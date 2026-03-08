@@ -1,0 +1,12 @@
+[project]
+name = "fmriprep-workflow"
+version = "0.1.0"
+description = "CLI for submitting fMRIPrep SLURM array jobs"
+requires-python = ">=3.9"
+
+[project.scripts]
+fmriprep-run = "fmriprep_workflow.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
