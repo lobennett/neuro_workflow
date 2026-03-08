@@ -10,3 +10,8 @@ fmriprep-run = "fmriprep_workflow.cli:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+]
