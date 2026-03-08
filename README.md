@@ -6,7 +6,7 @@ A zero-dependency Python CLI for submitting fMRIPrep SLURM array jobs. Register 
 
 ```bash
 module load uv
-cd /home/users/logben/freesurfer/fmriprep-workflow
+cd /home/users/logben/fmriprep-workflow
 uv pip install -e .
 ```
 
@@ -18,7 +18,7 @@ After installation, `fmriprep-run` is available from anywhere (as long as the ve
 # 1. Register a dataset
 fmriprep-run add-dataset discovery \
   --bids-dir /oak/stanford/groups/russpold/data/network_grant/discovery_BIDS_20250402 \
-  --subjects-file /home/users/logben/freesurfer/subs_discovery.txt \
+  --subjects-file /home/users/logben/fmriprep-workflow/subs_discovery.txt \
   --fmriprep-version 25.2.4 \
   --output-spaces "MNI152NLin2009cAsym:res-2 fsaverage6 fsnative func anat" \
   --fmriprep-args "--no-submm-recon --skip-bids-validation --cifti-output 91k --me-output-echos --medial-surface-nan --project-goodvoxels" \
@@ -104,7 +104,7 @@ All dataset configs are stored in `~/.fmriprep_workflow/datasets.json`. You can 
 {
   "discovery": {
     "bids_dir": "/oak/.../discovery_BIDS_20250402",
-    "subjects_file": "/home/users/logben/freesurfer/subs_discovery.txt",
+    "subjects_file": "/home/users/logben/fmriprep-workflow/subs_discovery.txt",
     "fmriprep_version": "25.2.4",
     "output_spaces": "MNI152NLin2009cAsym:res-2 fsaverage6 fsnative func anat",
     "fmriprep_args": "--no-submm-recon --skip-bids-validation ...",
@@ -173,7 +173,7 @@ fmriprep-workflow/
 ## Running Tests
 
 ```bash
-cd /home/users/logben/freesurfer/fmriprep-workflow
+cd /home/users/logben/fmriprep-workflow
 module load uv
 uv run pytest tests/ -v
 ```
