@@ -5,7 +5,7 @@ from pathlib import Path
 from neuro_workflow.pipelines.base import register
 
 
-def _discover_scans(bids_dir: str) -> list[dict]:
+def _discover_scans(bids_dir: str, version: str) -> list[dict]:
     """Discover BOLD echo + physio file pairs in a BIDS directory."""
     bids = Path(bids_dir)
     scans = []
@@ -23,7 +23,7 @@ def _discover_scans(bids_dir: str) -> list[dict]:
             continue
 
         rel = nifti.relative_to(bids)
-        output = Path(bids_dir) / "derivatives" / "happy" / rel
+        output = Path(bids_dir) / "derivatives" / f"rapidtide_{version}" / rel
 
         scans.append({
             "bold": str(nifti),
@@ -63,13 +63,13 @@ class HappyPipeline:
         time = args.time if args.time is not None else self.default_resources["time"]
 
         bids_dir = dataset_config["bids_dir"]
-        scans = _discover_scans(bids_dir)
+        scans = _discover_scans(bids_dir, args.version)
 
         if not scans:
             print("Error: no BOLD+physio scan pairs found in BIDS directory", file=sys.stderr)
             sys.exit(1)
 
-        deriv_dir = Path(bids_dir) / "derivatives" / "happy"
+        deriv_dir = Path(bids_dir) / "derivatives" / f"rapidtide_{args.version}"
         deriv_dir.mkdir(parents=True, exist_ok=True)
         scan_list_file = deriv_dir / "scan_list.txt"
         with open(scan_list_file, "w") as f:

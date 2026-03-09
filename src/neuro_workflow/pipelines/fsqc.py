@@ -43,7 +43,7 @@ class FsqcPipeline:
             f"sub-{s}" if not s.startswith("sub-") else s for s in subjects
         )
 
-        output_dir = f"{dataset_config['bids_dir']}/derivatives/fsqc"
+        output_dir = f"{dataset_config['bids_dir']}/derivatives/fsqc_{args.version}"
         log_dir = f"{output_dir}/logs"
 
         if dataset_config.get("mail_user"):
