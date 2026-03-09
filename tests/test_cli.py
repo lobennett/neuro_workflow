@@ -1,5 +1,6 @@
 import json
 import sys
+import pytest
 from pathlib import Path
 from neuro_workflow.cli import main
 
@@ -100,6 +101,25 @@ def test_show_renders_fmriprep_script(tmp_path, monkeypatch, capsys):
     output = capsys.readouterr().out
     assert "#SBATCH -J fmriprep_test_ds" in output
     assert "#SBATCH --array=1-2" in output
+
+
+def test_qa_subcommand_no_args(capsys):
+    """qa subcommand without required args should fail."""
+    from unittest.mock import patch
+    with patch("sys.argv", ["neuro-run", "qa"]):
+        with pytest.raises(SystemExit):
+            main()
+
+
+def test_qa_unknown_command(tmp_path, monkeypatch, capsys):
+    """qa with unknown command should print error."""
+    from unittest.mock import patch
+    config_file = tmp_path / "datasets.json"
+    config_file.write_text('{"discovery": {"bids_dir": "/bids", "subjects_file": "/s.txt"}}')
+    monkeypatch.setattr("neuro_workflow.core.config.CONFIG_FILE", config_file)
+    with patch("sys.argv", ["neuro-run", "qa", "nonexistent", "discovery"]):
+        with pytest.raises(SystemExit):
+            main()
 
 
 def test_submit_renders_and_calls_sbatch(tmp_path, monkeypatch, capsys):

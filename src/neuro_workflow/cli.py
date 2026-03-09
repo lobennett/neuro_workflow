@@ -6,9 +6,17 @@ from neuro_workflow.core.config import save_dataset, get_dataset, load_datasets
 from neuro_workflow.core.image import ensure_image
 from neuro_workflow.core.slurm import render_template, submit_sbatch
 from neuro_workflow.pipelines.base import get_pipeline, list_pipelines, TEMPLATE_DIR
+from neuro_workflow.qa.base import get_qa_command, list_qa_commands
 
 # Import pipeline modules to trigger auto-registration
 import neuro_workflow.pipelines.fmriprep  # noqa: F401
+import neuro_workflow.pipelines.qsiprep  # noqa: F401
+import neuro_workflow.pipelines.fsqc  # noqa: F401
+import neuro_workflow.pipelines.freesurfer  # noqa: F401
+import neuro_workflow.pipelines.happy  # noqa: F401
+
+# Import QA modules to trigger auto-registration
+import neuro_workflow.qa.neg_events  # noqa: F401
 
 
 def cmd_add_dataset(args):
@@ -35,7 +43,7 @@ def cmd_add_dataset(args):
     print(f"Dataset '{args.name}' saved.")
 
 
-def cmd_show(args):
+def cmd_show(args, remaining):
     if args.list:
         datasets = load_datasets()
         if not datasets:
@@ -50,6 +58,14 @@ def cmd_show(args):
         print(f"Error: unknown pipeline '{args.pipeline}'. Available: {', '.join(list_pipelines())}", file=sys.stderr)
         sys.exit(1)
 
+    # Parse pipeline-specific args
+    pipeline_parser = argparse.ArgumentParser()
+    pipeline.add_cli_args(pipeline_parser)
+    pipeline_args = pipeline_parser.parse_args(remaining)
+    # Merge into args namespace
+    for key, value in vars(pipeline_args).items():
+        setattr(args, key, value)
+
     config = get_dataset(args.dataset)
     ctx = pipeline.build_context(args.dataset, config, args)
     template_path = TEMPLATE_DIR / pipeline.template_name
@@ -57,11 +73,18 @@ def cmd_show(args):
     print(script)
 
 
-def cmd_submit(args):
+def cmd_submit(args, remaining):
     pipeline = get_pipeline(args.pipeline)
     if pipeline is None:
         print(f"Error: unknown pipeline '{args.pipeline}'. Available: {', '.join(list_pipelines())}", file=sys.stderr)
         sys.exit(1)
+
+    # Parse pipeline-specific args
+    pipeline_parser = argparse.ArgumentParser()
+    pipeline.add_cli_args(pipeline_parser)
+    pipeline_args = pipeline_parser.parse_args(remaining)
+    for key, value in vars(pipeline_args).items():
+        setattr(args, key, value)
 
     config = get_dataset(args.dataset)
     ensure_image(config["image_dir"], pipeline.name, args.version, pipeline.docker_uri)
@@ -74,6 +97,24 @@ def cmd_submit(args):
     print(script)
     print("--- Submitting ---")
     submit_sbatch(script)
+
+
+def cmd_qa(args, remaining):
+    command = get_qa_command(args.qa_command)
+    if command is None:
+        available = ", ".join(list_qa_commands()) or "(none registered)"
+        print(f"Error: unknown QA command '{args.qa_command}'. Available: {available}", file=sys.stderr)
+        sys.exit(1)
+
+    # Parse QA-command-specific args
+    qa_parser = argparse.ArgumentParser()
+    command.add_cli_args(qa_parser)
+    qa_args = qa_parser.parse_args(remaining)
+    for key, value in vars(qa_args).items():
+        setattr(args, key, value)
+
+    config = get_dataset(args.dataset)
+    command.run(args.dataset, config, args)
 
 
 def main():
@@ -89,26 +130,26 @@ def main():
     add_p.add_argument("--mail-user", help="Email for SLURM notifications")
     add_p.add_argument("--image-dir", help="Directory for SIF images")
     add_p.add_argument("--templateflow-dir", help="TemplateFlow directory")
-    add_p.set_defaults(func=cmd_add_dataset)
+    add_p.set_defaults(func=lambda args, remaining: cmd_add_dataset(args))
 
-    # show
+    # show — pipeline-specific args parsed in second pass
     show_p = subparsers.add_parser("show", help="Preview sbatch script or list datasets")
     show_p.add_argument("--list", action="store_true", help="List all registered datasets")
     show_p.add_argument("pipeline", nargs="?", help="Pipeline name (e.g. fmriprep)")
     show_p.add_argument("dataset", nargs="?", help="Dataset name to preview")
-    # Add pipeline-specific args to show
-    for pipeline in list_pipelines().values():
-        pipeline.add_cli_args(show_p)
     show_p.set_defaults(func=cmd_show)
 
-    # submit
+    # submit — pipeline-specific args parsed in second pass
     sub_p = subparsers.add_parser("submit", help="Submit a pipeline job to SLURM")
-    sub_p.add_argument("pipeline", help="Pipeline name (e.g. fmriprep, mriqc)")
+    sub_p.add_argument("pipeline", help="Pipeline name (e.g. fmriprep, qsiprep)")
     sub_p.add_argument("dataset", help="Dataset name to submit")
-    # Add pipeline-specific args to submit
-    for pipeline in list_pipelines().values():
-        pipeline.add_cli_args(sub_p)
     sub_p.set_defaults(func=cmd_submit)
 
-    args = parser.parse_args()
-    args.func(args)
+    # qa — command-specific args parsed in second pass
+    qa_p = subparsers.add_parser("qa", help="Run QA analysis scripts")
+    qa_p.add_argument("qa_command", help="QA command name")
+    qa_p.add_argument("dataset", help="Dataset name")
+    qa_p.set_defaults(func=cmd_qa)
+
+    args, remaining = parser.parse_known_args()
+    args.func(args, remaining)
