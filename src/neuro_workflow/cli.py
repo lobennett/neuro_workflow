@@ -5,8 +5,16 @@ from pathlib import Path
 from neuro_workflow.core.config import save_dataset, get_dataset, load_datasets
 from neuro_workflow.core.image import ensure_image
 from neuro_workflow.core.slurm import render_template, submit_sbatch
+from neuro_workflow.core.exclusions import (
+    save_source_entries,
+    save_overrides,
+    load_overrides,
+    compile_exclusions,
+    load_compiled_exclusions,
+)
 from neuro_workflow.pipelines.base import get_pipeline, list_pipelines, TEMPLATE_DIR
 from neuro_workflow.qa.base import get_qa_command, list_qa_commands
+from neuro_workflow.exclusions.base import get_generator, list_generators
 
 # Import pipeline modules to trigger auto-registration
 import neuro_workflow.pipelines.fmriprep  # noqa: F401
@@ -21,6 +29,11 @@ import neuro_workflow.qa.breaks  # noqa: F401
 import neuro_workflow.qa.global_signal  # noqa: F401
 import neuro_workflow.qa.outlier_report  # noqa: F401
 import neuro_workflow.qa.reliability  # noqa: F401
+
+# Import exclusion generators to trigger auto-registration
+import neuro_workflow.exclusions.motion  # noqa: F401
+import neuro_workflow.exclusions.neg_events  # noqa: F401
+import neuro_workflow.exclusions.behavioral  # noqa: F401
 
 
 def cmd_add_dataset(args):
@@ -121,6 +134,60 @@ def cmd_qa(args, remaining):
     command.run(args.dataset, config, args)
 
 
+def cmd_exclusions_generate(args, remaining):
+    generator = get_generator(args.source)
+    if generator is None:
+        available = ", ".join(list_generators()) or "(none registered)"
+        print(f"Error: unknown generator '{args.source}'. Available: {available}", file=sys.stderr)
+        sys.exit(1)
+    config = get_dataset(args.dataset)
+    entries = generator.generate(args.dataset, config, args)
+    save_source_entries(args.dataset, generator.name, entries)
+    print(f"Saved {len(entries)} entries to sources/{generator.name}.json")
+
+
+def cmd_exclusions_compile(args, remaining):
+    config = get_dataset(args.dataset)
+    compiled = compile_exclusions(args.dataset, bids_dir=config.get("bids_dir"))
+    from collections import Counter
+    by_source = Counter(e["source"] for e in compiled)
+    by_action = Counter(e["action"] for e in compiled)
+    print(f"Compiled {len(compiled)} exclusions for '{args.dataset}':")
+    for source, count in sorted(by_source.items()):
+        print(f"  {source}: {count}")
+    print(f"  Actions: {dict(by_action)}")
+
+
+def cmd_exclusions_show(args, remaining):
+    compiled = load_compiled_exclusions(args.dataset)
+    if not compiled:
+        print(f"No compiled exclusions for '{args.dataset}'. Run 'neuro-run exclusions compile {args.dataset}' first.")
+        return
+    from collections import Counter
+    by_source = Counter(e["source"] for e in compiled)
+    by_action = Counter(e["action"] for e in compiled)
+    print(f"Exclusions for '{args.dataset}':")
+    print(f"{'Source':<15} {'Exclude':>8} {'Trim':>8} {'Total':>8}")
+    print("-" * 41)
+    for source in sorted(by_source):
+        src_entries = [e for e in compiled if e["source"] == source]
+        n_exc = sum(1 for e in src_entries if e["action"] == "exclude")
+        n_trim = sum(1 for e in src_entries if e["action"] == "trim")
+        print(f"{source:<15} {n_exc:>8} {n_trim:>8} {len(src_entries):>8}")
+    print("-" * 41)
+    print(f"{'Total':<15} {by_action.get('exclude', 0):>8} {by_action.get('trim', 0):>8} {len(compiled):>8}")
+
+
+def cmd_exclusions_import(args, remaining):
+    import json
+    with open(args.input_file) as f:
+        entries = json.load(f)
+    for entry in entries:
+        entry["source"] = args.source_name
+    save_source_entries(args.dataset, args.source_name, entries)
+    print(f"Imported {len(entries)} entries as source '{args.source_name}'")
+
+
 def main():
     parser = argparse.ArgumentParser(prog="neuro-run", description="Submit neuroimaging SLURM array jobs")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -154,6 +221,35 @@ def main():
     qa_p.add_argument("qa_command", help="QA command name")
     qa_p.add_argument("dataset", help="Dataset name")
     qa_p.set_defaults(func=cmd_qa)
+
+    # exclusions
+    excl_p = subparsers.add_parser("exclusions", help="Manage scan exclusions")
+    excl_sub = excl_p.add_subparsers(dest="excl_command", required=True)
+
+    # exclusions generate
+    gen_p = excl_sub.add_parser("generate", help="Generate exclusions from a source")
+    gen_p.add_argument("source", help="Generator name (e.g. motion, neg-events)")
+    gen_p.add_argument("dataset", help="Dataset name")
+    for gen in list_generators().values():
+        gen.add_cli_args(gen_p)
+    gen_p.set_defaults(func=cmd_exclusions_generate)
+
+    # exclusions compile
+    comp_p = excl_sub.add_parser("compile", help="Compile all exclusion sources")
+    comp_p.add_argument("dataset", help="Dataset name")
+    comp_p.set_defaults(func=cmd_exclusions_compile)
+
+    # exclusions show
+    show_excl_p = excl_sub.add_parser("show", help="Show exclusion summary")
+    show_excl_p.add_argument("dataset", help="Dataset name")
+    show_excl_p.set_defaults(func=cmd_exclusions_show)
+
+    # exclusions import
+    imp_p = excl_sub.add_parser("import", help="Import external exclusion list")
+    imp_p.add_argument("source_name", help="Source name to assign")
+    imp_p.add_argument("dataset", help="Dataset name")
+    imp_p.add_argument("--input-file", required=True, help="Path to JSON file to import")
+    imp_p.set_defaults(func=cmd_exclusions_import)
 
     args, remaining = parser.parse_known_args()
     args.func(args, remaining)
