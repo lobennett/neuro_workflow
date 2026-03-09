@@ -18,6 +18,7 @@ import neuro_workflow.pipelines.happy  # noqa: F401
 # Import QA modules to trigger auto-registration
 import neuro_workflow.qa.neg_events  # noqa: F401
 import neuro_workflow.qa.breaks  # noqa: F401
+import neuro_workflow.qa.global_signal  # noqa: F401
 
 
 def cmd_add_dataset(args):
