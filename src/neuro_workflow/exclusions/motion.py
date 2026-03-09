@@ -1,0 +1,127 @@
+"""Motion exclusion generator: reads fmriprep confound TSVs and applies thresholds."""
+from __future__ import annotations
+
+import re
+from argparse import ArgumentParser, Namespace
+from pathlib import Path
+
+try:
+    import numpy as np
+    import pandas as pd
+except ImportError:
+    pd = None  # type: ignore[assignment]
+    np = None  # type: ignore[assignment]
+
+from neuro_workflow.exclusions.base import register_generator
+
+
+def _parse_confounds_filename(filename: str) -> dict | None:
+    """Extract BIDS entities from a confounds filename."""
+    m = re.match(
+        r'(sub-\w+)_(ses-\w+)_task-(\w+)_run-(\w+)_desc-confounds_timeseries\.tsv',
+        filename,
+    )
+    if not m:
+        return None
+    return {
+        "subject": m.group(1),
+        "session": m.group(2),
+        "task": m.group(3),
+        "run": m.group(4),
+    }
+
+
+def _compute_metrics(df: "pd.DataFrame") -> dict:
+    """Compute motion metrics from a confounds dataframe."""
+    fd = pd.to_numeric(df.get("framewise_displacement", pd.Series(dtype=float)), errors="coerce").dropna()
+    dvars = pd.to_numeric(df.get("dvars", pd.Series(dtype=float)), errors="coerce").dropna()
+    return {
+        "fmriprep_fd_mean": float(fd.mean()) if len(fd) > 0 else 0.0,
+        "fmriprep_fd_std": float(fd.std()) if len(fd) > 0 else 0.0,
+        "fmriprep_proportion_fd_over_0.5": float((fd > 0.5).mean()) if len(fd) > 0 else 0.0,
+        "fmriprep_dvars_mean": float(dvars.mean()) if len(dvars) > 0 else 0.0,
+        "fmriprep_dvars_std": float(dvars.std()) if len(dvars) > 0 else 0.0,
+        "fmriprep_proportion_dvars_over_1.5": float((dvars > 1.5).mean()) if len(dvars) > 0 else 0.0,
+    }
+
+
+class MotionGenerator:
+    name = "motion"
+    description = "Generate motion exclusions from fmriprep confound files"
+
+    def add_cli_args(self, parser: ArgumentParser) -> None:
+        parser.add_argument("--fmriprep-version", required=False, default="24.1.0rc2",
+                            help="fMRIPrep version for derivatives path")
+        parser.add_argument("--fd-threshold", type=float, default=0.2,
+                            help="FD mean threshold for resting-state (default: 0.2)")
+        parser.add_argument("--proportion-fd-threshold", type=float, default=0.2,
+                            help="Proportion FD > 0.5 threshold for task scans (default: 0.2)")
+        parser.add_argument("--proportion-dvars-threshold", type=float, default=0.2,
+                            help="Proportion DVARS > 1.5 threshold (default: 0.2)")
+
+    def generate(self, dataset_name: str, dataset_config: dict, args: Namespace) -> list[dict]:
+        if pd is None:
+            print("Error: 'pandas' required for motion generator. Install with: uv pip install -e \".[qa]\"")
+            return []
+
+        bids_dir = Path(dataset_config["bids_dir"])
+        version = getattr(args, "fmriprep_version", "24.1.0rc2")
+        deriv = bids_dir / "derivatives" / f"fmriprep_{version}"
+
+        confound_files = sorted(deriv.glob("sub-*/ses-*/func/*_desc-confounds_timeseries.tsv"))
+        if not confound_files:
+            print(f"No confound files found in {deriv}")
+            return []
+
+        fd_thresh = args.fd_threshold
+        prop_fd_thresh = args.proportion_fd_threshold
+        prop_dvars_thresh = args.proportion_dvars_threshold
+
+        entries = []
+        for tsv_path in confound_files:
+            parsed = _parse_confounds_filename(tsv_path.name)
+            if not parsed:
+                continue
+
+            df = pd.read_csv(tsv_path, sep="\t")
+            metrics = _compute_metrics(df)
+
+            is_rest = parsed["task"] == "rest"
+            reasons = []
+
+            if is_rest:
+                if metrics["fmriprep_fd_mean"] > fd_thresh:
+                    reasons.append(
+                        f"Resting state FD mean ({metrics['fmriprep_fd_mean']:.3f}) "
+                        f"exceeded threshold ({fd_thresh})"
+                    )
+            else:
+                if metrics["fmriprep_proportion_fd_over_0.5"] > prop_fd_thresh:
+                    reasons.append(
+                        f"Proportion FD > 0.5 ({metrics['fmriprep_proportion_fd_over_0.5']:.3f}) "
+                        f"exceeded threshold ({prop_fd_thresh})"
+                    )
+
+            if metrics["fmriprep_proportion_dvars_over_1.5"] > prop_dvars_thresh:
+                reasons.append(
+                    f"Proportion DVARS > 1.5 ({metrics['fmriprep_proportion_dvars_over_1.5']:.3f}) "
+                    f"exceeded threshold ({prop_dvars_thresh})"
+                )
+
+            if reasons:
+                entries.append({
+                    "subject": parsed["subject"],
+                    "session": parsed["session"],
+                    "task": f"task-{parsed['task']}",
+                    "run": f"run-{parsed['run']}",
+                    "source": "motion",
+                    "action": "exclude",
+                    "reason": "; ".join(reasons),
+                    "metrics": metrics,
+                })
+
+        print(f"Motion generator: {len(entries)} exclusions from {len(confound_files)} confound files")
+        return entries
+
+
+register_generator(MotionGenerator())
