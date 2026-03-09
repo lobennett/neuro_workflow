@@ -22,6 +22,10 @@ import neuro_workflow.pipelines.qsiprep  # noqa: F401
 import neuro_workflow.pipelines.fsqc  # noqa: F401
 import neuro_workflow.pipelines.freesurfer  # noqa: F401
 import neuro_workflow.pipelines.happy  # noqa: F401
+import neuro_workflow.pipelines.lev1  # noqa: F401
+import neuro_workflow.pipelines.lev2  # noqa: F401
+import neuro_workflow.pipelines.prep_mshbm  # noqa: F401
+import neuro_workflow.pipelines.mshbm  # noqa: F401
 
 # Import QA modules to trigger auto-registration
 import neuro_workflow.qa.neg_events  # noqa: F401
@@ -105,7 +109,8 @@ def cmd_submit(args, remaining):
         setattr(args, key, value)
 
     config = get_dataset(args.dataset)
-    ensure_image(config["image_dir"], pipeline.name, args.version, pipeline.docker_uri)
+    if pipeline.docker_uri:
+        ensure_image(config["image_dir"], pipeline.name, args.version, pipeline.docker_uri)
 
     ctx = pipeline.build_context(args.dataset, config, args)
     template_path = TEMPLATE_DIR / pipeline.template_name

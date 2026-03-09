@@ -2,12 +2,19 @@
 name = "neuro-workflow"
 version = "0.2.0"
 description = "CLI for submitting neuroimaging SLURM array jobs"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 
 [project.scripts]
 neuro-run = "neuro_workflow.cli:main"
+network-lev1 = "network_lev1.run_lev1:main"
+network-lev2 = "network_lev1.run_lev2:main"
+network-prep-mshbm = "network_lev1.prepare_mshbm_inputs:main"
 
 [project.optional-dependencies]
+lev1 = [
+    "statsmodels>=0.14",
+    "randomise-prep @ git+https://github.com/jmumford/randomise-prep.git",
+]
 qa = [
     "nilearn>=0.12",
     "nibabel>=5.0",
@@ -21,6 +28,14 @@ qa = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+markers = [
+    "lev1: requires neuroimaging dependencies (nibabel, nilearn, statsmodels)",
+]
 
 [dependency-groups]
 dev = [

@@ -10,10 +10,16 @@ cd /home/users/logben/fmriprep-workflow
 uv pip install -e .
 ```
 
-For QA commands that require nilearn, nibabel, matplotlib, pandas, numpy, seaborn, and img2pdf:
+For QA commands (nilearn, nibabel, matplotlib, pandas, numpy, seaborn, img2pdf):
 
 ```bash
 uv pip install -e ".[qa]"
+```
+
+For first-level GLM analysis (statsmodels, randomise-prep — requires Python ≥ 3.11):
+
+```bash
+uv pip install -e ".[lev1,qa]"
 ```
 
 After installation, `neuro-run` is available from anywhere (as long as the venv is active or you use the full path `.venv/bin/neuro-run`).
@@ -88,6 +94,10 @@ neuro-run submit fmriprep discovery --version 25.2.4 \
 | `fsqc` | `neuro-run submit fsqc <dataset> --version <ver> --freesurfer-dir <dir>` | FreeSurfer quality control |
 | `freesurfer` | `neuro-run submit freesurfer <dataset> --version <ver>` | Cortical reconstruction (deprecated, use fMRIPrep) |
 | `happy` | `neuro-run submit happy <dataset> --version <ver>` | Cardiac signal extraction via rapidtide/happy |
+| `lev1` | `neuro-run submit lev1 <dataset> --fmriprep-dir <dir> --base-tasks` | First-level GLM (subject × task array) |
+| `lev2` | `neuro-run submit lev2 <dataset> --lev1-dirs <dir> --base-tasks ...` | Second-level group GLM via FSL randomise |
+| `prep-mshbm` | `neuro-run submit prep-mshbm <dataset> --glm-dir <dir> --fmriprep-dir <dir> ...` | Prepare fsaverage6 surface inputs for MSHBM |
+| `mshbm` | `neuro-run submit mshbm <dataset> --surface-inputs-dir <dir> --output-dir <dir>` | Precision network parcellation via MSHBM |
 
 ### Pipeline-Specific Options
 
@@ -116,6 +126,143 @@ neuro-run submit fsqc discovery --version 2.1.4 \
 ```bash
 neuro-run submit happy discovery --version 3.1.8
 ```
+
+---
+
+## First-Level GLM (`lev1`)
+
+The `lev1` pipeline runs first-level GLM analysis for the Network R01 task battery. It submits a SLURM array job where each task processes one subject × task combination.
+
+### Installation
+
+The lev1 analysis code requires additional dependencies (statsmodels, randomise-prep):
+
+```bash
+module load uv
+uv pip install -e ".[lev1,qa]"
+```
+
+### Prerequisites
+
+Before submitting, compile exclusions for the dataset:
+
+```bash
+# Generate motion exclusions from fMRIPrep confounds
+neuro-run exclusions generate motion discovery \
+  --fmriprep-version 24.1.0rc2 \
+  --fd-threshold 0.2
+
+# Generate neg-events exclusions from event files
+neuro-run exclusions generate neg-events discovery
+
+# Import any hand-curated behavioral exclusions
+neuro-run exclusions import behavioral discovery \
+  --input-file /path/to/behavioral_exclusions.json
+
+# Compile all sources into a single exclusions file
+neuro-run exclusions compile discovery
+
+# Review the summary
+neuro-run exclusions show discovery
+```
+
+The compiled exclusions are saved to `~/.neuro_workflow/exclusions/discovery/compiled_exclusions.json` and used automatically by `lev1` (and `lev2`). To use a custom exclusions file instead, pass `--exclusions-file`.
+
+### Submitting lev1 jobs
+
+```bash
+# All base tasks, surface space, with FC-quality residuals for precision mapping
+neuro-run submit lev1 discovery \
+  --fmriprep-dir /oak/.../derivatives/fmriprep_24.1.0rc2 \
+  --base-tasks \
+  --space surface \
+  --residuals \
+  --fc-confounds
+
+# Specific tasks, MNI space (volumetric)
+neuro-run submit lev1 discovery \
+  --fmriprep-dir /oak/.../derivatives/fmriprep_24.1.0rc2 \
+  --tasks stopSignal flanker nBack \
+  --space MNI
+
+# Preview the sbatch script before submitting
+neuro-run show lev1 discovery \
+  --fmriprep-dir /oak/.../derivatives/fmriprep_24.1.0rc2 \
+  --base-tasks \
+  --space surface --residuals
+```
+
+Results are written to `{bids_dir}/derivatives/lev1/` by default (override with `--results-dir`).
+
+### lev1 options
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--fmriprep-dir` | _(required)_ | fMRIPrep derivatives directory |
+| `--tasks <name...>` | — | One or more specific task names |
+| `--base-tasks` | — | All 8 base tasks |
+| `--dual-tasks` | — | All 10 dual tasks |
+| `--all` | — | All 18 tasks |
+| `--results-dir` | `{bids_dir}/derivatives/lev1` | Output directory |
+| `--exclusions-file` | compiled exclusions | Path to exclusions JSON (auto-detected) |
+| `--space` | `MNI` | `MNI`, `T1w`, `surface`, `fsaverage6`, or `fsLR` |
+| `--threshold` | `1.0` | Within-subject mask intersection threshold |
+| `--smoothing-fwhm` | _(none)_ | Spatial smoothing in mm |
+| `--residuals` | off | Compute task-regressed residuals |
+| `--fc-confounds` | off | Regress global signal / WM / CSF from residuals |
+| `--skip-existing` | off | Skip runs where output files already exist |
+| `--nthreads` | `1` | CPUs per array task |
+| `--mem-gb` | `64` | Memory per array task in GB |
+| `--time` | `2-00:00:00` | SLURM time limit |
+
+### Available tasks
+
+**Base tasks (8):** cuedTS, directedForgetting, flanker, goNogo, nBack, shapeMatching, spatialTS, stopSignal
+
+**Dual tasks (10):** directedForgettingWCuedTS, directedForgettingWFlanker, stopSignalWDirectedForgetting, stopSignalWFlanker, spatialTSWCuedTS, flankerWShapeMatching, cuedTSWFlanker, spatialTSWShapeMatching, nBackWShapeMatching, nBackWSpatialTS
+
+### Output structure
+
+Results land in `{results_dir}/sub-<id>/task-<name>/`:
+
+```
+derivatives/lev1/
+└── sub-s03/
+    └── task-flanker/
+        ├── fixed_effects/        # Subject-level fixed-effects maps (.nii.gz or .func.gii)
+        ├── indiv_contrasts/      # Per-run contrast estimates
+        ├── task_residuals/       # Task-regressed residuals (if --residuals)
+        ├── quality_control/      # VIF plots, design matrix figures
+        ├── masks/                # Combined brain masks (volumetric only)
+        └── simplified_events/    # Preprocessed event files
+```
+
+### Exclusions format
+
+`--exclusions-file` accepts two formats interchangeably:
+
+**neuro_workflow compiled format** (recommended — generated by `neuro-run exclusions compile`):
+```json
+[
+  {"subject": "sub-s03", "session": "ses-01", "task": "task-flanker", "run": "run-1",
+   "action": "exclude", "source": "motion", "reason": "FD > 0.2 in >20% of TRs"}
+]
+```
+
+**Legacy keyed-dict format** (from `network_glm/data/exclusions.json`):
+```json
+{
+  "fmriprep_exclusions": [
+    {"subject": "sub-s03", "session": "ses-01", "task": "task-flanker", "run": "run-1"}
+  ],
+  "behavioral_exclusions": [
+    {"subject": "sub-s03", "session": "ses-01", "task": "task-flanker", "run": "run-1",
+     "metrics": {"total_rows": 100, "rows_to_keep": 20}}
+  ]
+}
+```
+
+Both formats produce identical exclusion behavior. The format is detected automatically.
 
 ## QA Commands
 
@@ -244,42 +391,65 @@ All dataset configs are stored in `~/.neuro_workflow/datasets.json`:
 
 ## Package Structure
 
+This repo uses a two-package `src/` layout: `neuro_workflow` is the CLI and orchestration layer; `network_lev1` is the analysis library it calls.
+
 ```
 fmriprep-workflow/
 ├── pyproject.toml
-├── src/neuro_workflow/
-│   ├── core/
-│   │   ├── config.py         # ~/.neuro_workflow/datasets.json management
-│   │   ├── exclusions.py     # scan exclusion schema, compile, query API
-│   │   ├── image.py          # apptainer image existence check and pull
-│   │   └── slurm.py          # sbatch template rendering and job submission
-│   ├── exclusions/
-│   │   ├── base.py           # ExclusionGenerator protocol and registry
-│   │   ├── behavioral.py     # behavioral exclusion stub
-│   │   ├── motion.py         # motion exclusions from fmriprep confounds
-│   │   └── neg_events.py     # neg-events exclusions from event file onsets
-│   ├── pipelines/
-│   │   ├── base.py           # Pipeline protocol and registry
-│   │   ├── fmriprep.py       # fMRIPrep pipeline
-│   │   ├── fsqc.py           # FSQC pipeline
-│   │   ├── freesurfer.py     # FreeSurfer pipeline (deprecated)
-│   │   ├── happy.py          # Happy/rapidtide pipeline
-│   │   └── qsiprep.py        # QSIPrep pipeline
-│   ├── qa/
-│   │   ├── base.py           # QaCommand protocol and registry
-│   │   ├── breaks.py         # behavioral breaks QA
-│   │   ├── global_signal.py  # global signal plots
-│   │   ├── neg_events.py     # non-monotonic event file detection
-│   │   ├── outlier_report.py # VIF + outlier analysis
-│   │   └── reliability.py    # fMRI reliability movies
-│   ├── templates/
-│   │   ├── fmriprep.sbatch
-│   │   ├── fsqc.sbatch
-│   │   ├── freesurfer.sbatch
-│   │   ├── happy.sbatch
-│   │   └── qsiprep.sbatch
-│   └── cli.py                # argparse entry point
+├── src/
+│   ├── neuro_workflow/           # CLI + submission layer
+│   │   ├── core/
+│   │   │   ├── config.py         # ~/.neuro_workflow/datasets.json management
+│   │   │   ├── exclusions.py     # scan exclusion schema, compile, query API
+│   │   │   ├── image.py          # apptainer image existence check and pull
+│   │   │   └── slurm.py          # sbatch template rendering and job submission
+│   │   ├── exclusions/
+│   │   │   ├── base.py           # ExclusionGenerator protocol and registry
+│   │   │   ├── behavioral.py     # behavioral exclusion stub
+│   │   │   ├── motion.py         # motion exclusions from fmriprep confounds
+│   │   │   └── neg_events.py     # neg-events exclusions from event file onsets
+│   │   ├── pipelines/
+│   │   │   ├── base.py           # Pipeline protocol and registry
+│   │   │   ├── fmriprep.py
+│   │   │   ├── fsqc.py
+│   │   │   ├── freesurfer.py     # (deprecated)
+│   │   │   ├── happy.py
+│   │   │   ├── lev1.py           # first-level GLM pipeline
+│   │   │   ├── lev2.py           # second-level GLM pipeline
+│   │   │   ├── mshbm.py          # precision network parcellation
+│   │   │   ├── prep_mshbm.py     # MSHBM surface input prep
+│   │   │   └── qsiprep.py
+│   │   ├── qa/
+│   │   │   ├── base.py           # QaCommand protocol and registry
+│   │   │   ├── breaks.py
+│   │   │   ├── fieldmap_check.py
+│   │   │   ├── global_signal.py
+│   │   │   ├── neg_events.py
+│   │   │   ├── outlier_report.py
+│   │   │   └── reliability.py
+│   │   ├── templates/
+│   │   │   ├── fmriprep.sbatch
+│   │   │   ├── fsqc.sbatch
+│   │   │   ├── freesurfer.sbatch
+│   │   │   ├── happy.sbatch
+│   │   │   ├── lev1.sbatch
+│   │   │   ├── lev2.sbatch
+│   │   │   ├── mshbm.sbatch
+│   │   │   ├── prep_mshbm.sbatch
+│   │   │   └── qsiprep.sbatch
+│   │   └── cli.py
+│   └── network_lev1/             # GLM analysis library
+│       ├── config.py
+│       ├── core/                 # utils, task_utils
+│       ├── io/                   # file_discovery
+│       ├── processing/           # design, glm, contrasts, fixed_effects, residuals, …
+│       ├── task_config/          # per-task YAML configs + loader
+│       ├── run_lev1.py           # entry point → network-lev1
+│       ├── run_lev2.py           # entry point → network-lev2
+│       └── prepare_mshbm_inputs.py  # entry point → network-prep-mshbm
 └── tests/
+    ├── test_cli.py
+    └── lev1/                     # network_lev1 test suite
 ```
 
 ## Running Tests

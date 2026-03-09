@@ -6,7 +6,6 @@ Generates VIF + outlier analysis figures and summary CSVs.
 from __future__ import annotations
 
 import gc
-import json
 import logging
 import os
 import re
@@ -14,7 +13,7 @@ import shutil
 from argparse import ArgumentParser, Namespace
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set
 
 try:
     import img2pdf
@@ -31,6 +30,7 @@ try:
 except ImportError:
     plt = None  # type: ignore[assignment]
 
+from network_lev1.core.utils import load_exclusions
 from neuro_workflow.qa.base import register_qa
 
 logger = logging.getLogger(__name__)
@@ -59,17 +59,6 @@ def parse_bids_entities(path: str) -> Dict[str, Optional[str]]:
 
 
 # --- Data collection ---
-
-def load_exclusions(exclusions_file: str) -> Set[str]:
-    if not os.path.exists(exclusions_file):
-        raise FileNotFoundError(f'Exclusions file not found: {exclusions_file}')
-    with open(exclusions_file) as f:
-        data = json.load(f)
-    excluded = set()
-    for key in ('fmriprep_exclusions', 'behavioral_exclusions'):
-        for exc in data.get(key, []):
-            excluded.add(f"{exc['subject']}_{exc['session']}_{exc['task']}_{exc['run']}")
-    return excluded
 
 
 def is_scan_excluded(path: str, exclusions: Set[str]) -> bool:
