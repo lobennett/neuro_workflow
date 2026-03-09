@@ -24,6 +24,9 @@ qa = [
     "img2pdf>=0.5",
     "seaborn>=0.13",
 ]
+bidsify = [
+    "flywheel-sdk>=17.0",
+]
 
 [build-system]
 requires = ["hatchling"]

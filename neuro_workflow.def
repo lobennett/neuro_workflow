@@ -1,0 +1,23 @@
+Bootstrap: docker
+From: astral/uv:0.10-python3.13-trixie-slim
+
+%labels
+    Author logben
+    Description neuro-workflow CLI with all dependencies
+
+%files
+    . /opt/neuro_workflow
+
+%post
+    apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+    cd /opt/neuro_workflow
+    uv venv /opt/venv
+    UV_CACHE_DIR=/tmp/uv_cache uv pip install --python /opt/venv/bin/python -e ".[lev1,qa,bidsify]"
+    rm -rf /tmp/uv_cache
+
+%environment
+    export PATH="/opt/venv/bin:$PATH"
+    export VIRTUAL_ENV="/opt/venv"
+
+%runscript
+    exec neuro-run "$@"
