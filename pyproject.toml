@@ -1,11 +1,11 @@
 [project]
-name = "fmriprep-workflow"
-version = "0.1.0"
-description = "CLI for submitting fMRIPrep SLURM array jobs"
+name = "neuro-workflow"
+version = "0.2.0"
+description = "CLI for submitting neuroimaging SLURM array jobs"
 requires-python = ">=3.9"
 
 [project.scripts]
-fmriprep-run = "fmriprep_workflow.cli:main"
+neuro-run = "neuro_workflow.cli:main"
 
 [build-system]
 requires = ["hatchling"]

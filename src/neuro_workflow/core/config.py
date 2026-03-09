@@ -2,18 +2,13 @@ import json
 import sys
 from pathlib import Path
 
-CONFIG_DIR = Path.home() / ".fmriprep_workflow"
+CONFIG_DIR = Path.home() / ".neuro_workflow"
 CONFIG_FILE = CONFIG_DIR / "datasets.json"
 
 DEFAULTS = {
     "partition": "russpold",
-    "nthreads": 8,
-    "mem_per_cpu_gb": 8,
-    "time": "5-00:00:00",
     "image_dir": "/home/groups/russpold/singularity_images",
     "templateflow_dir": "/home/groups/russpold/templateflow",
-    "fs_license": "~/license.txt",
-    "bids_filter_file": None,
     "mail_user": None,
 }
 
@@ -38,7 +33,10 @@ def save_dataset(name, dataset_config):
 def get_dataset(name):
     datasets = load_datasets()
     if name not in datasets:
-        print(f"Error: dataset '{name}' not found. Run 'fmriprep-run show --list' to see registered datasets.", file=sys.stderr)
+        print(
+            f"Error: dataset '{name}' not found. Run 'neuro-run show --list' to see registered datasets.",
+            file=sys.stderr,
+        )
         sys.exit(1)
     merged = dict(DEFAULTS)
     merged.update(datasets[name])
