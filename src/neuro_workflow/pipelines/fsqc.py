@@ -3,7 +3,7 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from neuro_workflow.core.slurm import load_subjects
-from neuro_workflow.pipelines.base import register
+from neuro_workflow.pipelines.base import register, build_mail_line, resolve_resources
 
 
 class FsqcPipeline:
@@ -32,9 +32,10 @@ class FsqcPipeline:
             print("Error: --freesurfer-dir is required for fsqc pipeline", file=sys.stderr)
             sys.exit(1)
 
-        nthreads = args.nthreads if args.nthreads is not None else self.default_resources["nthreads"]
-        mem_per_cpu_gb = args.mem_per_cpu_gb if args.mem_per_cpu_gb is not None else self.default_resources["mem_per_cpu_gb"]
-        time = args.time if args.time is not None else self.default_resources["time"]
+        resources = resolve_resources(args, self.default_resources)
+        nthreads = resources["nthreads"]
+        mem_per_cpu_gb = resources["mem_per_cpu_gb"]
+        time = resources["time"]
 
         image_path = str(Path(dataset_config["image_dir"]) / f"fsqc_{args.version}.sif")
 
@@ -46,10 +47,7 @@ class FsqcPipeline:
         output_dir = f"{dataset_config['bids_dir']}/derivatives/fsqc_{args.version}"
         log_dir = f"{output_dir}/logs"
 
-        if dataset_config.get("mail_user"):
-            mail_line = f"#SBATCH --mail-user={dataset_config['mail_user']}\n#SBATCH --mail-type=ALL"
-        else:
-            mail_line = ""
+        mail_line = build_mail_line(dataset_config)
 
         return {
             "dataset_name": dataset_name,

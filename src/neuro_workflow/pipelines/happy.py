@@ -2,7 +2,7 @@ import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from neuro_workflow.pipelines.base import register
+from neuro_workflow.pipelines.base import register, build_mail_line, resolve_resources
 
 
 def _discover_scans(bids_dir: str, version: str) -> list[dict]:
@@ -58,9 +58,10 @@ class HappyPipeline:
             print("Error: --version is required for happy pipeline", file=sys.stderr)
             sys.exit(1)
 
-        nthreads = args.nthreads if args.nthreads is not None else self.default_resources["nthreads"]
-        mem_per_cpu_gb = args.mem_per_cpu_gb if args.mem_per_cpu_gb is not None else self.default_resources["mem_per_cpu_gb"]
-        time = args.time if args.time is not None else self.default_resources["time"]
+        resources = resolve_resources(args, self.default_resources)
+        nthreads = resources["nthreads"]
+        mem_per_cpu_gb = resources["mem_per_cpu_gb"]
+        time = resources["time"]
 
         bids_dir = dataset_config["bids_dir"]
         scans = _discover_scans(bids_dir, args.version)
@@ -79,10 +80,7 @@ class HappyPipeline:
         image_path = str(Path(dataset_config["image_dir"]) / f"rapidtide_{args.version}")
         log_dir = str(deriv_dir / "logs")
 
-        if dataset_config.get("mail_user"):
-            mail_line = f"#SBATCH --mail-user={dataset_config['mail_user']}\n#SBATCH --mail-type=ALL"
-        else:
-            mail_line = ""
+        mail_line = build_mail_line(dataset_config)
 
         return {
             "dataset_name": dataset_name,

@@ -2,7 +2,7 @@ import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from neuro_workflow.pipelines.base import register
+from neuro_workflow.pipelines.base import register, build_mail_line, resolve_resources
 
 
 class FreesurferPipeline:
@@ -28,9 +28,10 @@ class FreesurferPipeline:
             print("Error: --version is required for freesurfer pipeline", file=sys.stderr)
             sys.exit(1)
 
-        nthreads = args.nthreads if args.nthreads is not None else self.default_resources["nthreads"]
-        mem_per_cpu_gb = args.mem_per_cpu_gb if args.mem_per_cpu_gb is not None else self.default_resources["mem_per_cpu_gb"]
-        time = args.time if args.time is not None else self.default_resources["time"]
+        resources = resolve_resources(args, self.default_resources)
+        nthreads = resources["nthreads"]
+        mem_per_cpu_gb = resources["mem_per_cpu_gb"]
+        time = resources["time"]
 
         fs_subjects_file = getattr(args, "subjects_file", None) or dataset_config["subjects_file"]
         n_subjects = sum(1 for line in open(fs_subjects_file) if line.strip())
@@ -39,10 +40,7 @@ class FreesurferPipeline:
         fs_license = str(Path(args.fs_license).expanduser())
         log_dir = f"{dataset_config['bids_dir']}/derivatives/freesurfer_{args.version}/logs"
 
-        if dataset_config.get("mail_user"):
-            mail_line = f"#SBATCH --mail-user={dataset_config['mail_user']}\n#SBATCH --mail-type=ALL"
-        else:
-            mail_line = ""
+        mail_line = build_mail_line(dataset_config)
 
         return {
             "dataset_name": dataset_name,

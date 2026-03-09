@@ -13,7 +13,7 @@ _REGISTRY: dict[str, Pipeline] = {}
 @runtime_checkable
 class Pipeline(Protocol):
     name: str
-    docker_uri: str
+    docker_uri: str | None
     template_name: str
     default_resources: dict
 
@@ -31,3 +31,18 @@ def get_pipeline(name: str) -> Pipeline | None:
 
 def list_pipelines() -> dict[str, Pipeline]:
     return dict(_REGISTRY)
+
+
+def build_mail_line(dataset_config: dict) -> str:
+    """Build SBATCH mail directives from dataset config."""
+    if dataset_config.get("mail_user"):
+        return f"#SBATCH --mail-user={dataset_config['mail_user']}\n#SBATCH --mail-type=ALL"
+    return ""
+
+
+def resolve_resources(args, defaults: dict) -> dict:
+    """Resolve resource values: use args override if not None, else default."""
+    return {
+        key: getattr(args, key, None) if getattr(args, key, None) is not None else val
+        for key, val in defaults.items()
+    }
