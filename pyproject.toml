@@ -7,6 +7,17 @@ requires-python = ">=3.9"
 [project.scripts]
 neuro-run = "neuro_workflow.cli:main"
 
+[project.optional-dependencies]
+qa = [
+    "nilearn>=0.12",
+    "nibabel>=5.0",
+    "matplotlib>=3.0",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "img2pdf>=0.5",
+    "seaborn>=0.13",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
