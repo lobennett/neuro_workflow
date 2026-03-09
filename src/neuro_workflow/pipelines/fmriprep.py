@@ -1,4 +1,5 @@
 import os
+import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
@@ -17,7 +18,7 @@ class FmriprepPipeline:
     }
 
     def add_cli_args(self, parser: ArgumentParser) -> None:
-        parser.add_argument("--version", required=True, help="fMRIPrep version tag (e.g. 25.2.4)")
+        parser.add_argument("--version", default=None, help="fMRIPrep version tag (e.g. 25.2.4)")
         parser.add_argument("--output-spaces", default="", help="fMRIPrep output spaces")
         parser.add_argument("--fmriprep-args", default="", help="Additional fMRIPrep arguments")
         parser.add_argument("--fs-license", default="~/license.txt", help="FreeSurfer license file")
@@ -27,6 +28,9 @@ class FmriprepPipeline:
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 5-00:00:00)")
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
+        if not getattr(args, "version", None):
+            print("Error: --version is required for fmriprep pipeline", file=sys.stderr)
+            sys.exit(1)
         nthreads = args.nthreads if args.nthreads is not None else self.default_resources["nthreads"]
         mem_per_cpu_gb = args.mem_per_cpu_gb if args.mem_per_cpu_gb is not None else self.default_resources["mem_per_cpu_gb"]
         time = args.time if args.time is not None else self.default_resources["time"]
