@@ -45,7 +45,7 @@ src/neuro_workflow/
 neuro-run submit qsiprep discovery --version 1.1.1 --output-resolution 1.5
 ```
 
-- **Container:** `docker://pennbbl/qsiprep`
+- **Container:** `docker://pennlinc/qsiprep`
 - **Default resources:** 8 CPUs, 8GB/cpu, 24h
 - **CLI args:** `--version` (required), `--output-resolution` (default: 1.5), `--qsiprep-args` (passthrough)
 - **Template:** Standard apptainer run with BIDS I/O, participant-level, array over subjects
