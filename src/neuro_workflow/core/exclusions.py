@@ -1,0 +1,151 @@
+"""Scan exclusion management: schema, persistence, compilation, and query API."""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Optional
+
+from neuro_workflow.core.config import CONFIG_DIR
+
+EXCLUSIONS_DIR = CONFIG_DIR / "exclusions"
+
+REQUIRED_FIELDS = {"subject", "session", "task", "run", "action", "reason"}
+VALID_ACTIONS = {"exclude", "trim", "force-include", "force-exclude"}
+
+
+def _scan_key(entry: dict) -> tuple:
+    return (entry["subject"], entry["session"], entry["task"], entry["run"])
+
+
+def validate_entry(entry: dict) -> bool:
+    """Check that an entry has all required fields and a valid action."""
+    if not REQUIRED_FIELDS.issubset(entry.keys()):
+        return False
+    if entry["action"] not in VALID_ACTIONS:
+        return False
+    return True
+
+
+def _sources_dir(dataset_name: str) -> Path:
+    return EXCLUSIONS_DIR / dataset_name / "sources"
+
+
+def _overrides_path(dataset_name: str) -> Path:
+    return EXCLUSIONS_DIR / dataset_name / "overrides.json"
+
+
+def _compiled_path(dataset_name: str) -> Path:
+    return EXCLUSIONS_DIR / dataset_name / "compiled_exclusions.json"
+
+
+def save_source_entries(dataset_name: str, source_name: str, entries: list[dict]) -> None:
+    """Write entries for a single source to its JSON file."""
+    d = _sources_dir(dataset_name)
+    d.mkdir(parents=True, exist_ok=True)
+    with open(d / f"{source_name}.json", "w") as f:
+        json.dump(entries, f, indent=2)
+
+
+def load_source_entries(dataset_name: str, source_name: str) -> list[dict]:
+    """Load entries for a single source."""
+    path = _sources_dir(dataset_name) / f"{source_name}.json"
+    if not path.exists():
+        return []
+    with open(path) as f:
+        return json.load(f)
+
+
+def save_overrides(dataset_name: str, overrides: list[dict]) -> None:
+    """Write manual override entries."""
+    path = _overrides_path(dataset_name)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(overrides, f, indent=2)
+
+
+def load_overrides(dataset_name: str) -> list[dict]:
+    """Load manual override entries."""
+    path = _overrides_path(dataset_name)
+    if not path.exists():
+        return []
+    with open(path) as f:
+        return json.load(f)
+
+
+def compile_exclusions(dataset_name: str, bids_dir: Optional[str] = None) -> list[dict]:
+    """Merge all source files and overrides into a compiled exclusion list.
+
+    1. Collect all entries from sources/*.json
+    2. Apply overrides: force-include removes, force-exclude adds
+    3. Save compiled result
+    4. Optionally copy to derivatives
+    """
+    sources_dir = _sources_dir(dataset_name)
+    all_entries: list[dict] = []
+
+    if sources_dir.exists():
+        for source_file in sorted(sources_dir.glob("*.json")):
+            with open(source_file) as f:
+                all_entries.extend(json.load(f))
+
+    overrides = load_overrides(dataset_name)
+
+    # Separate override types
+    force_includes = {_scan_key(o) for o in overrides if o.get("action") == "force-include"}
+    force_excludes = [o for o in overrides if o.get("action") == "force-exclude"]
+
+    # Remove force-included scans
+    if force_includes:
+        all_entries = [e for e in all_entries if _scan_key(e) not in force_includes]
+
+    # Add force-excluded scans
+    for fe in force_excludes:
+        all_entries.append({
+            "subject": fe["subject"],
+            "session": fe["session"],
+            "task": fe["task"],
+            "run": fe["run"],
+            "source": "override",
+            "action": "exclude",
+            "reason": fe.get("reason", "Manual force-exclude"),
+            "metrics": fe.get("metrics", {}),
+        })
+
+    # Save compiled
+    compiled_path = _compiled_path(dataset_name)
+    compiled_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(compiled_path, "w") as f:
+        json.dump(all_entries, f, indent=2)
+
+    # Copy to derivatives if bids_dir provided
+    if bids_dir:
+        deriv = Path(bids_dir) / "derivatives" / "exclusions"
+        deriv.mkdir(parents=True, exist_ok=True)
+        with open(deriv / "compiled_exclusions.json", "w") as f:
+            json.dump(all_entries, f, indent=2)
+
+    return all_entries
+
+
+def load_compiled_exclusions(dataset_name: str) -> list[dict]:
+    """Load the compiled exclusion list for a dataset."""
+    path = _compiled_path(dataset_name)
+    if not path.exists():
+        return []
+    with open(path) as f:
+        return json.load(f)
+
+
+def is_excluded(subject: str, session: str, task: str, run: str, compiled: list[dict]) -> bool:
+    """Check if a scan is excluded (action == 'exclude' or 'trim')."""
+    key = (subject, session, task, run)
+    return any(_scan_key(e) == key for e in compiled if e["action"] in ("exclude", "trim"))
+
+
+def get_trim_info(subject: str, session: str, task: str, run: str, compiled: list[dict]) -> Optional[dict]:
+    """Get trim metrics for a scan, or None if not a trim action."""
+    key = (subject, session, task, run)
+    for e in compiled:
+        if _scan_key(e) == key and e["action"] == "trim":
+            return e.get("metrics", {})
+    return None
