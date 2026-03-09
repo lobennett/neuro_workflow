@@ -29,6 +29,7 @@ import neuro_workflow.qa.breaks  # noqa: F401
 import neuro_workflow.qa.global_signal  # noqa: F401
 import neuro_workflow.qa.outlier_report  # noqa: F401
 import neuro_workflow.qa.reliability  # noqa: F401
+import neuro_workflow.qa.fieldmap_check  # noqa: F401
 
 # Import exclusion generators to trigger auto-registration
 import neuro_workflow.exclusions.motion  # noqa: F401
