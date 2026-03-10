@@ -6,9 +6,6 @@ requires-python = ">=3.11"
 
 [project.scripts]
 neuro-run = "neuro_workflow.cli:main"
-network-lev1 = "network_lev1.run_lev1:main"
-network-lev2 = "network_lev1.run_lev2:main"
-network-prep-mshbm = "network_lev1.prepare_mshbm_inputs:main"
 
 [project.optional-dependencies]
 lev1 = [

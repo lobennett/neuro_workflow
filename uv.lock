@@ -348,6 +348,23 @@ wheels = [
 ]
 
 [[package]]
+name = "flywheel-sdk"
+version = "21.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "packaging" },
+    { name = "python-dateutil" },
+    { name = "requests" },
+    { name = "requests-toolbelt" },
+    { name = "six" },
+    { name = "urllib3" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/41/d1/1bb8985634a5d721b6c04aae955c22301a54ea5d5aecf2a08a1144c3cf45/flywheel_sdk-21.5.0-py3-none-any.whl", hash = "sha256:01b4e75378a51ab59a1e289b166ec92f39a9d91c923418711b1eb18caa701d43", size = 1362304, upload-time = "2026-03-06T22:24:49.701Z" },
+]
+
+[[package]]
 name = "fonttools"
 version = "4.61.1"
 source = { registry = "https://pypi.org/simple" }
@@ -948,6 +965,14 @@ version = "0.2.0"
 source = { editable = "." }
 
 [package.optional-dependencies]
+bidsify = [
+    { name = "flywheel-sdk" },
+]
+events = [
+    { name = "nibabel" },
+    { name = "numpy" },
+    { name = "pandas" },
+]
 lev1 = [
     { name = "randomise-prep" },
     { name = "statsmodels" },
@@ -969,17 +994,21 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "flywheel-sdk", marker = "extra == 'bidsify'", specifier = ">=17.0" },
     { name = "img2pdf", marker = "extra == 'qa'", specifier = ">=0.5" },
     { name = "matplotlib", marker = "extra == 'qa'", specifier = ">=3.0" },
+    { name = "nibabel", marker = "extra == 'events'", specifier = ">=5.0" },
     { name = "nibabel", marker = "extra == 'qa'", specifier = ">=5.0" },
     { name = "nilearn", marker = "extra == 'qa'", specifier = ">=0.12" },
+    { name = "numpy", marker = "extra == 'events'", specifier = ">=1.24" },
     { name = "numpy", marker = "extra == 'qa'", specifier = ">=1.24" },
+    { name = "pandas", marker = "extra == 'events'", specifier = ">=2.0" },
     { name = "pandas", marker = "extra == 'qa'", specifier = ">=2.0" },
     { name = "randomise-prep", marker = "extra == 'lev1'", git = "https://github.com/jmumford/randomise-prep.git" },
     { name = "seaborn", marker = "extra == 'qa'", specifier = ">=0.13" },
     { name = "statsmodels", marker = "extra == 'lev1'", specifier = ">=0.14" },
 ]
-provides-extras = ["lev1", "qa"]
+provides-extras = ["lev1", "qa", "bidsify", "events"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=8.4.2" }]
@@ -1100,11 +1129,11 @@ wheels = [
 
 [[package]]
 name = "packaging"
-version = "26.0"
+version = "25.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/65/ee/299d360cdc32edc7d2cf530f3accf79c4fca01e96ffc950d8a52213bd8e4/packaging-26.0.tar.gz", hash = "sha256:00243ae351a257117b6a241061796684b084ed1c516a08c48a3f7e147a9d80b4", size = 143416, upload-time = "2026-01-21T20:50:39.064Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a1/d4/1fc4078c65507b51b96ca8f8c3ba19e6a61c8253c72794544580a7b6c24d/packaging-25.0.tar.gz", hash = "sha256:d443872c98d677bf60f6a1f2f8c1cb748e8fe762d2bf9d3148b5599295b0fc4f", size = 165727, upload-time = "2025-04-19T11:48:59.673Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b7/b9/c538f279a4e237a006a2c98387d081e9eb060d203d8ed34467cc0f0b9b53/packaging-26.0-py3-none-any.whl", hash = "sha256:b36f1fef9334a5588b4166f8bcd26a14e521f2b55e6b9de3aaa80d3ff7a37529", size = 74366, upload-time = "2026-01-21T20:50:37.788Z" },
+    { url = "https://files.pythonhosted.org/packages/20/12/38679034af332785aac8774540895e234f4d07f7545804097de4b666afd8/packaging-25.0-py3-none-any.whl", hash = "sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484", size = 66469, upload-time = "2025-04-19T11:48:57.875Z" },
 ]
 
 [[package]]
@@ -1542,6 +1571,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c9/74/b3ff8e6c8446842c3f5c837e9c3dfcfe2018ea6ecef224c710c85ef728f4/requests-2.32.5.tar.gz", hash = "sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf", size = 134517, upload-time = "2025-08-18T20:46:02.573Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl", hash = "sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6", size = 64738, upload-time = "2025-08-18T20:46:00.542Z" },
+]
+
+[[package]]
+name = "requests-toolbelt"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f3/61/d7545dafb7ac2230c70d38d31cbfe4cc64f7144dc41f6e4e4b78ecd9f5bb/requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6", size = 206888, upload-time = "2023-05-01T04:11:33.229Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06", size = 54481, upload-time = "2023-05-01T04:11:28.427Z" },
 ]
 
 [[package]]
