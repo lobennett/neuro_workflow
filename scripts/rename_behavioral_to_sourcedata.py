@@ -271,6 +271,18 @@ def main():
         if d.is_dir() and d.name not in SKIP_DIRS
     )
 
+    # Load timestamps from reconciliation.json if available
+    reconciliation_path = args.bids_dir / "sourcedata" / "reconciliation.json"
+    timestamps = {}
+    if reconciliation_path.exists():
+        with open(reconciliation_path) as f:
+            rec = json.load(f)
+        for sub, info in rec.get("subjects", {}).items():
+            timestamps[sub] = {
+                s["bids_session"]: s.get("timestamp")
+                for s in info.get("sessions", [])
+            }
+
     for subject in subjects:
         bids_sessions = build_bids_task_map(args.bids_dir, subject)
         if not bids_sessions:
@@ -285,10 +297,15 @@ def main():
         mappings, skipped_bids, unmatched_raw = match_sessions(raw_sessions, bids_sessions)
 
         # Record mapping for audit
-        sub_label = subject if subject.startswith("sub-") else f"sub-{subject}"
+        sub_timestamps = timestamps.get(subject, {})
         session_mapping["subjects"][subject] = {
             "mappings": [
-                {"raw_session": raw_ses, "bids_session": bids_ses, "tasks": tasks}
+                {
+                    "raw_session": raw_ses,
+                    "bids_session": bids_ses,
+                    "timestamp": sub_timestamps.get(bids_ses),
+                    "tasks": tasks,
+                }
                 for raw_ses, bids_ses, tasks, _ in mappings
             ],
             "skipped_bids_sessions": skipped_bids,
