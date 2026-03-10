@@ -41,7 +41,7 @@ class BidsifyPipeline:
         extra_args = " ".join(extra_parts)
 
         output_dir = Path(args.output_dir)
-        log_dir = str(output_dir / "logs")
+        log_dir = str(output_dir / "sourcedata" / "logs")
 
         return {
             "sample": dataset_name,

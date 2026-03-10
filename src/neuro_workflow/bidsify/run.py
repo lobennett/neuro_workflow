@@ -17,6 +17,7 @@ from neuro_workflow.bidsify.bids_writer import (
     bids_filename,
     patch_sidecar,
     write_dataset_description,
+    write_readme,
     download_and_place,
 )
 
@@ -49,6 +50,27 @@ def build_reconciliation(canonical_label, sessions, fw_sources):
         ],
         "warnings": [],
     }
+
+
+def _validate_bold_4d(nifti_path):
+    """Check that a BOLD NIfTI is 4D. Remove and warn if not."""
+    try:
+        import nibabel as nib
+        img = nib.load(nifti_path)
+        ndim = len(img.shape)
+        if ndim < 4:
+            logger.warning(
+                "Removing non-4D BOLD file (%dD): %s", ndim, nifti_path
+            )
+            Path(nifti_path).unlink()
+            return False
+        return True
+    except ImportError:
+        # nibabel not available, skip validation
+        return True
+    except Exception as e:
+        logger.warning("Could not validate %s: %s", nifti_path, e)
+        return True
 
 
 def process_subject_session(
@@ -106,14 +128,20 @@ def process_subject_session(
                 )
                 dest_dir = sub_dir / "func"
                 if echo_info["nifti"]:
+                    nifti_path = dest_dir / f"{stem}.nii.gz"
                     info = download_and_place(
-                        acq, echo_info["nifti"], dest_dir / f"{stem}.nii.gz"
+                        acq, echo_info["nifti"], nifti_path
                     )
                     log_entries.append(info)
+                    # Validate BOLD is 4D
+                    if not _validate_bold_4d(nifti_path):
+                        continue
                 if echo_info["json"]:
                     json_path = dest_dir / f"{stem}.json"
                     info = download_and_place(acq, echo_info["json"], json_path)
                     log_entries.append(info)
+                    # Add TaskName to BOLD sidecar
+                    patch_sidecar(json_path, TaskName=task_name)
                     bold_sidecars.append(json_path)
 
         elif modality == "fmap":
@@ -135,7 +163,7 @@ def process_subject_session(
                 json_path = dest_dir / f"{stem}.json"
                 info = download_and_place(acq, selected["fieldmap_json"], json_path)
                 log_entries.append(info)
-                patch_sidecar(json_path, b0_field_identifier=fmap_id)
+                patch_sidecar(json_path, b0_field_identifier=fmap_id, Units="Hz")
             if selected.get("magnitude_nifti"):
                 stem = bids_filename(subject_label, bids_ses, run=run, suffix="magnitude")
                 info = download_and_place(
@@ -246,7 +274,9 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
         "discovery": "Network Discovery Sample",
         "validation": "Network Validation Sample",
     }
-    write_dataset_description(output_dir, dataset_names.get(sample_name, sample_name))
+    ds_name = dataset_names.get(sample_name, sample_name)
+    write_dataset_description(output_dir, ds_name)
+    write_readme(output_dir, ds_name)
 
     # Write reconciliation and log
     sourcedata_dir = output_dir / "sourcedata"
