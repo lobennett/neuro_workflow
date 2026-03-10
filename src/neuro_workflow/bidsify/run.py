@@ -248,7 +248,7 @@ def process_subject_session(
     return warnings
 
 
-def _process_one_subject(subject_label, all_subjects, aliases, output_dir):
+def _process_one_subject(subject_label, all_subjects, aliases, output_dir, session_overrides=None):
     """Process a single subject: query sessions, download files, return results.
 
     Returns:
@@ -258,7 +258,9 @@ def _process_one_subject(subject_label, all_subjects, aliases, output_dir):
     bidsignore_entries = []
 
     logger.info("Processing %s...", subject_label)
-    sessions = collect_subject_sessions(subject_label, all_subjects, aliases)
+    sessions = collect_subject_sessions(
+        subject_label, all_subjects, aliases, session_overrides=session_overrides,
+    )
     sessions = build_session_timeline(sessions)
 
     fw_sources = [subject_label]
@@ -303,6 +305,7 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
     project_label = flywheel_project or config["flywheel_project"]
     aliases = config["subject_aliases"]
     skip = set(config["skip_subjects"])
+    session_overrides = config.get("session_overrides", {})
 
     if subjects is None:
         subjects = config["samples"].get(sample_name, [])
@@ -331,7 +334,8 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
             executor.submit(
-                _process_one_subject, subject_label, all_subjects, aliases, output_dir
+                _process_one_subject, subject_label, all_subjects, aliases, output_dir,
+                session_overrides=session_overrides,
             ): subject_label
             for subject_label in subjects_to_process
         }
@@ -366,6 +370,13 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
 
     with open(sourcedata_dir / "reconciliation.json", "w") as f:
         json.dump(reconciliation, f, indent=2)
+
+    # Write sample notes
+    sample_notes = config.get("notes", {}).get(sample_name, [])
+    if sample_notes:
+        notes_path = sourcedata_dir / "NOTES.txt"
+        notes_path.write_text("\n".join(sample_notes) + "\n")
+        logger.info("Wrote %d notes to %s", len(sample_notes), notes_path)
 
     log = {
         "generated": datetime.now(timezone.utc).isoformat(),

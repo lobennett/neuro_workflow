@@ -164,7 +164,9 @@ class TestLoadReconciliationConfig:
     def test_skip_subjects(self):
         config = load_reconciliation_config()
         assert "n01" in config["skip_subjects"]
-        assert "ex26207" in config["skip_subjects"]
+        # ex26207 moved to subject_aliases (alias for s297)
+        assert "ex26207" not in config["skip_subjects"]
+        assert config["subject_aliases"]["ex26207"] == "s297"
 
     def test_samples_discovery(self):
         config = load_reconciliation_config()
