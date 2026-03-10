@@ -1,208 +1,76 @@
 # neuro-workflow
 
-A zero-dependency Python CLI for submitting neuroimaging pipeline SLURM array jobs. Register a dataset once, then submit parallel jobs for any supported pipeline with a single command.
+CLI for managing the full neuroimaging pipeline from raw data to statistical analysis, orchestrated through SLURM array jobs.
 
 ## Installation
 
 ```bash
 module load uv
 cd /home/users/logben/neuro_workflow
-uv pip install -e .
+uv sync
 ```
 
-For QA commands (nilearn, nibabel, matplotlib, pandas, numpy, seaborn, img2pdf):
+Install optional dependency groups as needed:
 
 ```bash
-uv pip install -e ".[qa]"
+uv pip install -e ".[bidsify]"   # Flywheel BIDSify
+uv pip install -e ".[events]"    # Behavioral events pipeline
+uv pip install -e ".[qa]"        # QA commands (nilearn, matplotlib, etc.)
+uv pip install -e ".[lev1,qa]"   # First-level GLM analysis
 ```
 
-For behavioral events pipeline (event file creation, QC, NIfTI trimming):
+After installation, use `uv run neuro-run` from the project directory, or `module load uv && neuro-run` if the venv is on your PATH.
 
-```bash
-uv pip install -e ".[events]"
+## Pipeline Progression
+
+The workflow moves data through these stages:
+
+```
+1. BIDSify         Raw Flywheel data → BIDS dataset
+2. Events          Behavioral CSVs → BIDS _events.tsv + behavioral QC + exclusions
+3. Preprocessing   fMRIPrep, QSIPrep, FreeSurfer, happy
+4. QA              Derivative quality checks (global signal, fieldmaps, reliability)
+5. Exclusions      Compile motion + behavioral + manual exclusions
+6. Analysis        First-level GLM → Second-level group stats → MSHBM parcellation
 ```
 
-For Flywheel BIDSify (pulling and converting raw data from Flywheel to BIDS):
-
-```bash
-uv pip install -e ".[bidsify]"
-```
-
-For first-level GLM analysis (statsmodels, randomise-prep — requires Python ≥ 3.11):
-
-```bash
-uv pip install -e ".[lev1,qa]"
-```
-
-After installation, `neuro-run` is available from anywhere (as long as the venv is active or you use the full path `.venv/bin/neuro-run`).
-
-## Quick Start
-
-```bash
-# 1. Register a dataset (pipeline-agnostic)
-neuro-run add-dataset discovery \
-  --bids-dir /oak/stanford/groups/russpold/data/network_grant/discovery_BIDS_20250402 \
-  --subjects-file /home/users/logben/neuro_workflow/subs_discovery.txt \
-  --partition russpold \
-  --mail-user logben@stanford.edu
-
-# 2. Preview the generated sbatch script for a pipeline
-neuro-run show fmriprep discovery --version 25.2.4
-
-# 3. Submit the job to SLURM
-neuro-run submit fmriprep discovery --version 25.2.4 \
-  --output-spaces "MNI152NLin2009cAsym:res-2 fsaverage6 fsnative func anat" \
-  --fmriprep-args "--no-submm-recon --skip-bids-validation --cifti-output 91k"
-```
-
-## Commands
-
-### `neuro-run add-dataset <name>`
-
-Registers a dataset in `~/.neuro_workflow/datasets.json`. Dataset registration is pipeline-agnostic — it only stores shared configuration. Pipeline-specific options are passed at submit time.
-
-**Required arguments:**
-
-| Argument | Description |
-|----------|-------------|
-| `name` | Dataset name (positional, e.g., `discovery`, `validation`) |
-| `--bids-dir` | Path to BIDS directory |
-| `--subjects-file` | Path to text file with one subject ID per line |
-
-**Optional arguments (with defaults):**
-
-| Argument | Default | Description |
-|----------|---------|-------------|
-| `--partition` | `russpold` | SLURM partition |
-| `--mail-user` | _(none)_ | Email for SLURM notifications |
-| `--image-dir` | `/home/groups/russpold/singularity_images` | Directory for SIF images |
-| `--templateflow-dir` | `/home/groups/russpold/templateflow` | TemplateFlow directory |
-
-### `neuro-run show <pipeline> <name> [pipeline-flags]`
-
-Renders the sbatch script for a dataset and pipeline, then prints it to stdout.
-
-```bash
-neuro-run show fmriprep discovery --version 25.2.4
-neuro-run show --list
-```
-
-### `neuro-run submit <pipeline> <name> [pipeline-flags]`
-
-Submits a SLURM array job. Checks/pulls the SIF image if needed, renders the template, and calls `sbatch`.
-
-```bash
-neuro-run submit fmriprep discovery --version 25.2.4 \
-  --output-spaces "MNI152NLin2009cAsym:res-2 fsaverage6 fsnative func anat" \
-  --fmriprep-args "--no-submm-recon --skip-bids-validation --cifti-output 91k --me-output-echos"
-```
-
-## Supported Pipelines
-
-| Pipeline | Command | Description |
-|----------|---------|-------------|
-| `fmriprep` | `neuro-run submit fmriprep <dataset> --version <ver>` | fMRI preprocessing via fMRIPrep |
-| `qsiprep` | `neuro-run submit qsiprep <dataset> --version <ver>` | DWI preprocessing via QSIPrep |
-| `fsqc` | `neuro-run submit fsqc <dataset> --version <ver> --freesurfer-dir <dir>` | FreeSurfer quality control |
-| `freesurfer` | `neuro-run submit freesurfer <dataset> --version <ver>` | Cortical reconstruction (deprecated, use fMRIPrep) |
-| `happy` | `neuro-run submit happy <dataset> --version <ver>` | Cardiac signal extraction via rapidtide/happy |
-| `lev1` | `neuro-run submit lev1 <dataset> --fmriprep-dir <dir> --base-tasks` | First-level GLM (subject × task array) |
-| `lev2` | `neuro-run submit lev2 <dataset> --lev1-dirs <dir> --base-tasks ...` | Second-level group GLM via FSL randomise |
-| `prep-mshbm` | `neuro-run submit prep-mshbm <dataset> --glm-dir <dir> --fmriprep-dir <dir> ...` | Prepare fsaverage6 surface inputs for MSHBM |
-| `mshbm` | `neuro-run submit mshbm <dataset> --surface-inputs-dir <dir> --output-dir <dir>` | Precision network parcellation via MSHBM |
-| `bidsify` | `neuro-run submit bidsify <sample> --output-dir <dir>` | Pull and BIDSify data from Flywheel |
-
-### Pipeline-Specific Options
-
-**fmriprep:**
-```bash
-neuro-run submit fmriprep discovery --version 25.2.4 \
-  --output-spaces "MNI152NLin2009cAsym:res-2" \
-  --fs-license ~/license.txt \
-  --fmriprep-args "--no-submm-recon"
-```
-
-**qsiprep:**
-```bash
-neuro-run submit qsiprep discovery --version 1.1.1 \
-  --output-resolution 1.5 \
-  --fs-license ~/license.txt
-```
-
-**fsqc:**
-```bash
-neuro-run submit fsqc discovery --version 2.1.4 \
-  --freesurfer-dir /oak/.../derivatives/freesurfer
-```
-
-**happy:**
-```bash
-neuro-run submit happy discovery --version 3.1.8
-```
+Each stage is described below in order.
 
 ---
 
-## Flywheel BIDSify (`bidsify`)
+## Stage 1: BIDSify
 
-Pull NIfTI/JSON data from Flywheel and write clean BIDS datasets. Handles subject label aliases (e.g., `s43-2` → `s43`), multi-echo BOLD file selection with duplicate resolution, sequential session numbering, and B0 fieldmap sidecar patching.
+Pull NIfTI/JSON data from Flywheel and write a clean BIDS dataset. Handles subject label aliases, multi-echo BOLD selection, sequential session numbering, and fieldmap sidecar patching.
 
 ### Prerequisites
 
-- **Flywheel API key:** Must be configured (`~/.config/flywheel/user.json` or `FW_API_KEY` env var)
-- **flywheel-sdk:** Install with `uv pip install -e ".[bidsify]"` or use the container (already includes it)
+- Flywheel API key configured (`~/.config/flywheel/user.json` or `FW_API_KEY`)
+- `uv pip install -e ".[bidsify]"`
 
 ### Usage
 
-Submit as a SLURM job (recommended for large pulls):
-
 ```bash
-# Pull all discovery subjects (s03, s10, s19, s29, s43)
+# Register the dataset first
+neuro-run add-dataset discovery \
+  --bids-dir /oak/.../discovery_BIDS \
+  --subjects-file subs_discovery.txt \
+  --partition russpold \
+  --mail-user logben@stanford.edu
+
+# Submit BIDSify job
 neuro-run submit bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS
 
-# Pull all validation subjects (51 subjects)
-neuro-run submit bidsify validation --output-dir /scratch/users/logben/validation_BIDS
+# Or run directly (no SLURM)
+neuro-run bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS
 
-# Pull a subset of subjects
-neuro-run submit bidsify validation --output-dir /scratch/users/logben/validation_BIDS \
-  --subjects s76 s247
+# Pull specific subjects
+neuro-run submit bidsify validation --output-dir /scratch/.../validation_BIDS --subjects s76 s247
 
-# Preview the generated sbatch script
+# Preview the sbatch script
 neuro-run show bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS
-
-# Overwrite existing output
-neuro-run submit bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS --overwrite
 ```
 
-For iterative development, run directly without SLURM:
-
-```bash
-module load uv
-uv run neuro-run bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS
-```
-
-### Options
-
-| Argument | Default | Description |
-|----------|---------|-------------|
-| `sample` | _(required, positional)_ | `discovery` or `validation` |
-| `--output-dir` | _(required)_ | BIDS output directory |
-| `--subjects` | all in sample | Space-separated subject labels to process |
-| `--flywheel-project` | `r01network` | Flywheel project label |
-| `--overwrite` | off | Overwrite existing output directory |
-| `--time` | `1-00:00:00` | SLURM time limit (submit only) |
-| `--mem-gb` | `8` | Memory in GB (submit only) |
-
-### What it does
-
-1. **Queries Flywheel** for all subjects in the sample (including aliases like `s43-2` → `s43`)
-2. **Assigns sequential BIDS sessions** (`ses-01`, `ses-02`, ...) sorted by timestamp
-3. **Selects correct files** from each acquisition — handles multi-echo BOLD (`_e1`, `_e2`, `_e3`), fieldmap + magnitude pairs, anatomical, and DWI with bval/bvec
-4. **Resolves duplicates** by preferring the newest file when gear re-runs produce multiple outputs
-5. **Downloads and renames** files to BIDS naming (`sub-<id>_ses-<N>_task-<name>_run-<N>_echo-<N>_bold.nii.gz`)
-6. **Patches sidecars** — adds `B0FieldIdentifier` to fieldmap JSONs and `B0FieldSource` to BOLD JSONs
-7. **Writes provenance** — `sourcedata/reconciliation.json` (FW-to-BIDS mapping) and `sourcedata/bidsify_log.json` (download log)
-
-### Output structure
+### Output
 
 ```
 discovery_BIDS/
@@ -213,212 +81,102 @@ discovery_BIDS/
 │   │   ├── func/     # multi-echo BOLD
 │   │   ├── fmap/     # fieldmap + magnitude
 │   │   └── dwi/      # DWI + bval/bvec
-│   ├── ses-02/
-│   └── ...
+│   └── ses-02/
 ├── sub-s10/
 └── sourcedata/
-    ├── reconciliation.json   # FW subject/session → BIDS mapping
-    └── bidsify_log.json      # download provenance
+    ├── reconciliation.json
+    └── bidsify_log.json
 ```
 
-### Configuration
-
-Subject lists, aliases, and skip lists are defined in `src/neuro_workflow/bidsify/reconciliation_config.json`. Acquisition label → BIDS name mappings are in `src/neuro_workflow/bidsify/config.py`.
+Configuration lives in `src/neuro_workflow/bidsify/reconciliation_config.json` (subject lists, aliases, skip lists) and `src/neuro_workflow/bidsify/config.py` (acquisition label → BIDS mappings).
 
 ---
 
-## Behavioral Events Pipeline
+## Stage 2: Behavioral Events
 
-The events pipeline creates BIDS `_events.tsv` files from raw behavioral CSVs, runs behavioral QC to flag exclusions, and trims NIfTIs for participants who stopped responding mid-run.
+Create BIDS `_events.tsv` files from raw behavioral CSVs, run behavioral QC to flag exclusions, and trim NIfTIs for participants who stopped responding mid-run.
+
+### Prerequisites
+
+- `uv pip install -e ".[events]"`
 
 ### Workflow
 
 ```
-raw_cleaned/                    (original behavioral CSVs)
-    | [scripts/rename_behavioral_to_sourcedata.py]  (one-time)
-sourcedata/                     (standardized BIDS layout)
-    | [neuro-run events create]
-{bids_dir}/.../func/*_events.tsv    (BIDS event files)
-    | [neuro-run events qc]
-    |-> exclusions system            (behavioral-qc source -> compile -> lev1)
-    |-> trim_list.json               (tasks needing trimming)
-        | [neuro-run events trim]
-        |-> derivatives/trimmed/     (truncated NIfTIs with desc-trimmed)
+raw_cleaned/                         (original behavioral CSVs)
+    | scripts/rename_behavioral_to_sourcedata.py   (one-time migration)
+sourcedata/                          (standardized BIDS layout)
+    | neuro-run events create
+{bids_dir}/.../func/*_events.tsv     (BIDS event files)
+    | neuro-run events qc
+    |→ exclusions/sources/behavioral-qc.json
+    |→ trim_list.json
+        | neuro-run events trim
+        |→ derivatives/trimmed/      (truncated NIfTIs)
 ```
 
-### Step 1: Rename raw CSVs to BIDS sourcedata layout (one-time)
+### Commands
 
 ```bash
+# One-time: rename raw CSVs to BIDS sourcedata layout
 python scripts/rename_behavioral_to_sourcedata.py \
     --input-dir /oak/.../behavioral_data/raw_cleaned \
     --output-dir /oak/.../behavioral_data/sourcedata \
-    --dry-run  # preview without copying
-```
+    --dry-run
 
-### Step 2: Create BIDS event files
-
-```bash
+# Create BIDS event files
 neuro-run events create discovery --behavioral-dir /oak/.../sourcedata
-```
 
-### Step 3: Run behavioral QC
-
-```bash
+# Run behavioral QC (generates exclusion entries + trim list)
 neuro-run events qc discovery --behavioral-dir /oak/.../sourcedata
-```
 
-This generates exclusion entries (saved to `~/.neuro_workflow/exclusions/discovery/sources/behavioral-qc.json`) and a trim list (`{bids_dir}/sourcedata/behavioral_qc/trim_list.json`).
-
-Integrate with `neuro-run exclusions compile discovery` to include behavioral exclusions in the compiled list.
-
-### Step 4: Trim NIfTIs (if needed)
-
-```bash
+# Trim NIfTIs for participants flagged by QC
 neuro-run events trim discovery
 ```
 
-Reads the trim list and writes truncated NIfTIs to `{bids_dir}/derivatives/trimmed/`.
+The QC step saves exclusions to `~/.neuro_workflow/exclusions/discovery/sources/behavioral-qc.json` and a trim list to `{bids_dir}/sourcedata/behavioral_qc/trim_list.json`.
 
 ---
 
-## First-Level GLM (`lev1`)
+## Stage 3: Preprocessing
 
-The `lev1` pipeline runs first-level GLM analysis for the Network R01 task battery. It submits a SLURM array job where each task processes one subject × task combination.
-
-### Installation
-
-The lev1 analysis code requires additional dependencies (statsmodels, randomise-prep):
+Submit containerized preprocessing pipelines as SLURM array jobs. Each subject gets its own array task.
 
 ```bash
-module load uv
-uv pip install -e ".[lev1,qa]"
+# fMRIPrep
+neuro-run submit fmriprep discovery --version 25.2.4 \
+  --output-spaces "MNI152NLin2009cAsym:res-2 fsaverage6 fsnative func anat" \
+  --fmriprep-args "--no-submm-recon --skip-bids-validation --cifti-output 91k"
+
+# QSIPrep
+neuro-run submit qsiprep discovery --version 1.1.1 \
+  --output-resolution 1.5
+
+# happy (cardiac signal extraction)
+neuro-run submit happy discovery --version 3.1.8
+
+# FreeSurfer QC
+neuro-run submit fsqc discovery --version 2.1.4 \
+  --freesurfer-dir /oak/.../derivatives/freesurfer
 ```
 
-### Prerequisites
+### Supported pipelines
 
-Before submitting, compile exclusions for the dataset:
+| Pipeline | Description |
+|----------|-------------|
+| `fmriprep` | fMRI preprocessing |
+| `qsiprep` | DWI preprocessing |
+| `happy` | Cardiac signal extraction via rapidtide |
+| `fsqc` | FreeSurfer quality control |
+| `freesurfer` | Cortical reconstruction (deprecated — use fMRIPrep) |
 
-```bash
-# Generate motion exclusions from fMRIPrep confounds
-neuro-run exclusions generate motion discovery \
-  --fmriprep-version 24.1.0rc2 \
-  --fd-threshold 0.2
+All pipelines pull their Apptainer/Singularity image automatically if not present in `--image-dir`.
 
-# Generate neg-events exclusions from event files
-neuro-run exclusions generate neg-events discovery
+---
 
-# Import any hand-curated behavioral exclusions
-neuro-run exclusions import behavioral discovery \
-  --input-file /path/to/behavioral_exclusions.json
+## Stage 4: QA
 
-# Compile all sources into a single exclusions file
-neuro-run exclusions compile discovery
-
-# Review the summary
-neuro-run exclusions show discovery
-```
-
-The compiled exclusions are saved to `~/.neuro_workflow/exclusions/discovery/compiled_exclusions.json` and used automatically by `lev1` (and `lev2`). To use a custom exclusions file instead, pass `--exclusions-file`.
-
-### Submitting lev1 jobs
-
-```bash
-# All base tasks, surface space, with FC-quality residuals for precision mapping
-neuro-run submit lev1 discovery \
-  --fmriprep-dir /oak/.../derivatives/fmriprep_24.1.0rc2 \
-  --base-tasks \
-  --space surface \
-  --residuals \
-  --fc-confounds
-
-# Specific tasks, MNI space (volumetric)
-neuro-run submit lev1 discovery \
-  --fmriprep-dir /oak/.../derivatives/fmriprep_24.1.0rc2 \
-  --tasks stopSignal flanker nBack \
-  --space MNI
-
-# Preview the sbatch script before submitting
-neuro-run show lev1 discovery \
-  --fmriprep-dir /oak/.../derivatives/fmriprep_24.1.0rc2 \
-  --base-tasks \
-  --space surface --residuals
-```
-
-Results are written to `{bids_dir}/derivatives/lev1/` by default (override with `--results-dir`).
-
-### lev1 options
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--fmriprep-dir` | _(required)_ | fMRIPrep derivatives directory |
-| `--tasks <name...>` | — | One or more specific task names |
-| `--base-tasks` | — | All 8 base tasks |
-| `--dual-tasks` | — | All 10 dual tasks |
-| `--all` | — | All 18 tasks |
-| `--results-dir` | `{bids_dir}/derivatives/lev1` | Output directory |
-| `--exclusions-file` | compiled exclusions | Path to exclusions JSON (auto-detected) |
-| `--space` | `MNI` | `MNI`, `T1w`, `surface`, `fsaverage6`, or `fsLR` |
-| `--threshold` | `1.0` | Within-subject mask intersection threshold |
-| `--smoothing-fwhm` | _(none)_ | Spatial smoothing in mm |
-| `--residuals` | off | Compute task-regressed residuals |
-| `--fc-confounds` | off | Regress global signal / WM / CSF from residuals |
-| `--skip-existing` | off | Skip runs where output files already exist |
-| `--nthreads` | `1` | CPUs per array task |
-| `--mem-gb` | `64` | Memory per array task in GB |
-| `--time` | `2-00:00:00` | SLURM time limit |
-
-### Available tasks
-
-**Base tasks (8):** cuedTS, directedForgetting, flanker, goNogo, nBack, shapeMatching, spatialTS, stopSignal
-
-**Dual tasks (10):** directedForgettingWCuedTS, directedForgettingWFlanker, stopSignalWDirectedForgetting, stopSignalWFlanker, spatialTSWCuedTS, flankerWShapeMatching, cuedTSWFlanker, spatialTSWShapeMatching, nBackWShapeMatching, nBackWSpatialTS
-
-### Output structure
-
-Results land in `{results_dir}/sub-<id>/task-<name>/`:
-
-```
-derivatives/lev1/
-└── sub-s03/
-    └── task-flanker/
-        ├── fixed_effects/        # Subject-level fixed-effects maps (.nii.gz or .func.gii)
-        ├── indiv_contrasts/      # Per-run contrast estimates
-        ├── task_residuals/       # Task-regressed residuals (if --residuals)
-        ├── quality_control/      # VIF plots, design matrix figures
-        ├── masks/                # Combined brain masks (volumetric only)
-        └── simplified_events/    # Preprocessed event files
-```
-
-### Exclusions format
-
-`--exclusions-file` accepts two formats interchangeably:
-
-**neuro_workflow compiled format** (recommended — generated by `neuro-run exclusions compile`):
-```json
-[
-  {"subject": "sub-s03", "session": "ses-01", "task": "task-flanker", "run": "run-1",
-   "action": "exclude", "source": "motion", "reason": "FD > 0.2 in >20% of TRs"}
-]
-```
-
-**Legacy keyed-dict format** (from `network_glm/data/exclusions.json`):
-```json
-{
-  "fmriprep_exclusions": [
-    {"subject": "sub-s03", "session": "ses-01", "task": "task-flanker", "run": "run-1"}
-  ],
-  "behavioral_exclusions": [
-    {"subject": "sub-s03", "session": "ses-01", "task": "task-flanker", "run": "run-1",
-     "metrics": {"total_rows": 100, "rows_to_keep": 20}}
-  ]
-}
-```
-
-Both formats produce identical exclusion behavior. The format is detected automatically.
-
-## QA Commands
-
-QA commands analyze preprocessed data. Most require QA extras: `uv pip install -e ".[qa]"`.
+Quality checks on preprocessed derivatives. Requires `uv pip install -e ".[qa]"`.
 
 ```bash
 neuro-run qa <command> <dataset> [flags]
@@ -427,109 +185,192 @@ neuro-run qa <command> <dataset> [flags]
 | Command | Description |
 |---------|-------------|
 | `neg-events` | Report event files with non-monotonic onsets |
-| `breaks` | Analyze behavioral data for performance feedback at breaks |
+| `breaks` | Analyze behavioral data for performance feedback breaks |
 | `global-signal` | Plot global signal from echo-2 BOLD data |
+| `fieldmap-check` | Verify fieldmap/BOLD correspondence |
 | `outlier-report` | VIF + outlier analysis with figures and summary CSVs |
 | `reliability` | Create MP4 movies showing fMRI reliability across sessions |
 
 ### Examples
 
 ```bash
-# Check for non-monotonic event file onsets
 neuro-run qa neg-events discovery
-
-# Analyze behavioral breaks data
-neuro-run qa breaks discovery \
-  --behavioral-dir /oak/.../behavioral \
-  --output-dir /oak/.../qa_results
-
-# Global signal plots
 neuro-run qa global-signal discovery --output-dir /tmp/gs_figs
-
-# Outlier report
 neuro-run qa outlier-report discovery \
-  --lev1-dirs /oak/.../lev1_discovery /oak/.../lev1_validation \
+  --lev1-dirs /oak/.../lev1_discovery \
   --exclusions-file /oak/.../exclusions.json \
   --output-dir /tmp/outlier_report
-
-# Reliability movies
 neuro-run qa reliability discovery \
   --fmriprep-version 24.1.0rc2 \
   --output-dir /tmp/reliability_movies
 ```
 
-## Exclusions Management
+---
 
-The exclusions module tracks which scans to exclude or trim, organized by source (motion, neg-events, behavioral) with manual override support.
+## Stage 5: Exclusions
+
+Compile scan-level exclusions from multiple sources before running analysis. Each source generates entries independently; `compile` merges them with manual overrides.
 
 ```bash
-# Generate exclusions from a source
+# Generate motion exclusions from fMRIPrep confounds
 neuro-run exclusions generate motion discovery \
-  --fmriprep-version 24.1.0rc2 \
-  --fd-threshold 0.2
+  --fmriprep-version 24.1.0rc2 --fd-threshold 0.2
 
+# Generate neg-events exclusions
 neuro-run exclusions generate neg-events discovery
 
-# Compile all sources + overrides into a final list
+# Behavioral exclusions are generated automatically by `events qc` (Stage 2)
+
+# Compile all sources into a single file
 neuro-run exclusions compile discovery
 
-# Show exclusion summary
+# Review
 neuro-run exclusions show discovery
-
-# Import an external exclusion list
-neuro-run exclusions import behavioral discovery \
-  --input-file /path/to/behavioral_exclusions.json
 ```
 
-**Storage:** All exclusion data is stored in `~/.neuro_workflow/exclusions/<dataset>/`:
-- `sources/motion.json` — motion exclusions
-- `sources/neg_events.json` — neg-events trim/exclude entries
-- `overrides.json` — manual force-include / force-exclude entries
-- `compiled_exclusions.json` — final compiled list
+### Storage
 
-**Override file format** (edit `~/.neuro_workflow/exclusions/<dataset>/overrides.json`):
+All exclusion data lives in `~/.neuro_workflow/exclusions/<dataset>/`:
+
+| File | Contents |
+|------|----------|
+| `sources/motion.json` | Motion-based exclusions |
+| `sources/neg_events.json` | Neg-events trim/exclude entries |
+| `sources/behavioral-qc.json` | Behavioral QC exclusions (from Stage 2) |
+| `overrides.json` | Manual force-include / force-exclude entries |
+| `compiled_exclusions.json` | Final compiled list used by analysis |
+
+### Manual overrides
+
+Edit `~/.neuro_workflow/exclusions/<dataset>/overrides.json`:
+
 ```json
 [
   {
-    "subject": "sub-s05",
-    "session": "ses-01",
-    "task": "task-rest",
-    "run": "run-1",
+    "subject": "sub-s05", "session": "ses-01", "task": "task-rest", "run": "run-1",
     "action": "force-include",
     "reason": "Borderline but acceptable after visual QC"
   }
 ]
 ```
 
-## How It Works
+---
+
+## Stage 6: Analysis
+
+### First-level GLM (`lev1`)
+
+Runs subject-level GLM for the task battery. Submits a SLURM array job with one task per subject x task combination.
+
+```bash
+# Surface space with FC-quality residuals
+neuro-run submit lev1 discovery \
+  --fmriprep-dir /oak/.../derivatives/fmriprep_24.1.0rc2 \
+  --base-tasks --space surface --residuals --fc-confounds
+
+# Volumetric MNI, specific tasks
+neuro-run submit lev1 discovery \
+  --fmriprep-dir /oak/.../derivatives/fmriprep_24.1.0rc2 \
+  --tasks stopSignal flanker nBack --space MNI
+
+# Preview
+neuro-run show lev1 discovery \
+  --fmriprep-dir /oak/.../derivatives/fmriprep_24.1.0rc2 \
+  --base-tasks --space surface --residuals
+```
+
+#### Options
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--fmriprep-dir` | _(required)_ | fMRIPrep derivatives directory |
+| `--tasks` | — | Specific task names |
+| `--base-tasks` | — | All 8 base tasks |
+| `--dual-tasks` | — | All 10 dual tasks |
+| `--all` | — | All 18 tasks |
+| `--results-dir` | `{bids_dir}/derivatives/lev1` | Output directory |
+| `--exclusions-file` | compiled | Exclusions JSON (auto-detected from Stage 5) |
+| `--space` | `MNI` | `MNI`, `T1w`, `surface`, `fsaverage6`, or `fsLR` |
+| `--threshold` | `1.0` | Within-subject mask intersection |
+| `--smoothing-fwhm` | _(none)_ | Spatial smoothing in mm |
+| `--residuals` | off | Compute task-regressed residuals |
+| `--fc-confounds` | off | Regress global signal / WM / CSF from residuals |
+| `--skip-existing` | off | Skip runs with existing outputs |
+
+#### Tasks
+
+**Base (8):** cuedTS, directedForgetting, flanker, goNogo, nBack, shapeMatching, spatialTS, stopSignal
+
+**Dual (10):** directedForgettingWCuedTS, directedForgettingWFlanker, stopSignalWDirectedForgetting, stopSignalWFlanker, spatialTSWCuedTS, flankerWShapeMatching, cuedTSWFlanker, spatialTSWShapeMatching, nBackWShapeMatching, nBackWSpatialTS
+
+#### Output
+
+```
+derivatives/lev1/sub-s03/task-flanker/
+├── fixed_effects/        # Subject-level fixed-effects maps
+├── indiv_contrasts/      # Per-run contrast estimates
+├── task_residuals/       # Task-regressed residuals (if --residuals)
+├── quality_control/      # VIF plots, design matrix figures
+├── masks/                # Combined brain masks (volumetric only)
+└── simplified_events/    # Preprocessed event files
+```
+
+### Second-level GLM (`lev2`)
+
+Group-level analysis via FSL randomise. One array task per contrast.
+
+```bash
+neuro-run submit lev2 discovery \
+  --lev1-dirs /oak/.../lev1_discovery \
+  --results-dir /oak/.../lev2_discovery \
+  --exclusions-csv /oak/.../exclusions.csv \
+  --base-tasks
+```
+
+### MSHBM Parcellation
+
+Precision network parcellation. Two steps: prepare fsaverage6 surface inputs, then run MSHBM.
+
+```bash
+# Prepare surface inputs from lev1 residuals + rest BOLD
+neuro-run submit prep-mshbm discovery \
+  --glm-dir /oak/.../lev1_discovery \
+  --fmriprep-dir /oak/.../fmriprep
+
+# Run MSHBM
+neuro-run submit mshbm discovery \
+  --surface-inputs-dir /scratch/.../surface_inputs \
+  --output-dir /scratch/.../mshbm_output
+```
+
+---
+
+## Reference
+
+### Dataset Registration
+
+Register a dataset once; all commands reference it by name.
+
+```bash
+neuro-run add-dataset <name> \
+  --bids-dir <path> \
+  --subjects-file <path> \
+  [--partition russpold] \
+  [--mail-user user@stanford.edu] \
+  [--image-dir /home/groups/russpold/singularity_images] \
+  [--templateflow-dir /home/groups/russpold/templateflow]
+```
+
+Configs are stored in `~/.neuro_workflow/datasets.json`.
 
 ### Subjects File
 
-A plain text file with one subject ID per line (no `sub-` prefix):
+Plain text, one subject ID per line (no `sub-` prefix):
 
 ```
 s03
 s10
 s19
-```
-
-Each line becomes one SLURM array task.
-
-### Config File
-
-All dataset configs are stored in `~/.neuro_workflow/datasets.json`:
-
-```json
-{
-  "discovery": {
-    "bids_dir": "/oak/.../discovery_BIDS_20250402",
-    "subjects_file": "/home/users/logben/neuro_workflow/subs_discovery.txt",
-    "partition": "russpold",
-    "mail_user": "logben@stanford.edu",
-    "image_dir": "/home/groups/russpold/singularity_images",
-    "templateflow_dir": "/home/groups/russpold/templateflow"
-  }
-}
 ```
 
 ### Derived Paths
@@ -538,90 +379,53 @@ All dataset configs are stored in `~/.neuro_workflow/datasets.json`:
 |------|-------|
 | Image | `{image_dir}/{pipeline}_{version}.sif` |
 | Derivatives | `{bids_dir}/derivatives/{pipeline}_{version}` |
-| Work dir | `$SCRATCH/work/{pipeline}_{dataset_name}_{version}` |
+| Work dir | `$SCRATCH/work/{pipeline}_{dataset}_{version}` |
 | Logs | `{bids_dir}/derivatives/{pipeline}_{version}/logs/` |
 
-## Package Structure
-
-This repo uses a two-package `src/` layout: `neuro_workflow` is the CLI and orchestration layer; `network_lev1` is the analysis library it calls.
+### Package Structure
 
 ```
-neuro_workflow/
-├── pyproject.toml
-├── src/
-│   ├── neuro_workflow/           # CLI + submission layer
-│   │   ├── bidsify/
-│   │   │   ├── config.py         # acquisition label → BIDS mapping
-│   │   │   ├── flywheel_query.py # subject/session enumeration + alias merging
-│   │   │   ├── file_selector.py  # multi-echo/fieldmap/anat/dwi file selection
-│   │   │   ├── bids_writer.py    # BIDS filename construction + sidecar patching
-│   │   │   ├── run.py            # orchestrator (Flywheel → BIDS conversion)
-│   │   │   └── reconciliation_config.json
-│   │   ├── core/
-│   │   │   ├── config.py         # ~/.neuro_workflow/datasets.json management
-│   │   │   ├── exclusions.py     # scan exclusion schema, compile, query API
-│   │   │   ├── image.py          # apptainer image existence check and pull
-│   │   │   └── slurm.py          # sbatch template rendering and job submission
-│   │   ├── events/
-│   │   │   ├── create.py         # BIDS _events.tsv generation from behavioral CSVs
-│   │   │   ├── utils.py          # shared event processing utilities
-│   │   │   ├── qc.py             # behavioral QC metrics + exclusion criteria
-│   │   │   ├── qc_globals.py     # QC thresholds and task definitions
-│   │   │   └── trim.py           # NIfTI trimming for behavioral cutoff
-│   │   ├── exclusions/
-│   │   │   ├── base.py           # ExclusionGenerator protocol and registry
-│   │   │   ├── behavioral.py     # behavioral QC-driven exclusion generator
-│   │   │   ├── motion.py         # motion exclusions from fmriprep confounds
-│   │   │   └── neg_events.py     # neg-events exclusions from event file onsets
-│   │   ├── pipelines/
-│   │   │   ├── base.py           # Pipeline protocol and registry
-│   │   │   ├── fmriprep.py
-│   │   │   ├── fsqc.py
-│   │   │   ├── freesurfer.py     # (deprecated)
-│   │   │   ├── happy.py
-│   │   │   ├── lev1.py           # first-level GLM pipeline
-│   │   │   ├── lev2.py           # second-level GLM pipeline
-│   │   │   ├── mshbm.py          # precision network parcellation
-│   │   │   ├── prep_mshbm.py     # MSHBM surface input prep
-│   │   │   └── qsiprep.py
-│   │   ├── qa/
-│   │   │   ├── base.py           # QaCommand protocol and registry
-│   │   │   ├── breaks.py
-│   │   │   ├── fieldmap_check.py
-│   │   │   ├── global_signal.py
-│   │   │   ├── neg_events.py
-│   │   │   ├── outlier_report.py
-│   │   │   └── reliability.py
-│   │   ├── templates/
-│   │   │   ├── fmriprep.sbatch
-│   │   │   ├── fsqc.sbatch
-│   │   │   ├── freesurfer.sbatch
-│   │   │   ├── happy.sbatch
-│   │   │   ├── lev1.sbatch
-│   │   │   ├── lev2.sbatch
-│   │   │   ├── mshbm.sbatch
-│   │   │   ├── prep_mshbm.sbatch
-│   │   │   └── qsiprep.sbatch
-│   │   └── cli.py
-│   └── network_lev1/             # GLM analysis library
-│       ├── config.py
-│       ├── core/                 # utils, task_utils
-│       ├── io/                   # file_discovery
-│       ├── processing/           # design, glm, contrasts, fixed_effects, residuals, …
-│       ├── task_config/          # per-task YAML configs + loader
-│       ├── run_lev1.py           # entry point → network-lev1
-│       ├── run_lev2.py           # entry point → network-lev2
-│       └── prepare_mshbm_inputs.py  # entry point → network-prep-mshbm
-└── tests/
-    ├── test_cli.py
-    ├── bidsify/                  # bidsify module tests
-    └── lev1/                     # network_lev1 test suite
+src/neuro_workflow/
+├── cli.py                     # Entry point (neuro-run)
+├── bidsify/                   # Stage 1: Flywheel → BIDS
+├── events/                    # Stage 2: Behavioral events + QC
+│   ├── create.py              #   _events.tsv generation
+│   ├── utils.py               #   Shared event utilities
+│   ├── qc.py                  #   Behavioral QC + exclusion criteria
+│   ├── qc_globals.py          #   QC thresholds
+│   └── trim.py                #   NIfTI trimming
+├── pipelines/                 # Stage 3: SLURM submission templates
+│   ├── fmriprep.py
+│   ├── qsiprep.py
+│   ├── happy.py
+│   ├── fsqc.py
+│   ├── lev1.py, lev2.py       # Analysis submission
+│   ├── prep_mshbm.py, mshbm.py
+│   └── bidsify.py
+├── qa/                        # Stage 4: Quality checks
+├── exclusions/                # Stage 5: Exclusion management
+│   ├── motion.py
+│   ├── neg_events.py
+│   └── behavioral.py
+├── analysis/                  # Stage 6: Analysis library
+│   ├── config.py
+│   ├── core/                  #   Shared utilities
+│   ├── io/                    #   File discovery
+│   ├── task_config/           #   Per-task YAML configs
+│   ├── lev1/                  #   First-level GLM
+│   │   ├── run.py
+│   │   └── processing/        #   Design, GLM, contrasts, residuals, etc.
+│   ├── lev2/                  #   Second-level group stats
+│   │   └── run.py
+│   └── mshbm/                 #   MSHBM surface input prep
+│       └── run.py
+├── templates/                 # sbatch templates
+└── core/                      # Config, image management, SLURM utils
 ```
 
-## Running Tests
+### Running Tests
 
 ```bash
-cd /home/users/logben/neuro_workflow
 module load uv
 uv run pytest tests/ -v
 ```
