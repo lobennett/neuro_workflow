@@ -104,6 +104,7 @@ neuro-run submit fmriprep discovery --version 25.2.4 \
 | `lev2` | `neuro-run submit lev2 <dataset> --lev1-dirs <dir> --base-tasks ...` | Second-level group GLM via FSL randomise |
 | `prep-mshbm` | `neuro-run submit prep-mshbm <dataset> --glm-dir <dir> --fmriprep-dir <dir> ...` | Prepare fsaverage6 surface inputs for MSHBM |
 | `mshbm` | `neuro-run submit mshbm <dataset> --surface-inputs-dir <dir> --output-dir <dir>` | Precision network parcellation via MSHBM |
+| `bidsify` | `neuro-run submit bidsify <sample> --output-dir <dir>` | Pull and BIDSify data from Flywheel |
 
 ### Pipeline-Specific Options
 
@@ -146,22 +147,27 @@ Pull NIfTI/JSON data from Flywheel and write clean BIDS datasets. Handles subjec
 
 ### Usage
 
+Submit as a SLURM job (recommended for large pulls):
+
 ```bash
 # Pull all discovery subjects (s03, s10, s19, s29, s43)
-neuro-run bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS
+neuro-run submit bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS
 
 # Pull all validation subjects (51 subjects)
-neuro-run bidsify validation --output-dir /scratch/users/logben/validation_BIDS
+neuro-run submit bidsify validation --output-dir /scratch/users/logben/validation_BIDS
 
 # Pull a subset of subjects
-neuro-run bidsify validation --output-dir /scratch/users/logben/validation_BIDS \
+neuro-run submit bidsify validation --output-dir /scratch/users/logben/validation_BIDS \
   --subjects s76 s247
 
+# Preview the generated sbatch script
+neuro-run show bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS
+
 # Overwrite existing output
-neuro-run bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS --overwrite
+neuro-run submit bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS --overwrite
 ```
 
-For iterative development, run directly with `uv` instead of rebuilding the container:
+For iterative development, run directly without SLURM:
 
 ```bash
 module load uv
@@ -177,6 +183,8 @@ uv run neuro-run bidsify discovery --output-dir /scratch/users/logben/discovery_
 | `--subjects` | all in sample | Space-separated subject labels to process |
 | `--flywheel-project` | `r01network` | Flywheel project label |
 | `--overwrite` | off | Overwrite existing output directory |
+| `--time` | `1-00:00:00` | SLURM time limit (submit only) |
+| `--mem-gb` | `8` | Memory in GB (submit only) |
 
 ### What it does
 
