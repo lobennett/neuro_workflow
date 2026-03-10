@@ -15,7 +15,7 @@ module load biology freesurfer/8.1.0
 module load biology ants/2.4.0
 module load uv
 
-uv --directory "{neuro_workflow_dir}" run network-prep-mshbm \
+uv --directory "{neuro_workflow_dir}" run python -m neuro_workflow.analysis.mshbm.run \
     --subj-id "$SUBJ_ID" \
     --glm-dir "{glm_dir}" \
     --fmriprep-dir "{fmriprep_dir}" \

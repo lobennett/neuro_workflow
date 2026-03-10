@@ -14,7 +14,7 @@ CONTRAST="$(sed -n "${{SLURM_ARRAY_TASK_ID}}p" "{contrast_list_file}")"
 module load biology fsl
 module load uv
 
-uv --directory "{neuro_workflow_dir}" run network-lev2 \
+uv --directory "{neuro_workflow_dir}" run python -m neuro_workflow.analysis.lev2.run \
     --contrast "$CONTRAST" \
     --level1-dirs {lev1_dirs} \
     --output-dir "{results_dir}" \

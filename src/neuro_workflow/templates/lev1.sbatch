@@ -14,7 +14,7 @@ read -r SUBJ_ID TASK_NAME <<< "$LINE"
 
 module load uv
 
-uv --directory "{neuro_workflow_dir}" run network-lev1 \
+uv --directory "{neuro_workflow_dir}" run python -m neuro_workflow.analysis.lev1.run \
     --subj-id "$SUBJ_ID" \
     --task-name "$TASK_NAME" \
     --bids-dir "{bids_dir}" \
