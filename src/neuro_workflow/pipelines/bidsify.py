@@ -16,7 +16,8 @@ class BidsifyPipeline:
     requires_dataset = False
     default_resources = {
         "time": "1-00:00:00",
-        "mem_gb": 8,
+        "mem_gb": 32,
+        "cpus": 16,
     }
 
     def add_cli_args(self, parser: ArgumentParser) -> None:
@@ -25,7 +26,8 @@ class BidsifyPipeline:
         parser.add_argument("--flywheel-project", default=None, help="Flywheel project label")
         parser.add_argument("--overwrite", action="store_true", help="Overwrite existing output")
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 1-00:00:00)")
-        parser.add_argument("--mem-gb", type=int, default=None, help="Memory in GB (default: 8)")
+        parser.add_argument("--mem-gb", type=int, default=None, help="Memory in GB (default: 32)")
+        parser.add_argument("--cpus", type=int, default=None, help="CPUs / parallel threads (default: 16)")
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
         resources = resolve_resources(args, self.default_resources)
@@ -49,6 +51,7 @@ class BidsifyPipeline:
             "partition": dataset_config.get("partition", "russpold"),
             "time": resources["time"],
             "mem_gb": resources["mem_gb"],
+            "cpus": resources["cpus"],
             "log_dir": log_dir,
             "mail_line": build_mail_line(dataset_config),
             "container": _DEFAULT_CONTAINER,

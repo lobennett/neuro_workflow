@@ -3,6 +3,7 @@
 import json
 import logging
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -247,6 +248,45 @@ def process_subject_session(
     return warnings
 
 
+def _process_one_subject(subject_label, all_subjects, aliases, output_dir):
+    """Process a single subject: query sessions, download files, return results.
+
+    Returns:
+        Dict with keys: subject, reconciliation, log_entries, bidsignore_entries.
+    """
+    log_entries = []
+    bidsignore_entries = []
+
+    logger.info("Processing %s...", subject_label)
+    sessions = collect_subject_sessions(subject_label, all_subjects, aliases)
+    sessions = build_session_timeline(sessions)
+
+    fw_sources = [subject_label]
+    for variant, canonical in aliases.items():
+        if canonical == subject_label:
+            fw_sources.append(variant)
+
+    recon = build_reconciliation(subject_label, sessions, fw_sources)
+
+    for i, session_info in enumerate(sessions):
+        acq_objects = list(session_info["acquisitions"])
+
+        session_warnings = process_subject_session(
+            subject_label, session_info, acq_objects, output_dir, log_entries,
+            bidsignore_entries=bidsignore_entries,
+        )
+        if session_warnings:
+            recon["sessions"][i]["warnings"] = session_warnings
+
+    logger.info("Finished %s: %d files", subject_label, len(log_entries))
+    return {
+        "subject": subject_label,
+        "reconciliation": recon,
+        "log_entries": log_entries,
+        "bidsignore_entries": bidsignore_entries,
+    }
+
+
 def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, overwrite=False):
     """Main entry point for Flywheel -> BIDS conversion.
 
@@ -276,44 +316,40 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
     fw = flywheel.Client()
     all_subjects, project = query_project_subjects(fw, project_label)
 
+    # Filter to subjects not in skip list
+    subjects_to_process = [s for s in subjects if s not in skip]
+    for s in subjects:
+        if s in skip:
+            logger.info("Skipping %s (in skip list)", s)
+
+    # Process subjects in parallel
+    max_workers = min(len(subjects_to_process), 16)
     reconciliation = {"generated": datetime.now(timezone.utc).isoformat(), "subjects": {}}
     all_log_entries = []
-    bidsignore_entries = []
+    all_bidsignore_entries = []
 
-    for subject_label in subjects:
-        if subject_label in skip:
-            logger.info("Skipping %s (in skip list)", subject_label)
-            continue
-
-        logger.info("Processing %s...", subject_label)
-        sessions = collect_subject_sessions(subject_label, all_subjects, aliases)
-        sessions = build_session_timeline(sessions)
-
-        fw_sources = [subject_label]
-        for variant, canonical in aliases.items():
-            if canonical == subject_label:
-                fw_sources.append(variant)
-
-        reconciliation["subjects"][subject_label] = build_reconciliation(
-            subject_label, sessions, fw_sources
-        )
-
-        for i, session_info in enumerate(sessions):
-            # FW objects are stored directly by collect_subject_sessions
-            acq_objects = list(session_info["acquisitions"])
-
-            session_warnings = process_subject_session(
-                subject_label, session_info, acq_objects, output_dir, all_log_entries,
-                bidsignore_entries=bidsignore_entries,
-            )
-            if session_warnings:
-                reconciliation["subjects"][subject_label]["sessions"][i]["warnings"] = session_warnings
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(
+                _process_one_subject, subject_label, all_subjects, aliases, output_dir
+            ): subject_label
+            for subject_label in subjects_to_process
+        }
+        for future in as_completed(futures):
+            subject_label = futures[future]
+            try:
+                result = future.result()
+                reconciliation["subjects"][result["subject"]] = result["reconciliation"]
+                all_log_entries.extend(result["log_entries"])
+                all_bidsignore_entries.extend(result["bidsignore_entries"])
+            except Exception:
+                logger.exception("Failed to process %s", subject_label)
 
     # Write .bidsignore for non-compliant files (non-4D BOLD, MPRAGEPromo)
-    if bidsignore_entries:
+    if all_bidsignore_entries:
         bidsignore_path = output_dir / ".bidsignore"
-        bidsignore_path.write_text("\n".join(sorted(set(bidsignore_entries))) + "\n")
-        logger.info("Wrote .bidsignore with %d entries", len(set(bidsignore_entries)))
+        bidsignore_path.write_text("\n".join(sorted(set(all_bidsignore_entries))) + "\n")
+        logger.info("Wrote .bidsignore with %d entries", len(set(all_bidsignore_entries)))
 
     # Write dataset description
     dataset_names = {
@@ -341,5 +377,5 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
 
     logger.info(
         "Done. %d subjects, %d files written to %s",
-        len(subjects), len(all_log_entries), output_dir,
+        len(subjects_to_process), len(all_log_entries), output_dir,
     )

@@ -45,6 +45,7 @@ class TestBidsifyBuildContext:
             overwrite=False,
             time=None,
             mem_gb=None,
+            cpus=None,
         )
         config = {"partition": "russpold", "mail_user": "logben@stanford.edu"}
         ctx = bidsify_pipeline.build_context("discovery", config, args)
@@ -62,6 +63,7 @@ class TestBidsifyBuildContext:
             overwrite=False,
             time=None,
             mem_gb=None,
+            cpus=None,
         )
         ctx = bidsify_pipeline.build_context("discovery", {}, args)
         assert "--subjects s03 s10" in ctx["extra_args"]
@@ -74,6 +76,7 @@ class TestBidsifyBuildContext:
             overwrite=True,
             time=None,
             mem_gb=None,
+            cpus=None,
         )
         ctx = bidsify_pipeline.build_context("validation", {}, args)
         assert "--overwrite" in ctx["extra_args"]
@@ -87,7 +90,8 @@ class TestBidsifyTemplate:
             "output_dir": "/scratch/users/logben/discovery_BIDS",
             "partition": "russpold",
             "time": "1-00:00:00",
-            "mem_gb": 8,
+            "mem_gb": 32,
+            "cpus": 16,
             "log_dir": "/scratch/users/logben/logs",
             "mail_line": "",
             "container": "/home/groups/russpold/singularity_images/neuro_workflow.sif",
@@ -106,7 +110,8 @@ class TestBidsifyTemplate:
             "output_dir": "/scratch/test",
             "partition": "russpold",
             "time": "1-00:00:00",
-            "mem_gb": 8,
+            "mem_gb": 32,
+            "cpus": 16,
             "log_dir": "/tmp/logs",
             "mail_line": "",
             "container": "/path/to/container.sif",

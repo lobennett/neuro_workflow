@@ -2,7 +2,7 @@
 #SBATCH -J bidsify_{sample}
 #SBATCH --time={time}
 #SBATCH -n 1
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task={cpus}
 #SBATCH --mem={mem_gb}G
 #SBATCH -p {partition}
 #SBATCH -o {log_dir}/%x-%j.out
