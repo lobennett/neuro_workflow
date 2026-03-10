@@ -16,6 +16,12 @@ For QA commands (nilearn, nibabel, matplotlib, pandas, numpy, seaborn, img2pdf):
 uv pip install -e ".[qa]"
 ```
 
+For behavioral events pipeline (event file creation, QC, NIfTI trimming):
+
+```bash
+uv pip install -e ".[events]"
+```
+
 For Flywheel BIDSify (pulling and converting raw data from Flywheel to BIDS):
 
 ```bash
@@ -218,6 +224,60 @@ discovery_BIDS/
 ### Configuration
 
 Subject lists, aliases, and skip lists are defined in `src/neuro_workflow/bidsify/reconciliation_config.json`. Acquisition label → BIDS name mappings are in `src/neuro_workflow/bidsify/config.py`.
+
+---
+
+## Behavioral Events Pipeline
+
+The events pipeline creates BIDS `_events.tsv` files from raw behavioral CSVs, runs behavioral QC to flag exclusions, and trims NIfTIs for participants who stopped responding mid-run.
+
+### Workflow
+
+```
+raw_cleaned/                    (original behavioral CSVs)
+    | [scripts/rename_behavioral_to_sourcedata.py]  (one-time)
+sourcedata/                     (standardized BIDS layout)
+    | [neuro-run events create]
+{bids_dir}/.../func/*_events.tsv    (BIDS event files)
+    | [neuro-run events qc]
+    |-> exclusions system            (behavioral-qc source -> compile -> lev1)
+    |-> trim_list.json               (tasks needing trimming)
+        | [neuro-run events trim]
+        |-> derivatives/trimmed/     (truncated NIfTIs with desc-trimmed)
+```
+
+### Step 1: Rename raw CSVs to BIDS sourcedata layout (one-time)
+
+```bash
+python scripts/rename_behavioral_to_sourcedata.py \
+    --input-dir /oak/.../behavioral_data/raw_cleaned \
+    --output-dir /oak/.../behavioral_data/sourcedata \
+    --dry-run  # preview without copying
+```
+
+### Step 2: Create BIDS event files
+
+```bash
+neuro-run events create discovery --behavioral-dir /oak/.../sourcedata
+```
+
+### Step 3: Run behavioral QC
+
+```bash
+neuro-run events qc discovery --behavioral-dir /oak/.../sourcedata
+```
+
+This generates exclusion entries (saved to `~/.neuro_workflow/exclusions/discovery/sources/behavioral-qc.json`) and a trim list (`{bids_dir}/sourcedata/behavioral_qc/trim_list.json`).
+
+Integrate with `neuro-run exclusions compile discovery` to include behavioral exclusions in the compiled list.
+
+### Step 4: Trim NIfTIs (if needed)
+
+```bash
+neuro-run events trim discovery
+```
+
+Reads the trim list and writes truncated NIfTIs to `{bids_dir}/derivatives/trimmed/`.
 
 ---
 
@@ -502,9 +562,15 @@ neuro_workflow/
 │   │   │   ├── exclusions.py     # scan exclusion schema, compile, query API
 │   │   │   ├── image.py          # apptainer image existence check and pull
 │   │   │   └── slurm.py          # sbatch template rendering and job submission
+│   │   ├── events/
+│   │   │   ├── create.py         # BIDS _events.tsv generation from behavioral CSVs
+│   │   │   ├── utils.py          # shared event processing utilities
+│   │   │   ├── qc.py             # behavioral QC metrics + exclusion criteria
+│   │   │   ├── qc_globals.py     # QC thresholds and task definitions
+│   │   │   └── trim.py           # NIfTI trimming for behavioral cutoff
 │   │   ├── exclusions/
 │   │   │   ├── base.py           # ExclusionGenerator protocol and registry
-│   │   │   ├── behavioral.py     # behavioral exclusion stub
+│   │   │   ├── behavioral.py     # behavioral QC-driven exclusion generator
 │   │   │   ├── motion.py         # motion exclusions from fmriprep confounds
 │   │   │   └── neg_events.py     # neg-events exclusions from event file onsets
 │   │   ├── pipelines/

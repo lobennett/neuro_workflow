@@ -27,6 +27,11 @@ qa = [
 bidsify = [
     "flywheel-sdk>=17.0",
 ]
+events = [
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "nibabel>=5.0",
+]
 
 [build-system]
 requires = ["hatchling"]
