@@ -194,6 +194,23 @@ def cmd_exclusions_import(args, remaining):
     print(f"Imported {len(entries)} entries as source '{args.source_name}'")
 
 
+def cmd_bidsify(args):
+    import logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+    from neuro_workflow.bidsify.run import run_bidsify
+    subjects = args.subjects if args.subjects else None
+    run_bidsify(
+        sample_name=args.sample,
+        output_dir=args.output_dir,
+        subjects=subjects,
+        flywheel_project=args.flywheel_project,
+        overwrite=args.overwrite,
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(prog="neuro-run", description="Submit neuroimaging SLURM array jobs")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -256,6 +273,15 @@ def main():
     imp_p.add_argument("dataset", help="Dataset name")
     imp_p.add_argument("--input-file", required=True, help="Path to JSON file to import")
     imp_p.set_defaults(func=cmd_exclusions_import)
+
+    # bidsify
+    bidsify_p = subparsers.add_parser("bidsify", help="Pull and BIDSify data from Flywheel")
+    bidsify_p.add_argument("sample", help="Sample name (discovery, validation)")
+    bidsify_p.add_argument("--output-dir", required=True, help="BIDS output directory")
+    bidsify_p.add_argument("--subjects", nargs="+", help="Subject labels to process (default: all in sample)")
+    bidsify_p.add_argument("--flywheel-project", default=None, help="Flywheel project label")
+    bidsify_p.add_argument("--overwrite", action="store_true", help="Overwrite existing output")
+    bidsify_p.set_defaults(func=lambda args, remaining: cmd_bidsify(args))
 
     args, remaining = parser.parse_known_args()
     args.func(args, remaining)
