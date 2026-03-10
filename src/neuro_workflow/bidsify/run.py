@@ -45,10 +45,10 @@ def build_reconciliation(canonical_label, sessions, fw_sources):
                 "fw_session_label": s["fw_session"].label,
                 "timestamp": s["timestamp"].isoformat() if s["timestamp"] else None,
                 "acquisitions": [a.label for a in s["acquisitions"]],
+                "warnings": [],
             }
             for s in sessions
         ],
-        "warnings": [],
     }
 
 
@@ -81,6 +81,9 @@ def process_subject_session(
         output_dir: BIDS root directory
         log_entries: List to append download log entries to
         bidsignore_entries: List to append .bidsignore patterns to
+
+    Returns:
+        List of warning strings for this session (for reconciliation).
     """
     if bidsignore_entries is None:
         bidsignore_entries = []
@@ -91,6 +94,9 @@ def process_subject_session(
     fieldmap_id = None
     bold_sidecars = []
     task_run_counter = Counter()
+    warnings = []
+    bold_acq_count = 0
+    bold_file_count = 0
 
     # Sort acquisitions by timestamp so duplicate tasks get correct run numbering
     acq_objects_sorted = sorted(acq_objects, key=lambda a: a.timestamp or "")
@@ -112,6 +118,7 @@ def process_subject_session(
             task_name = mapping["task"]
             task_run_counter[task_name] += 1
             run = task_run_counter[task_name]
+            bold_acq_count += 1
 
             if not selected:
                 logger.error(
@@ -119,6 +126,8 @@ def process_subject_session(
                     subject_label, bids_ses, acq.label,
                 )
                 continue
+
+            bold_file_count += 1
 
             for echo_info in selected:
                 stem = bids_filename(
@@ -226,6 +235,17 @@ def process_subject_session(
             if sidecar_path.exists():
                 patch_sidecar(sidecar_path, b0_field_source=fieldmap_id)
 
+    # Generate session warnings for reconciliation
+    if bold_acq_count == 0:
+        warnings.append("No BOLD acquisitions in session")
+    elif bold_file_count == 0:
+        warnings.append(
+            "BOLD acquisitions present but no multi-echo files found"
+            " — possible protocol mismatch"
+        )
+
+    return warnings
+
 
 def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, overwrite=False):
     """Main entry point for Flywheel -> BIDS conversion.
@@ -278,14 +298,16 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
             subject_label, sessions, fw_sources
         )
 
-        for session_info in sessions:
+        for i, session_info in enumerate(sessions):
             # FW objects are stored directly by collect_subject_sessions
             acq_objects = list(session_info["acquisitions"])
 
-            process_subject_session(
+            session_warnings = process_subject_session(
                 subject_label, session_info, acq_objects, output_dir, all_log_entries,
                 bidsignore_entries=bidsignore_entries,
             )
+            if session_warnings:
+                reconciliation["subjects"][subject_label]["sessions"][i]["warnings"] = session_warnings
 
     # Write .bidsignore for non-compliant files (non-4D BOLD, MPRAGEPromo)
     if bidsignore_entries:
