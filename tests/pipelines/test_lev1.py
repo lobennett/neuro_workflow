@@ -243,7 +243,7 @@ def test_lev1_render_full_template(tmp_path):
     assert "#SBATCH --mem=64G" in script
     assert "#SBATCH --time=2-00:00:00" in script
     assert "#SBATCH -p russpold" in script
-    assert "network-lev1" in script
+    assert "neuro_workflow.analysis.lev1.run" in script
     assert "--space MNI" in script
     assert "--within-subject-threshold 1.0" in script
     assert "--mail-user" not in script
