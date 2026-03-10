@@ -16,6 +16,12 @@ For QA commands (nilearn, nibabel, matplotlib, pandas, numpy, seaborn, img2pdf):
 uv pip install -e ".[qa]"
 ```
 
+For Flywheel BIDSify (pulling and converting raw data from Flywheel to BIDS):
+
+```bash
+uv pip install -e ".[bidsify]"
+```
+
 For first-level GLM analysis (statsmodels, randomise-prep — requires Python ≥ 3.11):
 
 ```bash
@@ -126,6 +132,84 @@ neuro-run submit fsqc discovery --version 2.1.4 \
 ```bash
 neuro-run submit happy discovery --version 3.1.8
 ```
+
+---
+
+## Flywheel BIDSify (`bidsify`)
+
+Pull NIfTI/JSON data from Flywheel and write clean BIDS datasets. Handles subject label aliases (e.g., `s43-2` → `s43`), multi-echo BOLD file selection with duplicate resolution, sequential session numbering, and B0 fieldmap sidecar patching.
+
+### Prerequisites
+
+- **Flywheel API key:** Must be configured (`~/.config/flywheel/user.json` or `FW_API_KEY` env var)
+- **flywheel-sdk:** Install with `uv pip install -e ".[bidsify]"` or use the container (already includes it)
+
+### Usage
+
+```bash
+# Pull all discovery subjects (s03, s10, s19, s29, s43)
+neuro-run bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS
+
+# Pull all validation subjects (51 subjects)
+neuro-run bidsify validation --output-dir /scratch/users/logben/validation_BIDS
+
+# Pull a subset of subjects
+neuro-run bidsify validation --output-dir /scratch/users/logben/validation_BIDS \
+  --subjects s76 s247
+
+# Overwrite existing output
+neuro-run bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS --overwrite
+```
+
+For iterative development, run directly with `uv` instead of rebuilding the container:
+
+```bash
+module load uv
+uv run neuro-run bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS
+```
+
+### Options
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `sample` | _(required, positional)_ | `discovery` or `validation` |
+| `--output-dir` | _(required)_ | BIDS output directory |
+| `--subjects` | all in sample | Space-separated subject labels to process |
+| `--flywheel-project` | `r01network` | Flywheel project label |
+| `--overwrite` | off | Overwrite existing output directory |
+
+### What it does
+
+1. **Queries Flywheel** for all subjects in the sample (including aliases like `s43-2` → `s43`)
+2. **Assigns sequential BIDS sessions** (`ses-01`, `ses-02`, ...) sorted by timestamp
+3. **Selects correct files** from each acquisition — handles multi-echo BOLD (`_e1`, `_e2`, `_e3`), fieldmap + magnitude pairs, anatomical, and DWI with bval/bvec
+4. **Resolves duplicates** by preferring the newest file when gear re-runs produce multiple outputs
+5. **Downloads and renames** files to BIDS naming (`sub-<id>_ses-<N>_task-<name>_run-<N>_echo-<N>_bold.nii.gz`)
+6. **Patches sidecars** — adds `B0FieldIdentifier` to fieldmap JSONs and `B0FieldSource` to BOLD JSONs
+7. **Writes provenance** — `sourcedata/reconciliation.json` (FW-to-BIDS mapping) and `sourcedata/bidsify_log.json` (download log)
+
+### Output structure
+
+```
+discovery_BIDS/
+├── dataset_description.json
+├── sub-s03/
+│   ├── ses-01/
+│   │   ├── anat/     # T1w, T2w
+│   │   ├── func/     # multi-echo BOLD
+│   │   ├── fmap/     # fieldmap + magnitude
+│   │   └── dwi/      # DWI + bval/bvec
+│   ├── ses-02/
+│   └── ...
+├── sub-s10/
+└── sourcedata/
+    ├── reconciliation.json   # FW subject/session → BIDS mapping
+    └── bidsify_log.json      # download provenance
+```
+
+### Configuration
+
+Subject lists, aliases, and skip lists are defined in `src/neuro_workflow/bidsify/reconciliation_config.json`. Acquisition label → BIDS name mappings are in `src/neuro_workflow/bidsify/config.py`.
 
 ---
 
@@ -398,6 +482,13 @@ neuro_workflow/
 ├── pyproject.toml
 ├── src/
 │   ├── neuro_workflow/           # CLI + submission layer
+│   │   ├── bidsify/
+│   │   │   ├── config.py         # acquisition label → BIDS mapping
+│   │   │   ├── flywheel_query.py # subject/session enumeration + alias merging
+│   │   │   ├── file_selector.py  # multi-echo/fieldmap/anat/dwi file selection
+│   │   │   ├── bids_writer.py    # BIDS filename construction + sidecar patching
+│   │   │   ├── run.py            # orchestrator (Flywheel → BIDS conversion)
+│   │   │   └── reconciliation_config.json
 │   │   ├── core/
 │   │   │   ├── config.py         # ~/.neuro_workflow/datasets.json management
 │   │   │   ├── exclusions.py     # scan exclusion schema, compile, query API
@@ -449,6 +540,7 @@ neuro_workflow/
 │       └── prepare_mshbm_inputs.py  # entry point → network-prep-mshbm
 └── tests/
     ├── test_cli.py
+    ├── bidsify/                  # bidsify module tests
     └── lev1/                     # network_lev1 test suite
 ```
 
