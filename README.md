@@ -6,7 +6,7 @@ A zero-dependency Python CLI for submitting neuroimaging pipeline SLURM array jo
 
 ```bash
 module load uv
-cd /home/users/logben/fmriprep-workflow
+cd /home/users/logben/neuro_workflow
 uv pip install -e .
 ```
 
@@ -30,7 +30,7 @@ After installation, `neuro-run` is available from anywhere (as long as the venv 
 # 1. Register a dataset (pipeline-agnostic)
 neuro-run add-dataset discovery \
   --bids-dir /oak/stanford/groups/russpold/data/network_grant/discovery_BIDS_20250402 \
-  --subjects-file /home/users/logben/fmriprep-workflow/subs_discovery.txt \
+  --subjects-file /home/users/logben/neuro_workflow/subs_discovery.txt \
   --partition russpold \
   --mail-user logben@stanford.edu
 
@@ -371,7 +371,7 @@ All dataset configs are stored in `~/.neuro_workflow/datasets.json`:
 {
   "discovery": {
     "bids_dir": "/oak/.../discovery_BIDS_20250402",
-    "subjects_file": "/home/users/logben/fmriprep-workflow/subs_discovery.txt",
+    "subjects_file": "/home/users/logben/neuro_workflow/subs_discovery.txt",
     "partition": "russpold",
     "mail_user": "logben@stanford.edu",
     "image_dir": "/home/groups/russpold/singularity_images",
@@ -394,7 +394,7 @@ All dataset configs are stored in `~/.neuro_workflow/datasets.json`:
 This repo uses a two-package `src/` layout: `neuro_workflow` is the CLI and orchestration layer; `network_lev1` is the analysis library it calls.
 
 ```
-fmriprep-workflow/
+neuro_workflow/
 ├── pyproject.toml
 ├── src/
 │   ├── neuro_workflow/           # CLI + submission layer
@@ -455,7 +455,7 @@ fmriprep-workflow/
 ## Running Tests
 
 ```bash
-cd /home/users/logben/fmriprep-workflow
+cd /home/users/logben/neuro_workflow
 module load uv
 uv run pytest tests/ -v
 ```
