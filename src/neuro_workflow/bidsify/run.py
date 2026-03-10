@@ -52,21 +52,16 @@ def build_reconciliation(canonical_label, sessions, fw_sources):
     }
 
 
-def _validate_bold_4d(nifti_path):
-    """Check that a BOLD NIfTI is 4D. Remove and warn if not."""
+def _check_bold_4d(nifti_path):
+    """Check that a BOLD NIfTI is 4D. Returns True if valid."""
     try:
         import nibabel as nib
         img = nib.load(nifti_path)
-        ndim = len(img.shape)
-        if ndim < 4:
-            logger.warning(
-                "Removing non-4D BOLD file (%dD): %s", ndim, nifti_path
-            )
-            Path(nifti_path).unlink()
+        if len(img.shape) < 4:
+            logger.warning("Non-4D BOLD (%dD), adding to .bidsignore: %s", len(img.shape), nifti_path)
             return False
         return True
     except ImportError:
-        # nibabel not available, skip validation
         return True
     except Exception as e:
         logger.warning("Could not validate %s: %s", nifti_path, e)
@@ -74,7 +69,8 @@ def _validate_bold_4d(nifti_path):
 
 
 def process_subject_session(
-    subject_label, session_info, acq_objects, output_dir, log_entries
+    subject_label, session_info, acq_objects, output_dir, log_entries,
+    bidsignore_entries=None,
 ):
     """Process a single session: select files, download, rename, patch sidecars.
 
@@ -84,7 +80,10 @@ def process_subject_session(
         acq_objects: List of Flywheel acquisition objects for this session
         output_dir: BIDS root directory
         log_entries: List to append download log entries to
+        bidsignore_entries: List to append .bidsignore patterns to
     """
+    if bidsignore_entries is None:
+        bidsignore_entries = []
     bids_ses = session_info["bids_session"]
     sub_dir = Path(output_dir) / f"sub-{subject_label}" / bids_ses
 
@@ -127,22 +126,29 @@ def process_subject_session(
                     task=task_name, run=run, echo=echo_info["echo"], suffix="bold",
                 )
                 dest_dir = sub_dir / "func"
+                is_non4d = False
                 if echo_info["nifti"]:
                     nifti_path = dest_dir / f"{stem}.nii.gz"
                     info = download_and_place(
                         acq, echo_info["nifti"], nifti_path
                     )
                     log_entries.append(info)
-                    # Validate BOLD is 4D
-                    if not _validate_bold_4d(nifti_path):
-                        continue
+                    # Add non-4D BOLD to .bidsignore
+                    if not _check_bold_4d(nifti_path):
+                        rel = nifti_path.relative_to(output_dir)
+                        bidsignore_entries.append(str(rel))
+                        is_non4d = True
                 if echo_info["json"]:
                     json_path = dest_dir / f"{stem}.json"
                     info = download_and_place(acq, echo_info["json"], json_path)
                     log_entries.append(info)
-                    # Add TaskName to BOLD sidecar
-                    patch_sidecar(json_path, TaskName=task_name)
-                    bold_sidecars.append(json_path)
+                    if is_non4d:
+                        rel = json_path.relative_to(output_dir)
+                        bidsignore_entries.append(str(rel))
+                    else:
+                        # Add TaskName to BOLD sidecar
+                        patch_sidecar(json_path, TaskName=task_name)
+                        bold_sidecars.append(json_path)
 
         elif modality == "fmap":
             run = 1  # one fieldmap per session
@@ -178,15 +184,25 @@ def process_subject_session(
             stem = bids_filename(subject_label, bids_ses, acq=acq_label, suffix=suffix)
 
             if selected.get("nifti"):
+                nifti_path = dest_dir / f"{stem}.nii.gz"
                 info = download_and_place(
-                    acq, selected["nifti"], dest_dir / f"{stem}.nii.gz"
+                    acq, selected["nifti"], nifti_path
                 )
                 log_entries.append(info)
+                # MPRAGEPromo T1w files have extra dimensions — add to .bidsignore
+                if acq_label and "MPRAGEPromo" in acq_label:
+                    rel = nifti_path.relative_to(output_dir)
+                    bidsignore_entries.append(str(rel))
+                    logger.info("Adding MPRAGEPromo to .bidsignore: %s", rel)
             if selected.get("json"):
+                json_path = dest_dir / f"{stem}.json"
                 info = download_and_place(
-                    acq, selected["json"], dest_dir / f"{stem}.json"
+                    acq, selected["json"], json_path
                 )
                 log_entries.append(info)
+                if acq_label and "MPRAGEPromo" in acq_label:
+                    rel = json_path.relative_to(output_dir)
+                    bidsignore_entries.append(str(rel))
 
         elif modality == "dwi":
             dir_label = mapping.get("dir")
@@ -242,6 +258,7 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
 
     reconciliation = {"generated": datetime.now(timezone.utc).isoformat(), "subjects": {}}
     all_log_entries = []
+    bidsignore_entries = []
 
     for subject_label in subjects:
         if subject_label in skip:
@@ -266,8 +283,15 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
             acq_objects = list(session_info["acquisitions"])
 
             process_subject_session(
-                subject_label, session_info, acq_objects, output_dir, all_log_entries
+                subject_label, session_info, acq_objects, output_dir, all_log_entries,
+                bidsignore_entries=bidsignore_entries,
             )
+
+    # Write .bidsignore for non-compliant files (non-4D BOLD, MPRAGEPromo)
+    if bidsignore_entries:
+        bidsignore_path = output_dir / ".bidsignore"
+        bidsignore_path.write_text("\n".join(sorted(set(bidsignore_entries))) + "\n")
+        logger.info("Wrote .bidsignore with %d entries", len(set(bidsignore_entries)))
 
     # Write dataset description
     dataset_names = {
