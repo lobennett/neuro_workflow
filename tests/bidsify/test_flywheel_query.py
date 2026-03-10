@@ -71,14 +71,16 @@ class TestCollectSubjectSessions:
     # --- session_overrides tests ---
 
     def test_exclude_override_skips_session(self):
-        """Override with 'exclude' action should remove that session."""
+        """Override with exclude=true should remove that session."""
         sess_a = _mock_session("22752", datetime(2024, 1, 1))
         sess_b = _mock_session("25210", datetime(2024, 2, 1))
         sess_c = _mock_session("good", datetime(2024, 3, 1))
         subj = _mock_subject("s03", [sess_a, sess_b, sess_c])
 
         overrides = {
-            "s03/25210": {"action": "exclude"},
+            "s03": {
+                "25210": {"exclude": True, "reason": "Empty session"},
+            },
         }
         result = collect_subject_sessions(
             "s03", [subj], {}, session_overrides=overrides
@@ -95,7 +97,9 @@ class TestCollectSubjectSessions:
         subj = _mock_subject("s03", [sess_a, sess_b])
 
         overrides = {
-            "s03/22752": {"action": "reassign_to", "target": "s10"},
+            "s03": {
+                "22752": {"reassign_to": "s10", "reason": "Mislabeled"},
+            },
         }
         result = collect_subject_sessions(
             "s03", [subj], {}, session_overrides=overrides
@@ -112,7 +116,9 @@ class TestCollectSubjectSessions:
         subj_s10 = _mock_subject("s10", [sess_own])
 
         overrides = {
-            "s03/22752": {"action": "reassign_to", "target": "s10"},
+            "s03": {
+                "22752": {"reassign_to": "s10", "reason": "Mislabeled"},
+            },
         }
         result = collect_subject_sessions(
             "s10", [subj_s03, subj_s10], {}, session_overrides=overrides
@@ -144,7 +150,9 @@ class TestCollectSubjectSessions:
 
         aliases = {"s19-2": "s19"}
         overrides = {
-            "s19-2/22542": {"action": "exclude"},
+            "s19-2": {
+                "22542": {"exclude": True, "reason": "Duplicate"},
+            },
         }
         result = collect_subject_sessions(
             "s19", [subj_canon, subj_alias], aliases, session_overrides=overrides

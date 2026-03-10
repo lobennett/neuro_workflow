@@ -16,21 +16,19 @@ def collect_subject_sessions(
 ) -> list[dict[str, Any]]:
     """Collect all sessions for a canonical subject, merging aliased labels.
 
+    Args:
+        canonical_label: The canonical subject label (e.g. "s10").
+        all_subjects: All FW subject objects in the project.
+        aliases: Mapping of variant label -> canonical label.
+        session_overrides: Optional nested dict keyed by FW subject label,
+            then session label. Each value is a dict with either
+            ``{"exclude": true}`` or ``{"reassign_to": "<subject>"}``
+            plus an optional ``"reason"`` string.
+
     Returns list of dicts sorted by timestamp:
         {fw_subject, fw_session, timestamp, acquisitions}
-
-    Parameters
-    ----------
-    session_overrides : dict, optional
-        Keys are ``"subject_label/session_label"`` strings.  Each value is a
-        dict with an ``"action"`` key:
-
-        * ``{"action": "exclude"}`` – drop the session entirely.
-        * ``{"action": "reassign_to", "target": "<subject>"}`` – move the
-          session to a different subject's timeline.
     """
-    if session_overrides is None:
-        session_overrides = {}
+    overrides = session_overrides or {}
 
     # Build set of FW labels that map to this canonical label
     matching_labels = {canonical_label}
@@ -39,30 +37,28 @@ def collect_subject_sessions(
             matching_labels.add(variant)
 
     # Index subjects by label for reassignment lookups
-    subjects_by_label: dict[str, Any] = {}
-    for subj in all_subjects:
-        subjects_by_label[subj.label] = subj
+    subjects_by_label: dict[str, Any] = {s.label: s for s in all_subjects}
 
     sessions: list[dict[str, Any]] = []
     for subj in all_subjects:
         if subj.label not in matching_labels:
             continue
+        subj_overrides = overrides.get(subj.label, {})
         for sess in subj.sessions():
-            override_key = f"{subj.label}/{sess.label}"
-            ovr = session_overrides.get(override_key)
-            if ovr is not None:
-                if ovr.get("action") == "exclude":
-                    logger.info(
-                        "Excluding session %s (override)", override_key
-                    )
-                    continue
-                if ovr.get("action") == "reassign_to":
-                    logger.info(
-                        "Skipping session %s (reassigned to %s)",
-                        override_key,
-                        ovr["target"],
-                    )
-                    continue
+            ovr = subj_overrides.get(sess.label, {})
+            if ovr.get("exclude"):
+                logger.info(
+                    "Excluding %s/%s: %s",
+                    subj.label, sess.label, ovr.get("reason", ""),
+                )
+                continue
+            if ovr.get("reassign_to"):
+                logger.info(
+                    "Skipping %s/%s (reassigned to %s): %s",
+                    subj.label, sess.label,
+                    ovr["reassign_to"], ovr.get("reason", ""),
+                )
+                continue
             sessions.append(
                 {
                     "fw_subject": subj,
@@ -73,29 +69,33 @@ def collect_subject_sessions(
             )
 
     # Pick up sessions reassigned TO this canonical subject
-    for key, ovr in session_overrides.items():
-        if ovr.get("action") != "reassign_to":
-            continue
-        if ovr.get("target") != canonical_label:
-            continue
-        src_subj_label, src_sess_label = key.split("/", 1)
-        src_subj = subjects_by_label.get(src_subj_label)
-        if src_subj is None:
-            logger.info(
-                "Reassign source subject %s not found", src_subj_label
-            )
-            continue
-        for sess in src_subj.sessions():
-            if sess.label == src_sess_label:
-                sessions.append(
-                    {
-                        "fw_subject": src_subj,
-                        "fw_session": sess,
-                        "timestamp": sess.timestamp,
-                        "acquisitions": sess.acquisitions(),
-                    }
+    for src_label, src_overrides in overrides.items():
+        for ses_label, ovr in src_overrides.items():
+            if ovr.get("reassign_to") != canonical_label:
+                continue
+            src_subj = subjects_by_label.get(src_label)
+            if src_subj is None:
+                logger.warning(
+                    "Reassign source subject '%s' not found in project",
+                    src_label,
                 )
-                break
+                continue
+            for sess in src_subj.sessions():
+                if sess.label == ses_label:
+                    logger.info(
+                        "Reassigning %s/%s -> %s: %s",
+                        src_label, ses_label,
+                        canonical_label, ovr.get("reason", ""),
+                    )
+                    sessions.append(
+                        {
+                            "fw_subject": src_subj,
+                            "fw_session": sess,
+                            "timestamp": sess.timestamp,
+                            "acquisitions": sess.acquisitions(),
+                        }
+                    )
+                    break
 
     sessions.sort(key=lambda s: s["timestamp"])
     return sessions
