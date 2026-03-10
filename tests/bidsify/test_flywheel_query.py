@@ -68,6 +68,92 @@ class TestCollectSubjectSessions:
         result = collect_subject_sessions("s43", [subj], {})
         assert result == []
 
+    # --- session_overrides tests ---
+
+    def test_exclude_override_skips_session(self):
+        """Override with 'exclude' action should remove that session."""
+        sess_a = _mock_session("22752", datetime(2024, 1, 1))
+        sess_b = _mock_session("25210", datetime(2024, 2, 1))
+        sess_c = _mock_session("good", datetime(2024, 3, 1))
+        subj = _mock_subject("s03", [sess_a, sess_b, sess_c])
+
+        overrides = {
+            "s03/25210": {"action": "exclude"},
+        }
+        result = collect_subject_sessions(
+            "s03", [subj], {}, session_overrides=overrides
+        )
+
+        labels = [r["fw_session"].label for r in result]
+        assert len(result) == 2
+        assert "25210" not in labels
+
+    def test_reassign_override_removes_from_source(self):
+        """Reassigned session should not appear for the source subject."""
+        sess_a = _mock_session("22752", datetime(2024, 1, 1))
+        sess_b = _mock_session("good", datetime(2024, 3, 1))
+        subj = _mock_subject("s03", [sess_a, sess_b])
+
+        overrides = {
+            "s03/22752": {"action": "reassign_to", "target": "s10"},
+        }
+        result = collect_subject_sessions(
+            "s03", [subj], {}, session_overrides=overrides
+        )
+
+        assert len(result) == 1
+        assert result[0]["fw_session"].label == "good"
+
+    def test_reassign_override_adds_to_target(self):
+        """Reassigned session should appear when collecting for the target subject."""
+        sess_reassigned = _mock_session("22752", datetime(2024, 1, 1))
+        sess_own = _mock_session("own_sess", datetime(2024, 4, 1))
+        subj_s03 = _mock_subject("s03", [sess_reassigned])
+        subj_s10 = _mock_subject("s10", [sess_own])
+
+        overrides = {
+            "s03/22752": {"action": "reassign_to", "target": "s10"},
+        }
+        result = collect_subject_sessions(
+            "s10", [subj_s03, subj_s10], {}, session_overrides=overrides
+        )
+
+        labels = [r["fw_session"].label for r in result]
+        assert len(result) == 2
+        assert "22752" in labels
+        assert "own_sess" in labels
+        # 22752 has earlier timestamp, should come first
+        assert result[0]["fw_session"].label == "22752"
+
+    def test_no_overrides_backward_compatible(self):
+        """Calling without session_overrides kwarg works as before."""
+        sess = _mock_session("ses1", datetime(2024, 6, 1))
+        subj = _mock_subject("s50", [sess])
+
+        result = collect_subject_sessions("s50", [subj], {})
+
+        assert len(result) == 1
+        assert result[0]["fw_session"].label == "ses1"
+
+    def test_override_on_alias_subject(self):
+        """Override keyed by alias subject label should apply during merge."""
+        sess_alias = _mock_session("22542", datetime(2024, 1, 1))
+        sess_canon = _mock_session("good", datetime(2024, 5, 1))
+        subj_alias = _mock_subject("s19-2", [sess_alias])
+        subj_canon = _mock_subject("s19", [sess_canon])
+
+        aliases = {"s19-2": "s19"}
+        overrides = {
+            "s19-2/22542": {"action": "exclude"},
+        }
+        result = collect_subject_sessions(
+            "s19", [subj_canon, subj_alias], aliases, session_overrides=overrides
+        )
+
+        labels = [r["fw_session"].label for r in result]
+        assert len(result) == 1
+        assert labels == ["good"]
+
 
 class TestBuildSessionTimeline:
     def test_assigns_sequential_labels(self):
