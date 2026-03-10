@@ -30,7 +30,7 @@ try:
 except ImportError:
     plt = None  # type: ignore[assignment]
 
-from network_lev1.core.utils import load_exclusions
+from neuro_workflow.analysis.core.utils import load_exclusions
 from neuro_workflow.qa.base import register_qa
 
 logger = logging.getLogger(__name__)
