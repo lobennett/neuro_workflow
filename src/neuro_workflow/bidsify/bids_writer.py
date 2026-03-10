@@ -54,5 +54,5 @@ def download_and_place(acq, file_obj, dest_path: str | Path) -> dict:
         "fw_filename": file_obj.name,
         "bids_path": str(dest_path),
         "size": file_obj.size,
-        "created": file_obj.created,
+        "created": file_obj.created.isoformat() if file_obj.created else None,
     }
