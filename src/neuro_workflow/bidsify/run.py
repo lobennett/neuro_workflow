@@ -204,9 +204,9 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
         subjects = config["samples"].get(sample_name, [])
 
     output_dir = Path(output_dir)
-    if output_dir.exists() and not overwrite:
+    if (output_dir / "dataset_description.json").exists() and not overwrite:
         raise FileExistsError(
-            f"Output directory exists: {output_dir}. Use --overwrite to replace."
+            f"Output directory already contains BIDS data: {output_dir}. Use --overwrite to replace."
         )
 
     fw = flywheel.Client()
