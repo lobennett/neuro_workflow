@@ -40,10 +40,10 @@ def build_reconciliation(canonical_label, sessions, fw_sources):
         "sessions": [
             {
                 "bids_session": s["bids_session"],
-                "fw_subject": s["fw_subject"],
-                "fw_session_label": s["fw_session"],
+                "fw_subject": s["fw_subject"].label,
+                "fw_session_label": s["fw_session"].label,
                 "timestamp": s["timestamp"].isoformat() if s["timestamp"] else None,
-                "acquisitions": s["acquisitions"],
+                "acquisitions": [a.label for a in s["acquisitions"]],
             }
             for s in sessions
         ],
@@ -234,14 +234,8 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
         )
 
         for session_info in sessions:
-            # Get actual FW acquisition objects for this session
-            fw_sub_label = session_info["fw_subject"]
-            fw_ses_label = session_info["fw_session"]
-
-            # Find the FW subject and session objects
-            fw_sub = next(s for s in all_subjects if s.label == fw_sub_label)
-            fw_ses = next(s for s in fw_sub.sessions() if s.label == fw_ses_label)
-            acq_objects = list(fw_ses.acquisitions())
+            # FW objects are stored directly by collect_subject_sessions
+            acq_objects = list(session_info["acquisitions"])
 
             process_subject_session(
                 subject_label, session_info, acq_objects, output_dir, all_log_entries
