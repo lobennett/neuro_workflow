@@ -11,3 +11,9 @@ wheels/
 
 # Local reference docs
 VISUAL_GUIDE.md
+
+# Env vars
+.env
+
+# Git worktrees
+.worktrees/
