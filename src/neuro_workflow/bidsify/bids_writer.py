@@ -71,6 +71,9 @@ def download_and_place(acq, file_obj, dest_path: str | Path, max_retries: int = 
             acq.download_file(file_obj.name, str(dest_path))
             break
         except Exception as exc:
+            # Remove partial file before retry or re-raise
+            if dest_path.exists():
+                dest_path.unlink()
             if attempt < max_retries - 1:
                 wait = 2 ** attempt
                 logger.warning(
