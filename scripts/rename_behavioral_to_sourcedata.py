@@ -204,22 +204,30 @@ def build_raw_session_map(input_dir: Path, subject: str) -> list[tuple[str, set[
 
 
 def match_sessions(raw_sessions, bids_sessions):
-    """Greedy ordered matching of behavioral sessions to BIDS sessions.
+    """Two-pass matching of behavioral sessions to BIDS sessions.
+
+    Pass 1: greedy ordered matching (handles the common case where sessions
+    are in the same order but offset).
+
+    Pass 2: unmatched raw sessions are matched against skipped BIDS sessions
+    (handles cases like s29 where later behavioral sessions correspond to
+    earlier BIDS sessions that were skipped in pass 1).
 
     Returns:
-        mappings: list of (raw_ses, bids_ses, tasks) for matched sessions
+        mappings: list of (raw_ses, bids_ses, tasks, csvs) for matched sessions
         skipped_bids: list of BIDS session labels with no behavioral match
         unmatched_raw: list of raw session labels with no BIDS match
     """
     mappings = []
     skipped_bids = []
-    unmatched_raw = []
+    unmatched_raw_items = []  # (raw_ses, raw_tasks, csvs)
     bids_ptr = 0
 
+    # Pass 1: greedy forward matching
     for raw_ses, raw_tasks, csvs in raw_sessions:
         if not raw_tasks:
             log.warning("Skipping %s: no recognized tasks", raw_ses)
-            unmatched_raw.append(raw_ses)
+            unmatched_raw_items.append((raw_ses, raw_tasks, csvs))
             continue
 
         matched = False
@@ -235,14 +243,44 @@ def match_sessions(raw_sessions, bids_sessions):
                 bids_ptr += 1
 
         if not matched:
-            log.warning("No BIDS match for %s (tasks: %s)", raw_ses, sorted(raw_tasks))
-            unmatched_raw.append(raw_ses)
+            unmatched_raw_items.append((raw_ses, raw_tasks, csvs))
 
     # Any remaining BIDS sessions are also skipped
     while bids_ptr < len(bids_sessions):
         skipped_bids.append(bids_sessions[bids_ptr][0])
         bids_ptr += 1
 
+    # Pass 2: match remaining raw sessions against skipped BIDS sessions
+    if unmatched_raw_items and skipped_bids:
+        # Build ordered list of skipped BIDS sessions with their task sets
+        bids_by_label = {ses: tasks for ses, tasks in bids_sessions}
+        available_bids = [(ses, bids_by_label[ses]) for ses in skipped_bids]
+
+        still_unmatched = []
+        for raw_ses, raw_tasks, csvs in unmatched_raw_items:
+            if not raw_tasks:
+                still_unmatched.append((raw_ses, raw_tasks, csvs))
+                continue
+            matched = False
+            for i, (bids_ses, bids_tasks) in enumerate(available_bids):
+                if raw_tasks <= bids_tasks:
+                    mappings.append((raw_ses, bids_ses, sorted(raw_tasks), csvs))
+                    available_bids.pop(i)
+                    log.info("Pass 2: matched %s -> %s", raw_ses, bids_ses)
+                    matched = True
+                    break
+            if not matched:
+                log.warning("No BIDS match for %s (tasks: %s)", raw_ses, sorted(raw_tasks))
+                still_unmatched.append((raw_ses, raw_tasks, csvs))
+
+        skipped_bids = [ses for ses, _ in available_bids]
+        unmatched_raw_items = still_unmatched
+    else:
+        # Log unmatched from pass 1
+        for raw_ses, raw_tasks, csvs in unmatched_raw_items:
+            log.warning("No BIDS match for %s (tasks: %s)", raw_ses, sorted(raw_tasks))
+
+    unmatched_raw = [raw_ses for raw_ses, _, _ in unmatched_raw_items]
     return mappings, skipped_bids, unmatched_raw
 
 
