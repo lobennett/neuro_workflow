@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import json
+import logging
+import time
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 ENTITY_ORDER = ("task", "acq", "dir", "run", "echo")
@@ -59,10 +63,23 @@ def write_readme(output_dir: str | Path, name: str) -> None:
         )
 
 
-def download_and_place(acq, file_obj, dest_path: str | Path) -> dict:
+def download_and_place(acq, file_obj, dest_path: str | Path, max_retries: int = 3) -> dict:
     dest_path = Path(dest_path)
     dest_path.parent.mkdir(parents=True, exist_ok=True)
-    acq.download_file(file_obj.name, str(dest_path))
+    for attempt in range(max_retries):
+        try:
+            acq.download_file(file_obj.name, str(dest_path))
+            break
+        except Exception as exc:
+            if attempt < max_retries - 1:
+                wait = 2 ** attempt
+                logger.warning(
+                    "Download failed for %s (attempt %d/%d), retrying in %ds: %s",
+                    file_obj.name, attempt + 1, max_retries, wait, exc,
+                )
+                time.sleep(wait)
+            else:
+                raise
     return {
         "fw_filename": file_obj.name,
         "bids_path": str(dest_path),
