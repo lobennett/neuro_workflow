@@ -18,22 +18,10 @@
                 "reason": "Empty/test session -- no usable imaging data"
             }
         },
-        "s19-2": {
-            "22542": {
-                "exclude": true,
-                "reason": "Duplicate of s19 session -- already captured under canonical label"
-            }
-        },
         "s29-2": {
             "20210305": {
                 "exclude": true,
-                "reason": "Duplicate of s29 session -- already captured under canonical label"
-            }
-        },
-        "s43-2": {
-            "20201112": {
-                "exclude": true,
-                "reason": "Duplicate of s43 session -- already captured under canonical label"
+                "reason": "True duplicate of s29 session -- s29 already has 12 sessions under its own label"
             }
         }
     },
