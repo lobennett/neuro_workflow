@@ -40,3 +40,96 @@ def normalize_task_name(task_str: str) -> str:
             camel += part.capitalize()
 
     return camel
+
+
+def normalize_mturk_filename(filename: str) -> str:
+    """
+    Normalize mTurk filename: s528_go_nogo_with_shape_matching.csv
+    -> sub-s528_task-goNogoWShapeMatching_behavior.csv
+
+    Args:
+        filename: Archive filename (e.g., "s528_go_nogo_with_shape_matching.csv")
+
+    Returns:
+        BIDS-normalized filename with sub- prefix
+
+    Raises:
+        ValueError: If filename cannot be parsed
+    """
+    # Remove extension
+    stem = filename.rsplit(".", 1)[0]
+
+    # Parse subject and task
+    # Format: [s###]_[task_name] or [task_name]_[s###]
+    parts = stem.split("_")
+
+    subject = None
+    task_parts = []
+
+    for part in parts:
+        if part.startswith("s") and part[1:].isdigit():
+            subject = part
+        else:
+            task_parts.append(part)
+
+    if not subject or not task_parts:
+        raise ValueError(f"Could not parse mTurk filename: {filename}")
+
+    task_name = "_".join(task_parts)
+    normalized_task = normalize_task_name(task_name)
+
+    # Get extension
+    ext = filename.rsplit(".", 1)[1]
+
+    return f"sub-{subject}_task-{normalized_task}_behavior.{ext}"
+
+
+def normalize_out_of_scanner_filename(filename: str) -> str:
+    """
+    Normalize out_of_scanner filename: s247_flanker_single_task.csv
+    -> sub-s247_task-flanker_behavior.csv
+
+    Args:
+        filename: Archive filename (e.g., "s247_flanker_single_task.csv")
+
+    Returns:
+        BIDS-normalized filename with sub- prefix
+
+    Raises:
+        ValueError: If filename cannot be parsed
+    """
+    # Same logic as mTurk
+    return normalize_mturk_filename(filename)
+
+
+def normalize_survey_filename(filename: str, subject: str = None) -> str:
+    """
+    Normalize survey filename: prescan_1.json
+    -> prescan-01_survey.json (or sub-s247_prescan-01_survey.json if subject given)
+
+    Args:
+        filename: Archive filename (e.g., "prescan_1.json")
+        subject: Optional subject ID to include in output
+
+    Returns:
+        BIDS-normalized filename
+
+    Raises:
+        ValueError: If filename cannot be parsed
+    """
+    # Extract number and extension
+    match = re.match(r"prescan_(\d+)\.(.+)", filename)
+    if not match:
+        raise ValueError(f"Could not parse survey filename: {filename}")
+
+    number = match.group(1)
+    ext = match.group(2)
+
+    # Zero-pad to 2 digits
+    padded_number = number.zfill(2)
+
+    # Build output
+    if subject:
+        return f"sub-{subject}_prescan-{padded_number}_survey.{ext}"
+    else:
+        return f"prescan-{padded_number}_survey.{ext}"
