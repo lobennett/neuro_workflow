@@ -54,19 +54,23 @@ def normalize_mturk_filename(filename: str) -> str:
         BIDS-normalized filename with sub- prefix
 
     Raises:
-        ValueError: If filename cannot be parsed
+        ValueError: If filename cannot be parsed (no extension or no subject)
     """
-    # Remove extension
-    stem = filename.rsplit(".", 1)[0]
+    # Split filename and extension
+    parts = filename.rsplit(".", 1)
+    if len(parts) != 2:
+        raise ValueError(f"Could not parse mTurk filename: {filename}")
 
-    # Parse subject and task
+    stem, ext = parts
+
+    # Parse subject and task from stem
     # Format: [s###]_[task_name] or [task_name]_[s###]
-    parts = stem.split("_")
+    stem_parts = stem.split("_")
 
     subject = None
     task_parts = []
 
-    for part in parts:
+    for part in stem_parts:
         if part.startswith("s") and part[1:].isdigit():
             subject = part
         else:
@@ -77,9 +81,6 @@ def normalize_mturk_filename(filename: str) -> str:
 
     task_name = "_".join(task_parts)
     normalized_task = normalize_task_name(task_name)
-
-    # Get extension
-    ext = filename.rsplit(".", 1)[1]
 
     return f"sub-{subject}_task-{normalized_task}_behavior.{ext}"
 
@@ -117,13 +118,13 @@ def normalize_survey_filename(filename: str, subject: str = None) -> str:
     Raises:
         ValueError: If filename cannot be parsed
     """
-    # Extract number and extension
-    match = re.match(r"prescan_(\d+)\.(.+)", filename)
+    # Extract number and extension (final component only)
+    match = re.match(r"prescan_(\d+)\.(.+\.)?([^.]+)$", filename)
     if not match:
         raise ValueError(f"Could not parse survey filename: {filename}")
 
     number = match.group(1)
-    ext = match.group(2)
+    ext = match.group(3)  # Final extension only
 
     # Zero-pad to 2 digits
     padded_number = number.zfill(2)

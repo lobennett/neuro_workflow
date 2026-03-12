@@ -68,3 +68,27 @@ def test_normalize_survey_filename_padding():
     """survey numbers are zero-padded."""
     result = normalize_survey_filename("prescan_10.json", subject="s528")
     assert result == "sub-s528_prescan-10_survey.json"
+
+
+def test_normalize_mturk_filename_no_extension():
+    """Raise ValueError if filename has no extension."""
+    with pytest.raises(ValueError, match="Could not parse mTurk filename"):
+        normalize_mturk_filename("s528_go_nogo")
+
+
+def test_normalize_out_of_scanner_no_extension():
+    """Raise ValueError if filename has no extension."""
+    with pytest.raises(ValueError, match="Could not parse"):
+        normalize_out_of_scanner_filename("s247_flanker")
+
+
+def test_normalize_survey_filename_no_extension():
+    """Raise ValueError if survey filename has no extension."""
+    with pytest.raises(ValueError, match="Could not parse survey filename"):
+        normalize_survey_filename("prescan_1")
+
+
+def test_normalize_survey_filename_multi_dot():
+    """Correctly extract final extension only."""
+    result = normalize_survey_filename("prescan_1.backup.json")
+    assert result == "prescan-01_survey.json"  # Not "prescan-01_survey.backup.json"
