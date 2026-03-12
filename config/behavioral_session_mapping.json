@@ -1,0 +1,6639 @@
+{
+  "generated": "2026-03-12T01:21:43.135938+00:00",
+  "generator": "scripts/generate_behavioral_mapping.py",
+  "sources": {
+    "bids_discovery": "/scratch/users/logben/discovery_bids",
+    "bids_validation": "/scratch/users/logben/validation_bids",
+    "behavioral_raw": "/oak/stanford/groups/russpold/data/network_grant/_archive_someone_plz_clean/behavioral_data/raw_cleaned",
+    "reconciliation_discovery": "sourcedata/reconciliation.json",
+    "reconciliation_validation": "sourcedata/reconciliation.json",
+    "scan_notes": "scan_notes/"
+  },
+  "subjects": {
+    "s03": {
+      "sample": "discovery",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2020-11-18",
+          "tasks": [
+            "goNogo",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2020-11-19",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "nBack",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2020-12-09",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2020-12-10",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2021-02-10",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2021-02-11",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2021-03-03",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2021-03-04",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2021-03-10",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2021-03-11",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2021-03-24",
+          "tasks": [
+            "directedForgettingWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2021-03-25",
+          "tasks": [
+            "directedForgettingWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s10": {
+      "sample": "discovery",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2020-11-17",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2020-11-20",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2020-12-08",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2020-12-11",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2021-02-09",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2021-02-12",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2021-03-02",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2021-03-05",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2021-03-09",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2021-03-12",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2021-03-23",
+          "tasks": [
+            "directedForgettingWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2021-03-26",
+          "tasks": [
+            "directedForgettingWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1035": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-14",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-15",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-10",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-12",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-02",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-08",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-07",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-08",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-17",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-18",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-13",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-03-06",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1057": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-13",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-18",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-02",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-05",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-06",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-09",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-04",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-07",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-08",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-11",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-08",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-15",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-13",
+          "bids": "ses-13",
+          "bids_date": "2024-02-21",
+          "tasks": [
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1058": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-20",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-22",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-28",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-31",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-08",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-09",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-06",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-08",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-17",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-29",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-07",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-09",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1127": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-04",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-07",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-02",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-05",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-06",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-10",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-04",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-08",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-12",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-15",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-09",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-12",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1134": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-19",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-20",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-16",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-17",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-13",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-14",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-12",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-15",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-16",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-19",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-12",
+          "tasks": [
+            "flankerWShapeMatching",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-16",
+          "tasks": [
+            "flankerWShapeMatching",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1165": {
+      "sample": "validation",
+      "excluded": true,
+      "exclude_reason": "withdrew from study",
+      "mappings": [],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1175": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-04",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-05",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-02",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-03",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-07",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-08",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-04",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-05",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-12",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-17",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-05",
+          "tasks": [
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-06",
+          "tasks": [
+            "cuedTSWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1178": {
+      "sample": "validation",
+      "excluded": true,
+      "exclude_reason": "withdrew from study",
+      "mappings": [],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1189": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-08-26",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-02",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-10",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-12",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-08",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-09",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-11-14",
+          "tasks": [
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-05",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-12-09",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-09",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-01-15",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-05",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-13",
+          "bids": "ses-13",
+          "bids_date": "2024-02-08",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1258": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-13",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-15",
+          "tasks": [
+            "nBack",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-11",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-18",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-17",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-22",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-08",
+          "bids_date": "2023-11-29",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-09",
+          "bids_date": "2023-11-30",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-10",
+          "bids_date": "2023-12-20",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-11",
+          "bids_date": "2023-12-21",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-12",
+          "bids_date": "2024-01-25",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-13",
+          "bids_date": "2024-02-01",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [
+        "ses-07"
+      ],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": [
+        "REVIEW: inconsistent offsets: ses-01->ses-01 (offset=0), ses-02->ses-02 (offset=0), ses-03->ses-03 (offset=0), ses-04->ses-04 (offset=0), ses-05->ses-05 (offset=0), ses-06->ses-06 (offset=0), ses-07->ses-08 (offset=1), ses-08->ses-09 (offset=1), ses-09->ses-10 (offset=1), ses-10->ses-11 (offset=1), ses-11->ses-12 (offset=1), ses-12->ses-13 (offset=1)"
+      ]
+    },
+    "s1266": {
+      "sample": "validation",
+      "excluded": true,
+      "exclude_reason": "withdrew from study",
+      "mappings": [],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1267": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-20",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-23",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-19",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-21",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-16",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-18",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-14",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-16",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-11",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-13",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-08",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-10",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1270": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-12",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-13",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-04",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-05",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-10-31",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-01",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-11-28",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-11-30",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-12-19",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-12-21",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-01-24",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-01-24",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1273": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-27",
+          "tasks": [
+            "directedForgetting",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-10-04",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-18",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-25",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-13",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-15",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-11",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-13",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-10",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-17",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-05",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-16",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1292": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-19",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-23",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-16",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-20",
+          "tasks": [
+            "goNogo",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-03",
+          "tasks": [
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-18",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-11-20",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-08",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-12-11",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-06",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-01-12",
+          "tasks": [
+            "goNogo",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-03",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-13",
+          "bids": "ses-13",
+          "bids_date": "2024-02-05",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1314": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-10-05",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-10-12",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-11-02",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-11-09",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-12-05",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-12-07",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2024-01-09",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2024-01-26",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-30",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-02-01",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-29",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-03-07",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1320": {
+      "sample": "validation",
+      "excluded": true,
+      "exclude_reason": "withdrew from study",
+      "mappings": [],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1326": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-16",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-19",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-04",
+          "bids_date": "2023-10-10",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-05",
+          "bids_date": "2023-10-12",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-06",
+          "bids_date": "2023-11-11",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-07",
+          "bids_date": "2023-11-14",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-08",
+          "bids_date": "2023-12-12",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-09",
+          "bids_date": "2023-12-16",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-10",
+          "bids_date": "2024-01-09",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-11",
+          "bids_date": "2024-01-13",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-12",
+          "bids_date": "2024-02-06",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-13",
+          "bids_date": "2024-02-10",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [
+        "ses-03"
+      ],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": [
+        "REVIEW: inconsistent offsets: ses-01->ses-01 (offset=0), ses-02->ses-02 (offset=0), ses-03->ses-04 (offset=1), ses-04->ses-05 (offset=1), ses-05->ses-06 (offset=1), ses-06->ses-07 (offset=1), ses-07->ses-08 (offset=1), ses-08->ses-09 (offset=1), ses-09->ses-10 (offset=1), ses-10->ses-11 (offset=1), ses-11->ses-12 (offset=1), ses-12->ses-13 (offset=1)"
+      ]
+    },
+    "s1338": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-10-04",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-10-06",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-25",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-11-02",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-12-02",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-12-04",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-13",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-15",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-10",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-12",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-07",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-28",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1351": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-10-03",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-10-10",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-11-07",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-11-09",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-28",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-12-05",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-20",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-27",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-16",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-26",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-20",
+          "tasks": [
+            "flankerWShapeMatching",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-27",
+          "tasks": [
+            "flankerWShapeMatching",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1391": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-22",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-30",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-19",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-26",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-14",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-07",
+          "bids_date": "2023-11-15",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-08",
+          "bids_date": "2023-12-13",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-09",
+          "bids_date": "2023-12-20",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-10",
+          "bids_date": "2024-01-09",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-11",
+          "bids_date": "2024-01-10",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-12",
+          "bids_date": "2024-02-04",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-13",
+          "bids_date": "2024-02-05",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [
+        "ses-06"
+      ],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": [
+        "REVIEW: inconsistent offsets: ses-01->ses-01 (offset=0), ses-02->ses-02 (offset=0), ses-03->ses-03 (offset=0), ses-04->ses-04 (offset=0), ses-05->ses-05 (offset=0), ses-06->ses-07 (offset=1), ses-07->ses-08 (offset=1), ses-08->ses-09 (offset=1), ses-09->ses-10 (offset=1), ses-10->ses-11 (offset=1), ses-11->ses-12 (offset=1), ses-12->ses-13 (offset=1)"
+      ]
+    },
+    "s1399": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-10-25",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-10-31",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-11-16",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-11-18",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-28",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-30",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-14",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-15",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-16",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-20",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-13",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-17",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1402": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-28",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-10-03",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-20",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-24",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-14",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-18",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-12",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-15",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-09",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-10",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-02",
+          "tasks": [
+            "shapeMatchingWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-06",
+          "tasks": [
+            "shapeMatchingWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1408": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-26",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-28",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-24",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-26",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-23",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-30",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-14",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-19",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-16",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-18",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-13",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-15",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1445": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-10-17",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-03",
+          "bids_date": "2023-10-20",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-04",
+          "bids_date": "2023-11-10",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-05",
+          "bids_date": "2023-11-16",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-06",
+          "bids_date": "2023-11-27",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-07",
+          "bids_date": "2023-12-01",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-08",
+          "bids_date": "2023-12-20",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-09",
+          "bids_date": "2023-12-21",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-10",
+          "bids_date": "2024-01-22",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-11",
+          "bids_date": "2024-01-26",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-12",
+          "bids_date": "2024-02-21",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-13",
+          "bids_date": "2024-02-23",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [
+        "ses-02"
+      ],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": [
+        "REVIEW: inconsistent offsets: ses-01->ses-01 (offset=0), ses-02->ses-03 (offset=1), ses-03->ses-04 (offset=1), ses-04->ses-05 (offset=1), ses-05->ses-06 (offset=1), ses-06->ses-07 (offset=1), ses-07->ses-08 (offset=1), ses-08->ses-09 (offset=1), ses-09->ses-10 (offset=1), ses-10->ses-11 (offset=1), ses-11->ses-12 (offset=1), ses-12->ses-13 (offset=1)"
+      ]
+    },
+    "s1481": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-10-11",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-10-17",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-11-03",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-11-04",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-28",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-12-02",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-19",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-20",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-19",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-20",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-06",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-07",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s1486": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-10-20",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-10-26",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-11-16",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-11-18",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-12-14",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-12-21",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2024-01-04",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2024-01-05",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-25",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-26",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-22",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-03-01",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s180": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-03-15",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-03-16",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-04-11",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-04-15",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-05-02",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-05-05",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-06-06",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-06-10",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-06-28",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-06-30",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-07-26",
+          "tasks": [
+            "shapeMatchingWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-07-28",
+          "tasks": [
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s19": {
+      "sample": "discovery",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2020-11-13",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2020-11-16",
+          "tasks": [
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2020-12-04",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2020-12-07",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2021-02-12",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2021-02-15",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2021-02-26",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2021-03-01",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2021-03-12",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2021-03-15",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2021-04-02",
+          "tasks": [
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2021-04-05",
+          "tasks": [
+            "directedForgettingWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s214": {
+      "sample": "validation",
+      "excluded": true,
+      "exclude_reason": "dropped for being unreliable",
+      "mappings": [],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s216": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2022-10-13",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2022-10-19",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2022-11-10",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2022-11-16",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2022-12-08",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2022-12-14",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "nBack",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-01-05",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-01-06",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-02-02",
+          "tasks": [
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-02-08",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-03-02",
+          "tasks": [
+            "directedForgettingWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-03-08",
+          "tasks": [
+            "directedForgettingWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s222": {
+      "sample": "validation",
+      "excluded": true,
+      "exclude_reason": "dropped for poor behavioral performance",
+      "mappings": [],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s247": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2022-09-19",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2022-09-21",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2022-10-17",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2022-10-21",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2022-11-23",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2022-11-29",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2022-12-13",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2022-12-17",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-01-13",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-01-13",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-02-07",
+          "tasks": [
+            "directedForgettingWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-02-14",
+          "tasks": [
+            "directedForgettingWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s250": {
+      "sample": "validation",
+      "excluded": true,
+      "exclude_reason": "dropped (lens prescription issue)",
+      "mappings": [],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s286": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2022-10-25",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2022-10-26",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2022-11-22",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2022-11-23",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2022-12-20",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2022-12-21",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-01-17",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-01-18",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-02-14",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-02-17",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-03-14",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-03-15",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s29": {
+      "sample": "discovery",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-04",
+          "bids_date": "2020-12-02",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-05",
+          "bids_date": "2020-12-04",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-06",
+          "bids_date": "2021-02-03",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-07",
+          "bids_date": "2021-02-05",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-08",
+          "bids_date": "2021-02-24",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-09",
+          "bids_date": "2021-02-25",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-10",
+          "bids_date": "2021-03-03",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-11",
+          "bids_date": "2021-03-05",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-03",
+          "bids_date": "2020-11-14",
+          "tasks": [
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-12",
+          "bids_date": "2021-03-17",
+          "tasks": [
+            "directedForgettingWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-13",
+          "bids_date": "2021-03-19",
+          "tasks": [
+            "directedForgettingWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [
+        "ses-01",
+        "ses-02"
+      ],
+      "unmatched_raw": [
+        "ses-09"
+      ],
+      "irreconcilable_bids_runs": [],
+      "notes": [
+        "REVIEW: inconsistent offsets: ses-01->ses-04 (offset=3), ses-02->ses-05 (offset=3), ses-03->ses-06 (offset=3), ses-04->ses-07 (offset=3), ses-05->ses-08 (offset=3), ses-06->ses-09 (offset=3), ses-07->ses-10 (offset=3), ses-08->ses-11 (offset=3), ses-10->ses-03 (offset=-7), ses-11->ses-12 (offset=1), ses-12->ses-13 (offset=1)"
+      ]
+    },
+    "s295": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2022-11-16",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2022-11-19",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2022-12-13",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2022-12-16",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-01-11",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-01-14",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-02-08",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-02-11",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-03-07",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-03-10",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-04-05",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-04-08",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s297": {
+      "sample": "validation",
+      "excluded": true,
+      "exclude_reason": "discontinued (ear issues after scanning)",
+      "mappings": [],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s300": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-01-17",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-01-19",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-02-16",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-02-22",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-03-14",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-03-16",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-04-11",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-04-13",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-05-09",
+          "tasks": [
+            "flanker",
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-05-11",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-06-08",
+          "tasks": [
+            "spatialTSWShapeMatching",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-06-13",
+          "tasks": [
+            "spatialTSWShapeMatching",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s320": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-02-03",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-02-04",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-03-03",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-03-04",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-03-31",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-04-01",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-04-28",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-04-29",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-05-25",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-05-27",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-06-23",
+          "tasks": [
+            "directedForgettingWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-06-24",
+          "tasks": [
+            "directedForgettingWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s321": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-01-25",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-03",
+          "bids_date": "2023-02-03",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-04",
+          "bids_date": "2023-02-22",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-05",
+          "bids_date": "2023-02-24",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-06",
+          "bids_date": "2023-03-24",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-07",
+          "bids_date": "2023-03-31",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-08",
+          "bids_date": "2023-04-19",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-09",
+          "bids_date": "2023-04-21",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-10",
+          "bids_date": "2023-05-17",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-11",
+          "bids_date": "2023-05-19",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-12",
+          "bids_date": "2023-06-27",
+          "tasks": [
+            "nBackWShapeMatching",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-13",
+          "bids_date": "2023-06-28",
+          "tasks": [
+            "nBackWShapeMatching",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [
+        "ses-02"
+      ],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": [
+        "REVIEW: inconsistent offsets: ses-01->ses-01 (offset=0), ses-02->ses-03 (offset=1), ses-03->ses-04 (offset=1), ses-04->ses-05 (offset=1), ses-05->ses-06 (offset=1), ses-06->ses-07 (offset=1), ses-07->ses-08 (offset=1), ses-08->ses-09 (offset=1), ses-09->ses-10 (offset=1), ses-10->ses-11 (offset=1), ses-11->ses-12 (offset=1), ses-12->ses-13 (offset=1)"
+      ]
+    },
+    "s336": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-04-18",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-04-19",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-05-16",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-05-17",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-06-13",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-06-14",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-07-18",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-07-19",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-08-08",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-08-09",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-09-07",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-09-08",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s373": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-02-03",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-02-06",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-03-03",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-03-06",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-03-31",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-04-03",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-04-28",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-05-01",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-05-26",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-05-30",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-06-23",
+          "tasks": [
+            "nBackWSpatialTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-06-26",
+          "tasks": [
+            "nBackWSpatialTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s394": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-02-15",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-02-17",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-03-14",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-03-17",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-04-12",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-04-14",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-05-10",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-05-12",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-06-09",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-06-14",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-07-07",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-07-12",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s415": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-02-03",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-02-04",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-03-03",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-03-04",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-03-31",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-04-01",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-04-28",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-04-29",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-06-02",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-06-16",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-07-07",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-07-08",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s43": {
+      "sample": "discovery",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2020-11-12",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2020-11-19",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2020-12-09",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2020-12-10",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2021-02-02",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2021-02-04",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2021-02-15",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2021-02-16",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2021-02-23",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2021-02-25",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2021-03-16",
+          "tasks": [
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2021-03-18",
+          "tasks": [
+            "directedForgettingWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s432": {
+      "sample": "validation",
+      "excluded": true,
+      "exclude_reason": "withdrew from study",
+      "mappings": [],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s480": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-03-10",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-03-13",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-04-11",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-04-17",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-05-12",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-05-15",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-05-30",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-05-31",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-06-27",
+          "tasks": [
+            "goNogo",
+            "nBack",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-06-28",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "flanker",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-08-08",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-08-10",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s599": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-09-11",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-09-15",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-10-11",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-10-13",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-08",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-12",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-12-06",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-08",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-05",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-15",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-01-31",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-02",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s645": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-08-18",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-08-25",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-09-22",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-09-29",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-11-03",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-11-12",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-11-29",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-12-05",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2024-01-05",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2024-01-12",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2024-02-09",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2024-02-16",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s76": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2022-02-12",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2022-02-17",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2022-03-12",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2022-03-24",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2022-04-08",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2022-04-14",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "nBack",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2022-05-13",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2022-05-19",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2022-06-10",
+          "tasks": [
+            "flanker",
+            "nBack",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2022-06-16",
+          "tasks": [
+            "cuedTS",
+            "directedForgetting",
+            "goNogo",
+            "shapeMatching"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2022-07-08",
+          "tasks": [
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2022-07-14",
+          "tasks": [
+            "directedForgettingWFlanker",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s823": {
+      "sample": "validation",
+      "excluded": true,
+      "exclude_reason": "withdrew from study",
+      "mappings": [],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s874": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-07-29",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-07-31",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-08-27",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-08-31",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-09-23",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-09-28",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-10-21",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-10-26",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-11-19",
+          "tasks": [
+            "directedForgetting",
+            "flanker",
+            "goNogo",
+            "spatialTS"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-11-20",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-12-17",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-12-21",
+          "tasks": [
+            "spatialTSWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s956": {
+      "sample": "validation",
+      "excluded": false,
+      "exclude_reason": null,
+      "mappings": [
+        {
+          "raw": "ses-01",
+          "bids": "ses-01",
+          "bids_date": "2023-07-28",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-02",
+          "bids_date": "2023-07-31",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-03",
+          "bids": "ses-03",
+          "bids_date": "2023-08-21",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-04",
+          "bids": "ses-04",
+          "bids_date": "2023-08-28",
+          "tasks": [
+            "cuedTS",
+            "nBack",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-05",
+          "bids": "ses-05",
+          "bids_date": "2023-09-18",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-06",
+          "bids": "ses-06",
+          "bids_date": "2023-09-21",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-07",
+          "bids": "ses-07",
+          "bids_date": "2023-10-20",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-08",
+          "bids": "ses-08",
+          "bids_date": "2023-10-23",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-09",
+          "bids": "ses-09",
+          "bids_date": "2023-11-17",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "spatialTS",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-10",
+          "bids": "ses-10",
+          "bids_date": "2023-11-20",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "goNogo",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-11",
+          "bids": "ses-11",
+          "bids_date": "2023-12-15",
+          "tasks": [
+            "directedForgettingWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        },
+        {
+          "raw": "ses-12",
+          "bids": "ses-12",
+          "bids_date": "2023-12-18",
+          "tasks": [
+            "directedForgettingWCuedTS",
+            "stopSignalWDirectedForgetting",
+            "stopSignalWFlanker"
+          ]
+        }
+      ],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    },
+    "s968": {
+      "sample": "validation",
+      "excluded": true,
+      "exclude_reason": "withdrew from study",
+      "mappings": [],
+      "skipped_bids": [],
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [],
+      "notes": []
+    }
+  }
+}
