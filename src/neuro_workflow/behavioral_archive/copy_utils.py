@@ -52,12 +52,14 @@ def copy_file_with_retries(
             logger.debug(f"Copied {src} -> {dest}")
             return "success"
         except Exception as exc:
-            # Clean up partial file
+            # Clean up partial file (only suppress FileNotFoundError)
             if dest.exists():
                 try:
                     dest.unlink()
-                except Exception:
-                    pass
+                except FileNotFoundError:
+                    pass  # File may have been deleted already
+                except Exception as cleanup_exc:
+                    logger.warning(f"Failed to clean up partial file {dest}: {cleanup_exc}")
 
             if attempt < max_retries - 1:
                 wait = 2 ** attempt
@@ -69,5 +71,3 @@ def copy_file_with_retries(
             else:
                 logger.error(f"Copy failed for {src} after {max_retries} attempts: {exc}")
                 raise
-
-    return "success"
