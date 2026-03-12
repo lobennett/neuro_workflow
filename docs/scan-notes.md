@@ -26,16 +26,16 @@ These subjects were dropped from the study entirely. Their data should not be us
 
 ## Discovery Subjects with Issues
 
-### s29 — Session Offset + Protocol Mismatch
+### s29 — Excluded Test Session + Protocol Mismatch
 
-All raw behavioral session numbers are offset by +1 from BIDS (raw ses-01 = BIDS ses-02, etc.).
+Flywheel session 22424 (Scan 0, 2020-11-11) was a fmap-only test session and is excluded from the Flywheel pull entirely — it is not downloaded to BIDS. After excluding it, raw and BIDS session numbers align 1:1.
 
 | BIDS Session | Scan | Date | Issue |
 |--------------|------|------|-------|
-| ses-01 | 0 | 2020-11-11 | Test session — fmap only. No functional or behavioral data. Added to `.bidsignore`. |
-| ses-02 | 1 | 2020-11-13 | Protocol mismatch — spatialTS was the behavioral task but cuedTS was scanned. Only 3 of 4 tasks overlap. **cuedTS BOLD has no events file (irreconcilable).** |
-| ses-03 | 2 | 2020-11-14 | Raw behavioral missing goNogo. |
-| ses-12 | 11 | 2021-03-17 | Task order flipped: "stop+DF and DF+flanker" (dual-task session). |
+| _(excluded)_ | 0 | 2020-11-11 | Test session — fmap only. Excluded from Flywheel pull (`session_overrides` in `reconciliation_config.json`). |
+| ses-01 | 1 | 2020-11-13 | Protocol mismatch — spatialTS was the behavioral task but cuedTS was scanned. Only 3 of 4 tasks overlap. **cuedTS BOLD has no events file (irreconcilable).** |
+| ses-02 | 2 | 2020-11-14 | Raw behavioral missing goNogo. |
+| ses-11 | 11 | 2021-03-17 | Task order flipped: "stop+DF and DF+flanker" (dual-task session). |
 
 ### s03 — Extra/Mislabeled Sessions
 

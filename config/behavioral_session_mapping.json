@@ -2039,7 +2039,7 @@
         {
           "session": "ses-04",
           "task": "nBack",
-          "reason": "nBack scan ended before task completed — scanner failure (scan operator note 10/20)"
+          "reason": "nBack scan ended before task completed \u2014 scanner failure (scan operator note 10/20)"
         }
       ],
       "notes": []
@@ -4357,7 +4357,7 @@
       "mappings": [
         {
           "raw": "ses-01",
-          "bids": "ses-02",
+          "bids": "ses-01",
           "bids_date": "2020-11-13",
           "tasks": [
             "directedForgetting",
@@ -4367,7 +4367,7 @@
         },
         {
           "raw": "ses-02",
-          "bids": "ses-03",
+          "bids": "ses-02",
           "bids_date": "2020-11-14",
           "tasks": [
             "cuedTS",
@@ -4377,7 +4377,7 @@
         },
         {
           "raw": "ses-03",
-          "bids": "ses-04",
+          "bids": "ses-03",
           "bids_date": "2020-12-02",
           "tasks": [
             "directedForgetting",
@@ -4388,7 +4388,7 @@
         },
         {
           "raw": "ses-04",
-          "bids": "ses-05",
+          "bids": "ses-04",
           "bids_date": "2020-12-04",
           "tasks": [
             "cuedTS",
@@ -4399,7 +4399,7 @@
         },
         {
           "raw": "ses-05",
-          "bids": "ses-06",
+          "bids": "ses-05",
           "bids_date": "2021-02-03",
           "tasks": [
             "directedForgetting",
@@ -4410,7 +4410,7 @@
         },
         {
           "raw": "ses-06",
-          "bids": "ses-07",
+          "bids": "ses-06",
           "bids_date": "2021-02-05",
           "tasks": [
             "cuedTS",
@@ -4421,7 +4421,7 @@
         },
         {
           "raw": "ses-07",
-          "bids": "ses-08",
+          "bids": "ses-07",
           "bids_date": "2021-02-24",
           "tasks": [
             "directedForgetting",
@@ -4432,7 +4432,7 @@
         },
         {
           "raw": "ses-08",
-          "bids": "ses-09",
+          "bids": "ses-08",
           "bids_date": "2021-02-25",
           "tasks": [
             "cuedTS",
@@ -4443,7 +4443,7 @@
         },
         {
           "raw": "ses-09",
-          "bids": "ses-10",
+          "bids": "ses-09",
           "bids_date": "2021-03-03",
           "tasks": [
             "directedForgetting",
@@ -4454,7 +4454,7 @@
         },
         {
           "raw": "ses-10",
-          "bids": "ses-11",
+          "bids": "ses-10",
           "bids_date": "2021-03-05",
           "tasks": [
             "flanker",
@@ -4464,7 +4464,7 @@
         },
         {
           "raw": "ses-11",
-          "bids": "ses-12",
+          "bids": "ses-11",
           "bids_date": "2021-03-17",
           "tasks": [
             "directedForgettingWFlanker",
@@ -4474,7 +4474,7 @@
         },
         {
           "raw": "ses-12",
-          "bids": "ses-13",
+          "bids": "ses-12",
           "bids_date": "2021-03-19",
           "tasks": [
             "directedForgettingWFlanker",
@@ -4483,26 +4483,19 @@
           ]
         }
       ],
-      "skipped_bids": [
-        "ses-01"
-      ],
+      "skipped_bids": [],
       "unmatched_raw": [],
       "irreconcilable_bids_runs": [
         {
           "session": "ses-01",
-          "task": "*",
-          "reason": "fmap-only test session (2020-11-11) — no functional or behavioral data. Entire session should be ignored."
-        },
-        {
-          "session": "ses-02",
           "task": "cuedTS",
           "reason": "protocol mismatch: cuedTS was scanned but spatialTS was the behavioral task (Nov 13 2020)"
         }
       ],
       "notes": [
-        "ses-01 is fmap-only test session (2020-11-11) — no functional or behavioral data, added to .bidsignore",
-        "raw ses-01 maps to BIDS ses-02 despite protocol mismatch (spatialTS behavioral vs cuedTS scanned) — only 3/4 tasks overlap",
-        "Date-corrected mapping: algorithm matched raw ses-01→ses-04 (wrong date), manually fixed to ses-02 based on scan tracking dates"
+        "Flywheel session 22424 (2020-11-11) excluded from BIDS \u2014 fmap-only test session, not pulled from Flywheel",
+        "raw ses-01 maps to BIDS ses-01 despite protocol mismatch (spatialTS behavioral vs cuedTS scanned) \u2014 only 3/4 tasks overlap",
+        "Date-corrected mapping: raw session numbers now align 1:1 with BIDS after excluding the test session"
       ]
     },
     "s295": {
@@ -4797,7 +4790,7 @@
         {
           "session": "ses-08",
           "task": "flanker",
-          "reason": "flanker behavioral data lost — server shut down before save (scan operator note 4/13/2023)"
+          "reason": "flanker behavioral data lost \u2014 server shut down before save (scan operator note 4/13/2023)"
         }
       ],
       "notes": [

@@ -17,6 +17,12 @@
                 "exclude": true,
                 "reason": "Empty/test session -- no usable imaging data"
             }
+        },
+        "s29": {
+            "22424": {
+                "exclude": true,
+                "reason": "Fmap-only test session (2020-11-11) -- single-echo protocol, no usable functional data, no behavioral data"
+            }
         }
     },
     "excluded_validation_subjects": {
@@ -35,7 +41,7 @@
     "notes": {
         "discovery": [
             "s03/session 22752 was mislabeled on Flywheel -- reassigned to s10 based on scan content and timeline",
-            "s29/ses-01 is fmap-only test session (2020-11-11) — skipped in behavioral mapping, added to .bidsignore",
+            "s29/session 22424 (2020-11-11) is fmap-only test session — excluded from Flywheel pull, not downloaded to BIDS",
             "s29-2/20210305 is s29 Scan 10 (2021-03-05) collected under wrong subject label -- not a duplicate"
         ],
         "validation": [
