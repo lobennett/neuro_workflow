@@ -51,3 +51,21 @@ def test_copy_file_raises_if_exists_and_no_skip(tmp_path):
 
     with pytest.raises(FileExistsError):
         copy_file_with_retries(src, dest, skip_existing=False)
+
+
+def test_copy_file_raises_on_retry_failure(tmp_path, monkeypatch):
+    """Raise exception after max_retries exhausted."""
+    src = tmp_path / "source.txt"
+    src.write_text("content")
+    dest = tmp_path / "dest" / "source.txt"
+
+    # Mock shutil.copy2 to always fail
+    def mock_copy_fail(*args, **kwargs):
+        raise IOError("Simulated copy failure")
+
+    import shutil
+    monkeypatch.setattr(shutil, "copy2", mock_copy_fail)
+
+    # Should raise after max_retries attempts
+    with pytest.raises(IOError, match="Simulated copy failure"):
+        copy_file_with_retries(src, dest, max_retries=2)
