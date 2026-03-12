@@ -18,14 +18,147 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Import matching functions from the existing rename script
+# Import utility functions from the rename script (these are still there)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from rename_behavioral_to_sourcedata import (
     SKIP_DIRS,
-    build_bids_task_map,
-    build_raw_session_map,
-    match_sessions,
+    parse_csv_filename,
+    zero_pad_session,
 )
+
+
+def build_bids_task_map(bids_dir: Path, subject: str) -> list[tuple[str, set[str]]]:
+    """Scan BIDS func/ directories and return ordered (ses_label, task_set) pairs."""
+    sub_label = subject if subject.startswith("sub-") else f"sub-{subject}"
+    sub_dir = bids_dir / sub_label
+    if not sub_dir.exists():
+        return []
+
+    sessions = []
+    for ses_dir in sorted(sub_dir.glob("ses-*")):
+        func_dir = ses_dir / "func"
+        tasks = set()
+        if func_dir.exists():
+            for f in func_dir.iterdir():
+                m = re.search(r"task-(\w+)_run", f.name)
+                if m and m.group(1) != "rest":
+                    tasks.add(m.group(1))
+        sessions.append((ses_dir.name, tasks))
+    return sessions
+
+
+def build_raw_session_map(
+    input_dir: Path, subject: str
+) -> list[tuple[str, set[str], list[Path]]]:
+    """Scan raw_cleaned sessions and return ordered (ses_label, task_set, csv_paths) triples."""
+    subj_dir = input_dir / subject
+    if not subj_dir.exists():
+        return []
+
+    sessions = []
+    for ses_dir in sorted(subj_dir.glob("ses-*")):
+        if ses_dir.name in SKIP_DIRS:
+            continue
+        tasks = set()
+        csvs = []
+        for csv_file in sorted(ses_dir.glob("*.csv")):
+            if "practice" in str(csv_file).lower():
+                continue
+            task = parse_csv_filename(csv_file.name)
+            if task:
+                tasks.add(task)
+            else:
+                log.warning("Unrecognized file: %s", csv_file)
+            csvs.append((csv_file, task))
+        sessions.append((zero_pad_session(ses_dir.name), tasks, csvs))
+    return sessions
+
+
+def match_sessions(raw_sessions, bids_sessions):
+    """Two-pass matching of behavioral sessions to BIDS sessions.
+
+    Pass 1: greedy ordered matching (handles the common case where sessions
+    are in the same order but offset).
+
+    Pass 2: unmatched raw sessions are matched against skipped BIDS sessions
+    (handles cases like s29 where later behavioral sessions correspond to
+    earlier BIDS sessions that were skipped in pass 1).
+
+    Returns:
+        mappings: list of (raw_ses, bids_ses, tasks, csvs) for matched sessions
+        skipped_bids: list of BIDS session labels with no behavioral match
+        unmatched_raw: list of raw session labels with no BIDS match
+    """
+    mappings = []
+    skipped_bids = []
+    unmatched_raw_items = []  # (raw_ses, raw_tasks, csvs)
+    bids_ptr = 0
+
+    # Pass 1: greedy forward matching
+    for raw_ses, raw_tasks, csvs in raw_sessions:
+        if not raw_tasks:
+            log.warning("Skipping %s: no recognized tasks", raw_ses)
+            unmatched_raw_items.append((raw_ses, raw_tasks, csvs))
+            continue
+
+        matched = False
+        while bids_ptr < len(bids_sessions):
+            bids_ses, bids_tasks = bids_sessions[bids_ptr]
+            if (raw_tasks & bids_tasks) and (
+                raw_tasks <= bids_tasks or bids_tasks <= raw_tasks
+            ):
+                mappings.append((raw_ses, bids_ses, sorted(raw_tasks), csvs))
+                bids_ptr += 1
+                matched = True
+                break
+            else:
+                skipped_bids.append(bids_ses)
+                bids_ptr += 1
+
+        if not matched:
+            unmatched_raw_items.append((raw_ses, raw_tasks, csvs))
+
+    # Any remaining BIDS sessions are also skipped
+    while bids_ptr < len(bids_sessions):
+        skipped_bids.append(bids_sessions[bids_ptr][0])
+        bids_ptr += 1
+
+    # Pass 2: match remaining raw sessions against skipped BIDS sessions
+    if unmatched_raw_items and skipped_bids:
+        bids_by_label = {ses: tasks for ses, tasks in bids_sessions}
+        available_bids = [(ses, bids_by_label[ses]) for ses in skipped_bids]
+
+        still_unmatched = []
+        for raw_ses, raw_tasks, csvs in unmatched_raw_items:
+            if not raw_tasks:
+                still_unmatched.append((raw_ses, raw_tasks, csvs))
+                continue
+            matched = False
+            for i, (bids_ses, bids_tasks) in enumerate(available_bids):
+                if (raw_tasks & bids_tasks) and (
+                    raw_tasks <= bids_tasks or bids_tasks <= raw_tasks
+                ):
+                    mappings.append((raw_ses, bids_ses, sorted(raw_tasks), csvs))
+                    available_bids.pop(i)
+                    log.info("Pass 2: matched %s -> %s", raw_ses, bids_ses)
+                    matched = True
+                    break
+            if not matched:
+                log.warning(
+                    "No BIDS match for %s (tasks: %s)", raw_ses, sorted(raw_tasks)
+                )
+                still_unmatched.append((raw_ses, raw_tasks, csvs))
+
+        skipped_bids = [ses for ses, _ in available_bids]
+        unmatched_raw_items = still_unmatched
+    else:
+        for raw_ses, raw_tasks, csvs in unmatched_raw_items:
+            log.warning(
+                "No BIDS match for %s (tasks: %s)", raw_ses, sorted(raw_tasks)
+            )
+
+    unmatched_raw = [raw_ses for raw_ses, _, _ in unmatched_raw_items]
+    return mappings, skipped_bids, unmatched_raw
 
 log = logging.getLogger(__name__)
 
