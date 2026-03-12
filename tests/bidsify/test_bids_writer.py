@@ -33,6 +33,12 @@ class TestBidsFilename:
         result = bids_filename("s03", "ses-01", acq="g105", dir="AP", run=1, suffix="dwi")
         assert result == "sub-s03_ses-01_acq-g105_dir-AP_run-1_dwi"
 
+    def test_bids_filename_physio(self):
+        result = bids_filename(
+            "s1175", "ses-02", task="rest", run=1, recording="cardiac", suffix="physio"
+        )
+        assert result == "sub-s1175_ses-02_task-rest_run-1_recording-cardiac_physio"
+
 
 class TestPatchSidecar:
     def test_patch_sidecar_adds_b0field_to_fieldmap(self, tmp_path):

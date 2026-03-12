@@ -8,7 +8,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-ENTITY_ORDER = ("task", "acq", "dir", "run", "echo")
+ENTITY_ORDER = ("task", "acq", "dir", "run", "echo", "recording")
 
 
 def bids_filename(subject: str, session: str, **entities: str | int) -> str:
