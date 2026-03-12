@@ -45,3 +45,22 @@ def test_is_subject_in_sample_with_subject_prefix():
 
     assert is_subject_in_sample("s03", samples) is True
     assert is_subject_in_sample("sub-s03", samples) is True
+
+
+def test_load_samples_from_session_config(tmp_path):
+    """Load samples from config with session-based format (alternative config format)."""
+    config_file = tmp_path / "behavioral_session_mapping.json"
+    config_data = {
+        "sessions": [
+            {"subject": "s03", "sample": "discovery"},
+            {"subject": "s10", "sample": "discovery"},
+            {"subject": "s247", "sample": "validation"},
+            {"subject": "s528", "sample": "validation"},
+        ]
+    }
+    config_file.write_text(json.dumps(config_data))
+
+    samples = load_samples_from_config(str(config_file))
+
+    assert set(samples["discovery"]) == {"s03", "s10"}
+    assert set(samples["validation"]) == {"s247", "s528"}
