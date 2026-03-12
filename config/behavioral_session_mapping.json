@@ -2035,7 +2035,13 @@
       ],
       "skipped_bids": [],
       "unmatched_raw": [],
-      "irreconcilable_bids_runs": [],
+      "irreconcilable_bids_runs": [
+        {
+          "session": "ses-04",
+          "task": "nBack",
+          "reason": "nBack scan ended before task completed — scanner failure (scan operator note 10/20)"
+        }
+      ],
       "notes": []
     },
     "s1314": {
@@ -4782,8 +4788,16 @@
       ],
       "skipped_bids": [],
       "unmatched_raw": [],
-      "irreconcilable_bids_runs": [],
-      "notes": []
+      "irreconcilable_bids_runs": [
+        {
+          "session": "ses-08",
+          "task": "flanker",
+          "reason": "flanker behavioral data lost — server shut down before save (scan operator note 4/13/2023)"
+        }
+      ],
+      "notes": [
+        "ses-08: cuedTS behavioral exists but cuedTS was deleted from Flywheel (duplicate, operator deleted shorter copy). flanker BOLD exists but behavioral lost."
+      ]
     },
     "s320": {
       "sample": "validation",
