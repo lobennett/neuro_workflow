@@ -17,22 +17,31 @@
                 "exclude": true,
                 "reason": "Empty/test session -- no usable imaging data"
             }
-        },
-        "s29-2": {
-            "20210305": {
-                "exclude": true,
-                "reason": "True duplicate of s29 session -- s29 already has 12 sessions under its own label"
-            }
         }
+    },
+    "excluded_validation_subjects": {
+        "s214": "dropped for being unreliable",
+        "s222": "dropped for poor behavioral performance",
+        "s250": "dropped (lens prescription issue)",
+        "s297": "discontinued (ear issues after scanning)",
+        "s432": "withdrew from study",
+        "s823": "withdrew from study",
+        "s968": "withdrew from study",
+        "s1165": "withdrew from study",
+        "s1178": "withdrew from study",
+        "s1266": "withdrew from study",
+        "s1320": "withdrew from study"
     },
     "notes": {
         "discovery": [
             "s03/session 22752 was mislabeled on Flywheel -- reassigned to s10 based on scan content and timeline",
-            "s29/ses-01 used single-echo BOLD protocol -- no multi-echo func data extracted (protocol mismatch)"
+            "s29/ses-01 is fmap-only test session (2020-11-11) — skipped in behavioral mapping, added to .bidsignore",
+            "s29-2/20210305 is s29 Scan 10 (2021-03-05) collected under wrong subject label -- not a duplicate"
         ],
         "validation": [
             "ex26207 is an alias for s297 on Flywheel",
-            "Split sessions exist for s321, s968, s1326, s1292, s1189, s1391 -- these are merged chronologically"
+            "Split sessions exist for s321, s968, s1326, s1292, s1189, s1391 -- these are merged chronologically",
+            "Excluded subjects are pulled into BIDS but added to .bidsignore"
         ]
     },
     "samples": {

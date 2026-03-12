@@ -284,7 +284,10 @@ def main():
 
         # Record irreconcilable runs for .bidsignore
         for run in info.get("irreconcilable_bids_runs", []):
-            entry = f"sub-{subject}/{run['session']}/func/*task-{run['task']}*"
+            if run["task"] == "*":
+                entry = f"sub-{subject}/{run['session']}/"
+            else:
+                entry = f"sub-{subject}/{run['session']}/func/*task-{run['task']}*"
             bidsignore_entries.append(entry)
 
         if subject_files > 0:

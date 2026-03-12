@@ -4489,13 +4489,18 @@
       "unmatched_raw": [],
       "irreconcilable_bids_runs": [
         {
+          "session": "ses-01",
+          "task": "*",
+          "reason": "fmap-only test session (2020-11-11) — no functional or behavioral data. Entire session should be ignored."
+        },
+        {
           "session": "ses-02",
           "task": "cuedTS",
           "reason": "protocol mismatch: cuedTS was scanned but spatialTS was the behavioral task (Nov 13 2020)"
         }
       ],
       "notes": [
-        "ses-01 is fmap-only test session (2020-11-11), no behavioral data",
+        "ses-01 is fmap-only test session (2020-11-11) — no functional or behavioral data, added to .bidsignore",
         "raw ses-01 maps to BIDS ses-02 despite protocol mismatch (spatialTS behavioral vs cuedTS scanned) — only 3/4 tasks overlap",
         "Date-corrected mapping: algorithm matched raw ses-01→ses-04 (wrong date), manually fixed to ses-02 based on scan tracking dates"
       ]
