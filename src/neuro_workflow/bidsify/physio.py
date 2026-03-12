@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import csv
 import gzip
 import json
 import logging
@@ -43,6 +42,8 @@ def parse_flt_data(csv_path: Path) -> tuple[list[int], list[float]]:
     if not text:
         return timestamps, amplitudes
     for line in text.split("\n"):
+        if not line.strip():  # Skip blank lines
+            continue
         parts = line.split(",")
         timestamps.append(int(parts[0]))
         amplitudes.append(float(parts[1]))

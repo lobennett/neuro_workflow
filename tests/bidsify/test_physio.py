@@ -1,6 +1,5 @@
 """Tests for physio CSV-to-BIDS conversion."""
 
-import csv
 import gzip
 import json
 from pathlib import Path
@@ -154,6 +153,35 @@ class TestConvertPhysioToBids:
         json_path = output_dir / "sub-s1175_ses-02_task-rest_run-1_recording-respiratory_physio.json"
         meta = json.loads(json_path.read_text())
         assert meta["SamplingFrequency"] == 25
+
+    def test_converts_with_missing_trigger_file(self, tmp_path):
+        """Full conversion works even if trigger file is missing."""
+        input_dir = tmp_path / "input"
+        input_dir.mkdir()
+        (input_dir / "PPG_FltData.csv").write_text(
+            "10,0.40\n20,0.45\n30,0.50\n"
+        )
+        # No PPG_FltTrig.csv created
+
+        output_dir = tmp_path / "output"
+        output_dir.mkdir()
+
+        result = convert_physio_to_bids(
+            input_dir=input_dir,
+            output_dir=output_dir,
+            subject="s1175",
+            session="ses-02",
+            task="rest",
+            run=1,
+            channel="cardiac",
+        )
+
+        assert result is True
+        tsv_path = output_dir / "sub-s1175_ses-02_task-rest_run-1_recording-cardiac_physio.tsv.gz"
+        content = gzip.decompress(tsv_path.read_bytes()).decode()
+        lines = content.strip().split("\n")
+        # All trigger values should be 0 since no trigger file exists
+        assert all(line.endswith("\t0") for line in lines[1:])
 
     def test_skips_missing_data_file(self, tmp_path):
         """Returns False when data CSV is missing."""
