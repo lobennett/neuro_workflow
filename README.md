@@ -40,12 +40,13 @@ Each stage is described below in order.
 
 ## Stage 1: BIDSify
 
-Pull NIfTI/JSON data from Flywheel and write a clean BIDS dataset. Handles subject label aliases, multi-echo BOLD selection, sequential session numbering, and fieldmap sidecar patching.
+Pull NIfTI/JSON data from Flywheel and write a clean BIDS dataset. Handles subject label aliases, multi-echo BOLD selection, sequential session numbering, fieldmap sidecar patching, and physiological data (cardiac/respiratory from gephysio gear).
 
 ### Prerequisites
 
 - Flywheel API key configured (`~/.config/flywheel/user.json` or `FW_API_KEY`)
 - `uv pip install -e ".[bidsify]"`
+- Physiological data requires gephysio gear analysis on Flywheel (automatically downloaded if available)
 
 ### Usage
 
@@ -78,7 +79,7 @@ discovery_BIDS/
 ├── sub-s03/
 │   ├── ses-01/
 │   │   ├── anat/     # T1w, T2w
-│   │   ├── func/     # multi-echo BOLD
+│   │   ├── func/     # multi-echo BOLD + physio (cardiac/respiratory)
 │   │   ├── fmap/     # fieldmap + magnitude
 │   │   └── dwi/      # DWI + bval/bvec
 │   └── ses-02/
@@ -88,7 +89,16 @@ discovery_BIDS/
     └── bidsify_log.json
 ```
 
-Configuration lives in `src/neuro_workflow/bidsify/reconciliation_config.json` (subject lists, aliases, skip lists) and `src/neuro_workflow/bidsify/config.py` (acquisition label → BIDS mappings).
+Physio files are stored in `func/` as:
+- `sub-*_ses-*_task-*_recording-cardiac_physio.tsv.gz` + `.json` (cardiac waveform, 100 Hz)
+- `sub-*_ses-*_task-*_recording-respiratory_physio.tsv.gz` + `.json` (respiratory waveform, 25 Hz)
+
+Configuration lives in:
+- `src/neuro_workflow/bidsify/reconciliation_config.json` — subject lists, aliases, skip lists, Flywheel session overrides
+- `src/neuro_workflow/bidsify/config.py` — acquisition label → BIDS mappings
+- `config/behavioral_session_mapping.json` — behavioral data session pairing (used by events pipeline)
+
+Physiological data (gephysio gear outputs) are automatically detected and downloaded from Flywheel session analyses. They are processed and converted to BIDS format during the bidsify run.
 
 ---
 
