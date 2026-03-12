@@ -4351,6 +4351,26 @@
       "mappings": [
         {
           "raw": "ses-01",
+          "bids": "ses-02",
+          "bids_date": "2020-11-13",
+          "tasks": [
+            "directedForgetting",
+            "shapeMatching",
+            "stopSignal"
+          ]
+        },
+        {
+          "raw": "ses-02",
+          "bids": "ses-03",
+          "bids_date": "2020-11-14",
+          "tasks": [
+            "cuedTS",
+            "flanker",
+            "nBack"
+          ]
+        },
+        {
+          "raw": "ses-03",
           "bids": "ses-04",
           "bids_date": "2020-12-02",
           "tasks": [
@@ -4361,17 +4381,18 @@
           ]
         },
         {
-          "raw": "ses-02",
+          "raw": "ses-04",
           "bids": "ses-05",
           "bids_date": "2020-12-04",
           "tasks": [
             "cuedTS",
             "flanker",
+            "goNogo",
             "nBack"
           ]
         },
         {
-          "raw": "ses-03",
+          "raw": "ses-05",
           "bids": "ses-06",
           "bids_date": "2021-02-03",
           "tasks": [
@@ -4382,7 +4403,7 @@
           ]
         },
         {
-          "raw": "ses-04",
+          "raw": "ses-06",
           "bids": "ses-07",
           "bids_date": "2021-02-05",
           "tasks": [
@@ -4393,7 +4414,7 @@
           ]
         },
         {
-          "raw": "ses-05",
+          "raw": "ses-07",
           "bids": "ses-08",
           "bids_date": "2021-02-24",
           "tasks": [
@@ -4404,7 +4425,7 @@
           ]
         },
         {
-          "raw": "ses-06",
+          "raw": "ses-08",
           "bids": "ses-09",
           "bids_date": "2021-02-25",
           "tasks": [
@@ -4415,7 +4436,7 @@
           ]
         },
         {
-          "raw": "ses-07",
+          "raw": "ses-09",
           "bids": "ses-10",
           "bids_date": "2021-03-03",
           "tasks": [
@@ -4426,20 +4447,9 @@
           ]
         },
         {
-          "raw": "ses-08",
+          "raw": "ses-10",
           "bids": "ses-11",
           "bids_date": "2021-03-05",
-          "tasks": [
-            "cuedTS",
-            "flanker",
-            "goNogo",
-            "nBack"
-          ]
-        },
-        {
-          "raw": "ses-10",
-          "bids": "ses-03",
-          "bids_date": "2020-11-14",
           "tasks": [
             "flanker",
             "goNogo",
@@ -4468,15 +4478,20 @@
         }
       ],
       "skipped_bids": [
-        "ses-01",
-        "ses-02"
+        "ses-01"
       ],
-      "unmatched_raw": [
-        "ses-09"
+      "unmatched_raw": [],
+      "irreconcilable_bids_runs": [
+        {
+          "session": "ses-02",
+          "task": "cuedTS",
+          "reason": "protocol mismatch: cuedTS was scanned but spatialTS was the behavioral task (Nov 13 2020)"
+        }
       ],
-      "irreconcilable_bids_runs": [],
       "notes": [
-        "REVIEW: inconsistent offsets: ses-01->ses-04 (offset=3), ses-02->ses-05 (offset=3), ses-03->ses-06 (offset=3), ses-04->ses-07 (offset=3), ses-05->ses-08 (offset=3), ses-06->ses-09 (offset=3), ses-07->ses-10 (offset=3), ses-08->ses-11 (offset=3), ses-10->ses-03 (offset=-7), ses-11->ses-12 (offset=1), ses-12->ses-13 (offset=1)"
+        "ses-01 is fmap-only test session (2020-11-11), no behavioral data",
+        "raw ses-01 maps to BIDS ses-02 despite protocol mismatch (spatialTS behavioral vs cuedTS scanned) — only 3/4 tasks overlap",
+        "Date-corrected mapping: algorithm matched raw ses-01→ses-04 (wrong date), manually fixed to ses-02 based on scan tracking dates"
       ]
     },
     "s295": {
