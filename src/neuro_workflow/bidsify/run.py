@@ -2,6 +2,7 @@
 
 import json
 import logging
+import tempfile
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
@@ -20,6 +21,11 @@ from neuro_workflow.bidsify.bids_writer import (
     write_dataset_description,
     write_readme,
     download_and_place,
+)
+from neuro_workflow.bidsify.physio import convert_physio_to_bids
+from neuro_workflow.bidsify.physio_query import (
+    find_gephysio_analyses,
+    match_analyses_to_acquisitions,
 )
 
 logger = logging.getLogger(__name__)
@@ -69,6 +75,24 @@ def _check_bold_4d(nifti_path):
         return True
 
 
+def download_physio_analysis(analysis, dest_dir):
+    """Download gephysio analysis CSV files to a local directory.
+
+    Args:
+        analysis: Flywheel analysis object.
+        dest_dir: Path to download files into.
+
+    Returns:
+        Path to the directory containing downloaded files.
+    """
+    dest_dir = Path(dest_dir)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    for f in analysis.files:
+        if f.name.endswith(".csv"):
+            analysis.download_file(f.name, str(dest_dir / f.name))
+    return dest_dir
+
+
 def process_subject_session(
     subject_label, session_info, acq_objects, output_dir, log_entries,
     bidsignore_entries=None,
@@ -98,6 +122,7 @@ def process_subject_session(
     warnings = []
     bold_acq_count = 0
     bold_file_count = 0
+    acq_id_to_task = {}
 
     # Sort acquisitions by timestamp so duplicate tasks get correct run numbering
     acq_objects_sorted = sorted(acq_objects, key=lambda a: a.timestamp or "")
@@ -120,6 +145,9 @@ def process_subject_session(
             task_run_counter[task_name] += 1
             run = task_run_counter[task_name]
             bold_acq_count += 1
+
+            # Track acq ID for physio matching
+            acq_id_to_task[acq.id] = {"task": task_name, "run": run}
 
             if not selected:
                 logger.error(
@@ -235,6 +263,36 @@ def process_subject_session(
         for sidecar_path in bold_sidecars:
             if sidecar_path.exists():
                 patch_sidecar(sidecar_path, b0_field_source=fieldmap_id)
+
+    # Process physio data from gephysio analyses
+    if acq_id_to_task:
+        try:
+            fw_session = session_info["fw_session"].reload()
+            physio_analyses = find_gephysio_analyses(fw_session)
+            if physio_analyses:
+                matched = match_analyses_to_acquisitions(
+                    physio_analyses, acq_id_to_task
+                )
+                func_dir = sub_dir / "func"
+                for match in matched:
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        dl_dir = download_physio_analysis(
+                            match["analysis"], tmpdir
+                        )
+                        for channel in ("cardiac", "respiratory"):
+                            convert_physio_to_bids(
+                                input_dir=dl_dir,
+                                output_dir=func_dir,
+                                subject=subject_label,
+                                session=bids_ses,
+                                task=match["task"],
+                                run=match["run"],
+                                channel=channel,
+                            )
+        except Exception:
+            logger.exception(
+                "Failed to process physio for %s %s", subject_label, bids_ses
+            )
 
     # Generate session warnings for reconciliation
     if bold_acq_count == 0:

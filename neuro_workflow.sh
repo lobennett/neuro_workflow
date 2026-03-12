@@ -1,0 +1,1 @@
+sbatch --wrap="apptainer build --fakeroot --force /home/groups/russpold/singularity_images/neuro_workflow.sif /home/users/logben/neuro_workflow/neuro_workflow.def" --partition=russpold --mem=8G --time=00:30:00
