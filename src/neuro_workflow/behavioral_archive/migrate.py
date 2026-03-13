@@ -149,7 +149,7 @@ def migrate_out_of_scanner_data(
     Args:
         archive_dir: Path to archive/out_of_scanner
         dest_dir: Path to output sourcedata/out_scanner_behavior
-        samples: Sample dict from load_samples_from_config
+        samples: Sample dict from load_samples_from_config (includes 'excluded' key)
         dry_run: If True, don't actually copy files
 
     Returns:
@@ -159,6 +159,7 @@ def migrate_out_of_scanner_data(
     dest_dir = Path(dest_dir)
 
     stats = {"migrated": 0, "skipped": 0, "skipped_not_in_sample": 0, "errors": 0}
+    excluded = samples.get("excluded", {})
 
     for subject_dir in sorted(archive_dir.iterdir()):
         if not subject_dir.is_dir():
@@ -169,6 +170,13 @@ def migrate_out_of_scanner_data(
             continue
 
         subject = subject_dir.name
+
+        # Check if excluded
+        if subject in excluded:
+            logger.info(f"Subject {subject} excluded ({excluded[subject]}), skipping")
+            # Count all files in this subject (excluding hidden files)
+            stats["skipped_not_in_sample"] += len([f for f in subject_dir.iterdir() if f.is_file() and not f.name.startswith(".")])
+            continue
 
         # Check if in sample
         if not is_subject_in_sample(subject, samples):
@@ -225,7 +233,7 @@ def migrate_survey_data(
     Args:
         archive_dir: Path to archive/survey_data/prescan_surveys/raw
         dest_dir: Path to output sourcedata/survey_data
-        samples: Sample dict from load_samples_from_config
+        samples: Sample dict from load_samples_from_config (includes 'excluded' key)
         dry_run: If True, don't actually write files
 
     Returns:
@@ -235,6 +243,7 @@ def migrate_survey_data(
     dest_dir = Path(dest_dir)
 
     stats = {"migrated": 0, "skipped": 0, "skipped_not_in_sample": 0, "errors": 0}
+    excluded = samples.get("excluded", {})
 
     for subject_dir in sorted(archive_dir.iterdir()):
         if not subject_dir.is_dir():
@@ -245,6 +254,13 @@ def migrate_survey_data(
             continue
 
         subject = subject_dir.name
+
+        # Check if excluded
+        if subject in excluded:
+            logger.info(f"Subject {subject} excluded ({excluded[subject]}), skipping")
+            # Count all files in this subject (excluding hidden files)
+            stats["skipped_not_in_sample"] += len([f for f in subject_dir.iterdir() if f.is_file() and not f.name.startswith(".")])
+            continue
 
         if not is_subject_in_sample(subject, samples):
             logger.info(f"Subject {subject} not in discovery/validation sample, skipping")
