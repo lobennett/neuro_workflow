@@ -169,6 +169,12 @@ def main():
         default=None,
         help="BIDS root for writing .bidsignore (default: output-dir/../../)",
     )
+    parser.add_argument(
+        "--excluded-output-dir",
+        type=Path,
+        default=None,
+        help="Optional: output directory for excluded subjects' behavioral files",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Print plan without copying")
     args = parser.parse_args()
 
@@ -203,16 +209,27 @@ def main():
     total_skipped_subjects = 0
 
     for subject, info in sorted(subjects.items()):
-        # Skip excluded subjects
-        if info.get("excluded", False):
+        # Handle excluded subjects
+        if info.get("excluded", False) and not args.excluded_output_dir:
+            # No excluded output dir specified, skip excluded subjects
             log.info(
                 "Skipping excluded subject %s: %s",
                 subject,
                 info.get("exclude_reason", "no reason given"),
             )
-            bidsignore_entries.append(f"sub-{subject}/")
             total_skipped_subjects += 1
             continue
+
+        # Determine output directory for this subject
+        if info.get("excluded", False) and args.excluded_output_dir:
+            log.info(
+                "Processing excluded subject %s to %s",
+                subject,
+                args.excluded_output_dir,
+            )
+            subject_output_dir = args.excluded_output_dir
+        else:
+            subject_output_dir = args.output_dir
 
         mappings = info.get("mappings", [])
         if not mappings:
@@ -264,7 +281,7 @@ def main():
                     )
                     continue
 
-                out_path = build_output_path(args.output_dir, subject, bids_ses, task_name)
+                out_path = build_output_path(subject_output_dir, subject, bids_ses, task_name)
                 if not args.dry_run:
                     out_path.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(csv_file, out_path)

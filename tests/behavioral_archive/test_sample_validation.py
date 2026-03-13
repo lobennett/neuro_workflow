@@ -64,3 +64,25 @@ def test_load_samples_from_session_config(tmp_path):
 
     assert set(samples["discovery"]) == {"s03", "s10"}
     assert set(samples["validation"]) == {"s247", "s528"}
+
+
+def test_load_samples_from_subjects_dict(tmp_path):
+    """Load samples from config with subjects-dict format (current format with excluded)."""
+    config_file = tmp_path / "behavioral_session_mapping.json"
+    config_data = {
+        "subjects": {
+            "s03": {"sample": "discovery", "excluded": False},
+            "s10": {"sample": "discovery", "excluded": False},
+            "s247": {"sample": "validation", "excluded": False},
+            "s528": {"sample": "validation", "excluded": False},
+            "s214": {"sample": "validation", "excluded": True, "exclude_reason": "poor data quality"},
+            "s222": {"sample": "validation", "excluded": True, "exclude_reason": "incomplete session"},
+        }
+    }
+    config_file.write_text(json.dumps(config_data))
+
+    samples = load_samples_from_config(str(config_file))
+
+    assert set(samples["discovery"]) == {"s03", "s10"}
+    assert set(samples["validation"]) == {"s247", "s528"}
+    assert samples["excluded"] == {"s214": "poor data quality", "s222": "incomplete session"}

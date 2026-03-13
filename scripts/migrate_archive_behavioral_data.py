@@ -63,6 +63,12 @@ def main():
         help="Path to behavioral_session_mapping.json",
     )
     parser.add_argument(
+        "--excluded-sourcedata-dir",
+        type=Path,
+        default=None,
+        help="Optional: output directory for excluded subjects' sourcedata",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Preview migration without copying files",
@@ -100,8 +106,9 @@ def main():
 
     archive_out = args.archive_dir / "out_of_scanner"
     dest_out = args.sourcedata_dir / "out_scanner_behavior"
+    excluded_out = args.excluded_sourcedata_dir / "out_scanner_behavior" if args.excluded_sourcedata_dir else None
     out_stats = migrate_out_of_scanner_data(
-        archive_out, dest_out, samples, dry_run=args.dry_run
+        archive_out, dest_out, samples, dry_run=args.dry_run, excluded_dest_dir=excluded_out
     )
     logger.info(
         f"Out-of-scanner: {out_stats['migrated']} migrated, "
@@ -115,8 +122,9 @@ def main():
 
     archive_survey = args.archive_dir / "survey_data" / "prescan_surveys" / "raw"
     dest_survey = args.sourcedata_dir / "survey_data"
+    excluded_survey = args.excluded_sourcedata_dir / "survey_data" if args.excluded_sourcedata_dir else None
     survey_stats = migrate_survey_data(
-        archive_survey, dest_survey, samples, dry_run=args.dry_run
+        archive_survey, dest_survey, samples, dry_run=args.dry_run, excluded_dest_dir=excluded_survey
     )
     logger.info(
         f"Survey: {survey_stats['migrated']} migrated, "
