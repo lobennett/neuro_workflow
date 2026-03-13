@@ -26,11 +26,19 @@ def test_migration_end_to_end(tmp_path):
     (out_data / "s528").mkdir(parents=True)
     (out_data / "s528" / "s528_stop_signal_single_task.csv").write_text("s528,data")
 
-    # survey data
+    # survey data (with valid JSON structure for conversion)
+    survey_json = json.dumps({
+        "worker_id": "test",
+        "experiment_id": "prescan",
+        "battery_name": "Prescan",
+        "finishtime": "2024-01-01T00:00:00Z",
+        "completed": True,
+        "data": {}
+    })
     survey_data = archive_root / "behavioral_data" / "survey_data" / "prescan_surveys" / "raw"
     (survey_data / "s247").mkdir(parents=True)
-    (survey_data / "s247" / "prescan_1.json").write_text("{}")
-    (survey_data / "s247" / "prescan_2.json").write_text("{}")
+    (survey_data / "s247" / "prescan_1.json").write_text(survey_json)
+    (survey_data / "s247" / "prescan_2.json").write_text(survey_json)
 
     # Create config
     config = tmp_path / "config.json"
@@ -66,9 +74,9 @@ def test_migration_end_to_end(tmp_path):
     assert (sourcedata / "out_scanner_behavior" / "sub-s247" / "sub-s247_task-flanker_behavior.csv").exists()
     assert (sourcedata / "out_scanner_behavior" / "sub-s528" / "sub-s528_task-stopSignal_behavior.csv").exists()
 
-    # Verify survey output
-    assert (sourcedata / "survey_data" / "sub-s247" / "sub-s247_prescan-01_survey.json").exists()
-    assert (sourcedata / "survey_data" / "sub-s247" / "sub-s247_prescan-02_survey.json").exists()
+    # Verify survey output (now CSV format)
+    assert (sourcedata / "survey_data" / "sub-s247" / "sub-s247_prescan-01_survey.csv").exists()
+    assert (sourcedata / "survey_data" / "sub-s247" / "sub-s247_prescan-02_survey.csv").exists()
 
     # Verify report
     report_path = sourcedata / "behavioral_migration_report.json"

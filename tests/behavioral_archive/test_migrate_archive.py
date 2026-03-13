@@ -70,13 +70,24 @@ def test_migrate_out_of_scanner_data(tmp_path):
 
 def test_migrate_survey_data(tmp_path):
     """Migrate survey data only for subjects in sample."""
-    # Setup archive
+    import json
+
+    # Setup archive with valid survey JSON
+    survey_json = {
+        "worker_id": "test",
+        "experiment_id": "prescan",
+        "battery_name": "Prescan",
+        "finishtime": "2024-01-01T00:00:00Z",
+        "completed": True,
+        "data": {}
+    }
+
     archive_survey = tmp_path / "archive" / "survey_data" / "prescan_surveys" / "raw"
     (archive_survey / "s247").mkdir(parents=True)
-    (archive_survey / "s247" / "prescan_1.json").write_text("{}")
-    (archive_survey / "s247" / "prescan_2.json").write_text("{}")
+    (archive_survey / "s247" / "prescan_1.json").write_text(json.dumps(survey_json))
+    (archive_survey / "s247" / "prescan_2.json").write_text(json.dumps(survey_json))
     (archive_survey / "s528").mkdir(parents=True)
-    (archive_survey / "s528" / "prescan_1.json").write_text("{}")
+    (archive_survey / "s528" / "prescan_1.json").write_text(json.dumps(survey_json))
 
     config = {"discovery": ["s247"], "validation": ["s528"]}
 
@@ -86,6 +97,6 @@ def test_migrate_survey_data(tmp_path):
 
     # Should migrate all (both in sample)
     assert stats["migrated"] == 3
-    assert (dest_survey / "sub-s247" / "sub-s247_prescan-01_survey.json").exists()
-    assert (dest_survey / "sub-s247" / "sub-s247_prescan-02_survey.json").exists()
-    assert (dest_survey / "sub-s528" / "sub-s528_prescan-01_survey.json").exists()
+    assert (dest_survey / "sub-s247" / "sub-s247_prescan-01_survey.csv").exists()
+    assert (dest_survey / "sub-s247" / "sub-s247_prescan-02_survey.csv").exists()
+    assert (dest_survey / "sub-s528" / "sub-s528_prescan-01_survey.csv").exists()

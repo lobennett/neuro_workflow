@@ -20,6 +20,7 @@ from neuro_workflow.behavioral_archive.migrate import (
     migrate_mturk_data,
     migrate_out_of_scanner_data,
     migrate_survey_data,
+    migrate_demographics_to_survey_data,
 )
 from neuro_workflow.behavioral_archive.sample_validation import load_samples_from_config
 
@@ -123,6 +124,19 @@ def main():
         f"{survey_stats['errors']} errors"
     )
 
+    logger.info("=" * 60)
+    logger.info("DEMOGRAPHICS SURVEY MIGRATION")
+    logger.info("=" * 60)
+
+    archive_mturk = args.archive_dir / "mTurk" / "all_data"
+    demographics_stats = migrate_demographics_to_survey_data(
+        archive_mturk, dest_survey, samples, dry_run=args.dry_run
+    )
+    logger.info(
+        f"Demographics: {demographics_stats['migrated']} migrated, "
+        f"{demographics_stats['errors']} errors"
+    )
+
     # Generate report
     report = {
         "timestamp": datetime.now().isoformat(),
@@ -130,7 +144,8 @@ def main():
         "mturk": mturk_stats,
         "out_of_scanner": out_stats,
         "survey": survey_stats,
-        "total_migrated": mturk_stats["migrated"] + out_stats["migrated"] + survey_stats["migrated"],
+        "demographics": demographics_stats,
+        "total_migrated": mturk_stats["migrated"] + out_stats["migrated"] + survey_stats["migrated"] + demographics_stats["migrated"],
     }
 
     report_path = args.sourcedata_dir / "behavioral_migration_report.json"

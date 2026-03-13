@@ -134,3 +134,37 @@ def normalize_survey_filename(filename: str, subject: str = None) -> str:
         return f"sub-{subject}_prescan-{padded_number}_survey.{ext}"
     else:
         return f"prescan-{padded_number}_survey.{ext}"
+
+
+def normalize_demographics_filename(filename: str, subject: str = None) -> str:
+    """
+    Normalize demographics survey filename: demographics_survey__stanford__nih_sXXX.csv
+    -> sub-sXXX_demographics_survey.json (converted to JSON)
+
+    Args:
+        filename: Archive filename (e.g., "demographics_survey__stanford__nih_s528.csv")
+        subject: Subject ID to extract from filename or use directly
+
+    Returns:
+        BIDS-normalized filename with .json extension
+
+    Raises:
+        ValueError: If filename cannot be parsed
+    """
+    # Extract extension
+    parts = filename.rsplit(".", 1)
+    if len(parts) != 2:
+        raise ValueError(f"Could not parse demographics filename: {filename}")
+
+    stem = parts[0]
+
+    # Extract subject from filename if not provided
+    if not subject:
+        # Format: demographics_survey__stanford__nih_sXXX
+        match = re.search(r"(s\d+)", stem)
+        if not match:
+            raise ValueError(f"Could not parse demographics filename: {filename}")
+        subject = match.group(1)
+
+    # Always output as JSON for consistency with prescan surveys
+    return f"sub-{subject}_demographics_survey.json"
