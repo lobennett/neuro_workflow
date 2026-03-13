@@ -41,6 +41,10 @@ def migrate_mturk_data(
         if not subject_dir.is_dir():
             continue
 
+        # Skip hidden directories (.svn, .DS_Store, etc.)
+        if subject_dir.name.startswith("."):
+            continue
+
         subject = subject_dir.name
         dest_subject = dest_dir / f"sub-{subject}"
 
@@ -49,12 +53,16 @@ def migrate_mturk_data(
             if not src_file.is_file():
                 continue
 
+            # Skip hidden/system files
+            if src_file.name.startswith("."):
+                continue
+
             # Normalize filename
             try:
                 normalized_name = normalize_mturk_filename(src_file.name)
             except ValueError as e:
-                logger.warning(f"Could not normalize {src_file.name}: {e}")
-                stats["errors"] += 1
+                logger.debug(f"Skipped non-behavioral file {src_file.name}: {e}")
+                stats["skipped"] += 1
                 continue
 
             dest_file = dest_subject / normalized_name
@@ -93,10 +101,14 @@ def migrate_out_of_scanner_data(
     archive_dir = Path(archive_dir)
     dest_dir = Path(dest_dir)
 
-    stats = {"migrated": 0, "skipped_not_in_sample": 0, "errors": 0}
+    stats = {"migrated": 0, "skipped": 0, "skipped_not_in_sample": 0, "errors": 0}
 
     for subject_dir in sorted(archive_dir.iterdir()):
         if not subject_dir.is_dir():
+            continue
+
+        # Skip hidden directories (.svn, .DS_Store, etc.)
+        if subject_dir.name.startswith("."):
             continue
 
         subject = subject_dir.name
@@ -104,8 +116,8 @@ def migrate_out_of_scanner_data(
         # Check if in sample
         if not is_subject_in_sample(subject, samples):
             logger.info(f"Subject {subject} not in discovery/validation sample, skipping")
-            # Count all files in this subject
-            stats["skipped_not_in_sample"] += len(list(subject_dir.iterdir()))
+            # Count all files in this subject (excluding hidden files)
+            stats["skipped_not_in_sample"] += len([f for f in subject_dir.iterdir() if f.is_file() and not f.name.startswith(".")])
             continue
 
         dest_subject = dest_dir / f"sub-{subject}"
@@ -114,11 +126,15 @@ def migrate_out_of_scanner_data(
             if not src_file.is_file():
                 continue
 
+            # Skip hidden/system files
+            if src_file.name.startswith("."):
+                continue
+
             try:
                 normalized_name = normalize_out_of_scanner_filename(src_file.name)
             except ValueError as e:
-                logger.warning(f"Could not normalize {src_file.name}: {e}")
-                stats["errors"] += 1
+                logger.debug(f"Skipped non-behavioral file {src_file.name}: {e}")
+                stats["skipped"] += 1
                 continue
 
             dest_file = dest_subject / normalized_name
@@ -157,17 +173,22 @@ def migrate_survey_data(
     archive_dir = Path(archive_dir)
     dest_dir = Path(dest_dir)
 
-    stats = {"migrated": 0, "skipped_not_in_sample": 0, "errors": 0}
+    stats = {"migrated": 0, "skipped": 0, "skipped_not_in_sample": 0, "errors": 0}
 
     for subject_dir in sorted(archive_dir.iterdir()):
         if not subject_dir.is_dir():
+            continue
+
+        # Skip hidden directories (.svn, .DS_Store, etc.)
+        if subject_dir.name.startswith("."):
             continue
 
         subject = subject_dir.name
 
         if not is_subject_in_sample(subject, samples):
             logger.info(f"Subject {subject} not in discovery/validation sample, skipping")
-            stats["skipped_not_in_sample"] += len(list(subject_dir.iterdir()))
+            # Count all files in this subject (excluding hidden files)
+            stats["skipped_not_in_sample"] += len([f for f in subject_dir.iterdir() if f.is_file() and not f.name.startswith(".")])
             continue
 
         dest_subject = dest_dir / f"sub-{subject}"
@@ -176,11 +197,15 @@ def migrate_survey_data(
             if not src_file.is_file():
                 continue
 
+            # Skip hidden/system files
+            if src_file.name.startswith("."):
+                continue
+
             try:
                 normalized_name = normalize_survey_filename(src_file.name, subject=subject)
             except ValueError as e:
-                logger.warning(f"Could not normalize {src_file.name}: {e}")
-                stats["errors"] += 1
+                logger.debug(f"Skipped non-standard survey file {src_file.name}: {e}")
+                stats["skipped"] += 1
                 continue
 
             dest_file = dest_subject / normalized_name
