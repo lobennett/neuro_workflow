@@ -16,12 +16,12 @@ import logging
 from pathlib import Path
 from datetime import datetime
 
-from src.neuro_workflow.behavioral_archive.migrate import (
+from neuro_workflow.behavioral_archive.migrate import (
     migrate_mturk_data,
     migrate_out_of_scanner_data,
     migrate_survey_data,
 )
-from src.neuro_workflow.behavioral_archive.sample_validation import load_samples_from_config
+from neuro_workflow.behavioral_archive.sample_validation import load_samples_from_config
 
 
 def setup_logging(verbose: bool = False):
