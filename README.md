@@ -150,9 +150,50 @@ neuro-run events trim discovery
 
 The QC step saves exclusions to `~/.neuro_workflow/exclusions/discovery/sources/behavioral-qc.json` and a trim list to `{bids_dir}/sourcedata/behavioral_qc/trim_list.json`.
 
+### Directory Structure
+
+Behavioral data is organized into three separate locations:
+
+1. **in_scanner_behavior** — Behavioral task data collected during fMRI scanning (discovery/validation subjects only)
+   - Source: `scripts/rename_behavioral_to_sourcedata.py`
+   - Location: `sourcedata/in_scanner_behavior/sub-XXX/`
+
+2. **out_scanner_behavior** — Behavioral data collected outside scanner (discovery/validation subjects only)
+   - Source: `scripts/migrate_archive_behavioral_data.py` (one-time migration)
+   - Location: `sourcedata/out_scanner_behavior/sub-XXX/`
+
+3. **survey_data** — Prescan survey responses (discovery/validation subjects only)
+   - Source: `scripts/migrate_archive_behavioral_data.py` (one-time migration)
+   - Location: `sourcedata/survey_data/sub-XXX/`
+
+4. **mTurk** — Behavioral data from separate mTurk sample (all subjects)
+   - Source: `scripts/migrate_archive_behavioral_data.py` (one-time migration)
+   - Location: `mTurk/sub-XXX/`
+
 ### Known Data Issues
 
 Session-level data issues are documented in `config/behavioral_session_mapping.json` (irreconcilable runs, skipped sessions) and `docs/scan-notes.md` (operator notes for excluded and incomplete subjects).
+
+---
+
+## One-Time Archive Migration
+
+Behavioral data from the archive directory must be migrated once to organize it into the proper structure above. This is done via:
+
+```bash
+python scripts/migrate_archive_behavioral_data.py \
+    --archive-dir /oak/stanford/groups/russpold/data/network_grant/_archive_someone_plz_clean/behavioral_data \
+    --sourcedata-dir /oak/stanford/groups/russpold/data/network_grant/sourcedata \
+    --mturk-dir /oak/stanford/groups/russpold/data/network_grant/mTurk \
+    --config config/behavioral_session_mapping.json \
+    --dry-run  # optional: preview without copying
+```
+
+This script:
+- Validates subjects against discovery/validation sample lists
+- Normalizes filenames to BIDS camelCase format
+- Copies files to appropriate locations
+- Generates a report of migration statistics and missing data
 
 ---
 
