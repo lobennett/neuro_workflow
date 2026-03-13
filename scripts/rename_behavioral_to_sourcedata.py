@@ -8,7 +8,7 @@ directory structure.
 Usage:
     python scripts/rename_behavioral_to_sourcedata.py \
         --input-dir /oak/.../behavioral_data/raw_cleaned \
-        --output-dir /scratch/users/logben/discovery_bids/sourcedata/behavioral \
+        --output-dir /scratch/users/logben/discovery_bids/sourcedata/in_scanner_behavior \
         --sample discovery \
         [--bids-dir /scratch/users/logben/discovery_bids] \
         [--dry-run]
