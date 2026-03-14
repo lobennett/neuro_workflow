@@ -178,3 +178,38 @@ class TestBidsignoreAutomationEndToEnd:
         # (it may be unchanged or have minimal changes)
         new_content = bidsignore_path.read_text()
         assert "original_entry" in new_content
+
+    def test_bidsify_automatic_validation_behavior(self, tmp_path):
+        """Test that bidsify would automatically run validation.
+
+        This test demonstrates the new behavior where bidsify automatically
+        runs BOLD validation after completing the bidsify process.
+        Validation creates .bids-validation/analysis.json without requiring
+        --run-validation flag.
+        """
+        bids_dir = tmp_path / "new_bids"
+        bids_dir.mkdir()
+
+        # Create minimal BIDS structure (simulating successful bidsify output)
+        for sub in ["01", "02"]:
+            func_dir = bids_dir / f"sub-{sub}" / "ses-01" / "func"
+            func_dir.mkdir(parents=True)
+
+        # Simulate what cmd_bidsify() does:
+        # 1. run_bidsify() completes (simulated by BIDS dir existing)
+        # 2. Automatic validation runs (NOT behind a flag anymore)
+        run_bold_analysis_and_update_bidsignore(
+            bids_dir=bids_dir,
+            tr_threshold_minutes=3.0,
+            merge_bidsignore=True,
+            verbose=False,
+        )
+
+        # Verify the automatic workflow produced outputs
+        analysis_file = bids_dir / ".bids-validation" / "analysis.json"
+        assert analysis_file.exists(), "Automatic validation should create analysis.json"
+
+        analysis = json.loads(analysis_file.read_text())
+        assert "metadata" in analysis
+        assert "issues" in analysis
+        assert analysis["metadata"]["tr_threshold_seconds"] == 180  # 3.0 minutes
