@@ -205,14 +205,34 @@ def cmd_bidsify(args):
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     from neuro_workflow.bidsify.run import run_bidsify
+    from neuro_workflow.bidsify.integration import run_bold_analysis_and_update_bidsignore
+    from pathlib import Path
+
     subjects = args.subjects if args.subjects else None
+    output_dir = Path(args.output_dir)
+
     run_bidsify(
         sample_name=args.sample,
-        output_dir=args.output_dir,
+        output_dir=output_dir,
         subjects=subjects,
         flywheel_project=args.flywheel_project,
         overwrite=args.overwrite,
     )
+
+    # Run BOLD analysis if requested
+    if args.run_validation:
+        try:
+            run_bold_analysis_and_update_bidsignore(
+                bids_dir=output_dir,
+                tr_threshold_minutes=args.tr_threshold_minutes,
+                merge_bidsignore=True,
+                verbose=args.verbose,
+            )
+        except Exception as e:
+            logging.error(f"BOLD analysis failed: {e}")
+            if args.validation_fail_hard:
+                raise
+            # Otherwise, log warning and continue
 
 
 def cmd_events_create(args, remaining):
@@ -318,6 +338,10 @@ def main():
     bidsify_p.add_argument("--subjects", nargs="+", help="Subject labels to process (default: all in sample)")
     bidsify_p.add_argument("--flywheel-project", default=None, help="Flywheel project label")
     bidsify_p.add_argument("--overwrite", action="store_true", help="Overwrite existing output")
+    bidsify_p.add_argument("--run-validation", action="store_true", help="Run BOLD validation analysis after bidsify")
+    bidsify_p.add_argument("--tr-threshold-minutes", type=float, default=3.0, help="TR threshold for short scans in minutes (default: 3.0)")
+    bidsify_p.add_argument("--validation-fail-hard", action="store_true", help="Fail if BOLD validation fails (default: warn and continue)")
+    bidsify_p.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     bidsify_p.set_defaults(func=lambda args, remaining: cmd_bidsify(args))
 
     # events

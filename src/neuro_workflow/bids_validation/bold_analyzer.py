@@ -6,6 +6,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -382,3 +383,68 @@ class BoldAnalyzer:
             lines.append("")
 
         return "\n".join(lines)
+
+    def save_analysis_report(self, output_file: Path) -> None:
+        """Save analysis results as JSON with full details.
+
+        Parameters
+        ----------
+        output_file : Path
+            Path to write JSON report to
+        """
+        issues_by_category = self.analyze()
+
+        # Convert ScanIssue objects to JSON-serializable dicts
+        report = {
+            "metadata": {
+                "bids_dir": str(self.bids_dir),
+                "tr_threshold_seconds": self.tr_threshold_seconds,
+                "generated": datetime.now(timezone.utc).isoformat(),
+            },
+            "issues": {},
+        }
+
+        for category, issues in sorted(issues_by_category.items()):
+            report["issues"][category] = [
+                {
+                    "subject": issue.subject,
+                    "session": issue.session,
+                    "task": issue.task,
+                    "run": issue.run,
+                    "echo": issue.echo,
+                    "reason": issue.reason,
+                    "filepath": issue.filepath,
+                    "timepoints": issue.timepoints,
+                    "duration_seconds": issue.duration_seconds,
+                    "tr_seconds": issue.tr_seconds,
+                }
+                for issue in sorted(
+                    issues,
+                    key=lambda x: (x.subject, x.session, x.task, x.run or 0, x.echo or 0),
+                )
+            ]
+
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(json.dumps(report, indent=2))
+        if self.verbose:
+            logger.info(f"Saved analysis report to {output_file}")
+
+    def save_bidsignore_entries(
+        self,
+        output_file: Path,
+        exclude_categories: Optional[List[str]] = None,
+    ) -> None:
+        """Save .bidsignore entries to file.
+
+        Parameters
+        ----------
+        output_file : Path
+            Path to write .bidsignore entries to (for merging)
+        exclude_categories : Optional[List[str]]
+            List of category names to exclude from output
+        """
+        content = self.generate_bidsignore_entries(exclude_categories)
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(content)
+        if self.verbose:
+            logger.info(f"Saved .bidsignore entries to {output_file}")
