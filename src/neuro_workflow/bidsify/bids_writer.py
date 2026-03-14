@@ -29,13 +29,32 @@ def patch_sidecar(
     b0_field_source: str | None = None,
     **extra_fields,
 ) -> None:
+    """Patch a BIDS JSON sidecar with additional metadata fields.
+
+    Args:
+        sidecar_path: Path to JSON sidecar file
+        b0_field_identifier: B0FieldIdentifier to add
+        b0_field_source: B0FieldSource to add
+        **extra_fields: Additional fields to patch
+
+    Raises:
+        json.JSONDecodeError: If JSON is invalid
+        IOError: If file cannot be read/written
+    """
     sidecar_path = Path(sidecar_path)
-    data = json.loads(sidecar_path.read_text())
+
+    # Read and validate JSON
+    json_content = sidecar_path.read_text()
+    data = json.loads(json_content)  # Will raise JSONDecodeError if invalid
+
+    # Patch fields
     if b0_field_identifier is not None:
         data["B0FieldIdentifier"] = b0_field_identifier
     if b0_field_source is not None:
         data["B0FieldSource"] = b0_field_source
     data.update(extra_fields)
+
+    # Write with formatting
     sidecar_path.write_text(json.dumps(data, indent=2))
 
 
