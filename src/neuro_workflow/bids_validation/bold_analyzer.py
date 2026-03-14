@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,12 @@ except ImportError:
 
 
 class ScanCategory(str, Enum):
-    """Categories of BOLD scan issues."""
+    """Categories of BOLD scan issues.
+
+    Note: Only problematic scans are reported; normal scans are not included in
+    analyze() results. The NORMAL value is reserved for future use in distinguishing
+    between different scan classifications.
+    """
 
     NORMAL = "normal"
     SHORT_SCAN = "short_scan"
@@ -114,7 +119,8 @@ class BoldAnalyzer:
         Returns
         -------
         Dict[str, List[ScanIssue]]
-            Issues grouped by category name
+            Issues grouped by category name. Only problematic scans are included;
+            scans that pass all validation checks are not reported.
         """
         issues_by_category: Dict[str, List[ScanIssue]] = {}
 
@@ -246,6 +252,10 @@ class BoldAnalyzer:
                 f"({num_timepoints} TRs × {tr}s = {duration_seconds:.1f}s, "
                 f"threshold: {self.tr_threshold_seconds:.1f}s)"
             )
+            short_scan_reason = (
+                f"Scan duration {duration_seconds:.1f}s below threshold "
+                f"{self.tr_threshold_seconds:.1f}s"
+            )
             return ScanIssue(
                 subject=subject,
                 session=session,
@@ -253,7 +263,7 @@ class BoldAnalyzer:
                 run=run,
                 echo=echo,
                 category=ScanCategory.SHORT_SCAN,
-                reason=f"Scan duration {duration_seconds:.1f}s below threshold {self.tr_threshold_seconds:.1f}s",
+                reason=short_scan_reason,
                 filepath=str(bold_file),
                 timepoints=num_timepoints,
                 duration_seconds=duration_seconds,
@@ -263,7 +273,9 @@ class BoldAnalyzer:
         # No issues found
         return None
 
-    def _parse_bold_filename(self, bold_file: Path) -> Optional[tuple]:
+    def _parse_bold_filename(
+        self, bold_file: Path
+    ) -> Optional[Tuple[str, int, str, Optional[int], Optional[int]]]:
         """Parse BOLD filename to extract BIDS entities.
 
         Parameters
@@ -273,16 +285,26 @@ class BoldAnalyzer:
 
         Returns
         -------
-        Optional[tuple]
-            Tuple of (subject, session, task, run, echo) or None if parsing fails
+        Optional[Tuple[str, int, str, Optional[int], Optional[int]]]
+            Tuple of (subject, session, task, run, echo) or None if parsing fails.
+            Components:
+            - subject: BIDS subject label
+            - session: Session number (parsed as int from string)
+            - task: Task label
+            - run: Run number (optional)
+            - echo: Echo number (optional)
         """
         filename = bold_file.name
         # Remove .nii.gz extension
         if filename.endswith(".nii.gz"):
             filename = filename[:-7]
 
-        # BIDS filename pattern: sub-<label>_ses-<label>_task-<label>_[run-<index>_][echo-<index>_]bold
-        pattern = r"sub-([a-zA-Z0-9]+)_ses-(\d+)_task-([a-zA-Z0-9]+)(?:_run-(\d+))?(?:_echo-(\d+))?"
+        # BIDS filename pattern:
+        # sub-<label>_ses-<label>_task-<label>_[run-<index>_][echo-<index>_]bold
+        pattern = (
+            r"sub-([a-zA-Z0-9]+)_ses-(\d+)_task-([a-zA-Z0-9]+)"
+            r"(?:_run-(\d+))?(?:_echo-(\d+))?"
+        )
 
         match = re.match(pattern, filename)
         if not match:
