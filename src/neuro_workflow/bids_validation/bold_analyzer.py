@@ -94,6 +94,7 @@ class BoldAnalyzer:
         self,
         bids_dir: Path,
         tr_threshold_minutes: float = 3.0,
+        task_tr_counts: Optional[Dict[str, int]] = None,
         verbose: bool = False,
     ) -> None:
         """Initialize BOLD analyzer.
@@ -103,16 +104,37 @@ class BoldAnalyzer:
         bids_dir : Path
             Path to BIDS dataset directory
         tr_threshold_minutes : float, optional
-            Minimum scan duration in minutes (default: 3.0)
+            Global minimum scan duration in minutes (default: 3.0).
+            Used only as fallback when task_tr_counts is not provided.
+        task_tr_counts : Optional[Dict[str, int]], optional
+            Per-task TR count specifications. Dict maps task name to min acceptable TR count.
+            If provided, uses per-task detection. Otherwise falls back to duration-based.
         verbose : bool, optional
             Enable verbose logging (default: False)
         """
         self.bids_dir = Path(bids_dir)
         self.tr_threshold_seconds = tr_threshold_minutes * 60
+        self.task_tr_counts = task_tr_counts or {}
         self.verbose = verbose
+        self.use_tr_based_detection = len(self.task_tr_counts) > 0
 
         if not self.bids_dir.exists():
             logger.warning(f"BIDS directory does not exist: {self.bids_dir}")
+
+    def _get_min_tr_count_for_task(self, task: str) -> Optional[int]:
+        """Get minimum acceptable TR count for a task.
+
+        Parameters
+        ----------
+        task : str
+            Task name
+
+        Returns
+        -------
+        Optional[int]
+            Minimum acceptable TR count, or None if not defined for this task.
+        """
+        return self.task_tr_counts.get(task)
 
     def analyze(self) -> Dict[str, List[ScanIssue]]:
         """Analyze all BOLD files in BIDS dataset.
@@ -247,29 +269,55 @@ class BoldAnalyzer:
         num_timepoints = img.shape[3]
         duration_seconds = num_timepoints * tr
 
-        if duration_seconds < self.tr_threshold_seconds:
-            logger.warning(
-                f"Short BOLD scan detected: {bold_file.name} "
-                f"({num_timepoints} TRs × {tr}s = {duration_seconds:.1f}s, "
-                f"threshold: {self.tr_threshold_seconds:.1f}s)"
-            )
-            short_scan_reason = (
-                f"Scan duration {duration_seconds:.1f}s below threshold "
-                f"{self.tr_threshold_seconds:.1f}s"
-            )
-            return ScanIssue(
-                subject=subject,
-                session=session,
-                task=task,
-                run=run,
-                echo=echo,
-                category=ScanCategory.SHORT_SCAN,
-                reason=short_scan_reason,
-                filepath=str(bold_file),
-                timepoints=num_timepoints,
-                duration_seconds=duration_seconds,
-                tr_seconds=tr,
-            )
+        # Use TR-based detection if available, otherwise fall back to duration-based
+        if self.use_tr_based_detection:
+            min_acceptable_trs = self._get_min_tr_count_for_task(task)
+            if min_acceptable_trs is not None and num_timepoints < min_acceptable_trs:
+                logger.warning(
+                    f"Short BOLD scan detected: {bold_file.name} "
+                    f"({num_timepoints} TRs, minimum {min_acceptable_trs} TRs required)"
+                )
+                short_scan_reason = (
+                    f"Scan has {num_timepoints} TRs, but minimum {min_acceptable_trs} TRs required"
+                )
+                return ScanIssue(
+                    subject=subject,
+                    session=session,
+                    task=task,
+                    run=run,
+                    echo=echo,
+                    category=ScanCategory.SHORT_SCAN,
+                    reason=short_scan_reason,
+                    filepath=str(bold_file),
+                    timepoints=num_timepoints,
+                    duration_seconds=duration_seconds,
+                    tr_seconds=tr,
+                )
+        else:
+            # Fall back to duration-based detection
+            if duration_seconds < self.tr_threshold_seconds:
+                logger.warning(
+                    f"Short BOLD scan detected: {bold_file.name} "
+                    f"({num_timepoints} TRs × {tr}s = {duration_seconds:.1f}s, "
+                    f"threshold: {self.tr_threshold_seconds:.1f}s)"
+                )
+                short_scan_reason = (
+                    f"Scan duration {duration_seconds:.1f}s below threshold "
+                    f"{self.tr_threshold_seconds:.1f}s"
+                )
+                return ScanIssue(
+                    subject=subject,
+                    session=session,
+                    task=task,
+                    run=run,
+                    echo=echo,
+                    category=ScanCategory.SHORT_SCAN,
+                    reason=short_scan_reason,
+                    filepath=str(bold_file),
+                    timepoints=num_timepoints,
+                    duration_seconds=duration_seconds,
+                    tr_seconds=tr,
+                )
 
         # No issues found
         return None
