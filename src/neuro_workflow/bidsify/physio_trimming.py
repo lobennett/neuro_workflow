@@ -11,9 +11,19 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+__all__ = ["trim_physio_data", "update_physio_json"]
+
 
 def get_sampling_frequency(json_path: Path) -> int:
-    """Extract sampling frequency from physio JSON sidecar."""
+    """
+    Extract sampling frequency from physio JSON sidecar.
+
+    Args:
+        json_path: Path to physio JSON sidecar
+
+    Returns:
+        Sampling frequency in Hz (default: 100 if not found)
+    """
     with open(json_path) as f:
         data = json.load(f)
     return int(data.get("SamplingFrequency", 100))
@@ -46,6 +56,10 @@ def trim_physio_data(
         logger.warning(f"Physio file not found: {physio_tsv_gz}")
         return False
 
+    if not physio_json.exists():
+        logger.warning(f"Physio JSON not found: {physio_json}")
+        return False
+
     # Calculate dummy offset in milliseconds
     dummy_offset_ms = dummy_scans * tr * 1000
 
@@ -69,11 +83,18 @@ def trim_physio_data(
     trimmed_lines = data_lines[samples_to_skip:]
 
     # Apply behavioral cutoff if specified
+    applied_behavioral_cutoff = False
     if behavioral_cutoff_ms is not None:
         # Calculate how many samples to keep
         samples_to_keep = int(behavioral_cutoff_ms * samples_per_ms) - samples_to_skip
-        if samples_to_keep > 0:
+        if samples_to_keep <= 0:
+            logger.warning(
+                f"behavioral_cutoff_ms ({behavioral_cutoff_ms}ms) is less than "
+                f"dummy_offset_ms ({dummy_offset_ms:.0f}ms), skipping behavioral cutoff"
+            )
+        else:
             trimmed_lines = trimmed_lines[:samples_to_keep]
+            applied_behavioral_cutoff = True
 
     # Write trimmed data back
     with gzip.open(physio_tsv_gz, 'wt') as f:
@@ -84,7 +105,8 @@ def trim_physio_data(
     update_physio_json(
         physio_json,
         dummy_offset_ms=dummy_offset_ms,
-        behavioral_cutoff_ms=behavioral_cutoff_ms,
+        dummy_scans=dummy_scans,
+        behavioral_cutoff_ms=behavioral_cutoff_ms if applied_behavioral_cutoff else None,
     )
 
     logger.info(
@@ -98,6 +120,7 @@ def trim_physio_data(
 def update_physio_json(
     json_path: Path,
     dummy_offset_ms: float,
+    dummy_scans: int = 7,
     behavioral_cutoff_ms: Optional[float] = None,
 ) -> None:
     """
@@ -106,6 +129,7 @@ def update_physio_json(
     Args:
         json_path: Path to physio JSON sidecar
         dummy_offset_ms: Dummy scan offset in milliseconds
+        dummy_scans: Number of dummy scans removed (default: 7)
         behavioral_cutoff_ms: Optional behavioral cutoff in milliseconds
     """
     with open(json_path) as f:
@@ -117,7 +141,7 @@ def update_physio_json(
     # Update with new StartTime (in seconds)
     sidecar["StartTime"] = dummy_offset_ms / 1000.0
     sidecar["OriginalStartTime"] = original_start_time
-    sidecar["DummyScansRemoved"] = 7
+    sidecar["DummyScansRemoved"] = dummy_scans
 
     if behavioral_cutoff_ms is not None:
         sidecar["BehavioralTrimApplied"] = True

@@ -103,3 +103,50 @@ def test_trim_physio_with_behavioral_cutoff():
         assert updated["StartTime"] == 10.43
         assert updated.get("BehavioralTrimApplied") is True
         assert updated.get("BehavioralTrimPointMs") == 15000
+
+
+def test_trim_physio_behavioral_cutoff_less_than_dummy_offset():
+    """Test handling when behavioral_cutoff_ms < dummy_offset_ms."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+
+        # Create 2000 sample mock physio
+        physio_file = tmpdir / "test_physio.tsv.gz"
+        header = "cardiac\ttrigger\n"
+        data_lines = [f"{0.5}\t{0}\n" for _ in range(2000)]
+
+        with gzip.open(physio_file, 'wt') as f:
+            f.write(header)
+            f.writelines(data_lines)
+
+        # Create JSON
+        json_file = tmpdir / "test_physio.json"
+        sidecar = {
+            "SamplingFrequency": 100,
+            "StartTime": 0.0,
+            "Columns": ["cardiac", "trigger"],
+        }
+        json_file.write_text(json.dumps(sidecar))
+
+        # Trim with behavioral_cutoff_ms < dummy_offset_ms (5000 < 10430)
+        trim_physio_data(
+            physio_file,
+            json_file,
+            dummy_scans=7,
+            tr=1.49,
+            behavioral_cutoff_ms=5000,  # Less than dummy offset
+        )
+
+        # Verify file was trimmed (dummies removed but behavioral cutoff skipped)
+        with gzip.open(physio_file, 'rt') as f:
+            lines = f.readlines()
+
+        # Should have dummy-trimmed data (1000 lines), not behavioral-trimmed
+        assert len(lines) == 958  # 957 data + 1 header
+
+        # Check JSON was updated
+        updated = json.loads(json_file.read_text())
+        assert updated["StartTime"] == 10.43
+        assert updated["DummyScansRemoved"] == 7
+        # BehavioralTrimApplied should NOT be set since cutoff was invalid
+        assert updated.get("BehavioralTrimApplied") is None
