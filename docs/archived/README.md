@@ -17,7 +17,7 @@ Audit reports and resolution documents from March 2026:
 - `STATUS-UPDATE-MAR14-2026.md` - Status snapshot (earlier)
 - `STATUS-UPDATE-MAR16-2026.md` - Status snapshot (later)
 
-**When to reference:** Understanding historical problems and how they were solved. For current pipeline status, use `docs/WORKFLOW.md`.
+**When to reference:** Understanding historical problems and how they were solved. For current pipeline status, check the authoritative sources listed below.
 
 ### `validator-outputs/`
 Raw BIDS validator output files from validation runs. Preserved for audit trail.
@@ -29,11 +29,11 @@ Raw BIDS validator output files from validation runs. Preserved for audit trail.
 ## Current Authoritative Documents
 
 For current information, see:
-- **`docs/WORKFLOW.md`** - Complete Flywheel→BIDS→Behavioral→Events→Preprocessing pipeline
-- **`docs/ARCHITECTURE.md`** - Package structure, data flows, architectural decisions
-- **`docs/CLAUDE.md`** - Project conventions and guidelines
-- **`docs/scan-notes.md`** - Active scan status and notes
-- **`docs/tr-based-short-scan-detection.md`** - Technical reference for BOLD validation
+- **`../CLAUDE.md`** - Project conventions and guidelines (root level)
+- **`scan-notes.md`** - Active scan status and notes
+- **`tr-based-short-scan-detection.md`** - Technical reference for BOLD validation
+- **`WORKFLOW.md`** - Complete pipeline guide (under development)
+- **`ARCHITECTURE.md`** - Package structure and design (under development)
 
 ---
 
