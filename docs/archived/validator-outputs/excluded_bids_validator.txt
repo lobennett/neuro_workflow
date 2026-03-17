@@ -1,0 +1,100 @@
+bids-validator@1.14.6
+	[33m1: [WARN] Task scans should have a corresponding events.tsv file. If this is a resting state scan you can ignore this warning or rename the task to include the word "rest". (code: 25 - EVENTS_TSV_MISSING)[39m
+		./sub-s1165/ses-01/func/sub-s1165_ses-01_task-cuedTS_run-1_echo-1_bold.nii.gz
+		./sub-s1165/ses-01/func/sub-s1165_ses-01_task-cuedTS_run-1_echo-2_bold.nii.gz
+		./sub-s1165/ses-01/func/sub-s1165_ses-01_task-cuedTS_run-1_echo-3_bold.nii.gz
+		./sub-s1165/ses-01/func/sub-s1165_ses-01_task-nBack_run-1_echo-1_bold.nii.gz
+		./sub-s1165/ses-01/func/sub-s1165_ses-01_task-nBack_run-1_echo-2_bold.nii.gz
+		./sub-s1165/ses-01/func/sub-s1165_ses-01_task-nBack_run-1_echo-3_bold.nii.gz
+		./sub-s1165/ses-01/func/sub-s1165_ses-01_task-shapeMatching_run-1_echo-1_bold.nii.gz
+		./sub-s1165/ses-01/func/sub-s1165_ses-01_task-shapeMatching_run-1_echo-2_bold.nii.gz
+		./sub-s1165/ses-01/func/sub-s1165_ses-01_task-shapeMatching_run-1_echo-3_bold.nii.gz
+		./sub-s1165/ses-01/func/sub-s1165_ses-01_task-stopSignal_run-1_echo-1_bold.nii.gz
+		[33m... and 326 more files having this issue (Use --verbose to see them all).[39m
+
+[36m	Please visit https://neurostars.org/search?q=EVENTS_TSV_MISSING for existing conversations about this issue.[39m
+
+	[33m2: [WARN] Not all subjects contain the same files. Each subject should contain the same number of files with the same naming unless some files are known to be missing. (code: 38 - INCONSISTENT_SUBJECTS)[39m
+		./sub-s1165/ses-01/dwi/sub-s1165_ses-01_acq-g105_dir-AP_run-1_dwi.bval
+			Evidence: Subject: sub-s1165; Missing file: sub-s1165_ses-01_acq-g105_dir-AP_run-1_dwi.bval
+		./sub-s1165/ses-01/dwi/sub-s1165_ses-01_acq-g105_dir-AP_run-1_dwi.bvec
+			Evidence: Subject: sub-s1165; Missing file: sub-s1165_ses-01_acq-g105_dir-AP_run-1_dwi.bvec
+		./sub-s1165/ses-01/dwi/sub-s1165_ses-01_acq-g105_dir-AP_run-1_dwi.json
+			Evidence: Subject: sub-s1165; Missing file: sub-s1165_ses-01_acq-g105_dir-AP_run-1_dwi.json
+		./sub-s1165/ses-01/dwi/sub-s1165_ses-01_acq-g105_dir-AP_run-1_dwi.nii.gz
+			Evidence: Subject: sub-s1165; Missing file: sub-s1165_ses-01_acq-g105_dir-AP_run-1_dwi.nii.gz
+		./sub-s1165/ses-01/dwi/sub-s1165_ses-01_acq-g105_dir-PA_run-1_dwi.bval
+			Evidence: Subject: sub-s1165; Missing file: sub-s1165_ses-01_acq-g105_dir-PA_run-1_dwi.bval
+		./sub-s1165/ses-01/dwi/sub-s1165_ses-01_acq-g105_dir-PA_run-1_dwi.bvec
+			Evidence: Subject: sub-s1165; Missing file: sub-s1165_ses-01_acq-g105_dir-PA_run-1_dwi.bvec
+		./sub-s1165/ses-01/dwi/sub-s1165_ses-01_acq-g105_dir-PA_run-1_dwi.json
+			Evidence: Subject: sub-s1165; Missing file: sub-s1165_ses-01_acq-g105_dir-PA_run-1_dwi.json
+		./sub-s1165/ses-01/dwi/sub-s1165_ses-01_acq-g105_dir-PA_run-1_dwi.nii.gz
+			Evidence: Subject: sub-s1165; Missing file: sub-s1165_ses-01_acq-g105_dir-PA_run-1_dwi.nii.gz
+		./sub-s1165/ses-01/func/sub-s1165_ses-01_task-directedForgetting_run-1_echo-1_bold.json
+			Evidence: Subject: sub-s1165; Missing file: sub-s1165_ses-01_task-directedForgetting_run-1_echo-1_bold.json
+		./sub-s1165/ses-01/func/sub-s1165_ses-01_task-directedForgetting_run-1_echo-1_bold.nii.gz
+			Evidence: Subject: sub-s1165; Missing file: sub-s1165_ses-01_task-directedForgetting_run-1_echo-1_bold.nii.gz
+		[33m... and 1238 more files having this issue (Use --verbose to see them all).[39m
+
+[36m	Please visit https://neurostars.org/search?q=INCONSISTENT_SUBJECTS for existing conversations about this issue.[39m
+
+	[33m3: [WARN] Not all subjects/sessions/runs have the same scanning parameters. (code: 39 - INCONSISTENT_PARAMETERS)[39m
+		./sub-s1320/ses-01/func/sub-s1320_ses-01_task-shapeMatching_run-1_echo-1_bold.nii.gz
+		./sub-s1320/ses-01/func/sub-s1320_ses-01_task-shapeMatching_run-1_echo-2_bold.nii.gz
+		./sub-s1320/ses-01/func/sub-s1320_ses-01_task-shapeMatching_run-1_echo-3_bold.nii.gz
+		./sub-s214/ses-01/func/sub-s214_ses-01_task-cuedTS_run-1_echo-1_bold.nii.gz
+		./sub-s214/ses-01/func/sub-s214_ses-01_task-cuedTS_run-1_echo-2_bold.nii.gz
+		./sub-s214/ses-01/func/sub-s214_ses-01_task-cuedTS_run-1_echo-3_bold.nii.gz
+		./sub-s214/ses-01/func/sub-s214_ses-01_task-directedForgetting_run-1_echo-1_bold.nii.gz
+		./sub-s214/ses-01/func/sub-s214_ses-01_task-directedForgetting_run-1_echo-2_bold.nii.gz
+		./sub-s214/ses-01/func/sub-s214_ses-01_task-directedForgetting_run-1_echo-3_bold.nii.gz
+		./sub-s214/ses-01/func/sub-s214_ses-01_task-goNogo_run-1_echo-1_bold.nii.gz
+		[33m... and 74 more files having this issue (Use --verbose to see them all).[39m
+
+[36m	Please visit https://neurostars.org/search?q=INCONSISTENT_PARAMETERS for existing conversations about this issue.[39m
+
+	[33m4: [WARN] Not all subjects contain the same sessions. (code: 97 - MISSING_SESSION)[39m
+		./sub-s1165/ses-03
+			Evidence: Subject: sub-s1165; Missing session: ses-03
+		./sub-s1165/ses-04
+			Evidence: Subject: sub-s1165; Missing session: ses-04
+		./sub-s1165/ses-05
+			Evidence: Subject: sub-s1165; Missing session: ses-05
+		./sub-s1165/ses-06
+			Evidence: Subject: sub-s1165; Missing session: ses-06
+		./sub-s1165/ses-07
+			Evidence: Subject: sub-s1165; Missing session: ses-07
+		./sub-s1165/ses-08
+			Evidence: Subject: sub-s1165; Missing session: ses-08
+		./sub-s1165/ses-09
+			Evidence: Subject: sub-s1165; Missing session: ses-09
+		./sub-s1165/ses-10
+			Evidence: Subject: sub-s1165; Missing session: ses-10
+		./sub-s1165/ses-11
+			Evidence: Subject: sub-s1165; Missing session: ses-11
+		./sub-s1165/ses-12
+			Evidence: Subject: sub-s1165; Missing session: ses-12
+		[33m... and 90 more files having this issue (Use --verbose to see them all).[39m
+
+[36m	Please visit https://neurostars.org/search?q=MISSING_SESSION for existing conversations about this issue.[39m
+
+	[33m5: [WARN] The recommended file /README is very small. Please consider expanding it with additional information about the dataset. (code: 213 - README_FILE_SMALL)[39m
+		./README
+
+[36m	Please visit https://neurostars.org/search?q=README_FILE_SMALL for existing conversations about this issue.[39m
+
+        [34m[4mSummary:[24m[39m                   [34m[4mAvailable Tasks:[24m[39m          [34m[4mAvailable Modalities:[39m[24m 
+        1550 Files, 48.93GB        cuedTS                    MRI                   
+        11 - Subjects              nBack                                           
+        12 - Sessions              rest                                            
+                                   shapeMatching                                   
+                                   stopSignal                                      
+                                   directedForgetting                              
+                                   flanker                                         
+                                   goNogo                                          
+                                   spatialTS                                       
+                                   stopSignalWFlanker                              
+
+
+[36m	If you have any questions, please post on https://neurostars.org/tags/bids.[39m
