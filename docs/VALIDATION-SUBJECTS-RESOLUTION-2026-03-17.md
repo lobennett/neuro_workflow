@@ -36,9 +36,9 @@ run_bidsify(
 ```
 
 ### 4. Verified Results
-- **s295**: 11 sessions, 156 BOLD files ✓
+- **s295**: 12 sessions, 165 BOLD files ✓ (includes all sessions from Flywheel)
 - **s321**: 13 sessions, 168 BOLD files ✓
-- Updated reconciliation.json: 41/41 subjects
+- Updated reconciliation.json: 41/41 subjects with complete session documentation
 
 ### 5. Re-secured Directory
 Made validation_bids read-only (dr-xr-xr-x) for preprocessing
@@ -48,12 +48,12 @@ Made validation_bids read-only (dr-xr-xr-x) for preprocessing
 | BIDS Dataset | Subjects | BOLD Files | Status |
 |---|---|---|---|
 | **Discovery** | 5/5 | 882 | Read-only ✓ |
-| **Validation** | 41/41 | 6,923 | Read-only ✓ |
+| **Validation** | 41/41 | 6,933 | Read-only ✓ |
 | **Excluded** | 11/11 | 417 | Read-only ✓ |
 
 ### Total
 - **57 subjects** across all BIDS directories
-- **8,222 BOLD files**
+- **8,232 BOLD files**
 - All directories verified read-only for preprocessing handoff
 
 ## Ready for Preprocessing
