@@ -151,3 +151,36 @@ Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>"
 
 ## Last Updated
 2026-03-14 - Added bidsify improvements (reduced parallelism, retry logic, duplicate handling)
+
+
+## Codebase Cleanup (March 17, 2026)
+
+### Archive Organization
+All legacy documents (30+ design iterations, audit reports, validator outputs) have been archived to `docs/archived/` with subdirectories:
+- `design-iterations/` - Historical planning documents
+- `audit-reports/` - Resolution reports and status updates
+- `validator-outputs/` - BIDS validator output files
+
+See `docs/archived/README.md` for archive index and guidance on when to reference archived docs.
+
+### Current Authoritative Documents
+The workflow is now documented in a small set of authoritative references:
+1. **`docs/WORKFLOW.md`** - Single source of truth for complete Flywheel→BIDS→Behavioral→Events→Preprocessing pipeline
+2. **`docs/ARCHITECTURE.md`** - Package structure, module reference, data flows, architectural decisions
+3. **`docs/CLAUDE.md`** (this file) - Project conventions and guidelines
+4. **`docs/scan-notes.md`** - Active scan status and special handling notes
+5. **`docs/tr-based-short-scan-detection.md`** - Technical reference for BOLD validation approach
+
+### Logs Organization
+Logs have been moved to `logs/` directory with `.gitignore` to prevent bloat:
+- `logs/bidsify_logs/` - Bidsify execution logs
+- `logs/build_logs/` - Container build logs
+- `logs/validator_logs/` - BIDS validator outputs
+
+### Key Principles After Cleanup
+- **No hardcoded lists:** All subject lists, aliases, thresholds in JSON config files
+- **Reproducibility:** Same config → same results, verifiable in git
+- **Simplicity:** Follow WORKFLOW.md for entire pipeline; refer to ARCHITECTURE.md only when understanding internals
+- **Audit trail:** All decisions encoded in JSON + exclusions.json manifests
+
+**Last updated:** 2026-03-17
