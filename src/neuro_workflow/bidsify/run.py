@@ -27,6 +27,7 @@ from neuro_workflow.bidsify.physio_query import (
     find_gephysio_analyses,
     match_analyses_to_acquisitions,
 )
+from neuro_workflow.bidsify.physio_trimming import trim_physio_data
 
 logger = logging.getLogger(__name__)
 
@@ -398,7 +399,7 @@ def process_subject_session(
                             match["analysis"], tmpdir
                         )
                         for channel in ("cardiac", "respiratory"):
-                            convert_physio_to_bids(
+                            success = convert_physio_to_bids(
                                 input_dir=dl_dir,
                                 output_dir=func_dir,
                                 subject=subject_label,
@@ -407,6 +408,34 @@ def process_subject_session(
                                 run=match["run"],
                                 channel=channel,
                             )
+
+                            # Trim dummy volumes (7 TRs @ 1.49s = 10.43s offset)
+                            if success:
+                                physio_stem = bids_filename(
+                                    subject_label, bids_ses,
+                                    task=match["task"], run=match["run"],
+                                    recording=channel, suffix="physio"
+                                )
+                                physio_tsv_gz = func_dir / f"{physio_stem}.tsv.gz"
+                                physio_json = func_dir / f"{physio_stem}.json"
+                                try:
+                                    trim_physio_data(
+                                        physio_tsv_gz,
+                                        physio_json,
+                                        dummy_scans=7,
+                                        tr=1.49,
+                                    )
+                                    logger.debug(
+                                        "Trimmed %s physio dummy volumes: %s",
+                                        channel, physio_tsv_gz
+                                    )
+                                except Exception as e:
+                                    logger.warning(
+                                        "Could not trim %s physio: %s", channel, e
+                                    )
+                                    warnings.append(
+                                        f"Failed to trim {channel} physio dummy volumes"
+                                    )
         except Exception as e:
             logger.exception(
                 "Failed to process physio for %s %s: %s", subject_label, bids_ses, str(e)
