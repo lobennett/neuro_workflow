@@ -322,9 +322,6 @@ def main():
     bidsify_p.add_argument("--subjects", nargs="+", help="Subject labels to process (default: all in sample)")
     bidsify_p.add_argument("--flywheel-project", default=None, help="Flywheel project label")
     bidsify_p.add_argument("--overwrite", action="store_true", help="Overwrite existing output")
-    bidsify_p.add_argument("--tr-threshold-minutes", type=float, default=3.0, help="TR threshold for short scans in minutes (default: 3.0)")
-    bidsify_p.add_argument("--skip-validation", action="store_true", help="Skip BOLD validation analysis (default: always run)")
-    bidsify_p.add_argument("--validation-fail-hard", action="store_true", help="Fail if BOLD validation fails (default: warn and continue)")
     bidsify_p.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     bidsify_p.set_defaults(func=lambda args, remaining: cmd_bidsify(args))
 

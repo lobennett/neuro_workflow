@@ -55,24 +55,15 @@ uv run python -m py_compile src/neuro_workflow/bidsify/run.py
 uv run python -m neuro_workflow.cli bidsify <sample> \
     --output-dir <bids_output> \
     [--subjects <list>] \
-    [--skip-validation] \
     [-v]
 ```
 
-### Example: Run validation sample with automatic BOLD validation
+### Example: Run validation sample
 ```bash
 uv run python -m neuro_workflow.cli bidsify validation \
     --output-dir /scratch/users/logben/validation_bids \
     -v
 ```
-
-## BOLD Validation System
-
-Validation runs automatically after bidsify completes (no flag needed):
-- Analyzes all BOLD files for issues (3D, missing TR, short scans)
-- Generates `.bids-validation/analysis.json` with detailed results
-- Updates `.bidsignore` with problematic scans
-- Can be skipped with `--skip-validation` if needed
 
 ## Testing Changes
 ```bash
@@ -127,7 +118,6 @@ sbatch --wrap="apptainer build --fakeroot --force /home/groups/russpold/singular
 
 Each contains:
 - `.bidsignore` - Files to exclude from validation
-- `.bids-validation/analysis.json` - BOLD analysis results
 - `sourcedata/reconciliation.json` - Subject session mapping and warnings
 - `sourcedata/bidsify_log.json` - Download logs
 
@@ -169,7 +159,6 @@ The workflow is now documented in a small set of authoritative references:
 2. **`docs/ARCHITECTURE.md`** - Package structure, module reference, data flows, architectural decisions
 3. **`docs/CLAUDE.md`** (this file) - Project conventions and guidelines
 4. **`docs/SCAN-NOTES.md`** - Active scan status and special handling notes
-5. **`docs/TR-BASED-SHORT-SCAN-DETECTION.md`** - Technical reference for BOLD validation approach
 
 ### Logs Organization
 Logs have been moved to `logs/` directory with `.gitignore` to prevent bloat:
