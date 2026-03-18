@@ -32,6 +32,64 @@ uv run python -m py_compile src/neuro_workflow/bidsify/run.py
 - `src/neuro_workflow/cli.py` - CLI entry point
 - `pyproject.toml` - Project configuration and dependencies
 
+## Pipeline Simplification (March 18, 2026)
+
+### Major Changes to Bidsify
+
+#### 1. **Dummy BOLD Volume Trimming** (7 TRs @ 1.49s = 10.43s offset)
+- **When:** Immediately during bidsify, after NIfTI download
+- **Where:** `src/neuro_workflow/bidsify/run.py` lines ~220-245
+- **What:** Removes first 7 BOLD volumes (calibration/dummy scans) for each echo
+- **Why:** Improves Tedana optimal echo combination quality
+- **Verification:** Log entries confirm: "Trimmed 7 dummy volumes from BOLD.nii.gz (was 161 vols, now 154)"
+- **Impact:** All downstream preprocessing should use `--dummy-scans 0` (volumes already removed)
+
+#### 2. **Physiological Data Trimming** (Cardiac 100Hz, Respiratory 25Hz)
+- **When:** Immediately after `convert_physio_to_bids()`, same dummy removal offset
+- **Where:** `src/neuro_workflow/bidsify/run.py` lines ~246-290
+- **Sample counts removed:**
+  - Cardiac: ~1,043 samples (100 Hz × 10.43s)
+  - Respiratory: ~261 samples (25 Hz × 10.43s)
+- **Why:** Keeps physio-BOLD alignment perfect for preprocessing
+- **JSON sidecars:** Updated with new `StartTime` offset (10.43s)
+
+#### 3. **Duplicate Anatomical Logic** (Keep LATEST, not OLDEST)
+- **What changed:** Pre-computation identifies latest acquisition per anatomy type
+- **Before:** `is_first_anat = len(anat_scans_by_type[anat_key]) == 0` (kept oldest)
+- **After:** Compare with `_latest_anat_acq` dict (keeps newest by timestamp)
+- **Impact:** Older duplicate T1w/T2w scans are marked for .bidsignore; newest scan kept
+- **Rationale:** Earlier scans flagged as low quality during QA phase
+
+#### 4. **Removed 3D BOLD Validation Check**
+- **What was removed:** `_check_bold_4d()` function (lines 62-75)
+- **Why removed:** Manual BIDS validator is more comprehensive
+- **Action:** Use BIDS validator after bidsify: `bids-validator /path/to/bids_dir`
+- **Impact:** No "non-4D", "3D", "below threshold" entries in .bidsignore
+
+#### 5. **Configuration Consolidation**
+- **Primary config:** `src/neuro_workflow/bidsify/reconciliation_config.json` (active)
+- **Deprecated config:** `config/reconciliation_config.json` (legacy, do not use)
+- **New sections in primary config:**
+  - `irreconcilable_scans`: 3 scans with no behavioral data (s29/ses-01/cuedTS, s300/ses-08/flanker, s1292/ses-04/nBack)
+  - `trim_scans_end`: 17 scans needing end-of-scan behavioral cutoff (15 to trim, 2 "fell asleep" flags)
+
+### Example Workflow with New Changes
+
+```bash
+# Run discovery BIDS generation (includes dummy trim + physio trim)
+uv run neuro-run bidsify submit discovery \
+  --output-dir /scratch/users/logben/discovery_bids \
+  --time 02:00:00 --mem-gb 32 --cpus 4
+
+# Once BIDS is complete, run BIDS validator (custom 3D check)
+bids-validator /scratch/users/logben/discovery_bids
+
+# Preprocessing note: Use fMRIPrep with --dummy-scans 0
+fmriprep --dummy-scans 0 /scratch/users/logben/discovery_bids /derivatives --fs-license /path/to/license
+```
+
+---
+
 ## Bidsify Updates (March 14, 2026)
 
 ### Changes Made to run.py
