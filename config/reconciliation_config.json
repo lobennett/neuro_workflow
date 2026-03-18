@@ -1,0 +1,44 @@
+{
+  "subject_aliases": {
+    "s03": "Flywheel session 22752 (2021-02-12) is mislabeled; it belongs to s10"
+  },
+  "session_overrides": {
+    "s29_session_22424": {
+      "action": "exclude",
+      "reason": "Test session (fmap only). Should not be downloaded to BIDS."
+    }
+  },
+  "excluded_subjects": {
+    "s214": "Dropped - unreliable behavioral performance",
+    "s222": "Dropped - poor behavioral performance",
+    "s250": "Dropped - lens prescription issue",
+    "s297": "Discontinued - ear issues after scanning",
+    "s432": "Withdrew - incomplete scans",
+    "s823": "Withdrew",
+    "s968": "Withdrew - extensive issues",
+    "s1165": "Withdrew - possible wrong prescription",
+    "s1178": "Withdrew - missing both diffusions",
+    "s1266": "Withdrew - wrong task run executed",
+    "s1320": "Withdrew - behavioral concerns"
+  },
+  "irreconcilable_scans": {
+    "s29_ses-01_cuedTS": {
+      "subject": "s29",
+      "session": "ses-01",
+      "task": "cuedTS",
+      "reason": "BOLD functional scan exists but no corresponding behavioral events file (events were collected for spatialTS task instead; only 3 of 4 tasks overlap)"
+    },
+    "s300_ses-08_flanker": {
+      "subject": "s300",
+      "session": "ses-08",
+      "task": "flanker",
+      "reason": "Behavioral data lost during server shutdown before save completed; only BOLD data recovered"
+    },
+    "s1292_ses-04_nBack": {
+      "subject": "s1292",
+      "session": "ses-04",
+      "task": "nBack",
+      "reason": "Scanner failure during acquisition; only partial BOLD data and no behavioral data collected"
+    }
+  }
+}
