@@ -205,7 +205,6 @@ def cmd_bidsify(args):
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     from neuro_workflow.bidsify.run import run_bidsify
-    from neuro_workflow.bidsify.integration import run_bold_analysis_and_update_bidsignore
     from pathlib import Path
 
     subjects = args.subjects if args.subjects else None
@@ -218,21 +217,6 @@ def cmd_bidsify(args):
         flywheel_project=args.flywheel_project,
         overwrite=args.overwrite,
     )
-
-    # Run BOLD analysis (automatic, unless skipped)
-    if not getattr(args, "skip_validation", False):
-        try:
-            run_bold_analysis_and_update_bidsignore(
-                bids_dir=output_dir,
-                tr_threshold_minutes=args.tr_threshold_minutes,
-                merge_bidsignore=True,
-                verbose=args.verbose,
-            )
-        except Exception as e:
-            logging.error(f"BOLD analysis failed: {e}")
-            if args.validation_fail_hard:
-                raise
-            # Otherwise, log warning and continue
 
 
 def cmd_events_create(args, remaining):
