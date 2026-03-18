@@ -1090,7 +1090,7 @@ find /scratch/users/logben/discovery_bids -type f -exec file {} \; | \
 │   ├── ARCHITECTURE.md               (Technical deep dive)
 │   ├── BIDS-TRIMMING-AUDIT-2026-03-16.md
 │   ├── STATUS-UPDATE-MAR16-2026.md
-│   └── tr-based-short-scan-detection.md
+│   └── TR-BASED-SHORT-SCAN-DETECTION.md
 │
 ├── tests/
 │   ├── bids_validation/

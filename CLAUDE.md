@@ -168,8 +168,8 @@ The workflow is now documented in a small set of authoritative references:
 1. **`docs/WORKFLOW.md`** - Single source of truth for complete Flywheel→BIDS→Behavioral→Events→Preprocessing pipeline
 2. **`docs/ARCHITECTURE.md`** - Package structure, module reference, data flows, architectural decisions
 3. **`docs/CLAUDE.md`** (this file) - Project conventions and guidelines
-4. **`docs/scan-notes.md`** - Active scan status and special handling notes
-5. **`docs/tr-based-short-scan-detection.md`** - Technical reference for BOLD validation approach
+4. **`docs/SCAN-NOTES.md`** - Active scan status and special handling notes
+5. **`docs/TR-BASED-SHORT-SCAN-DETECTION.md`** - Technical reference for BOLD validation approach
 
 ### Logs Organization
 Logs have been moved to `logs/` directory with `.gitignore` to prevent bloat:
