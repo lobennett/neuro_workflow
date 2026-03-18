@@ -160,7 +160,7 @@ def process_subject_session(
 
     # Track anatomical and DWI scans to handle duplicates
     anat_scans_by_type = {}  # {(suffix, acq_label): [(nifti_path, json_path, is_first)]}
-    dwi_scans = []  # [(nifti_path, json_path, is_first)]
+    dwi_scans_by_key = {}  # {(dir_label, acq_label): [(files, is_first)]} - track by direction+acq
 
     # Sort acquisitions by timestamp so duplicate tasks get correct run numbering
     acq_objects_sorted = sorted(acq_objects, key=lambda a: a.timestamp or "")
@@ -327,12 +327,16 @@ def process_subject_session(
             acq_label = mapping.get("acq")
             dest_dir = sub_dir / "dwi"
 
-            # Check for duplicate DWI scans in same session
-            is_first_dwi = len(dwi_scans) == 0
+            # Track duplicate DWI scans by (direction, acq) - AP and PA are NOT duplicates
+            dwi_key = (dir_label, acq_label)
+            if dwi_key not in dwi_scans_by_key:
+                dwi_scans_by_key[dwi_key] = []
+
+            is_first_dwi = len(dwi_scans_by_key[dwi_key]) == 0
             if not is_first_dwi:
                 logger.info(
-                    "Duplicate DWI scan found for %s %s, will add to .bidsignore",
-                    subject_label, bids_ses
+                    "Duplicate DWI scan found for %s %s (dir:%s, acq:%s), will add to .bidsignore",
+                    subject_label, bids_ses, dir_label, acq_label
                 )
 
             stem = bids_filename(
@@ -350,13 +354,13 @@ def process_subject_session(
                     log_entries.append(info)
                     dwi_files[ext] = dest_path
 
-                    # Mark duplicate DWI files for .bidsignore
+                    # Mark duplicate DWI files for .bidsignore (only if same dir+acq)
                     if not is_first_dwi:
                         rel = dest_path.relative_to(output_dir)
                         bidsignore_entries.append(str(rel))
 
             if dwi_files:
-                dwi_scans.append({
+                dwi_scans_by_key[dwi_key].append({
                     "files": dwi_files,
                     "is_first": is_first_dwi
                 })

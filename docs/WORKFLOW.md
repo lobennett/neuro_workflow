@@ -10,14 +10,14 @@
 
 1. [Quick Reference](#quick-reference)
 2. [Phase 1: Bidsify (Flywheel → BIDS)](#phase-1-bidsify)
-3. [Phase 2: Behavioral Data Migration](#phase-2-behavioral-data)
+3. [Phase 2: Behavioral Data Migration](#phase-2-behavioral-data-migration)
 4. [Phase 3: BOLD Trimming & Post-Processing](#phase-3-bold-trimming)
-5. [Phase 4: Event File Generation](#phase-4-event-generation)
+5. [Phase 4: Event File Generation](#phase-4-event-file-generation)
 6. [Phase 5: Preprocessing (fMRIPrep & Tedana)](#phase-5-preprocessing)
-7. [Troubleshooting Guide](#troubleshooting)
-8. [File Organization Reference](#file-organization)
+7. [Troubleshooting Guide](#troubleshooting-guide)
+8. [File Organization Reference](#file-organization-reference)
 9. [Key Concepts](#key-concepts)
-10. [Pipeline Checkpoints](#checkpoints)
+10. [Pipeline Checkpoints](#pipeline-checkpoints)
 
 ---
 
