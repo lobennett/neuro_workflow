@@ -108,7 +108,45 @@ fmriprep --dummy-scans 0 /scratch/users/logben/discovery_bids /derivatives --fs-
 
 ## Running Bidsify
 
-### Command Pattern
+### ✅ RECOMMENDED: Submit via Container + SLURM
+
+Use `uv run neuro-run submit` to automatically generate SBATCH script and submit via Singularity container.
+
+```bash
+# Discovery sample (5 subjects)
+uv run neuro-run submit bidsify discovery \
+  --output-dir /scratch/users/logben/discovery_bids \
+  --overwrite
+
+# Validation sample (41 non-excluded subjects)
+uv run neuro-run submit bidsify validation \
+  --subjects s1035 s1057 s1058 s1127 s1134 s1175 s1189 s1258 s1267 s1270 s1273 s1292 s1314 s1326 s1338 s1351 s1391 s1399 s1402 s1408 s1445 s1481 s1486 s180 s216 s247 s286 s295 s300 s320 s321 s336 s373 s394 s415 s480 s599 s645 s76 s874 s956 \
+  --output-dir /scratch/users/logben/validation_bids \
+  --overwrite
+
+# Excluded sample (11 excluded subjects)
+uv run neuro-run submit bidsify validation \
+  --subjects s1165 s1178 s1266 s1320 s214 s222 s250 s297 s432 s823 s968 \
+  --output-dir /scratch/users/logben/excluded_bids \
+  --overwrite
+```
+
+**What happens:**
+- Generates SBATCH script with container invocation
+- Uses Singularity container at `/home/groups/russpold/singularity_images/neuro_workflow.sif`
+- Submits to SLURM `russpold` partition
+- Logs written to: `<output-dir>/sourcedata/logs/`
+
+**Monitor jobs:**
+```bash
+squeue -u $USER | grep bidsify
+tail -f /scratch/users/logben/discovery_bids/sourcedata/logs/bidsify_discovery-*.out
+```
+
+### Local Execution (Debugging Only)
+
+For local testing without container/SLURM:
+
 ```bash
 uv run python -m neuro_workflow.cli bidsify <sample> \
     --output-dir <bids_output> \
@@ -116,12 +154,7 @@ uv run python -m neuro_workflow.cli bidsify <sample> \
     [-v]
 ```
 
-### Example: Run validation sample
-```bash
-uv run python -m neuro_workflow.cli bidsify validation \
-    --output-dir /scratch/users/logben/validation_bids \
-    -v
-```
+**Note:** This requires Flywheel API access and may hang in some environments. Use container approach for production.
 
 ## Testing Changes
 ```bash
