@@ -59,22 +59,6 @@ def build_reconciliation(canonical_label, sessions, fw_sources):
     }
 
 
-def _check_bold_4d(nifti_path):
-    """Check that a BOLD NIfTI is 4D. Returns True if valid."""
-    try:
-        import nibabel as nib
-        img = nib.load(nifti_path)
-        if len(img.shape) < 4:
-            logger.warning("Non-4D BOLD (%dD), adding to .bidsignore: %s", len(img.shape), nifti_path)
-            return False
-        return True
-    except ImportError:
-        return True
-    except Exception as e:
-        logger.warning("Could not validate %s: %s", nifti_path, e)
-        return True
-
-
 def download_physio_analysis(analysis, dest_dir):
     """Download gephysio analysis CSV files to a local directory.
 
@@ -165,6 +149,17 @@ def process_subject_session(
     # Sort acquisitions by timestamp so duplicate tasks get correct run numbering
     acq_objects_sorted = sorted(acq_objects, key=lambda a: a.timestamp or "")
 
+    # Pre-compute the latest acquisition for each anatomical type
+    # (ascending sort means last-seen == latest timestamp)
+    _latest_anat_acq = {}
+    for _acq in acq_objects_sorted:
+        _acq.reload()
+        _info = map_acquisition(_acq.label)
+        if _info and _info["modality"] == "anat":
+            _anat_key = (_info["suffix"], _info.get("acq"))
+            if _info.get("acq") != "MPRAGEPromo":  # MPRAGEPromo always bidsignored regardless
+                _latest_anat_acq[_anat_key] = _acq  # overwrite → last in ascending = latest
+
     for acq in acq_objects_sorted:
         acq = acq.reload()
         mapping = map_acquisition(acq.label)
@@ -202,37 +197,49 @@ def process_subject_session(
                     task=task_name, run=run, echo=echo_info["echo"], suffix="bold",
                 )
                 dest_dir = sub_dir / "func"
-                is_non4d = False
                 if echo_info["nifti"]:
                     nifti_path = dest_dir / f"{stem}.nii.gz"
                     info = download_and_place(
                         acq, echo_info["nifti"], nifti_path
                     )
                     log_entries.append(info)
-                    # Add non-4D BOLD to .bidsignore
-                    if not _check_bold_4d(nifti_path):
-                        rel = nifti_path.relative_to(output_dir)
-                        bidsignore_entries.append(str(rel))
-                        is_non4d = True
+
+                    # Trim 7 dummy volumes from start of BOLD scan (TR=1.49s, total offset=10.43s)
+                    try:
+                        import nibabel as nib
+                        _img = nib.load(nifti_path)
+                        if _img.ndim == 4 and _img.shape[3] > 7:
+                            _trimmed = nib.Nifti1Image(
+                                _img.get_fdata()[..., 7:], _img.affine, _img.header
+                            )
+                            nib.save(_trimmed, nifti_path)
+                            logger.debug(
+                                "Trimmed 7 dummy volumes from %s (was %d vols, now %d)",
+                                nifti_path, _img.shape[3], _img.shape[3] - 7
+                            )
+                        else:
+                            logger.warning(
+                                "BOLD too short to trim 7 dummies (%s): shape=%s",
+                                nifti_path, _img.shape
+                            )
+                    except Exception as e:
+                        logger.warning("Could not trim dummy volumes from %s: %s", nifti_path, e)
+
                 if echo_info["json"]:
                     json_path = dest_dir / f"{stem}.json"
                     info = download_and_place(acq, echo_info["json"], json_path)
                     log_entries.append(info)
-                    if is_non4d:
-                        rel = json_path.relative_to(output_dir)
-                        bidsignore_entries.append(str(rel))
+                    # Add TaskName to BOLD sidecar with error handling
+                    if _safe_patch_sidecar(json_path, TaskName=task_name):
+                        bold_sidecars.append(json_path)
+                        logger.debug("Patched BOLD sidecar with TaskName: %s", json_path)
                     else:
-                        # Add TaskName to BOLD sidecar with error handling
-                        if _safe_patch_sidecar(json_path, TaskName=task_name):
-                            bold_sidecars.append(json_path)
-                            logger.debug("Patched BOLD sidecar with TaskName: %s", json_path)
-                        else:
-                            logger.error(
-                                "Failed to patch TaskName in BOLD sidecar: %s", json_path
-                            )
-                            warnings.append(
-                                f"Failed to patch TaskName for {task_name} echo {echo_info['echo']}"
-                            )
+                        logger.error(
+                            "Failed to patch TaskName in BOLD sidecar: %s", json_path
+                        )
+                        warnings.append(
+                            f"Failed to patch TaskName for {task_name} echo {echo_info['echo']}"
+                        )
 
         elif modality == "fmap":
             run = 1  # one fieldmap per session
@@ -275,7 +282,7 @@ def process_subject_session(
             if anat_key not in anat_scans_by_type:
                 anat_scans_by_type[anat_key] = []
 
-            is_first_anat = len(anat_scans_by_type[anat_key]) == 0
+            is_latest_anat = (_latest_anat_acq.get(anat_key) is acq)
             stem = bids_filename(subject_label, bids_ses, acq=acq_label, suffix=suffix)
 
             anat_nifti_path = None
@@ -294,12 +301,12 @@ def process_subject_session(
                     bidsignore_entries.append(str(rel))
                     logger.info("Adding MPRAGEPromo to .bidsignore: %s", rel)
                     should_skip = True
-                elif not is_first_anat:
-                    # Duplicate anatomical scan: mark for .bidsignore
+                elif not is_latest_anat:
+                    # Duplicate anatomical scan (older): mark for .bidsignore, keep latest
                     rel = anat_nifti_path.relative_to(output_dir)
                     bidsignore_entries.append(str(rel))
                     logger.info(
-                        "Duplicate %s scan in %s, adding to .bidsignore: %s",
+                        "Duplicate %s scan in %s (keeping latest), adding older to .bidsignore: %s",
                         suffix, bids_ses, rel
                     )
                     should_skip = True
@@ -310,7 +317,7 @@ def process_subject_session(
                     acq, selected["json"], anat_json_path
                 )
                 log_entries.append(info)
-                if (acq_label and "MPRAGEPromo" in acq_label) or (not is_first_anat and should_skip):
+                if (acq_label and "MPRAGEPromo" in acq_label) or (not is_latest_anat and should_skip):
                     rel = anat_json_path.relative_to(output_dir)
                     bidsignore_entries.append(str(rel))
 
@@ -319,7 +326,7 @@ def process_subject_session(
                 anat_scans_by_type[anat_key].append({
                     "nifti": anat_nifti_path,
                     "json": anat_json_path,
-                    "is_first": is_first_anat
+                    "is_latest": is_latest_anat
                 })
 
         elif modality == "dwi":

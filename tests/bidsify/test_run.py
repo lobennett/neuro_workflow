@@ -86,7 +86,6 @@ def test_process_subject_session_downloads_physio(tmp_path):
          patch("neuro_workflow.bidsify.run.match_analyses_to_acquisitions") as mock_match, \
          patch("neuro_workflow.bidsify.run.download_physio_analysis") as mock_dl, \
          patch("neuro_workflow.bidsify.run.convert_physio_to_bids") as mock_convert, \
-         patch("neuro_workflow.bidsify.run._check_bold_4d", return_value=True), \
          patch("neuro_workflow.bidsify.run.patch_sidecar"), \
          patch("neuro_workflow.bidsify.run.download_and_place") as mock_download:
 
