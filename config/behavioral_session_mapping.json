@@ -22,7 +22,8 @@
           "tasks": [
             "goNogo",
             "shapeMatching",
-            "spatialTS"
+            "spatialTS",
+            "nBack"
           ]
         },
         {
@@ -4737,7 +4738,8 @@
           "tasks": [
             "cuedTS",
             "directedForgetting",
-            "stopSignal"
+            "stopSignal",
+            "flanker"
           ]
         },
         {
@@ -4784,6 +4786,13 @@
           ]
         }
       ],
+      "task_session_overrides": {
+        "flanker": {
+          "raw": "ses-09",
+          "output": "ses-08",
+          "reason": "flanker behavioral in raw ses-09 but BOLD scan in ses-08 (mislabeled in archive, recovered as makeup scan)"
+        }
+      },
       "skipped_bids": [],
       "unmatched_raw": [],
       "irreconcilable_bids_runs": [

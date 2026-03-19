@@ -99,7 +99,16 @@ def main():
         },
     ]
 
-    # Special cases
+    # Special cases: BOLD without behavioral
+    discovery_behavioral_without_bold = [
+        {
+            "subject": "s03",
+            "session": "ses-01",
+            "task": "nBack",
+            "reason": "BOLD scan exists but behavioral is in ses-02 (scan 1 had issues, scan 2 is correct)"
+        }
+    ]
+
     validation_behavioral_without_bold = [
         {
             "subject": "s321",
@@ -132,10 +141,15 @@ def main():
         discovery_bidsignore_entries.append(bidsignore_entry)
         discovery_bidsignore_entries.append("")
 
-    # Special case: s03 ses-01 nBack (behavioral in ses-02, BOLD in ses-01) - note only
-    discovery_bidsignore_entries.append("# SALVAGEABLE: s03 ses-01 nBack - behavioral CSV in raw ses-02 directory")
-    discovery_bidsignore_entries.append("# Action: Update session mapping and re-run migration to salvage this file")
-    discovery_bidsignore_entries.append("")
+    # Behavioral without BOLD (for discovery)
+    for disc in discovery_behavioral_without_bold:
+        sub_label = f"sub-{disc['subject']}"
+        bidsignore_entry = f"{sub_label}/{disc['session']}/func/*task-{disc['task']}*"
+
+        print(f"Marking for exclusion (BOLD w/o behavioral): {sub_label}/{disc['session']}/task-{disc['task']}")
+        discovery_bidsignore_entries.append(f"# {disc['reason']} - BOLD scan exists but no behavioral data")
+        discovery_bidsignore_entries.append(bidsignore_entry)
+        discovery_bidsignore_entries.append("")
 
     # Write discovery .bidsignore
     if discovery_bidsignore_entries:
@@ -177,9 +191,9 @@ def main():
         validation_bidsignore_entries.append(bidsignore_entry)
         validation_bidsignore_entries.append("")
 
-    # Special case: s300 ses-08 flanker (behavioral in ses-09, BOLD in ses-08) - note only
-    validation_bidsignore_entries.append("# SALVAGEABLE: s300 ses-08 flanker - behavioral CSV in raw ses-09 directory")
-    validation_bidsignore_entries.append("# Action: Update session mapping and re-run migration to salvage this file")
+    # s300 ses-09 flanker (moved to ses-08, now orphaned in ses-09)
+    validation_bidsignore_entries.append("# RESOLVED: s300 ses-09 flanker - behavioral migrated to ses-08")
+    validation_bidsignore_entries.append("sub-s300/ses-09/beh/sub-s300_ses-09_task-flanker_beh.csv")
     validation_bidsignore_entries.append("")
 
     # Write validation .bidsignore
@@ -198,15 +212,14 @@ def main():
     print("=" * 80)
     print(f"\nDiscovery:")
     print(f"  - Created {len(discovery_missing_behavioral)} empty behavioral CSV placeholders")
-    print(f"  - Added {len(discovery_missing_behavioral)} entries to .bidsignore")
+    print(f"  - Excluded {len(discovery_behavioral_without_bold)} BOLD file(s) without behavioral")
+    print(f"  - Added {len(discovery_missing_behavioral) + len(discovery_behavioral_without_bold)} entries to .bidsignore")
     print(f"\nValidation:")
     print(f"  - Created {len(validation_missing_behavioral)} empty behavioral CSV placeholders")
-    print(f"  - Added {len(validation_missing_behavioral)} entries to .bidsignore")
+    print(f"  - Added {len(validation_missing_behavioral)} entries to .bidsignore for missing behavioral")
     print(f"  - Excluded {len(validation_behavioral_without_bold)} behavioral file(s) without BOLD")
-    print(f"\nTotal BIDS entries affected: {len(discovery_missing_behavioral) + len(validation_missing_behavioral) + len(validation_behavioral_without_bold)}")
-    print(f"\nSalvageable items (optional - requires session mapping update):")
-    print(f"  - s03 ses-01 nBack (discovery)")
-    print(f"  - s300 ses-08 flanker (validation)")
+    print(f"\nTotal BIDS entries affected: {len(discovery_missing_behavioral) + len(discovery_behavioral_without_bold) + len(validation_missing_behavioral) + len(validation_behavioral_without_bold)}")
+    print(f"\nAll discrepancies resolved and documented.")
     print(f"\nFor full details, see:")
     print(f"  - docs/BEHAVIORAL_BOLD_DISCREPANCIES.md")
     print(f"  - /oak/.../sourcedata/BEHAVIORAL_DISCREPANCIES_NOTES.md")

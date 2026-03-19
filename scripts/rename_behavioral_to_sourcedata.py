@@ -239,6 +239,9 @@ def main():
         subject_files = 0
         subject_mapping_out = []
 
+        # Load task-level session overrides (if any)
+        task_session_overrides = info.get("task_session_overrides", {})
+
         for mapping in mappings:
             raw_ses = mapping["raw"]
             bids_ses = mapping["bids"]
@@ -281,7 +284,23 @@ def main():
                     )
                     continue
 
-                out_path = build_output_path(subject_output_dir, subject, bids_ses, task_name)
+                # Check for task-level session overrides
+                output_ses = bids_ses
+                if task_name in task_session_overrides:
+                    override = task_session_overrides[task_name]
+                    # Only apply override if this is the raw session specified in the override
+                    if override.get("raw") == raw_ses:
+                        output_ses = override.get("output", bids_ses)
+                        log.info(
+                            "%s/%s: applying task-level override for %s → ses-%s (%s)",
+                            subject,
+                            raw_ses,
+                            task_name,
+                            output_ses.replace("ses-", ""),
+                            override.get("reason", "override applied"),
+                        )
+
+                out_path = build_output_path(subject_output_dir, subject, output_ses, task_name)
                 if not args.dry_run:
                     out_path.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(csv_file, out_path)
