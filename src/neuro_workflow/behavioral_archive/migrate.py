@@ -365,12 +365,13 @@ def migrate_demographics_to_survey_data(
     dry_run: bool = False,
 ) -> Dict[str, Any]:
     """
-    Migrate demographics survey CSV files to survey_data directory (keep as CSV).
+    Migrate all survey CSV files from demographics_surveys/csv directory to survey_data.
 
-    Includes ALL demographics files regardless of sample membership.
+    This directory contains all survey data (demographics, personality, risk, etc).
+    Includes ALL survey files regardless of sample membership.
 
     Args:
-        archive_dir: Path to archive/survey_data/demographics_surveys/csv (contains *-demographics.csv files)
+        archive_dir: Path to archive/survey_data/demographics_surveys/csv (contains all s###-*.csv files)
         dest_dir: Path to output sourcedata/survey_data
         samples: Sample dict from load_samples_from_config (unused, kept for API compatibility)
         dry_run: If True, don't actually copy files
@@ -385,9 +386,9 @@ def migrate_demographics_to_survey_data(
 
     stats = {"migrated": 0, "errors": 0}
 
-    # Find all demographics CSV files (named like s03-demographics.csv)
+    # Find all CSV files in all subject subdirectories (named like s03-*.csv)
     try:
-        for src_file in sorted(archive_dir.rglob("*-demographics.csv")):
+        for src_file in sorted(archive_dir.rglob("*.csv")):
             if not src_file.is_file():
                 continue
 
@@ -408,19 +409,27 @@ def migrate_demographics_to_survey_data(
                 stats["errors"] += 1
                 continue
 
-
             dest_subject = dest_dir / f"sub-{subject}"
 
-            # Normalize filename
+            # For demographics files, normalize; for others, keep original name with sub- prefix
             try:
-                normalized_name = normalize_demographics_filename(src_file.name, subject=subject)
+                if "demographics" in src_file.name:
+                    # Use demographics normalizer for demographics files
+                    normalized_name = normalize_demographics_filename(src_file.name, subject=subject)
+                    # Keep .csv extension
+                    normalized_name = normalized_name.replace(".json", ".csv")
+                else:
+                    # For other surveys, keep the original name with subject prefix
+                    # Extract the survey type (everything after subject, before .csv)
+                    # e.g., s03-alcohol_drugs.csv -> alcohol_drugs
+                    survey_type = src_file.name.split("-", 1)[1].rsplit(".", 1)[0]
+                    normalized_name = f"sub-{subject}_{survey_type}_survey.csv"
             except ValueError as e:
-                logger.debug(f"Skipped non-standard demographics file {src_file.name}: {e}")
+                logger.debug(f"Skipped non-standard survey file {src_file.name}: {e}")
                 stats["errors"] += 1
                 continue
 
-            # Keep .csv extension (change from .json if normalized)
-            dest_file = dest_subject / normalized_name.replace(".json", ".csv")
+            dest_file = dest_subject / normalized_name
 
             if not dry_run:
                 try:
@@ -433,6 +442,6 @@ def migrate_demographics_to_survey_data(
             else:
                 stats["migrated"] += 1
     except Exception as e:
-        logger.error(f"Error during demographics migration: {e}")
+        logger.error(f"Error during survey data migration: {e}")
 
     return stats
