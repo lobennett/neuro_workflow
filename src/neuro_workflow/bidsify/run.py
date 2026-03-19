@@ -159,7 +159,7 @@ def process_subject_session(
         if _info and _info["modality"] == "anat":
             _anat_key = (_info["suffix"], _info.get("acq"))
             if _info.get("acq") != "MPRAGEPromo":  # MPRAGEPromo always bidsignored regardless
-                _latest_anat_acq[_anat_key] = _acq  # overwrite → last in ascending = latest
+                _latest_anat_acq[_anat_key] = _acq.id  # overwrite → last in ascending = latest
 
     for acq in acq_objects_sorted:
         acq = acq.reload()
@@ -283,7 +283,7 @@ def process_subject_session(
             if anat_key not in anat_scans_by_type:
                 anat_scans_by_type[anat_key] = []
 
-            is_latest_anat = (_latest_anat_acq.get(anat_key) is acq)
+            is_latest_anat = (_latest_anat_acq.get(anat_key) == acq.id)
             stem = bids_filename(subject_label, bids_ses, acq=acq_label, suffix=suffix)
 
             anat_nifti_path = None
