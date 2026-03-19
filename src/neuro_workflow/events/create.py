@@ -117,6 +117,41 @@ def _flagged_feedback(text_content: str) -> bool:
     return any(keyword in text_content.lower() for keyword in keywords)
 
 
+def is_placeholder_behavioral_csv(csv_file: Path) -> bool:
+    """Check if behavioral CSV is a placeholder (missing data marker).
+
+    Args:
+        csv_file: Path to behavioral CSV file
+
+    Returns:
+        True if file contains PLACEHOLDER marker, False otherwise
+    """
+    try:
+        with open(csv_file, encoding='utf-8') as f:
+            first_line = f.readline()
+            return "PLACEHOLDER" in first_line
+    except Exception as e:
+        log.warning("Error checking if %s is placeholder: %s", csv_file, e)
+        return False
+
+
+def create_empty_events_df() -> pd.DataFrame:
+    """Create empty events DataFrame with required BIDS columns.
+
+    Returns:
+        Empty DataFrame with standard BIDS events columns
+    """
+    return pd.DataFrame(columns=[
+        "onset",
+        "duration",
+        "trial_id",
+        "trial_type",
+        "response_time",
+        "key_press",
+        "correct_response",
+    ])
+
+
 def _get_rows_with_feedback(df: pd.DataFrame, original_df: pd.DataFrame):
     feedback_block_rows = original_df[original_df["trial_id"] == "test_feedback"]
     if len(feedback_block_rows) == 0:
@@ -197,7 +232,7 @@ def run_create_events(
             # Get tasks that have NIfTIs
             nifti_tasks = set()
             for nii in func_dir.glob("*.nii.gz"):
-                m = re.search(r"task-(\w+)", nii.name)
+                m = re.search(r"task-([^_]+)", nii.name)
                 if m and m.group(1) != "rest":
                     nifti_tasks.add(m.group(1))
 
@@ -205,17 +240,58 @@ def run_create_events(
             csv_files = sorted(beh_dir.glob("*.csv"))
             task_to_files: dict[str, list[Path]] = {}
             for csv_file in csv_files:
-                # Extract task from BIDS-style sourcedata filename
-                m = re.search(r"task-(\w+)", csv_file.name)
+                # Extract task from BIDS-style sourcedata filename (stop at underscore)
+                m = re.search(r"task-([^_]+)", csv_file.name)
                 if m:
                     task_name = m.group(1)
                     if task_name in nifti_tasks:
                         task_to_files.setdefault(task_name, []).append(csv_file)
 
+            # Track which tasks have been processed
+            tasks_with_events = set()
+
             for task_name, files in task_to_files.items():
                 for run_idx, csv_file in enumerate(files, 1):
-                    df = create_events_df(csv_file, task_name)
                     outname = f"{sub_dir.name}_{ses_dir.name}_task-{task_name}_run-{run_idx}_events.tsv"
                     outpath = func_dir / outname
-                    log.info("Writing %s", outpath)
+
+                    # Check if this is a placeholder behavioral file
+                    if is_placeholder_behavioral_csv(csv_file):
+                        log.info(
+                            "Creating empty events.tsv for placeholder behavioral: %s",
+                            outpath,
+                        )
+                        df = create_empty_events_df()
+                    else:
+                        # Normal processing of behavioral CSV
+                        try:
+                            df = create_events_df(csv_file, task_name)
+                            log.info("Writing events.tsv from behavioral: %s", outpath)
+                        except Exception as e:
+                            log.warning(
+                                "Failed to process behavioral %s: %s. Creating empty events.tsv.",
+                                csv_file,
+                                e,
+                            )
+                            df = create_empty_events_df()
+
+                    df.to_csv(outpath, sep="\t", index=False)
+                    tasks_with_events.add(task_name)
+
+            # Check for BOLD scans without behavioral data
+            for bold_task in nifti_tasks:
+                if bold_task not in tasks_with_events:
+                    log.warning(
+                        "BOLD scan exists without behavioral data: %s %s task-%s",
+                        sub_dir.name,
+                        ses_dir.name,
+                        bold_task,
+                    )
+                    outname = f"{sub_dir.name}_{ses_dir.name}_task-{bold_task}_run-1_events.tsv"
+                    outpath = func_dir / outname
+                    log.info(
+                        "Creating empty events.tsv for BOLD without behavioral: %s",
+                        outpath,
+                    )
+                    df = create_empty_events_df()
                     df.to_csv(outpath, sep="\t", index=False)
