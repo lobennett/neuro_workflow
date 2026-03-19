@@ -7,6 +7,8 @@ Validates that:
 2. BOLD scans have corresponding behavioral data
 3. Reports discrepancies for .bidsignore addition
 
+Only checks discovery subjects against discovery_bids and validation subjects against validation_bids.
+
 Usage:
     python scripts/check_behavioral_bold_correspondence.py
 """
@@ -15,6 +17,8 @@ import re
 import json
 from pathlib import Path
 from collections import defaultdict
+
+from neuro_workflow.behavioral_archive.sample_validation import load_samples_from_config
 
 
 def extract_beh_info(beh_file: Path) -> dict:
@@ -84,13 +88,22 @@ def main():
     discovery_bids = Path("/scratch/users/logben/discovery_bids")
     validation_bids = Path("/scratch/users/logben/validation_bids")
 
+    # Load sample configuration to filter subjects
+    config_path = Path("config/behavioral_session_mapping.json")
+    samples = load_samples_from_config(config_path)
+
+    discovery_subjects = set(samples.get("discovery", []))
+    validation_subjects = set(samples.get("validation", []))
+
     print("=" * 80)
     print("BEHAVIORAL <-> BOLD CORRESPONDENCE CHECK")
     print("=" * 80)
+    print(f"\nLoaded {len(discovery_subjects)} discovery subjects")
+    print(f"Loaded {len(validation_subjects)} validation subjects\n")
 
     datasets = [
-        ("discovery", discovery_bids),
-        ("validation", validation_bids),
+        ("discovery", discovery_bids, discovery_subjects),
+        ("validation", validation_bids, validation_subjects),
     ]
 
     all_discrepancies = {
@@ -104,19 +117,24 @@ def main():
         },
     }
 
-    for sample_name, bids_root in datasets:
+    for sample_name, bids_root, sample_subjects in datasets:
         print(f"\n### {sample_name.upper()} DATASET ###\n")
 
-        # Get behavioral data
-        behavioral = get_behavioral_data(beh_root)
-        print(f"Found {len(behavioral)} behavioral (subject, session, task) groups")
+        # Get ALL behavioral data
+        all_behavioral = get_behavioral_data(beh_root)
+
+        # Filter to only this sample's subjects
+        behavioral = {}
+        for (subj, sess, task), beh_files in all_behavioral.items():
+            if subj in sample_subjects:
+                behavioral[(subj, sess, task)] = beh_files
+
+        print(f"Found {len(behavioral)} behavioral (subject, session, task) groups for {sample_name}")
 
         # Get BOLD data
         bold = get_bold_data(bids_root)
         print(f"Found {len(bold)} BOLD (subject, session, task, run) files\n")
 
-        # Extract behavioral by sample (need to check BIDS or config for sample membership)
-        # For now, check all behavioral files against their respective BIDS directory
         behavioral_without_bold = []
         bold_without_behavioral = []
 
@@ -141,6 +159,10 @@ def main():
         # Check BOLD files have behavioral
         print("Checking BOLD → behavioral correspondence...")
         for (bold_subj, bold_sess, bold_task, run), bold_files in sorted(bold.items()):
+            # Skip rest tasks - they never have behavioral data
+            if bold_task == "rest":
+                continue
+
             # Look for behavioral matching this (subject, session, task)
             key = (bold_subj, bold_sess, bold_task)
             if key not in behavioral:
