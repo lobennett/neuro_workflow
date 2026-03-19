@@ -136,9 +136,9 @@ def main():
     logger.info("DEMOGRAPHICS SURVEY MIGRATION")
     logger.info("=" * 60)
 
-    archive_mturk = args.archive_dir / "mTurk" / "all_data"
+    archive_demographics = args.archive_dir / "survey_data" / "demographics_surveys" / "csv"
     demographics_stats = migrate_demographics_to_survey_data(
-        archive_mturk, dest_survey, samples, dry_run=args.dry_run
+        archive_demographics, dest_survey, samples, dry_run=args.dry_run
     )
     logger.info(
         f"Demographics: {demographics_stats['migrated']} migrated, "

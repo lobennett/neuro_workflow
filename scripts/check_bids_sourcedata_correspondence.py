@@ -150,17 +150,21 @@ def main():
         # Extract sourcedata (include both regular and excluded)
         all_sourcedata = defaultdict(lambda: defaultdict(set))
 
-        if paths["sourcedata"] and Path(paths["sourcedata"] / "behavioral_data").exists():
-            sourcedata_regular = extract_sourcedata_sessions(paths["sourcedata"] / "behavioral_data")
-            for subj, sessions in sourcedata_regular.items():
-                for sess, files in sessions.items():
-                    all_sourcedata[subj][sess].update(files)
+        if paths["sourcedata"]:
+            sourcedata_path = Path(paths["sourcedata"]) / "in_scanner_behavior"
+            if sourcedata_path.exists():
+                sourcedata_regular = extract_sourcedata_sessions(sourcedata_path)
+                for subj, sessions in sourcedata_regular.items():
+                    for sess, files in sessions.items():
+                        all_sourcedata[subj][sess].update(files)
 
-        if paths["excluded_sourcedata"] and Path(paths["excluded_sourcedata"] / "behavioral_data").exists():
-            sourcedata_excluded = extract_sourcedata_sessions(paths["excluded_sourcedata"] / "behavioral_data")
-            for subj, sessions in sourcedata_excluded.items():
-                for sess, files in sessions.items():
-                    all_sourcedata[subj][sess].update(files)
+        if paths["excluded_sourcedata"]:
+            excluded_path = Path(paths["excluded_sourcedata"]) / "in_scanner_behavior"
+            if excluded_path.exists():
+                sourcedata_excluded = extract_sourcedata_sessions(excluded_path)
+                for subj, sessions in sourcedata_excluded.items():
+                    for sess, files in sessions.items():
+                        all_sourcedata[subj][sess].update(files)
 
         sourcedata_sessions = {s: {ses: sorted(list(files_set)) for ses, files_set in sess.items()}
                                for s, sess in all_sourcedata.items()}
