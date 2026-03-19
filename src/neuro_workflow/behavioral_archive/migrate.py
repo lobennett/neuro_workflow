@@ -370,7 +370,7 @@ def migrate_demographics_to_survey_data(
     Includes ALL demographics files regardless of sample membership.
 
     Args:
-        archive_dir: Path to archive/mTurk/all_data (contains demographics_survey CSVs)
+        archive_dir: Path to archive/survey_data/demographics_surveys/csv (contains *-demographics.csv files)
         dest_dir: Path to output sourcedata/survey_data
         samples: Sample dict from load_samples_from_config (unused, kept for API compatibility)
         dry_run: If True, don't actually copy files
@@ -385,9 +385,9 @@ def migrate_demographics_to_survey_data(
 
     stats = {"migrated": 0, "errors": 0}
 
-    # Find all demographics_survey CSV files in mTurk directory
+    # Find all demographics CSV files (named like s03-demographics.csv)
     try:
-        for src_file in sorted(archive_dir.rglob("demographics_survey*.csv")):
+        for src_file in sorted(archive_dir.rglob("*-demographics.csv")):
             if not src_file.is_file():
                 continue
 

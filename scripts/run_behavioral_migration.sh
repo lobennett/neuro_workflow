@@ -13,28 +13,29 @@ MTURK_OAK="/oak/stanford/groups/russpold/data/network_grant/mTurk"
 
 echo "=== Phase 1: Discovery In-Scanner Behavioral ==="
 echo "Source: $RAW_CLEANED"
-echo "Target: $SOURCEDATA_OAK/behavioral_data"
+echo "Target: $SOURCEDATA_OAK/in_scanner_behavior"
 echo ""
+ml uv
 uv run python scripts/rename_behavioral_to_sourcedata.py \
   --input-dir "$RAW_CLEANED" \
-  --output-dir "$SOURCEDATA_OAK/behavioral_data" \
-  --excluded-output-dir "$EXCLUDED_SOURCEDATA_OAK/behavioral_data" \
+  --output-dir "$SOURCEDATA_OAK/in_scanner_behavior" \
+  --excluded-output-dir "$EXCLUDED_SOURCEDATA_OAK/in_scanner_behavior" \
   --sample discovery \
   --bids-dir /scratch/users/logben/discovery_bids \
-  -v 2>&1 | tee logs/bidsify_logs/behavioral_discovery_$(date +%Y%m%d_%H%M).log
+  2>&1 | tee logs/bidsify_logs/behavioral_discovery_$(date +%Y%m%d_%H%M).log
 
 echo ""
 echo "=== Phase 2: Validation In-Scanner Behavioral ==="
 echo "Source: $RAW_CLEANED"
-echo "Target: $SOURCEDATA_OAK/behavioral_data (+ excluded routing)"
+echo "Target: $SOURCEDATA_OAK/in_scanner_behavior (+ excluded routing)"
 echo ""
 uv run python scripts/rename_behavioral_to_sourcedata.py \
   --input-dir "$RAW_CLEANED" \
-  --output-dir "$SOURCEDATA_OAK/behavioral_data" \
-  --excluded-output-dir "$EXCLUDED_SOURCEDATA_OAK/behavioral_data" \
+  --output-dir "$SOURCEDATA_OAK/in_scanner_behavior" \
+  --excluded-output-dir "$EXCLUDED_SOURCEDATA_OAK/in_scanner_behavior" \
   --sample validation \
   --bids-dir /scratch/users/logben/validation_bids \
-  -v 2>&1 | tee logs/bidsify_logs/behavioral_validation_$(date +%Y%m%d_%H%M).log
+  2>&1 | tee logs/bidsify_logs/behavioral_validation_$(date +%Y%m%d_%H%M).log
 
 echo ""
 echo "=== Verify irreconcilable entries added to .bidsignore ==="
