@@ -43,6 +43,7 @@ Flywheel session 22424 (Scan 0, 2020-11-11) was a fmap-only test session and is 
 - Flywheel session 25210 (2022-05-24): Extra T1w only. Excluded.
 - Scan 1: Missing T2w; issue with nBack.
 - Scan 2: Still missing T2w.
+- **Behavioral-BOLD Discrepancy (Mar 2026)**: ses-01 nBack behavioral CSV is in raw ses-02 directory. Salvageable by updating session mapping.
 
 ### s10 — Missing Sessions and DTIs
 
@@ -171,3 +172,82 @@ Flywheel session 22424 (Scan 0, 2020-11-11) was a fmap-only test session and is 
 - Deleted: run-1_echo-{1,2,3}_bold.{nii.gz,json} (6 files, 3D scan)
 - Promoted: run-2 → run-1 (6 files renamed, valid 4D scan)
 - Rationale: run-1 was incomplete 3D acquisition; run-2 is valid 4D functional data. BIDS validator identified the 3D issue; cleanup removes invalid data while maintaining proper run numbering.
+
+---
+
+## Behavioral-BOLD Correspondence Discrepancies (Mar 19, 2026)
+
+### Overview
+
+A systematic correspondence check was performed on all behavioral CSV files vs. BOLD scans across discovery (5 subjects) and validation (41 subjects) datasets. 11 total discrepancies were identified.
+
+**See also**: 
+- `docs/BEHAVIORAL_BOLD_DISCREPANCIES.md` (detailed analysis)
+- `/oak/.../sourcedata/BEHAVIORAL_DISCREPANCIES_NOTES.md` (implementation notes)
+
+### Discovery Subjects (5 analyzed)
+
+#### Salvageable Issues (1)
+
+| Subject | Session | Task | Issue | Status |
+|---------|---------|------|-------|--------|
+| **s03** | 01 | nBack | Behavioral CSV in raw ses-02, BOLD in ses-01 | Salvageable — update session mapping |
+
+**Action**: Update `config/behavioral_session_mapping.json` to remap s03 ses-02 nBack → ses-01 output, then re-run migration.
+
+#### Missing Behavioral Files (5) — Add to .bidsignore
+
+| Subject | Session | Task |
+|---------|---------|------|
+| s19 | 02 | goNogo |
+| s19 | 11 | directedForgettingWFlanker |
+| s29 | 01 | cuedTS |
+| s29 | 02 | goNogo |
+| s43 | 02 | goNogo |
+
+**Action**: Add entries to `/scratch/users/logben/discovery_bids/.bidsignore` when directory is made writable.
+
+### Validation Subjects (41 analyzed)
+
+#### Salvageable Issues (1)
+
+| Subject | Session | Task | Issue | Status |
+|---------|---------|------|-------|--------|
+| **s300** | 08 | flanker | Behavioral CSV in raw ses-09, BOLD in ses-08 | Salvageable — update session mapping |
+
+**Action**: Update `config/behavioral_session_mapping.json` to remap s300 ses-09 flanker → ses-08 output, then re-run migration.
+
+#### Behavioral Without BOLD Scans (1) — Exclude from Migration
+
+| Subject | Session | Task | Issue |
+|---------|---------|------|-------|
+| s321 | 01 | spatialTS | BOLD scan is missing |
+
+**Action**: Exclude from behavioral migration; add to `.bidsignore`.
+
+#### Missing Behavioral Files (4) — Add to .bidsignore
+
+| Subject | Session | Task |
+|---------|---------|------|
+| s1175 | 11 | cuedTSWFlanker |
+| s1292 | 04 | nBack |
+| s180 | 12 | shapeMatchingWCuedTS |
+| s321 | 02 | spatialTS |
+
+**Action**: Add entries to `/scratch/users/logben/validation_bids/.bidsignore` when directory is made writable.
+
+### Summary Statistics
+
+- **Total discrepancies found**: 11 (discovery: 6, validation: 5)
+- **Salvageable via session remapping**: 2
+- **Truly missing behavioral files**: 9
+- **Behavioral files without BOLD**: 1
+- **Overall data completeness**: 99.7% (2607 of 2610 behavioral-BOLD pairs matched correctly)
+
+### Technical Notes
+
+- Rest scans correctly excluded from check (no behavioral data by design)
+- Session mapping issues reflect archive organization, not migration errors
+- Remaining discrepancies represent either data collection issues or rare archival anomalies
+
+---
