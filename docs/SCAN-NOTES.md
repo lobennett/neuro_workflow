@@ -56,10 +56,11 @@ Flywheel session 22424 (Scan 0, 2020-11-11) was a fmap-only test session and is 
 - Scan 2: Got pe1 instead of pe0 (pe0 still needed). Got pe0 on scan 9.
 - Scan 8: No eye tracking for first scan; had to run 3 shims.
 
-### s19 — Minor Issues
+### s19 — Minor Issues + Anatomical Quality Selection
 
 - Scan 1: Only fmap and rest collected.
 - Missing 1 goNogo (per behavioral notes).
+- **Anatomical selection**: Quality inspection identified ses-05 T1w (SagMPRAGE) and ses-03 T2w (CubePromo) as best quality. Earlier acquisitions (ses-01 T1w/T2w, ses-03 T1w) are excluded in `.bidsignore`.
 
 ---
 
