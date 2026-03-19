@@ -146,3 +146,27 @@ Flywheel session 22424 (Scan 0, 2020-11-11) was a fmap-only test session and is 
 - **spatialTS behavioral data:** All raw files contain the column `predictable_dimension` despite none being predictableTS tasks.
 - **Mask thresholds (decided 2025-10-10):** Within-subject = 1.0; across-subject = 0.9.
 - **Event file trimming:** Scans with >10 trailing omissions were trimmed (subject stopped responding). Scans where subject fell asleep were **not** trimmed.
+
+---
+
+## BIDS Structural Cleanup - March 19, 2026
+
+### s480 ses-03 task-goNogo (validation_bids)
+
+**Issue**: Duplicate BOLD runs (run-1 and run-2 present for same task in same session)
+
+**Resolution**:
+- Deleted BOLD: run-1_echo-{1,2,3}_bold.{nii.gz,json} (6 files)
+- Deleted physio: run-1_recording-cardiac/respiratory_physio.{json,tsv.gz} (4 files)
+- Promoted BOLD: run-2 → run-1 (6 files renamed)
+- Promoted physio: run-2 → run-1 (4 files renamed: cardiac JSON/TSV, respiratory JSON/TSV)
+- Rationale: BIDS validator flagged duplicate runs; run-1 was original acquisition, run-2 was repeat. Kept run-2 based on acquisition quality assessment. All associated BOLD echoes and physiological recordings (cardiac 100Hz, respiratory 25Hz) also promoted to maintain temporal alignment.
+
+### s43 ses-08 task-directedForgetting (discovery_bids)
+
+**Issue**: 3D BOLD file (incomplete scan - ended prematurely) with duplicate run numbering
+
+**Resolution**:
+- Deleted: run-1_echo-{1,2,3}_bold.{nii.gz,json} (6 files, 3D scan)
+- Promoted: run-2 → run-1 (6 files renamed, valid 4D scan)
+- Rationale: run-1 was incomplete 3D acquisition; run-2 is valid 4D functional data. BIDS validator identified the 3D issue; cleanup removes invalid data while maintaining proper run numbering.
