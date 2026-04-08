@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -86,7 +87,7 @@ class TestDownloadAndPlace:
         file_obj = MagicMock()
         file_obj.name = "bold.nii.gz"
         file_obj.size = 1024
-        file_obj.created = "2025-01-01T00:00:00"
+        file_obj.created = datetime(2025, 1, 1, tzinfo=timezone.utc)
 
         dest_path = tmp_path / "sub-s03" / "ses-01" / "func" / "bold.nii.gz"
 
@@ -98,5 +99,5 @@ class TestDownloadAndPlace:
             "fw_filename": "bold.nii.gz",
             "bids_path": str(dest_path),
             "size": 1024,
-            "created": "2025-01-01T00:00:00",
+            "created": "2025-01-01T00:00:00+00:00",
         }

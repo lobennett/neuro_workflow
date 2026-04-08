@@ -7,7 +7,6 @@ from neuro_workflow.bidsify.config import (
     ACQUISITION_MAP,
     SKIP_ACQUISITIONS,
     load_pipeline_config,
-    load_reconciliation_config,
     map_acquisition,
 )
 
@@ -145,12 +144,6 @@ class TestSkipAcquisitions:
     def test_contains_all_skip_labels(self):
         expected = {"3Plane Loc SSFSE", "GE HOS FOV28", "GE HOS FOV28_1", "GE HOS FOV28_2"}
         assert expected == SKIP_ACQUISITIONS
-
-
-class TestLoadReconciliationConfig:
-    def test_loads_json(self):
-        config = load_reconciliation_config()
-        assert isinstance(config, dict)
 
 
 class TestLoadPipelineConfig:
