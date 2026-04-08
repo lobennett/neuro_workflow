@@ -32,8 +32,8 @@ def _echo_number(filename):
     return int(m.group(1)) if m else None
 
 
-def _pick_newest(candidates):
-    """From a list of file objects, return the one with most recent created timestamp."""
+def _resolve_duplicate_file(candidates):
+    """When a gear produces multiple copies of the same file, pick the latest."""
     return max(candidates, key=lambda f: f.created or "")
 
 
@@ -88,8 +88,8 @@ def _select_multiecho(files):
         nifti_candidates = echo_niftis[echo]
         json_candidates = echo_jsons.get(echo, [])
 
-        nifti = _pick_newest(nifti_candidates)
-        json_file = _pick_newest(json_candidates) if json_candidates else None
+        nifti = _resolve_duplicate_file(nifti_candidates)
+        json_file = _resolve_duplicate_file(json_candidates) if json_candidates else None
 
         if len(nifti_candidates) > 1:
             sizes = {f.size for f in nifti_candidates}
@@ -135,8 +135,8 @@ def _select_single(files):
     niftis = [f for f in files if _is_nifti(f)]
     jsons = [f for f in files if _is_json(f)]
 
-    nifti = _pick_newest(niftis) if niftis else None
-    json_file = _pick_newest(jsons) if jsons else None
+    nifti = _resolve_duplicate_file(niftis) if niftis else None
+    json_file = _resolve_duplicate_file(jsons) if jsons else None
 
     return {"nifti": nifti, "json": json_file}
 
@@ -149,8 +149,8 @@ def _select_dwi(files):
     bvecs = [f for f in files if _is_bvec(f)]
 
     return {
-        "nifti": _pick_newest(niftis) if niftis else None,
-        "json": _pick_newest(jsons) if jsons else None,
-        "bval": _pick_newest(bvals) if bvals else None,
-        "bvec": _pick_newest(bvecs) if bvecs else None,
+        "nifti": _resolve_duplicate_file(niftis) if niftis else None,
+        "json": _resolve_duplicate_file(jsons) if jsons else None,
+        "bval": _resolve_duplicate_file(bvals) if bvals else None,
+        "bvec": _resolve_duplicate_file(bvecs) if bvecs else None,
     }
