@@ -96,12 +96,6 @@ def map_acquisition(label):
     return ACQUISITION_MAP.get(label)
 
 
-def load_reconciliation_config():
-    config_path = Path(__file__).parent / "reconciliation_config.json"
-    with open(config_path) as f:
-        return json.load(f)
-
-
 def load_pipeline_config():
     """Load the consolidated pipeline config from config/pipeline_config.json."""
     config_dir = Path(__file__).resolve().parent.parent.parent.parent / "config"
