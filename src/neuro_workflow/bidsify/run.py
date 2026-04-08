@@ -4,11 +4,10 @@ import json
 import logging
 import tempfile
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
-from neuro_workflow.bidsify.config import map_acquisition, load_reconciliation_config
+from neuro_workflow.bidsify.config import map_acquisition, load_pipeline_config
 from neuro_workflow.bidsify.flywheel_query import (
     collect_subject_sessions,
     build_session_timeline,
@@ -27,7 +26,6 @@ from neuro_workflow.bidsify.physio_query import (
     find_gephysio_analyses,
     match_analyses_to_acquisitions,
 )
-from neuro_workflow.bidsify.physio_trimming import trim_physio_data
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +58,16 @@ def build_reconciliation(canonical_label, sessions, fw_sources):
     }
 
 
+def write_session_timestamps(rows, sourcedata_dir):
+    """Write session_timestamps.tsv to sourcedata directory."""
+    tsv_path = Path(sourcedata_dir) / "session_timestamps.tsv"
+    header = "subject\tbids_session\tflywheel_session_label\tflywheel_timestamp"
+    lines = [header]
+    for row in sorted(rows, key=lambda r: (r["subject"], r["bids_session"])):
+        lines.append(f"{row['subject']}\t{row['bids_session']}\t{row['flywheel_session_label']}\t{row['flywheel_timestamp']}")
+    tsv_path.write_text("\n".join(lines) + "\n")
+
+
 def download_physio_analysis(analysis, dest_dir):
     """Download gephysio analysis CSV files to a local directory.
 
@@ -78,43 +86,8 @@ def download_physio_analysis(analysis, dest_dir):
     return dest_dir
 
 
-def _safe_patch_sidecar(json_path, max_retries=3, **fields):
-    """Safely patch a sidecar JSON with retry logic and error handling.
-
-    Args:
-        json_path: Path to JSON sidecar
-        max_retries: Number of retry attempts
-        **fields: Fields to patch into JSON
-
-    Returns:
-        True if successful, False otherwise
-    """
-    for attempt in range(max_retries):
-        try:
-            patch_sidecar(json_path, **fields)
-            return True
-        except json.JSONDecodeError as e:
-            logger.error(
-                "JSON decode error in %s (attempt %d/%d): %s",
-                json_path, attempt + 1, max_retries, e
-            )
-            if attempt < max_retries - 1:
-                import time
-                time.sleep(0.5)
-        except Exception as e:
-            logger.error(
-                "Error patching %s (attempt %d/%d): %s",
-                json_path, attempt + 1, max_retries, e
-            )
-            if attempt < max_retries - 1:
-                import time
-                time.sleep(0.5)
-    return False
-
-
 def process_subject_session(
     subject_label, session_info, acq_objects, output_dir, log_entries,
-    bidsignore_entries=None,
 ):
     """Process a single session: select files, download, rename, patch sidecars.
 
@@ -124,13 +97,10 @@ def process_subject_session(
         acq_objects: List of Flywheel acquisition objects for this session
         output_dir: BIDS root directory
         log_entries: List to append download log entries to
-        bidsignore_entries: List to append .bidsignore patterns to
 
     Returns:
         List of warning strings for this session (for reconciliation).
     """
-    if bidsignore_entries is None:
-        bidsignore_entries = []
     bids_ses = session_info["bids_session"]
     sub_dir = Path(output_dir) / f"sub-{subject_label}" / bids_ses
 
@@ -138,28 +108,15 @@ def process_subject_session(
     fieldmap_id = None
     bold_sidecars = []
     task_run_counter = Counter()
+    anat_run_counter = Counter()
+    dwi_run_counter = Counter()
     warnings = []
     bold_acq_count = 0
     bold_file_count = 0
     acq_id_to_task = {}
 
-    # Track anatomical and DWI scans to handle duplicates
-    anat_scans_by_type = {}  # {(suffix, acq_label): [(nifti_path, json_path, is_first)]}
-    dwi_scans_by_key = {}  # {(dir_label, acq_label): [(files, is_first)]} - track by direction+acq
-
     # Sort acquisitions by timestamp so duplicate tasks get correct run numbering
     acq_objects_sorted = sorted(acq_objects, key=lambda a: a.timestamp or "")
-
-    # Pre-compute the latest acquisition for each anatomical type
-    # (ascending sort means last-seen == latest timestamp)
-    _latest_anat_acq = {}
-    for _acq in acq_objects_sorted:
-        _acq.reload()
-        _info = map_acquisition(_acq.label)
-        if _info and _info["modality"] == "anat":
-            _anat_key = (_info["suffix"], _info.get("acq"))
-            if _info.get("acq") != "MPRAGEPromo":  # MPRAGEPromo always bidsignored regardless
-                _latest_anat_acq[_anat_key] = _acq.id  # overwrite → last in ascending = latest
 
     for acq in acq_objects_sorted:
         acq = acq.reload()
@@ -205,42 +162,13 @@ def process_subject_session(
                     )
                     log_entries.append(info)
 
-                    # Trim 7 dummy volumes from start of BOLD scan (TR=1.49s, total offset=10.43s)
-                    try:
-                        import nibabel as nib
-                        _img = nib.load(nifti_path)
-                        if _img.ndim == 4 and _img.shape[3] > 7:
-                            _trimmed = nib.Nifti1Image(
-                                _img.get_fdata()[..., 7:], _img.affine, _img.header
-                            )
-                            nib.save(_trimmed, nifti_path)
-                            logger.debug(
-                                "Trimmed 7 dummy volumes from %s (was %d vols, now %d)",
-                                nifti_path, _img.shape[3], _img.shape[3] - 7
-                            )
-                        else:
-                            logger.warning(
-                                "BOLD too short to trim 7 dummies (%s): shape=%s",
-                                nifti_path, _img.shape
-                            )
-                    except Exception as e:
-                        logger.warning("Could not trim dummy volumes from %s: %s", nifti_path, e)
-
                 if echo_info["json"]:
                     json_path = dest_dir / f"{stem}.json"
                     info = download_and_place(acq, echo_info["json"], json_path)
                     log_entries.append(info)
-                    # Add TaskName to BOLD sidecar with error handling
-                    if _safe_patch_sidecar(json_path, TaskName=task_name):
-                        bold_sidecars.append(json_path)
-                        logger.debug("Patched BOLD sidecar with TaskName: %s", json_path)
-                    else:
-                        logger.error(
-                            "Failed to patch TaskName in BOLD sidecar: %s", json_path
-                        )
-                        warnings.append(
-                            f"Failed to patch TaskName for {task_name} echo {echo_info['echo']}"
-                        )
+                    # Add TaskName to BOLD sidecar
+                    patch_sidecar(json_path, TaskName=task_name)
+                    bold_sidecars.append(json_path)
 
         elif modality == "fmap":
             run = 1  # one fieldmap per session
@@ -261,11 +189,7 @@ def process_subject_session(
                 json_path = dest_dir / f"{stem}.json"
                 info = download_and_place(acq, selected["fieldmap_json"], json_path)
                 log_entries.append(info)
-                if _safe_patch_sidecar(json_path, b0_field_identifier=fmap_id, Units="Hz"):
-                    logger.debug("Patched fieldmap sidecar with Units and B0FieldIdentifier: %s", json_path)
-                else:
-                    logger.error("Failed to patch Units and B0FieldIdentifier in fieldmap: %s", json_path)
-                    warnings.append(f"Failed to patch Units in fieldmap sidecar")
+                patch_sidecar(json_path, b0_field_identifier=fmap_id, Units="Hz")
             if selected.get("magnitude_nifti"):
                 stem = bids_filename(subject_label, bids_ses, run=run, suffix="magnitude")
                 info = download_and_place(
@@ -278,110 +202,41 @@ def process_subject_session(
             acq_label = mapping.get("acq")
             dest_dir = sub_dir / "anat"
 
-            # Track duplicate anatomicals (e.g., multiple T1w scans in same session)
             anat_key = (suffix, acq_label)
-            if anat_key not in anat_scans_by_type:
-                anat_scans_by_type[anat_key] = []
+            anat_run_counter[anat_key] += 1
+            run = anat_run_counter[anat_key]
 
-            is_latest_anat = (_latest_anat_acq.get(anat_key) == acq.id)
-            stem = bids_filename(subject_label, bids_ses, acq=acq_label, suffix=suffix)
-
-            anat_nifti_path = None
-            anat_json_path = None
-            should_skip = False
+            stem = bids_filename(subject_label, bids_ses, acq=acq_label, run=run, suffix=suffix)
 
             if selected.get("nifti"):
-                anat_nifti_path = dest_dir / f"{stem}.nii.gz"
-                info = download_and_place(
-                    acq, selected["nifti"], anat_nifti_path
-                )
+                info = download_and_place(acq, selected["nifti"], dest_dir / f"{stem}.nii.gz")
                 log_entries.append(info)
-                # MPRAGEPromo T1w files have extra dimensions — add to .bidsignore
-                if acq_label and "MPRAGEPromo" in acq_label:
-                    rel = anat_nifti_path.relative_to(output_dir)
-                    bidsignore_entries.append(str(rel))
-                    logger.info("Adding MPRAGEPromo to .bidsignore: %s", rel)
-                    should_skip = True
-                elif not is_latest_anat:
-                    # Duplicate anatomical scan (older): mark for .bidsignore, keep latest
-                    rel = anat_nifti_path.relative_to(output_dir)
-                    bidsignore_entries.append(str(rel))
-                    logger.info(
-                        "Duplicate %s scan in %s (keeping latest), adding older to .bidsignore: %s",
-                        suffix, bids_ses, rel
-                    )
-                    should_skip = True
-
             if selected.get("json"):
-                anat_json_path = dest_dir / f"{stem}.json"
-                info = download_and_place(
-                    acq, selected["json"], anat_json_path
-                )
+                info = download_and_place(acq, selected["json"], dest_dir / f"{stem}.json")
                 log_entries.append(info)
-                if (acq_label and "MPRAGEPromo" in acq_label) or (not is_latest_anat and should_skip):
-                    rel = anat_json_path.relative_to(output_dir)
-                    bidsignore_entries.append(str(rel))
-
-            # Track this anatomical scan
-            if anat_nifti_path or anat_json_path:
-                anat_scans_by_type[anat_key].append({
-                    "nifti": anat_nifti_path,
-                    "json": anat_json_path,
-                    "is_latest": is_latest_anat
-                })
 
         elif modality == "dwi":
             dir_label = mapping.get("dir")
             acq_label = mapping.get("acq")
             dest_dir = sub_dir / "dwi"
 
-            # Track duplicate DWI scans by (direction, acq) - AP and PA are NOT duplicates
             dwi_key = (dir_label, acq_label)
-            if dwi_key not in dwi_scans_by_key:
-                dwi_scans_by_key[dwi_key] = []
+            dwi_run_counter[dwi_key] += 1
+            run = dwi_run_counter[dwi_key]
 
-            is_first_dwi = len(dwi_scans_by_key[dwi_key]) == 0
-            if not is_first_dwi:
-                logger.info(
-                    "Duplicate DWI scan found for %s %s (dir:%s, acq:%s), will add to .bidsignore",
-                    subject_label, bids_ses, dir_label, acq_label
-                )
+            stem = bids_filename(subject_label, bids_ses, acq=acq_label, dir=dir_label, run=run, suffix="dwi")
 
-            stem = bids_filename(
-                subject_label, bids_ses, acq=acq_label, dir=dir_label, run=1, suffix="dwi"
-            )
-
-            dwi_files = {}
             for ext in ("nifti", "json", "bval", "bvec"):
                 if selected.get(ext):
                     file_ext = {"nifti": ".nii.gz", "json": ".json", "bval": ".bval", "bvec": ".bvec"}[ext]
-                    dest_path = dest_dir / f"{stem}{file_ext}"
-                    info = download_and_place(
-                        acq, selected[ext], dest_path
-                    )
+                    info = download_and_place(acq, selected[ext], dest_dir / f"{stem}{file_ext}")
                     log_entries.append(info)
-                    dwi_files[ext] = dest_path
-
-                    # Mark duplicate DWI files for .bidsignore (only if same dir+acq)
-                    if not is_first_dwi:
-                        rel = dest_path.relative_to(output_dir)
-                        bidsignore_entries.append(str(rel))
-
-            if dwi_files:
-                dwi_scans_by_key[dwi_key].append({
-                    "files": dwi_files,
-                    "is_first": is_first_dwi
-                })
 
     # Patch all BOLD sidecars with B0FieldSource
     if fieldmap_id:
         for sidecar_path in bold_sidecars:
             if sidecar_path.exists():
-                if _safe_patch_sidecar(sidecar_path, b0_field_source=fieldmap_id):
-                    logger.debug("Patched BOLD sidecar with B0FieldSource: %s", sidecar_path)
-                else:
-                    logger.error("Failed to patch B0FieldSource in: %s", sidecar_path)
-                    warnings.append(f"Failed to patch B0FieldSource in BOLD sidecar")
+                patch_sidecar(sidecar_path, b0_field_source=fieldmap_id)
 
     # Process physio data from gephysio analyses
     if acq_id_to_task:
@@ -399,7 +254,7 @@ def process_subject_session(
                             match["analysis"], tmpdir
                         )
                         for channel in ("cardiac", "respiratory"):
-                            success = convert_physio_to_bids(
+                            convert_physio_to_bids(
                                 input_dir=dl_dir,
                                 output_dir=func_dir,
                                 subject=subject_label,
@@ -408,34 +263,6 @@ def process_subject_session(
                                 run=match["run"],
                                 channel=channel,
                             )
-
-                            # Trim dummy volumes (7 TRs @ 1.49s = 10.43s offset)
-                            if success:
-                                physio_stem = bids_filename(
-                                    subject_label, bids_ses,
-                                    task=match["task"], run=match["run"],
-                                    recording=channel, suffix="physio"
-                                )
-                                physio_tsv_gz = func_dir / f"{physio_stem}.tsv.gz"
-                                physio_json = func_dir / f"{physio_stem}.json"
-                                try:
-                                    trim_physio_data(
-                                        physio_tsv_gz,
-                                        physio_json,
-                                        dummy_scans=7,
-                                        tr=1.49,
-                                    )
-                                    logger.debug(
-                                        "Trimmed %s physio dummy volumes: %s",
-                                        channel, physio_tsv_gz
-                                    )
-                                except Exception as e:
-                                    logger.warning(
-                                        "Could not trim %s physio: %s", channel, e
-                                    )
-                                    warnings.append(
-                                        f"Failed to trim {channel} physio dummy volumes"
-                                    )
         except Exception as e:
             logger.exception(
                 "Failed to process physio for %s %s: %s", subject_label, bids_ses, str(e)
@@ -455,13 +282,8 @@ def process_subject_session(
 
 
 def _process_one_subject(subject_label, all_subjects, aliases, output_dir, session_overrides=None):
-    """Process a single subject: query sessions, download files, return results.
-
-    Returns:
-        Dict with keys: subject, reconciliation, log_entries, bidsignore_entries.
-    """
+    """Process a single subject: query sessions, download files, return results."""
     log_entries = []
-    bidsignore_entries = []
 
     logger.info("Processing %s...", subject_label)
     sessions = collect_subject_sessions(
@@ -476,45 +298,46 @@ def _process_one_subject(subject_label, all_subjects, aliases, output_dir, sessi
 
     recon = build_reconciliation(subject_label, sessions, fw_sources)
 
+    timestamp_rows = []
     for i, session_info in enumerate(sessions):
         acq_objects = list(session_info["acquisitions"])
 
         session_warnings = process_subject_session(
             subject_label, session_info, acq_objects, output_dir, log_entries,
-            bidsignore_entries=bidsignore_entries,
         )
         if session_warnings:
             recon["sessions"][i]["warnings"] = session_warnings
+
+        timestamp_rows.append({
+            "subject": subject_label,
+            "bids_session": session_info["bids_session"],
+            "flywheel_session_label": session_info["fw_session"].label,
+            "flywheel_timestamp": session_info["timestamp"].isoformat() if session_info["timestamp"] else "",
+        })
 
     logger.info("Finished %s: %d files", subject_label, len(log_entries))
     return {
         "subject": subject_label,
         "reconciliation": recon,
         "log_entries": log_entries,
-        "bidsignore_entries": bidsignore_entries,
+        "timestamp_rows": timestamp_rows,
     }
 
 
 def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, overwrite=False):
-    """Main entry point for Flywheel -> BIDS conversion.
-
-    Args:
-        sample_name: "discovery" or "validation"
-        output_dir: Path to BIDS output directory
-        subjects: Optional list of subject labels to process (default: all in sample)
-        flywheel_project: Flywheel project label (default from config)
-        overwrite: Whether to overwrite existing output
-    """
+    """Main entry point for Flywheel -> BIDS conversion."""
     import flywheel
 
-    config = load_reconciliation_config()
-    project_label = flywheel_project or config["flywheel_project"]
-    aliases = config["subject_aliases"]
-    skip = set(config["skip_subjects"])
-    session_overrides = config.get("session_overrides", {})
+    config = load_pipeline_config()
+    fw_config = config["flywheel"]
+    project_label = flywheel_project or fw_config["project"]
+    aliases = fw_config["subject_aliases"]
+    skip = set(fw_config["skip_subjects"])
+    session_overrides = fw_config.get("session_overrides", {})
 
     if subjects is None:
-        subjects = config["samples"].get(sample_name, [])
+        sample_data = config["samples"].get(sample_name, [])
+        subjects = list(sample_data.keys()) if isinstance(sample_data, dict) else sample_data
 
     output_dir = Path(output_dir)
     if (output_dir / "dataset_description.json").exists() and not overwrite:
@@ -525,73 +348,51 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
     fw = flywheel.Client()
     all_subjects, project = query_project_subjects(fw, project_label)
 
-    # Filter to subjects not in skip list
     subjects_to_process = [s for s in subjects if s not in skip]
     for s in subjects:
         if s in skip:
             logger.info("Skipping %s (in skip list)", s)
 
-    # Process subjects in parallel (reduced workers to avoid resource contention and Flywheel API rate limiting)
-    max_workers = min(len(subjects_to_process), 4)
     reconciliation = {"generated": datetime.now(timezone.utc).isoformat(), "subjects": {}}
     all_log_entries = []
-    all_bidsignore_entries = []
+    all_timestamp_rows = []
 
-    logger.info(
-        "Processing %d subjects with %d parallel workers",
-        len(subjects_to_process), max_workers
-    )
+    logger.info("Processing %d subjects sequentially", len(subjects_to_process))
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(
-                _process_one_subject, subject_label, all_subjects, aliases, output_dir,
+    for subject_label in subjects_to_process:
+        try:
+            result = _process_one_subject(
+                subject_label, all_subjects, aliases, output_dir,
                 session_overrides=session_overrides,
-            ): subject_label
-            for subject_label in subjects_to_process
-        }
-        for future in as_completed(futures):
-            subject_label = futures[future]
-            try:
-                result = future.result()
-                reconciliation["subjects"][result["subject"]] = result["reconciliation"]
-                all_log_entries.extend(result["log_entries"])
-                all_bidsignore_entries.extend(result["bidsignore_entries"])
-                logger.info(
-                    "Processed %s: %d files, %d .bidsignore entries",
-                    subject_label, len(result["log_entries"]), len(result["bidsignore_entries"])
-                )
-            except Exception as e:
-                logger.exception("Failed to process %s: %s", subject_label, str(e))
+            )
+            reconciliation["subjects"][result["subject"]] = result["reconciliation"]
+            all_log_entries.extend(result["log_entries"])
+            all_timestamp_rows.extend(result["timestamp_rows"])
+            logger.info("Processed %s: %d files", subject_label, len(result["log_entries"]))
+        except Exception:
+            logger.exception("Failed to process %s", subject_label)
 
-    # Write .bidsignore for non-compliant files (non-4D BOLD, MPRAGEPromo)
-    if all_bidsignore_entries:
-        bidsignore_path = output_dir / ".bidsignore"
-        bidsignore_path.write_text("\n".join(sorted(set(all_bidsignore_entries))) + "\n")
-        logger.info("Wrote .bidsignore with %d entries", len(set(all_bidsignore_entries)))
-
-    # Write dataset description
     dataset_names = {
         "discovery": "Network Discovery Sample",
         "validation": "Network Validation Sample",
+        "excluded": "Network Excluded Sample",
     }
     ds_name = dataset_names.get(sample_name, sample_name)
     write_dataset_description(output_dir, ds_name)
     write_readme(output_dir, ds_name)
 
-    # Write reconciliation and log
     sourcedata_dir = output_dir / "sourcedata"
     sourcedata_dir.mkdir(parents=True, exist_ok=True)
 
     with open(sourcedata_dir / "reconciliation.json", "w") as f:
         json.dump(reconciliation, f, indent=2)
 
-    # Write sample notes
+    write_session_timestamps(all_timestamp_rows, sourcedata_dir)
+
     sample_notes = config.get("notes", {}).get(sample_name, [])
     if sample_notes:
         notes_path = sourcedata_dir / "NOTES.txt"
         notes_path.write_text("\n".join(sample_notes) + "\n")
-        logger.info("Wrote %d notes to %s", len(sample_notes), notes_path)
 
     log = {
         "generated": datetime.now(timezone.utc).isoformat(),

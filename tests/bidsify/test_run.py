@@ -80,7 +80,6 @@ def test_process_subject_session_downloads_physio(tmp_path):
     physio_analysis.files = [ppg_file, resp_file]
 
     log_entries = []
-    bidsignore_entries = []
 
     with patch("neuro_workflow.bidsify.run.find_gephysio_analyses") as mock_find, \
          patch("neuro_workflow.bidsify.run.match_analyses_to_acquisitions") as mock_match, \
@@ -104,7 +103,6 @@ def test_process_subject_session_downloads_physio(tmp_path):
 
         process_subject_session(
             "s1175", session_info, [acq], tmp_path, log_entries,
-            bidsignore_entries=bidsignore_entries,
         )
 
         mock_find.assert_called_once()
