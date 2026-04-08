@@ -6,6 +6,7 @@ import pytest
 from neuro_workflow.bidsify.config import (
     ACQUISITION_MAP,
     SKIP_ACQUISITIONS,
+    load_pipeline_config,
     load_reconciliation_config,
     map_acquisition,
 )
@@ -151,29 +152,52 @@ class TestLoadReconciliationConfig:
         config = load_reconciliation_config()
         assert isinstance(config, dict)
 
+
+class TestLoadPipelineConfig:
+    def test_loads_json(self):
+        config = load_pipeline_config()
+        assert isinstance(config, dict)
+
     def test_flywheel_project(self):
-        config = load_reconciliation_config()
-        assert config["flywheel_project"] == "r01network"
+        config = load_pipeline_config()
+        assert config["flywheel"]["project"] == "r01network"
 
     def test_subject_aliases(self):
-        config = load_reconciliation_config()
-        assert config["subject_aliases"]["s19-2"] == "s19"
-        assert config["subject_aliases"]["s29-2"] == "s29"
-        assert config["subject_aliases"]["s43-2"] == "s43"
+        config = load_pipeline_config()
+        aliases = config["flywheel"]["subject_aliases"]
+        assert aliases["s19-2"] == "s19"
+        assert aliases["s29-2"] == "s29"
+        assert aliases["s43-2"] == "s43"
+        assert aliases["ex26207"] == "s297"
 
     def test_skip_subjects(self):
-        config = load_reconciliation_config()
-        assert "n01" in config["skip_subjects"]
-        # ex26207 moved to subject_aliases (alias for s297)
-        assert "ex26207" not in config["skip_subjects"]
-        assert config["subject_aliases"]["ex26207"] == "s297"
+        config = load_pipeline_config()
+        assert "n01" in config["flywheel"]["skip_subjects"]
+
+    def test_session_overrides(self):
+        config = load_pipeline_config()
+        overrides = config["flywheel"]["session_overrides"]
+        assert overrides["s03"]["22752"]["reassign_to"] == "s10"
+        assert overrides["s29"]["22424"]["exclude"] is True
 
     def test_samples_discovery(self):
-        config = load_reconciliation_config()
-        assert "s03" in config["samples"]["discovery"]
-        assert len(config["samples"]["discovery"]) == 5
+        config = load_pipeline_config()
+        assert config["samples"]["discovery"] == ["s03", "s10", "s19", "s29", "s43"]
 
-    def test_samples_validation(self):
-        config = load_reconciliation_config()
-        assert "s76" in config["samples"]["validation"]
-        assert len(config["samples"]["validation"]) == 52
+    def test_samples_validation_count(self):
+        config = load_pipeline_config()
+        assert len(config["samples"]["validation"]) == 41
+
+    def test_samples_excluded(self):
+        config = load_pipeline_config()
+        excluded = config["samples"]["excluded"]
+        assert isinstance(excluded, dict)
+        assert len(excluded) == 11
+        assert "s214" in excluded
+
+    def test_excluded_sample_resolves_to_subject_list(self):
+        config = load_pipeline_config()
+        subjects = list(config["samples"]["excluded"].keys())
+        assert "s214" in subjects
+        assert "s1320" in subjects
+        assert len(subjects) == 11
