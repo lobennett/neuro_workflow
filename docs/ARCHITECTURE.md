@@ -2,14 +2,15 @@
 
 ## Overview
 
-The neuro_workflow package is a comprehensive neuroimaging analysis pipeline that orchestrates the conversion of Flywheel project data to BIDS format, trims physiological and behavioral data, performs quality assurance checks, and manages multi-level statistical analysis. The system is designed with modularity, robustness, and data integrity as core principles.
+The neuro_workflow package is a neuroimaging analysis pipeline that orchestrates the conversion of Flywheel project data to BIDS format (with inline dummy volume trimming), manages behavioral data migration, and supports multi-level statistical analysis. The system is designed with simplicity, robustness, and data integrity as core principles.
 
 **Key Characteristics:**
-- Parallel processing with controlled concurrency
+- Sequential processing for simplicity and reliability
 - Comprehensive error handling and logging
 - Multi-sample support (discovery, validation, excluded)
-- Trimmed data management with audit trails
-- BIDS-compliant outputs with validation
+- Dummy volume trimming (7 TRs) during bidsify
+- BIDS-compliant outputs
+- Run numbering for duplicate scans (no .bidsignore generation)
 - Full lineage tracking of data transformations
 
 ## Package Structure
@@ -43,24 +44,14 @@ src/neuro_workflow/
 │   ├── normalize_filenames.py    # Filename normalization per data type
 │   └── sample_validation.py      # Sample filtering and subject validation
 │
-├── bidsify/                       # Flywheel → BIDS conversion and trimming
-│   ├── behavioral_trimming.py    # CSV behavioral data trimming
+├── bidsify/                       # Flywheel → BIDS conversion (sequential, dummy trim, run numbering)
 │   ├── bids_writer.py            # BIDS file output and JSON patching
-│   ├── bold_trimming.py          # NIfTI and events.tsv trimming
-│   ├── config.py                 # BIDS mapping and reconciliation config
-│   ├── exclusions_manifest.py    # Trimming decision tracking and reporting
+│   ├── config.py                 # Pipeline config loader (load_pipeline_config)
 │   ├── file_selector.py          # Acquisition file type selection
 │   ├── flywheel_query.py         # Subject/session querying with alias merging
-│   ├── integration.py            # BIDS validation integration
 │   ├── physio.py                 # Physiological data conversion and export
 │   ├── physio_query.py           # Gephysio analysis matching
-│   ├── physio_trimming.py        # Cardiac/respiratory data trimming
-│   ├── reconciliation_config.json# Session/subject overrides and exclusions
-│   ├── run.py                    # Main orchestrator (entry point)
-│   └── trimming_orchestrator.py  # Coordinates all trimming operations
-│
-├── bids_validation/               # BIDS-specific validation checks
-│   └── bold_analyzer.py          # Task-specific TR-based BOLD analysis
+│   └── run.py                    # Main orchestrator (entry point)
 │
 ├── cli.py                        # Command-line interface entry point
 │
@@ -123,28 +114,30 @@ src/neuro_workflow/
 ### Core Bidsify Modules
 
 #### run.py - Main Orchestrator
-**Purpose:** Primary entry point for Flywheel → BIDS conversion and trimming.
+**Purpose:** Primary entry point for Flywheel → BIDS conversion with dummy volume trimming and run numbering for duplicates.
 
 **Key Classes/Functions:**
 - `build_reconciliation(canonical_label, sessions, fw_sources)`: Constructs reconciliation record mapping BIDS subject to Flywheel sources
-- `_check_bold_4d(nifti_path)`: Validates BOLD NIfTI files are 4D; marks 3D files for .bidsignore
 - `download_physio_analysis(analysis, dest_dir)`: Extracts gephysio CSV files from Flywheel
 - `_safe_patch_sidecar(json_path, max_retries=3, **fields)`: Safely patches sidecar JSON with retry logic (handles corrupted files, API timeouts)
 - `main_bidsify(...)`: Main orchestration function that:
-  - Queries Flywheel for subjects and sessions
+  - Queries Flywheel for subjects and sessions (sequentially)
   - Merges aliased subject variants
   - Applies session overrides (exclusions, reassignments)
   - Downloads and places files in BIDS structure
+  - Trims 7 dummy BOLD volumes immediately after NIfTI download
+  - Assigns run numbering (run-01, run-02) to duplicate scans
   - Patches JSON sidecars with metadata
-  - Handles physiological data conversion
+  - Downloads physiological data (not trimmed)
   - Generates reconciliation.json
-  - Integrates BOLD validation system
-  - Coordinates trimming operations
+  - Writes session_timestamps.tsv
 
 **Key Design Decisions:**
-- **Parallel workers: 4** (reduced from 16 to avoid Flywheel API rate limiting)
+- **Sequential processing:** No parallelism; simpler and more reliable
 - **Retry logic:** 3 attempts for sidecar patching with backoff
-- **Duplicate handling:** First occurrence kept, subsequent duplicates marked for .bidsignore
+- **Duplicate handling:** Duplicate scans receive run numbering (run-01, run-02) instead of being excluded
+- **No .bidsignore generation:** Bidsify does not create .bidsignore; curation is a separate manual step
+- **Physio downloaded, not trimmed:** Physiological data is converted to BIDS format but not trimmed
 - **Error tolerance:** Physio failures generate warnings instead of silent skips
 
 #### flywheel_query.py - Session Merging & Alias Resolution
@@ -192,15 +185,15 @@ List of Session Dicts
 - Maintains directory structure: sub-XXX/ses-YY/anat|func|dwi|fmap|physio/
 - Tracks data provenance in dataset_description.json
 
-#### config.py - BIDS Mapping & Reconciliation
-**Purpose:** Load and manage BIDS acquisition mapping and session/subject overrides.
+#### config.py - Pipeline Configuration
+**Purpose:** Load and manage pipeline configuration, BIDS acquisition mapping, and session/subject overrides.
 
 **Key Functions:**
 - `map_acquisition(acquisition, project_name)`: Maps Flywheel acquisition label to BIDS task/suffix
-- `load_reconciliation_config()`: Loads reconciliation_config.json with:
+- `load_pipeline_config()`: Loads `config/pipeline_config.json` with:
   - Alias mappings (variant → canonical subject)
   - Session overrides (exclusions, reassignments)
-  - Trimming criteria (which scans need behavioral cutoff)
+  - Sample definitions (discovery, validation, excluded)
 
 **Configuration Format:**
 ```json
@@ -210,9 +203,6 @@ List of Session Dicts
     "s03": {
       "session_label": {"exclude": true, "reason": "..."}
     }
-  },
-  "trimming_criteria": {
-    "s19-ses-07-goNogo": {"behavioral_cutoff_ms": 15000}
   }
 }
 ```
@@ -224,143 +214,6 @@ List of Session Dicts
 - `select_files(acquisitions, file_types)`: Selects acquisition files based on type
 - Handles multiple modalities: anatomical, functional, dwi, fmap, physio
 - Implements modality-specific logic for file selection
-
-### Trimming Modules
-
-#### bold_trimming.py - NIfTI and Events Trimming
-**Purpose:** Remove dummy scans and apply behavioral cutoffs to BOLD data.
-
-**Key Functions:**
-- `trim_bold_nifti(bold_file, dummy_scans=7, behavioral_cutoff_trs=None)`:
-  - Removes dummy volumes from start of NIfTI
-  - Applies behavioral cutoff if scan requires early termination
-  - Updates affine matrix for trimmed data
-  - Preserves NIfTI header and metadata
-  - Returns True if trimming applied, False if file missing
-
-- `trim_events_tsv(events_file, dummy_offset_s, behavioral_cutoff_s=None)`:
-  - Adjusts event onsets by dummy offset
-  - Removes events outside behavioral cutoff window
-  - Maintains event column structure (trial_type, response_time, etc.)
-
-**Algorithm:**
-```
-1. Load NIfTI image (4D: x, y, z, time)
-2. Extract data array
-3. Calculate start_idx = dummy_scans
-4. Calculate end_idx = num_volumes or (dummy_scans + behavioral_cutoff_trs)
-5. Extract trimmed_data = data[:,:,:,start_idx:end_idx]
-6. Create new NIfTI with trimmed data
-7. Save with original filename (overwrites)
-```
-
-#### physio_trimming.py - Physiological Data Trimming
-**Purpose:** Synchronize cardiac and respiratory recordings with trimmed BOLD timeline.
-
-**Key Functions:**
-- `trim_physio_data(physio_file, dummy_offset_s, behavioral_cutoff_s, sampling_rate)`:
-  - Removes cardiac/respiratory samples during dummy period
-  - Synchronizes physio timeline with BOLD timeline
-  - Handles variable sampling rates (cardiac ~100 Hz, respiratory ~25 Hz)
-  - Updates _physio.tsv.gz file with trimmed samples
-
-- `calculate_sample_ranges(num_samples, dummy_offset_ms, behavioral_cutoff_ms, sampling_rate)`:
-  - Converts time offsets to sample indices for physiological data
-
-**Data Handling:**
-- Reads gzipped TSV files (Flywheel default export format)
-- Maintains cardiac and respiratory column structure
-- Preserves metadata in JSON sidecar
-- Outputs in BIDS-compliant format
-
-#### behavioral_trimming.py - Behavioral CSV Trimming
-**Purpose:** Trim behavioral data CSV files to match BOLD acquisition timeline.
-
-**Key Functions:**
-- `trim_behavioral_csv(csv_file, dummy_offset_s, behavioral_cutoff_s)`:
-  - Removes rows before dummy offset (behavior during dummies is invalid)
-  - Removes rows after behavioral cutoff
-  - Adjusts timing columns (trial_onset_ms, etc.) by dummy offset
-  - Maintains row structure and data integrity
-
-- `identify_timing_columns(df)`: Auto-detects columns containing timing information
-
-**Format Handling:**
-```
-Input CSV: trial_onset_ms, response_time_ms, accuracy, ...
-↓ trim_behavioral_csv(dummy_offset_s=10.43, behavioral_cutoff_s=600.0)
-Output CSV: (adjusted times, only rows 10.43s to 600.0s)
-```
-
-#### trimming_orchestrator.py - Trimming Coordination
-**Purpose:** Coordinate simultaneous trimming of BOLD, physio, and behavioral data.
-
-**Key Classes:**
-- `TrimContext`: Data class holding trim parameters
-  - subject, session, task
-  - dummy_scans (default 7)
-  - tr (default 1.49s)
-  - behavioral_cutoff_ms (optional)
-  - Properties: dummy_offset_s, dummy_offset_ms, behavioral_cutoff_trs
-
-- `TrimOrchestrator`: Main coordination class
-  - `trim_scan(context)`: Orchestrates trimming of all associated files
-  - `trim_bids_directory(bids_dir, trimming_specs)`: Batch trimming across BIDS directory
-  - Returns detailed results dict with trimmed file list and errors
-
-**Workflow:**
-```
-TrimContext(subject="s19", session="07", task="goNogo", behavioral_cutoff_ms=15000)
-    ↓
-TrimOrchestrator.trim_scan(context)
-    ├─ trim_bold_nifti() → sub-s19/ses-07/func/sub-s19_ses-07_task-goNogo_bold.nii.gz
-    ├─ trim_events_tsv() → sub-s19/ses-07/func/sub-s19_ses-07_task-goNogo_events.tsv
-    ├─ trim_behavioral_csv() → sourcedata/behavioral_data/sub-s19/ses-07/beh/...
-    └─ trim_physio_data() → sub-s19/ses-07/func/sub-s19_ses-07_task-goNogo_physio.tsv.gz
-    ↓
-results = {
-    "subject": "s19",
-    "session": "07",
-    "task": "goNogo",
-    "trimmed": [file_paths...],
-    "errors": [...]
-}
-```
-
-#### exclusions_manifest.py - Trimming Decision Tracking
-**Purpose:** Generate authoritative record of all trimming decisions and quality flags.
-
-**Key Functions:**
-- `ExclusionsManifest`: Class managing trimming decision tracking
-  - `record_trimming(subject, session, task, reason, details)`: Log trimming decision
-  - `record_quality_flag(subject, session, task, flag, reason)`: Log quality issues
-  - `to_json()`: Serialize manifest to JSON
-  - `save(path)`: Write manifest to file
-
-- Schema tracks:
-  - Dummy scan removal (standard 7 volumes)
-  - Behavioral cutoff trimming (with ms offset)
-  - 3D BOLD detection (marked for .bidsignore)
-  - Short scans (below task-specific TR thresholds)
-  - Missing physiological data
-  - Behavioral data reconciliation issues
-
-**Output Format:**
-```json
-{
-  "subject": "s19",
-  "session": "07",
-  "task": "goNogo",
-  "trimming": {
-    "type": "behavioral_cutoff",
-    "dummy_scans": 7,
-    "behavioral_cutoff_ms": 15000,
-    "timestamp": "2026-03-16T14:32:00Z"
-  },
-  "quality_flags": ["diagnostic_run_detected"],
-  "notes": "Participant reported stopped responding after 15s"
-}
-```
 
 ### Behavioral Data Migration Modules
 
@@ -441,32 +294,6 @@ For each subject:
   - Handles network timeouts, permission errors
   - Verifies file integrity (checksum/size)
   - Logs all attempts and failures
-
-### BIDS Validation Modules
-
-#### bold_analyzer.py - Task-Specific BOLD Analysis
-**Purpose:** Analyze BOLD data quality with task-specific TR thresholds.
-
-**Key Functions:**
-- `analyze_bold_files(bids_dir, config_path)`:
-  - Loads task-specific TR counts from config
-  - Scans all BOLD files in BIDS directory
-  - Identifies short scans, missing metadata
-  - Generates analysis.json with detailed results
-
-- `is_short_scan(actual_trs, expected_trs, tolerance=0.1)`:
-  - Compares actual TR count to task expectation
-  - Tolerance allows 10% variance for timing jitter
-
-- Schema detects:
-  - 3D BOLD files (marked for .bidsignore)
-  - Missing TR metadata
-  - Short scans (task-specific detection)
-  - Missing JSON sidecars
-
-**Dual-Mode Analysis:**
-1. Primary: Task-specific TR thresholds (config/task_tr_counts.json)
-2. Fallback: Duration-based detection (3.0 min minimum)
 
 ### Physiological Data Modules
 
@@ -562,7 +389,7 @@ Flywheel Project
     │
     ├─ query_project_subjects()
     │   ↓
-    ├─ All Subjects
+    ├─ All Subjects (processed sequentially)
     │   │
     │   └─ For each canonical subject:
     │       ├─ collect_subject_sessions()
@@ -583,12 +410,11 @@ Flywheel Project
     │       │       │   ↓
     │       │       ├─ For each acquisition:
     │       │       │   ├─ download_and_place()
-    │       │       │   ├─ patch_sidecar()
-    │       │       │   └─ Check for issues (3D, missing metadata)
+    │       │       │   ├─ Trim 7 dummy BOLD volumes (if BOLD)
+    │       │       │   ├─ Assign run numbering for duplicates (run-01, run-02)
+    │       │       │   └─ patch_sidecar()
     │       │       │
-    │       │       ├─ convert_physio_to_bids() [if gephysio found]
-    │       │       │
-    │       │       └─ create_events_from_behavioral() [if behavioral data found]
+    │       │       └─ convert_physio_to_bids() [downloaded, not trimmed]
     │       │
     │       └─ build_reconciliation()
     │
@@ -596,21 +422,19 @@ Flywheel Project
 BIDS Output Directory
     ├─ sub-XXX/
     │   ├─ ses-YY/
-    │   │   ├─ anat/
+    │   │   ├─ anat/ (duplicates get run-01, run-02, ...)
     │   │   ├─ func/
-    │   │   │   ├─ *_bold.nii.gz
+    │   │   │   ├─ *_bold.nii.gz (7 dummy vols trimmed)
     │   │   │   ├─ *_bold.json
-    │   │   │   ├─ *_events.tsv
-    │   │   │   └─ *_physio.tsv.gz
-    │   │   └─ dwi/
+    │   │   │   └─ *_physio.tsv.gz (not trimmed)
+    │   │   └─ dwi/ (duplicates get run-01, run-02, ...)
     │   └─ ...
     ├─ sourcedata/
     │   ├─ reconciliation.json (subject/session mapping)
-    │   ├─ behavioral_data/sub-XXX/ses-YY/beh/
+    │   ├─ session_timestamps.tsv (acquisition timestamps)
     │   └─ ...
     ├─ dataset_description.json
-    ├─ README.md
-    └─ .bidsignore (3D BOLD, short scans, etc.)
+    └─ README.md
 ```
 
 ### Archive → Oak Data Migration Flow
@@ -661,63 +485,18 @@ Archive Directory
     └─ Oak: /network_grant/excluded_sourcedata/survey_data/
 ```
 
-### BIDS → Trimmed BIDS Flow
-
-```
-BIDS Directory
-    │
-    ├─ For each scan requiring trimming:
-    │
-    └─ TrimOrchestrator.trim_scan(TrimContext)
-        │
-        ├─ Calculate offsets:
-        │   ├─ dummy_offset_s = dummy_scans * TR (e.g., 7 * 1.49 = 10.43s)
-        │   └─ behavioral_cutoff_s = behavioral_cutoff_ms / 1000
-        │
-        ├─ trim_bold_nifti()
-        │   └─ sub-XXX/ses-YY/func/*_bold.nii.gz
-        │       ├─ Remove first 7 volumes
-        │       ├─ Apply behavioral cutoff (if specified)
-        │       └─ Update affine matrix
-        │
-        ├─ trim_events_tsv()
-        │   └─ sub-XXX/ses-YY/func/*_events.tsv
-        │       ├─ Adjust onset times by -10.43s
-        │       └─ Remove events outside [0, behavioral_cutoff_s]
-        │
-        ├─ trim_behavioral_csv()
-        │   └─ sourcedata/behavioral_data/sub-XXX/ses-YY/beh/*
-        │       ├─ Remove rows < 10.43s
-        │       ├─ Remove rows > behavioral_cutoff_s
-        │       └─ Adjust timing columns
-        │
-        ├─ trim_physio_data()
-        │   └─ sub-XXX/ses-YY/func/*_physio.tsv.gz
-        │       ├─ Remove samples during dummy period (7 * 1.49s)
-        │       └─ Truncate to behavioral cutoff
-        │
-        └─ exclusions_manifest.record_trimming()
-            └─ exclusions.json (append trimming decision)
-                ↓
-Trimmed BIDS Directory
-    ├─ Fewer volumes per BOLD scan
-    ├─ Synchronized event/physio/behavioral timing
-    ├─ Updated reconciliation files
-    └─ exclusions.json with complete audit trail
-```
-
 ## Architectural Decisions
 
-### 1. Parallel Processing with Controlled Concurrency
-**Decision:** Use ThreadPoolExecutor with 4 workers for Flywheel downloads.
+### 1. Sequential Processing
+**Decision:** Process subjects and sessions sequentially (no parallelism).
 
 **Rationale:**
-- Balances speed (parallel I/O) with API stability
-- Reduces rate-limiting from Flywheel API
-- Earlier attempts with 16 workers caused timeouts
-- 4 workers provide ~4x speedup without instability
+- Simplest possible design; easy to debug and understand
+- Avoids Flywheel API rate limiting entirely
+- Earlier parallel approaches (4 and 16 workers) introduced complexity and intermittent failures
+- Reliability is more important than speed for a pipeline that runs infrequently
 
-**Impact:** Bidsify takes ~2-4 hours per sample vs. 30 min for 16 workers, but completes reliably
+**Impact:** Bidsify is slower but completely reliable; no concurrency-related failures
 
 ### 2. Session Merging via Aliases
 **Decision:** Support multiple naming variants for same subject (e.g., "s03", "003", "subj03").
@@ -741,27 +520,26 @@ Trimmed BIDS Directory
 
 **Impact:** Recovers from transient errors; warnings logged for persistent failures
 
-### 4. Modular Trimming Pipeline
-**Decision:** Separate modules for BOLD, physio, and behavioral trimming; coordinated via TrimOrchestrator.
+### 4. Inline Dummy Volume Trimming
+**Decision:** Trim 7 dummy BOLD volumes directly during bidsify, immediately after NIfTI download. No separate trimming phase or orchestrator.
 
 **Rationale:**
-- Each data type has distinct format and timing considerations
-- Allows independent unit testing per module
-- Future extensions (e.g., EEG, eye-tracking) fit naturally
-- Orchestrator ensures consistency across types
+- Only one type of trimming is needed (7 dummy volumes)
+- Inlining in run.py keeps the pipeline simple and avoids a separate post-processing step
+- Physio data is downloaded but not trimmed (deferred to later stages if needed)
 
-**Impact:** Trimming decisions atomic and auditable; extensible design
+**Impact:** BOLD files are ready for preprocessing immediately after bidsify completes
 
-### 5. Exclusions Manifest for Audit Trail
-**Decision:** Generate exclusions.json documenting all trimming and quality decisions.
+### 5. Run Numbering for Duplicate Scans
+**Decision:** Assign run labels (run-01, run-02, ...) to duplicate scans instead of excluding them via .bidsignore.
 
 **Rationale:**
-- Preprocessing teams need to know why scans were trimmed/excluded
-- Reproducibility requires documenting all transformations
-- Enables reconstruction of decisions (vs. guessing from file size)
-- Facilitates future quality audits
+- Preserves all acquired data in the BIDS directory
+- BIDS-compliant: run entity is the standard way to handle multiple acquisitions of the same type
+- Avoids premature data exclusion decisions during conversion
+- Curation decisions (which run to use) are deferred to analysis
 
-**Impact:** Complete provenance for all modified data
+**Impact:** No data loss during conversion; all scans accessible for QA and analysis
 
 ### 6. Sample-Based Filtering for Behavioral Data
 **Decision:** Routes files to discovery/validation/excluded directories based on behavioral_session_mapping.json.
@@ -785,18 +563,7 @@ Trimmed BIDS Directory
 
 **Impact:** Survey data immediately usable in R/Python without parsing
 
-### 8. Task-Specific TR-Based Short Scan Detection
-**Decision:** Use task-specific expected TR counts from config rather than global duration threshold.
-
-**Rationale:**
-- Different tasks have different optimal durations
-- Global 3-minute threshold too simplistic
-- Config allows per-task customization
-- Fallback to duration-based if task not in config
-
-**Impact:** Precise short scan detection; fewer false positives/negatives
-
-### 9. Lazy Reconciliation via Session Overrides
+### 8. Lazy Reconciliation via Session Overrides
 **Decision:** Handle subject merging/exclusion via JSON config rather than hardcoding.
 
 **Rationale:**
@@ -807,7 +574,7 @@ Trimmed BIDS Directory
 
 **Impact:** Reproducible subject assignments; non-developers can modify config
 
-### 10. NIfTI Affine Matrix Updates
+### 9. NIfTI Affine Matrix Updates
 **Decision:** Update affine matrix when trimming volumes to maintain spatial coordinates.
 
 **Rationale:**
@@ -834,17 +601,12 @@ Trimmed BIDS Directory
    - JSON sidecar creation
    - Required metadata fields
 
-3. **Trimming Module Tests** (`test_bold_trimming.py`, etc.)
-   - Volume/sample removal
-   - Index calculations
-   - Edge cases (no trimming needed, all trimming)
-
-4. **Sample Validation Tests** (`test_sample_validation.py`)
+3. **Sample Validation Tests** (`test_sample_validation.py`)
    - JSON config format detection
    - Sample membership determination
    - Excluded subject identification
 
-5. **Migration Tests** (`test_migrate.py`)
+4. **Migration Tests** (`test_migrate.py`)
    - File copying and retry logic
    - Sample filtering
    - JSON-to-CSV conversion
@@ -855,16 +617,11 @@ Trimmed BIDS Directory
 1. **Full Bidsify Workflow**
    - Query Flywheel project
    - Convert to BIDS
-   - Verify output structure
-   - Check reconciliation.json
+   - Verify dummy volume trimming
+   - Verify run numbering for duplicates
+   - Check reconciliation.json and session_timestamps.tsv
 
-2. **Trimming Pipeline**
-   - Load BIDS directory
-   - Apply trimming specifications
-   - Verify file modifications
-   - Validate exclusions.json
-
-3. **Behavioral Migration**
+2. **Behavioral Migration**
    - Copy all data types
    - Apply sample filtering
    - Verify directory structure
@@ -875,18 +632,14 @@ Trimmed BIDS Directory
 
 1. **BIDS Validator Integration**
    - No critical errors
-   - .bidsignore patterns applied correctly
    - Required files present
+   - Run numbering correct for duplicates
 
 2. **Data Integrity**
    - File checksums match downloads
    - JSON valid and parseable
    - TSV files have correct columns
-
-3. **Trimming Verification**
-   - Volume counts match expectations
-   - Event/physio timing synchronized
-   - Behavioral cutoff applied correctly
+   - Dummy volumes trimmed (7 fewer volumes per BOLD)
 
 ### Running Tests
 ```bash
@@ -918,28 +671,24 @@ uv run pytest tests/ --cov=src/neuro_workflow --cov-report=html
 **Current:** Format conversion only
 **Future:** Artifact detection, signal-to-noise analysis, automated flagging
 
-### 5. Parallel Trimming
-**Current:** Sequential trimming across scans
-**Future:** Parallel trimming with progress bars and error recovery
-
-### 6. Web Dashboard
+### 5. Web Dashboard
 **Current:** JSON logs and reconciliation files
 **Future:** Interactive dashboard showing sample composition, trimming decisions, BIDS validation results
 
-### 7. Incremental Updates
+### 6. Incremental Updates
 **Current:** Full re-download and re-conversion
 **Future:** Track processed subjects; only download new/modified acquisitions
 
-### 8. Pre-Processing Quality Control
+### 7. Pre-Processing Quality Control
 **Current:** Trim and validate
 **Future:** Integration with fMRIPrep outputs; feedback on preprocessing quality
 
-### 9. Multi-Project Support
+### 8. Multi-Project Support
 **Current:** Single Flywheel project per run
 **Future:** Aggregate from multiple projects; handle cross-project subject merging
 
-### 10. Version Tracking
-**Current:** reconciliation.json, exclusions.json per directory
+### 9. Version Tracking
+**Current:** reconciliation.json, session_timestamps.tsv per directory
 **Future:** Full version history with timestamps; ability to compare BIDS versions
 
 ## Dependency Architecture
@@ -967,18 +716,16 @@ uv run pytest tests/ --cov=src/neuro_workflow --cov-report=html
 ### Primary Configuration Files
 1. **CLAUDE.md** - Development guidelines, execution instructions
 2. **pyproject.toml** - Project metadata, dependencies, test configuration
-3. **reconciliation_config.json** - Subject merging, session overrides, trimming specs
-4. **behavioral_session_mapping.json** - Subject-to-sample assignments
-5. **task_tr_counts.json** - Task-specific TR thresholds for short scan detection
+3. **config/pipeline_config.json** - Subject merging, session overrides, sample definitions (replaces reconciliation_config.json)
+4. **config/behavioral_session_mapping.json** - Subject-to-sample assignments
 
 ### Runtime Outputs
 1. **reconciliation.json** - Subject/session mapping for BIDS directory
-2. **exclusions.json** - Trimming and quality decisions
+2. **session_timestamps.tsv** - Session and acquisition timestamps per dataset
 3. **bidsify_log.json** - Download log with warnings/errors
-4. **analysis.json** - BOLD validation results
 
 ## Conclusion
 
-The neuro_workflow architecture emphasizes modularity, auditability, and robustness. Each major component (Flywheel querying, BIDS writing, trimming, behavioral migration) is independently testable while being coordinated by orchestrator classes. Configuration-driven design enables customization without code changes. Comprehensive logging and decision manifests provide full traceability of data transformations, essential for reproducible research.
+The neuro_workflow architecture emphasizes simplicity, auditability, and robustness. The pipeline uses sequential processing with inline dummy volume trimming, run numbering for duplicate scans, and configuration-driven session reconciliation. Each major component (Flywheel querying, BIDS writing, behavioral migration) is independently testable. Configuration-driven design via `config/pipeline_config.json` enables customization without code changes. Comprehensive logging provides full traceability of data transformations, essential for reproducible research.
 
-The design decisions prioritize data integrity and researcher transparency over raw speed, with careful attention to error handling and validation at each step.
+The design decisions prioritize data integrity, simplicity, and researcher transparency, with careful attention to error handling and validation at each step.

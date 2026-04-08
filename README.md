@@ -40,35 +40,34 @@ Each stage is described below in order.
 
 ## Stage 1: BIDSify
 
-Pull NIfTI/JSON data from Flywheel and write a clean BIDS dataset. Handles subject label aliases, multi-echo BOLD selection, sequential session numbering, fieldmap sidecar patching, and physiological data (cardiac/respiratory from gephysio gear).
+Pull NIfTI/JSON data from Flywheel and write a clean BIDS dataset. Processes subjects sequentially, handling subject label aliases, multi-echo BOLD selection, sequential session numbering, duplicate scan run-numbering, fieldmap sidecar patching, and physiological data download (cardiac/respiratory from gephysio gear).
 
 ### Prerequisites
 
 - Flywheel API key configured (`~/.config/flywheel/user.json` or `FW_API_KEY`)
 - `uv pip install -e ".[bidsify]"`
-- Physiological data requires gephysio gear analysis on Flywheel (automatically downloaded if available)
 
 ### Usage
 
+Three samples are defined in `config/pipeline_config.json`: **discovery** (5 subjects), **validation** (41 subjects), and **excluded** (11 subjects).
+
 ```bash
-# Register the dataset first
-neuro-run add-dataset discovery \
-  --bids-dir /oak/.../discovery_BIDS \
-  --subjects-file subs_discovery.txt \
-  --partition russpold \
-  --mail-user logben@stanford.edu
+# Submit BIDSify jobs (one per sample)
+uv run neuro-run submit bidsify discovery \
+  --output-dir /scratch/users/logben/discovery_BIDS --overwrite
 
-# Submit BIDSify job
-neuro-run submit bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS
+uv run neuro-run submit bidsify validation \
+  --output-dir /scratch/users/logben/validation_BIDS --overwrite
 
-# Or run directly (no SLURM)
-neuro-run bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS
+uv run neuro-run submit bidsify excluded \
+  --output-dir /scratch/users/logben/excluded_BIDS --overwrite
 
-# Pull specific subjects
-neuro-run submit bidsify validation --output-dir /scratch/.../validation_BIDS --subjects s76 s247
+# Pull specific subjects only
+uv run neuro-run submit bidsify validation \
+  --output-dir /scratch/.../validation_BIDS --subjects s76 s247 --overwrite
 
-# Preview the sbatch script
-neuro-run show bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS
+# Run directly without SLURM (debugging)
+uv run neuro-run bidsify discovery --output-dir /scratch/users/logben/discovery_BIDS
 ```
 
 ### Output
@@ -78,7 +77,7 @@ discovery_BIDS/
 ├── dataset_description.json
 ├── sub-s03/
 │   ├── ses-01/
-│   │   ├── anat/     # T1w, T2w
+│   │   ├── anat/     # T1w, T2w (duplicates get run numbering)
 │   │   ├── func/     # multi-echo BOLD + physio (cardiac/respiratory)
 │   │   ├── fmap/     # fieldmap + magnitude
 │   │   └── dwi/      # DWI + bval/bvec
@@ -86,19 +85,21 @@ discovery_BIDS/
 ├── sub-s10/
 └── sourcedata/
     ├── reconciliation.json
-    └── bidsify_log.json
+    ├── bidsify_log.json
+    └── session_timestamps.tsv
 ```
 
 Physio files are stored in `func/` as:
 - `sub-*_ses-*_task-*_recording-cardiac_physio.tsv.gz` + `.json` (cardiac waveform, 100 Hz)
 - `sub-*_ses-*_task-*_recording-respiratory_physio.tsv.gz` + `.json` (respiratory waveform, 25 Hz)
 
-Configuration lives in:
-- `src/neuro_workflow/bidsify/reconciliation_config.json` — subject lists, aliases, skip lists, Flywheel session overrides
-- `src/neuro_workflow/bidsify/config.py` — acquisition label → BIDS mappings
-- `config/behavioral_session_mapping.json` — behavioral data session pairing (used by events pipeline)
+Physiological data (gephysio gear outputs) are automatically detected and downloaded from Flywheel session analyses. They are downloaded and converted to BIDS format but not trimmed during bidsify.
 
-Physiological data (gephysio gear outputs) are automatically detected and downloaded from Flywheel session analyses. They are processed and converted to BIDS format during the bidsify run.
+### Configuration
+
+- `config/pipeline_config.json` — sample lists, subject aliases, skip lists, Flywheel session overrides
+- `src/neuro_workflow/bidsify/config.py` — acquisition label to BIDS mappings
+- `config/behavioral_session_mapping.json` — behavioral data session pairing (used by events pipeline)
 
 ---
 
@@ -406,31 +407,9 @@ neuro-run submit mshbm discovery \
 
 ## Reference
 
-### Dataset Registration
+### Sample Configuration
 
-Register a dataset once; all commands reference it by name.
-
-```bash
-neuro-run add-dataset <name> \
-  --bids-dir <path> \
-  --subjects-file <path> \
-  [--partition russpold] \
-  [--mail-user user@stanford.edu] \
-  [--image-dir /home/groups/russpold/singularity_images] \
-  [--templateflow-dir /home/groups/russpold/templateflow]
-```
-
-Configs are stored in `~/.neuro_workflow/datasets.json`.
-
-### Subjects File
-
-Plain text, one subject ID per line (no `sub-` prefix):
-
-```
-s03
-s10
-s19
-```
+Samples (discovery, validation, excluded) and Flywheel settings are defined in `config/pipeline_config.json`. All commands reference samples by name. Runtime dataset paths (BIDS dir, partition, image dir) are stored in `~/.neuro_workflow/datasets.json` and registered via `neuro-run add-dataset`.
 
 ### Derived Paths
 

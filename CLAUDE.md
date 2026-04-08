@@ -30,87 +30,71 @@ uv run python -m py_compile src/neuro_workflow/bidsify/run.py
 - `src/neuro_workflow/bidsify/run.py` - Main Flywheel → BIDS conversion orchestrator
 - `src/neuro_workflow/bidsify/bids_writer.py` - BIDS file writing utilities
 - `src/neuro_workflow/cli.py` - CLI entry point
+- `config/pipeline_config.json` - Single source of truth for pipeline configuration (subject lists, session mappings, scan notes)
 - `pyproject.toml` - Project configuration and dependencies
 
-## Pipeline Simplification (March 18, 2026)
+## Bidsify Pipeline (April 8, 2026)
 
-### Major Changes to Bidsify
+### Architecture
 
-#### 1. **Dummy BOLD Volume Trimming** (7 TRs @ 1.49s = 10.43s offset)
-- **When:** Immediately during bidsify, after NIfTI download
-- **Where:** `src/neuro_workflow/bidsify/run.py` lines ~220-245
-- **What:** Removes first 7 BOLD volumes (calibration/dummy scans) for each echo
-- **Why:** Improves Tedana optimal echo combination quality
-- **Verification:** Log entries confirm: "Trimmed 7 dummy volumes from BOLD.nii.gz (was 161 vols, now 154)"
-- **Impact:** All downstream preprocessing should use `--dummy-scans 0` (volumes already removed)
+The bidsify pipeline is **sequential** (no parallel processing, no ThreadPoolExecutor). It processes one subject/session/scan at a time via `src/neuro_workflow/bidsify/run.py`.
 
-#### 2. **Physiological Data Trimming** (Cardiac 100Hz, Respiratory 25Hz)
-- **When:** Immediately after `convert_physio_to_bids()`, same dummy removal offset
-- **Where:** `src/neuro_workflow/bidsify/run.py` lines ~246-290
-- **Sample counts removed:**
-  - Cardiac: ~1,043 samples (100 Hz × 10.43s)
-  - Respiratory: ~261 samples (25 Hz × 10.43s)
-- **Why:** Keeps physio-BOLD alignment perfect for preprocessing
-- **JSON sidecars:** Updated with new `StartTime` offset (10.43s)
+### Configuration
 
-#### 3. **Duplicate Anatomical Logic** (Keep LATEST, not OLDEST)
-- **What changed:** Pre-computation identifies latest acquisition per anatomy type
-- **Before:** `is_first_anat = len(anat_scans_by_type[anat_key]) == 0` (kept oldest)
-- **After:** Compare with `_latest_anat_acq` dict (keeps newest by timestamp)
-- **Impact:** Older duplicate T1w/T2w scans are marked for .bidsignore; newest scan kept
-- **Rationale:** Earlier scans flagged as low quality during QA phase
+- **Single source of truth:** `config/pipeline_config.json`
+- Loaded via `load_pipeline_config()` (replaces the old `load_reconciliation_config()`)
+- Contains subject lists, session mappings, scan notes, irreconcilable scans, and trim metadata
+- **Deprecated:** `src/neuro_workflow/bidsify/reconciliation_config.json` and `config/reconciliation_config.json` (legacy, do not use)
 
-#### 4. **Removed 3D BOLD Validation Check**
-- **What was removed:** `_check_bold_4d()` function (lines 62-75)
-- **Why removed:** Manual BIDS validator is more comprehensive
-- **Action:** Use BIDS validator after bidsify: `bids-validator /path/to/bids_dir`
-- **Impact:** No "non-4D", "3D", "below threshold" entries in .bidsignore
+### What Bidsify Does
 
-#### 5. **Configuration Consolidation**
-- **Primary config:** `src/neuro_workflow/bidsify/reconciliation_config.json` (active)
-- **Deprecated config:** `config/reconciliation_config.json` (legacy, do not use)
-- **New sections in primary config:**
-  - `irreconcilable_scans`: 3 scans with no behavioral data (s29/ses-01/cuedTS, s300/ses-08/flanker, s1292/ses-04/nBack)
-  - `trim_scans_end`: 17 scans needing end-of-scan behavioral cutoff (15 to trim, 2 "fell asleep" flags)
+1. **Downloads NIfTI and sidecar JSON** from Flywheel for each scan
+2. **Trims 7 dummy BOLD volumes** inline using nibabel (7 TRs x 1.49s = 10.43s offset)
+   - Downstream preprocessing should use `--dummy-scans 0` (volumes already removed)
+3. **Downloads and converts physiological data** to BIDS format (cardiac + respiratory)
+   - Physio is NOT trimmed during bidsify; trimming deferred to preprocessing
+4. **Handles duplicate scans** with run numbering (run-01, run-02) instead of filtering or .bidsignore
+5. **Logs session timestamps** to `sourcedata/session_timestamps.tsv` per BIDS dataset
+6. **No .bidsignore generation** -- curation of ignored files is done manually after bidsify
 
-### Example Workflow with New Changes
+### Deleted Modules
+
+The following modules were removed as part of the April 2026 simplification:
+- `physio_trimming` -- physio no longer trimmed during bidsify
+- `trimming_orchestrator` -- no orchestrated multi-step trimming
+- `exclusions_manifest` -- no automatic exclusion manifest generation
+- `behavioral_trimming` -- behavioral trimming moved out of bidsify
+- `bold_trimming` -- dummy volume trimming is now inline in run.py
+- `integration` -- removed
+- `bids_validation` -- validation done externally via bids-validator
+
+### Three Samples
+
+The pipeline operates on three named samples:
+- **discovery** -- 5 subjects for initial pipeline development and testing
+- **validation** -- 41 non-excluded subjects for full validation
+- **excluded** -- 11 excluded subjects (processed separately for archival)
+
+### Example Workflow
 
 ```bash
-# Run discovery BIDS generation (includes dummy trim + physio trim)
-uv run neuro-run bidsify submit discovery \
+# Run discovery BIDS generation
+uv run neuro-run submit bidsify discovery \
   --output-dir /scratch/users/logben/discovery_bids \
-  --time 02:00:00 --mem-gb 32 --cpus 4
+  --overwrite
 
-# Once BIDS is complete, run BIDS validator (custom 3D check)
+# Run BIDS validator after bidsify completes
 bids-validator /scratch/users/logben/discovery_bids
 
 # Preprocessing note: Use fMRIPrep with --dummy-scans 0
 fmriprep --dummy-scans 0 /scratch/users/logben/discovery_bids /derivatives --fs-license /path/to/license
 ```
 
----
-
-## Bidsify Updates (March 14, 2026)
-
-### Changes Made to run.py
-1. **Reduced parallel workers**: 16 → 4 to avoid Flywheel API rate limiting
-2. **Safe sidecar patching**: Added `_safe_patch_sidecar()` with retry logic (3 attempts)
-3. **Better error logging**: All failures now logged with full context
-4. **Duplicate anatomical handling**: Marks duplicate T1w/T2w/etc. in same session for .bidsignore
-5. **Duplicate DWI handling**: Marks duplicate diffusion scans in same session for .bidsignore
-6. **Improved physio error handling**: Physio failures now generate warnings instead of silent skips
-
-### Example Scenarios Handled
-- **s19 with multiple T1w (SagMPRAGE_T1w)**: First kept, subsequent ones marked for .bidsignore
-- **s956 missing TR/Units metadata**: Now logs detailed errors and retry attempts
-- **s480 3D BOLD files**: Detected and marked for .bidsignore
-- **Physiological recordings without JSON**: Failed conversions now captured in warnings
-
 ## Running Bidsify
 
-### ✅ RECOMMENDED: Submit via Container + SLURM
+### RECOMMENDED: Submit via Container + SLURM
 
-Use `uv run neuro-run submit` to automatically generate SBATCH script and submit via Singularity container.
+Use `uv run neuro-run submit bidsify` to automatically generate an SBATCH script and submit via Singularity container. Subject lists are read from `config/pipeline_config.json` -- no need to pass `--subjects` on the command line.
 
 ```bash
 # Discovery sample (5 subjects)
@@ -120,13 +104,11 @@ uv run neuro-run submit bidsify discovery \
 
 # Validation sample (41 non-excluded subjects)
 uv run neuro-run submit bidsify validation \
-  --subjects s1035 s1057 s1058 s1127 s1134 s1175 s1189 s1258 s1267 s1270 s1273 s1292 s1314 s1326 s1338 s1351 s1391 s1399 s1402 s1408 s1445 s1481 s1486 s180 s216 s247 s286 s295 s300 s320 s321 s336 s373 s394 s415 s480 s599 s645 s76 s874 s956 \
   --output-dir /scratch/users/logben/validation_bids \
   --overwrite
 
 # Excluded sample (11 excluded subjects)
-uv run neuro-run submit bidsify validation \
-  --subjects s1165 s1178 s1266 s1320 s214 s222 s250 s297 s432 s823 s968 \
+uv run neuro-run submit bidsify excluded \
   --output-dir /scratch/users/logben/excluded_bids \
   --overwrite
 ```
@@ -168,14 +150,6 @@ uv run pytest tests/bids_validation/ -v  # Specific test suite
 ### "ModuleNotFoundError: No module named 'neuro_workflow'"
 **Solution:** Use `uv run python` instead of system python
 
-### JSON patching failures on s956, s1267, s1351
-**Causes:**
-- Corrupted JSON files from Flywheel extraction
-- Concurrent writes from parallel processing
-- Flywheel API timeouts
-
-**Solution:** Rerun bidsify with updated run.py (now has retry logic)
-
 ### Missing physio JSON sidecars
 **Cause:** gephysio analysis processing failures (now caught and logged)
 
@@ -208,9 +182,9 @@ sbatch --wrap="apptainer build --fakeroot --force /home/groups/russpold/singular
 ```
 
 Each contains:
-- `.bidsignore` - Files to exclude from validation
 - `sourcedata/reconciliation.json` - Subject session mapping and warnings
 - `sourcedata/bidsify_log.json` - Download logs
+- `sourcedata/session_timestamps.tsv` - Session-level timestamps for audit/reproducibility
 
 ### Behavioral Data Locations
 - In-scanner: `/oak/.../sourcedata/behavioral_data/`
@@ -231,7 +205,7 @@ Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>"
 ```
 
 ## Last Updated
-2026-03-14 - Added bidsify improvements (reduced parallelism, retry logic, duplicate handling)
+2026-04-08 - Simplified bidsify pipeline (sequential processing, config consolidation, no .bidsignore generation)
 
 
 ## Codebase Cleanup (March 17, 2026)
@@ -261,6 +235,9 @@ Logs have been moved to `logs/` directory with `.gitignore` to prevent bloat:
 - **No hardcoded lists:** All subject lists, aliases, thresholds in JSON config files
 - **Reproducibility:** Same config → same results, verifiable in git
 - **Simplicity:** Follow WORKFLOW.md for entire pipeline; refer to ARCHITECTURE.md only when understanding internals
-- **Audit trail:** All decisions encoded in JSON + exclusions.json manifests
+- **Audit trail:** All decisions encoded in JSON config files
 
-**Last updated:** 2026-03-17
+### April 2026 Simplification
+Further cleanup removed unused modules (physio_trimming, trimming_orchestrator, exclusions_manifest, behavioral_trimming, bold_trimming, integration, bids_validation). Pipeline configuration consolidated into `config/pipeline_config.json`. The bidsify pipeline is now fully sequential with no parallel processing. See "Bidsify Pipeline (April 8, 2026)" section above for details.
+
+**Last updated:** 2026-04-08

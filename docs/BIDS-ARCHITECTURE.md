@@ -1,4 +1,4 @@
-# BIDS Data Architecture (Mar 19, 2026)
+# BIDS Data Architecture (Apr 8, 2026)
 
 ## Overview
 
@@ -80,26 +80,14 @@ events.tsv files → BIDS func/ directories
 
 **Note**: Event generation reads behavioral files from Oak, does NOT require them to be in BIDS.
 
-## .bidsignore Content
+## .bidsignore (Manual Curation)
 
-### What's in .bidsignore (March 19, 2026)
+As of April 2026, the bidsify pipeline does NOT generate .bidsignore files. All scans are downloaded from Flywheel and placed in BIDS with run numbering for duplicates.
 
-**1. Anatomical Duplicates** (chosen during QA)
-```
-# Example: kept ses-05 T1w (better quality), excluded earlier acquisitions
-sub-s19/ses-01/anat/sub-s19_ses-01_acq-MPRAGEPromo_T1w.*
-```
-
-**2. BOLD Scans Without Behavioral Data** (for transparency)
-```
-# s03 ses-01 nBack: BOLD exists but behavioral in ses-02 (scan 1 had issues)
-sub-s03/ses-01/func/*task-nBack*
-```
-
-### What's NOT in .bidsignore
-- ✗ Behavioral CSV files (not in BIDS)
-- ✗ Files on Oak (outside BIDS scope)
-- ✗ External references (only BIDS files documented)
+.bidsignore curation is a separate, manual process:
+1. Run bidsify to pull all data
+2. Review scans against `docs/SCAN-NOTES.md` (ground truth for quality issues)
+3. Manually create .bidsignore entries and track them in sourcedata notes
 
 ## Event File Generation
 
@@ -116,7 +104,7 @@ sub-s03/ses-01/func/*task-nBack*
 If behavioral CSV is missing or placeholder:
 - Create empty events.tsv (BIDS-compliant headers only)
 - Log warning: "Creating empty events.tsv for BOLD without behavioral"
-- Document in .bidsignore: `sub-s03/ses-01/func/*task-nBack*`
+- Note in sourcedata logs for manual review
 
 **Result**: Complete BIDS structure even with data quality issues
 
@@ -132,7 +120,7 @@ If behavioral CSV is missing or placeholder:
 ### Resolution Method
 All discrepancies documented in:
 - `docs/BEHAVIORAL_BOLD_DISCREPANCIES.md` (detailed analysis)
-- `.bidsignore` (BIDS-level issues)
+- `docs/SCAN-NOTES.md` (scan-level issues)
 - Event generation logs (processing decisions)
 
 ## Verification
@@ -158,14 +146,10 @@ find /scratch/users/logben/validation_bids -name "*.csv" | wc -l
 ls /scratch/users/logben/discovery_bids/sub-*/ses-*/func/*_events.tsv | head
 ```
 
-### Check .bidsignore Accuracy
+### Verify No Auto-Generated .bidsignore
 ```bash
-# View current .bidsignore
-cat /scratch/users/logben/discovery_bids/.bidsignore
-
-# Verify files listed actually don't have behavioral
-ls /oak/stanford/groups/russpold/data/network_grant/sourcedata/in_scanner_behavior/sub-s03/ses-01/beh/
-# sub-s03_ses-01_task-nBack_beh.csv should exist (behavioral in ses-01)
+# Should not exist (bidsify no longer generates .bidsignore)
+test ! -f /scratch/users/logben/discovery_bids/.bidsignore && echo "OK"
 ```
 
 ## Architecture Decision Rationale
@@ -175,11 +159,6 @@ ls /oak/stanford/groups/russpold/data/network_grant/sourcedata/in_scanner_behavi
 2. **Single Edit Point**: Changes go in one place, no sync issues
 3. **Storage Efficiency**: BIDS directories stay lean (~1TB vs ~1.3TB if duplicated)
 4. **Reproducibility**: Event generation always reads from canonical source
-
-### Why Document in .bidsignore?
-1. **BIDS Validator**: Explains why some BOLD scans lack events.tsv
-2. **Transparency**: Researchers know which data was problematic
-3. **Audit Trail**: Can trace decisions back to QA phase
 
 ### Why This Design Works
 - **fMRIPrep**: Doesn't require events.tsv (just uses for task-based GLM)
@@ -196,5 +175,5 @@ ls /oak/stanford/groups/russpold/data/network_grant/sourcedata/in_scanner_behavi
 
 ---
 
-**Last Updated**: 2026-03-19
-**Status**: FINALIZED
+**Last Updated**: 2026-04-08
+**Status**: Updated for bidsify simplification

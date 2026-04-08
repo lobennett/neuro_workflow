@@ -1,7 +1,7 @@
 # Complete neuro_workflow Pipeline: Flywheel → BIDS → Behavioral → Events → Preprocessing
 
-**Last Updated:** 2026-03-17
-**Status:** ✓ Phases 1-3 Complete, Phase 4-5 Ready
+**Last Updated:** 2026-04-08
+**Status:** ✓ Phases 1-2 Complete, Phase 4-5 Ready
 **Single Source of Truth:** This document supersedes individual phase guides.
 
 ---
@@ -11,13 +11,12 @@
 1. [Quick Reference](#quick-reference)
 2. [Phase 1: Bidsify (Flywheel → BIDS)](#phase-1-bidsify)
 3. [Phase 2: Behavioral Data Migration](#phase-2-behavioral-data-migration)
-4. [Phase 3: BOLD Trimming & Post-Processing](#phase-3-bold-trimming)
-5. [Phase 4: Event File Generation](#phase-4-event-file-generation)
-6. [Phase 5: Preprocessing (fMRIPrep & Tedana)](#phase-5-preprocessing)
-7. [Troubleshooting Guide](#troubleshooting-guide)
-8. [File Organization Reference](#file-organization-reference)
-9. [Key Concepts](#key-concepts)
-10. [Pipeline Checkpoints](#pipeline-checkpoints)
+4. [Phase 4: Event File Generation](#phase-4-event-file-generation)
+5. [Phase 5: Preprocessing (fMRIPrep & Tedana)](#phase-5-preprocessing)
+6. [Troubleshooting Guide](#troubleshooting-guide)
+7. [File Organization Reference](#file-organization-reference)
+8. [Key Concepts](#key-concepts)
+9. [Pipeline Checkpoints](#pipeline-checkpoints)
 
 ---
 
@@ -33,6 +32,9 @@ uv run python -m neuro_workflow.cli bidsify discovery \
 uv run python -m neuro_workflow.cli bidsify validation \
     --output-dir /scratch/users/logben/validation_bids -v
 
+uv run python -m neuro_workflow.cli bidsify excluded \
+    --output-dir /scratch/users/logben/excluded_bids -v
+
 # Phase 2: Migrate behavioral data
 uv run python scripts/generate_behavioral_mapping.py \
     --output-config config/behavioral_session_mapping.json -v
@@ -47,30 +49,23 @@ uv run python scripts/migrate_archive_behavioral_data.py \
     --output-dir /network_grant/sourcedata \
     --excluded-sourcedata-dir /network_grant/excluded_sourcedata \
     --mturk-dir /network_grant/mTurk -v
-
-# Phase 3: Trim BOLD files and sync physiological data
-uv run python src/neuro_workflow/post_processing/post_process_bids.py \
-    --bids-dir /scratch/users/logben/discovery_bids \
-    --bids-dir /scratch/users/logben/validation_bids \
-    --bids-dir /scratch/users/logben/excluded_bids -v
 ```
 
 ### Current Status by Phase
 
 | Phase | Status | Output | Last Run |
 |-------|--------|--------|----------|
-| 1: Bidsify | ✓ Complete | 3 BIDS directories | 2026-03-14 |
-| 2: Behavioral Migration | ✓ Complete | sourcedata + excluded_sourcedata | 2026-03-13 |
-| 3: BOLD Trimming | ✓ Complete | Trimmed BOLD, sync'd physio | 2026-03-16 |
-| 4: Event Generation | ⏳ Planned | events.tsv files | TBD |
-| 5: Preprocessing | 📋 Ready | fMRIPrep output | TBD |
+| 1: Bidsify | Complete | 3 BIDS directories (7 dummy vols trimmed) | 2026-04-08 |
+| 2: Behavioral Migration | Complete | sourcedata + excluded_sourcedata | 2026-03-13 |
+| 4: Event Generation | Planned | events.tsv files | TBD |
+| 5: Preprocessing | Ready | fMRIPrep output | TBD |
 
 ---
 
 ## Phase 1: Bidsify (Flywheel → BIDS)
 
 ### Purpose
-Convert Flywheel acquisition data (stored as DICOMs + JSON metadata) into BIDS-compliant directory structure with proper sidecar files, subject/session organization, and validation.
+Convert Flywheel acquisition data (stored as DICOMs + JSON metadata) into BIDS-compliant directory structure with proper sidecar files, subject/session organization, and dummy volume trimming (7 TRs). Physiological data is downloaded but not trimmed. Duplicate scans receive run numbering (run-01, run-02) instead of being excluded.
 
 ### Prerequisites
 - Flywheel SDK and credentials configured
@@ -80,7 +75,7 @@ Convert Flywheel acquisition data (stored as DICOMs + JSON metadata) into BIDS-c
 
 ### Configuration Files
 
-**Location:** `config/reconciliation_config.json`
+**Location:** `config/pipeline_config.json`
 
 This file handles special cases and session overrides:
 
@@ -136,14 +131,12 @@ uv run python -m neuro_workflow.cli bidsify validation \
 # Time: ~4-5 hours
 ```
 
-#### Excluded Subjects (11 subjects)
+#### Excluded Sample (11 subjects)
 ```bash
 cd /home/users/logben/neuro_workflow
 
-# Manually specify excluded subjects
-uv run python -m neuro_workflow.cli bidsify validation \
+uv run python -m neuro_workflow.cli bidsify excluded \
     --output-dir /scratch/users/logben/excluded_bids \
-    --subjects s1165 s1178 s1266 s1320 s214 s222 s250 s297 s432 s823 s968 \
     -v
 
 # Expected: ~49 GB, 1,551 files
@@ -162,9 +155,9 @@ For each BIDS directory:
 │   │   │   ├── sub-001_ses-01_T1w.json
 │   │   │   └── ...
 │   │   ├── func/
-│   │   │   ├── sub-001_ses-01_task-rest_bold.nii.gz
+│   │   │   ├── sub-001_ses-01_task-rest_bold.nii.gz      (7 dummy vols trimmed)
 │   │   │   ├── sub-001_ses-01_task-rest_bold.json
-│   │   │   ├── sub-001_ses-01_task-rest_events.tsv  [Phase 4 adds this]
+│   │   │   ├── sub-001_ses-01_task-rest_events.tsv       [Phase 4 adds this]
 │   │   │   └── ...
 │   │   ├── fmap/
 │   │   │   └── ... (fieldmap files)
@@ -174,43 +167,51 @@ For each BIDS directory:
 │       └── ...
 ├── sourcedata/
 │   ├── reconciliation.json       (subject/session mapping, warnings)
+│   ├── session_timestamps.tsv    (session timestamp log for the dataset)
 │   ├── bidsify_log.json          (download logs from Flywheel)
 │   ├── behavioral_data/          (Phase 2 adds in-scanner behavioral CSVs)
 │   ├── out_scanner_behavior/     (Phase 2 adds out-of-scanner data)
 │   └── survey_data/              (Phase 2 adds surveys + demographics)
-├── .bidsignore                   (files to exclude from validation)
-├── .bids-validation/
-│   └── analysis.json             (BOLD validation results)
 ├── CHANGES
 ├── README
 ├── participants.tsv
 └── dataset_description.json
 ```
 
-### Bidsify Features (March 2026 Updates)
+**Note:** Bidsify does NOT generate a `.bidsignore` file. Curation of `.bidsignore` is a separate manual process performed after bidsify and BIDS validation.
 
-#### Parallel Processing
-- **Workers:** 4 parallel Flywheel API clients (reduced from 16 to avoid rate limiting)
-- **Trade-off:** Slower overall (~4-5 hours for validation) but more reliable
+### Bidsify Features (April 2026 -- Simplified Pipeline)
+
+#### Sequential Processing
+- **Workers:** Single-threaded, sequential processing (no parallelism)
+- **Rationale:** Simpler, more reliable, easier to debug; avoids Flywheel API rate limiting entirely
+
+#### Dummy BOLD Volume Trimming
+- **Trimming:** First 7 BOLD volumes removed during bidsify (10.43s offset at TR=1.49s)
+- **When:** Immediately after NIfTI download, before writing to BIDS
+- **Impact:** Downstream preprocessing uses `--dummy-scans 0` (already removed)
+
+#### Physiological Data Handling
+- **Downloaded:** Physio data (cardiac, respiratory) downloaded and converted to BIDS format
+- **NOT trimmed:** Physio is not trimmed during bidsify; trimming deferred to later stages if needed
+
+#### Duplicate Scan Handling (Run Numbering)
+- **Anatomical duplicates:** Multiple T1w/T2w/T2star in same session receive run labels (run-01, run-02, ...)
+- **Diffusion duplicates:** Multiple DWI sequences receive run labels (run-01, run-02, ...)
+- **No .bidsignore:** Duplicates are NOT excluded; all scans kept with unique run numbers
+- **Output:** `sourcedata/reconciliation.json` documents all duplicates
 
 #### Safe Sidecar Patching
 - **Retry Logic:** 3 attempts to patch JSON sidecars
 - **Handles:** Missing TR, Units metadata, malformed JSON
 - **Failure Mode:** Logs error with full context, continues with others
 
-#### Duplicate File Detection
-- **Anatomical duplicates:** Multiple T1w/T2w/T2star in same session → marked for .bidsignore
-- **Diffusion duplicates:** Multiple DWI/dwi sequences → marked for .bidsignore
-- **3D BOLD files:** Detected and excluded from processing
-- **Output:** `sourcedata/reconciliation.json` documents all duplicates
-
-#### Physiological Error Handling
-- **gephysio failures:** Non-fatal warnings (previously silent skips)
-- **Cardiac/Respiratory:** Sync'd with BOLD in Phase 3
-- **Output:** `sourcedata/reconciliation.json` warning logs
+#### Session Timestamps
+- **Output:** `sourcedata/session_timestamps.tsv` logged per dataset
+- **Contents:** Subject, session, and acquisition timestamp information
 
 #### Session Reconciliation
-- Reads `reconciliation_config.json` for session overrides
+- Reads `config/pipeline_config.json` for session overrides
 - Maps Flywheel acquisition IDs to standardized session labels
 - Example: s03 acquisition 22752 → ses-10
 - Excluded sessions mapped to null (skipped)
@@ -249,19 +250,10 @@ cat /scratch/users/logben/discovery_bids/sourcedata/reconciliation.json | \
     jq '.warnings' | head -50
 ```
 
-#### 4. Examine .bidsignore
+#### 4. Check Session Timestamps
 ```bash
-# Files marked for exclusion
-cat /scratch/users/logben/discovery_bids/.bidsignore | head -20
-
-# Should include duplicate anatomicals, DWI, 3D BOLDs, etc.
-```
-
-#### 5. Check BOLD Validation Results
-```bash
-# TR-based short scan detection (Phase 3 uses these results)
-cat /scratch/users/logben/discovery_bids/.bids-validation/analysis.json | \
-    jq '.short_scans'
+# View session timestamp log
+head -20 /scratch/users/logben/discovery_bids/sourcedata/session_timestamps.tsv
 ```
 
 ### Common Issues and Solutions
@@ -304,11 +296,6 @@ uv run python -m neuro_workflow.cli bidsify validation \
 - Check which physio files failed: `jq '.warnings.physio_failures' reconciliation.json`
 - These are expected for some acquisitions
 - If needed, manually generate minimal JSON templates
-
-#### Issue: 3D BOLD Files Not Detected
-**Solution:** Already integrated into validation analysis (Phase 3 uses detection)
-- Marked in `.bidsignore`
-- Documented in `sourcedata/reconciliation.json`
 
 ---
 
@@ -553,212 +540,9 @@ ls -la /oak/stanford/nsg/share/STUDYNAME/mTurk | head -20
 
 ---
 
-## Phase 3: BOLD Trimming & Post-Processing
+---
 
-### Purpose
-Remove dummy scans from BOLD files (standard fMRI preprocessing), trim behavioral data to match BOLD timeline, synchronize physiological data (cardiac, respiratory) with BOLD timing, and adjust event onsets.
-
-### Prerequisites
-- Completed Phase 1 (Bidsify) for all three samples
-- Completed Phase 2 (Behavioral migration) - optional but recommended
-- All BIDS directories read-writable (will be made read-only after completion)
-- Phase 3 configuration in place: `config/task_tr_counts.json`
-
-### Configuration Files
-
-**Location:** `config/task_tr_counts.json`
-
-Contains task-specific expected TR counts (used for short-scan detection):
-
-```json
-{
-  "task_tr_counts": {
-    "goNogo": 480,
-    "stopSignalWDirectedForgetting": 480,
-    "emotionRegulation": 480,
-    "rest": 400,
-    "sceneConstruction": 480,
-    ...
-  },
-  "default_min_duration_minutes": 3.0
-}
-```
-
-**Why needed:** Different tasks have different expected scan lengths. Use TR counts instead of duration for accurate detection.
-
-### Running Phase 3
-
-**Script:** `src/neuro_workflow/post_processing/post_process_bids.py`
-
-```bash
-cd /home/users/logben/neuro_workflow
-
-uv run python src/neuro_workflow/post_processing/post_process_bids.py \
-    --bids-dir /scratch/users/logben/discovery_bids \
-    --bids-dir /scratch/users/logben/validation_bids \
-    --bids-dir /scratch/users/logben/excluded_bids \
-    -v
-
-# Expected:
-# - 15,851 BOLD volumes processed
-# - 7 dummy scans removed from each (10.43s offset)
-# - 15 scans require behavioral cutoff trimming
-# - Physiological data synchronized
-# - Event onsets adjusted
-# - exclusions.json manifests created
-```
-
-#### What Gets Created/Modified
-
-For each BIDS directory:
-
-**Modified Files:**
-- `sub-XXX/ses-YY/func/*_bold.nii.gz` - Dummy scans removed
-- `sub-XXX/ses-YY/func/*_bold.json` - TR and timing metadata updated
-- `sub-XXX/ses-YY/func/*_physio.tsv.gz` - Synchronized with BOLD
-- `sourcedata/behavioral_data/sub-XXX/ses-YY/beh/*.csv` - Trimmed to BOLD duration
-
-**New Files:**
-- `sourcedata/exclusions.json` - Documents all trimming decisions and statistics
-- `sub-XXX/ses-YY/func/*_events.tsv` - Event onsets adjusted by -10.43s
-
-**Example exclusions.json:**
-```json
-{
-  "summary": {
-    "total_bold_files": 5000,
-    "dummy_scans_removed": 35000,
-    "behavioral_cutoffs_applied": 15,
-    "physio_synchronized": 5000
-  },
-  "trimmed_scans": [
-    {
-      "file": "sub-s19/ses-07/func/sub-s19_ses-07_task-rest_bold.nii.gz",
-      "reason": "behavioral_cutoff",
-      "trim_volumes": 45,
-      "original_volumes": 480,
-      "final_volumes": 435
-    },
-    ...
-  ],
-  "behavioral_adjustments": {
-    "sub-s19/ses-07/beh/sub-s19_ses-07_task-rest_beh.csv": {
-      "original_rows": 120,
-      "trimmed_rows": 108,
-      "reason": "behavioral_cutoff_trimming"
-    }
-  }
-}
-```
-
-### Trimming Details
-
-#### Dummy Scan Removal (Standard)
-- **All BOLD files:** First 7 dummy scans removed
-- **Offset:** 10.43 seconds (7 × 1.49s TR)
-- **Why:** Allows fMRI scanner magnetization to stabilize
-- **Effect on events:** Event onsets shifted by -10.43s in events.tsv
-
-#### Behavioral Cutoff Trimming (Selective)
-- **Applied to:** 15 scans with participant behavioral issues
-- **Detection:** Behavioral logs indicate early task termination
-- **Example:** Participant fell asleep at volume 435 of 480
-- **Action:** Trim BOLD file to 435 volumes, trim behavioral CSV to matching duration
-- **Scans affected:**
-  - Discovery: s19 ses-07/09 (4 scans), s43 ses-11 (1 scan)
-  - Validation: s76, s1057, s1058, s1175, s1314, s247, s599, s874, s956 (9 scans)
-  - Excluded: None
-
-#### Physiological Synchronization
-- **Cardiac data:** 100 Hz sampling → resampled to match BOLD
-- **Respiratory data:** 25 Hz sampling → interpolated to BOLD TR
-- **Timing alignment:** Adjusted to account for dummy scan removal
-- **File format:** TSV gzip-compressed (standard BIDS)
-
-#### Event Onset Adjustment
-- **All events:** Shifted by -10.43s (dummy scan offset)
-- **Behavioral cutoff scans:** Additional adjustment for volume trim
-- **Example:** Original onset at 15.2s → adjusted to 4.77s
-- **Note:** Behavioral cutoffs are rare; most adjustments are standard -10.43s
-
-### Verification Steps
-
-#### 1. Check Exclusions Manifest
-```bash
-# View trimming summary
-cat /scratch/users/logben/discovery_bids/sourcedata/exclusions.json | \
-    jq '.summary'
-
-# Expected: 15,851 BOLD files processed, 7 dummy scans removed from each
-```
-
-#### 2. Verify Dummy Scan Removal
-```bash
-# Check a BOLD file's new shape (should be 7 volumes less)
-nifti_tool -disp_hdr -infiles /scratch/users/logben/discovery_bids/sub-*/ses-*/func/*_bold.nii.gz | \
-    grep "dim\[4\]" | head -5
-
-# Should show volumes like 473, 393, 480-7=473, etc.
-# (Original - 7 dummy scans)
-```
-
-#### 3. Check Event Adjustments
-```bash
-# Examine event timing (should be -10.43s from original)
-head -5 /scratch/users/logben/discovery_bids/sub-s03/ses-01/func/sub-s03_ses-01_task-*_events.tsv
-
-# Should show onsets like: 0.1, 5.3, 10.5 (dummy scan offset applied)
-```
-
-#### 4. Verify Behavioral File Trimming
-```bash
-# Count rows in behavioral CSV before and after
-# (documented in exclusions.json)
-cat /scratch/users/logben/discovery_bids/sourcedata/exclusions.json | \
-    jq '.behavioral_adjustments'
-
-# Example: 120 rows → 108 rows due to behavioral cutoff
-```
-
-#### 5. Validate BIDS After Trimming
-```bash
-# Run BIDS validator again (should still pass)
-singularity run -B /scratch/users/logben \
-    /home/groups/russpold/singularity_images/bids-validator_1.14.6.simg \
-    /scratch/users/logben/discovery_bids
-
-# Should show: 0 critical errors
-```
-
-### Phase 3: Common Issues and Solutions
-
-#### Issue: "Dummy scans not removed - volumes unchanged"
-**Cause:** BOLD file already pre-trimmed or Phase 3 skipped
-**Solution:** Check exclusions.json to confirm processing:
-```bash
-cat /scratch/users/logben/discovery_bids/sourcedata/exclusions.json | \
-    jq '.summary.dummy_scans_removed'
-```
-
-#### Issue: Event onsets not adjusted
-**Cause:** Phase 4 (event generation) not yet complete
-**Solution:** Phase 3 pre-calculates adjustments; Phase 4 applies them
-- Events with -10.43s adjustment are ready for Phase 4
-
-#### Issue: Behavioral cutoff not detected
-**Cause:** Behavioral data missing or format incorrect
-**Solution:** Check behavioral_data directory structure
-```bash
-ls -la /network_grant/sourcedata/behavioral_data/sub-XXX/ses-YY/beh/ | head
-```
-
-#### Issue: Physiological sync failed
-**Cause:** Missing cardiac/respiratory files
-**Solution:** Check which physio files exist
-```bash
-find /scratch/users/logben/discovery_bids -name "*_physio.tsv.gz" | head
-# Should have matching physio files for most BOLD files
-```
+**Note on former Phase 3 (BOLD Trimming):** Dummy volume trimming (7 TRs) is now handled directly during Phase 1 (Bidsify). There is no separate Phase 3 step. Physio data is downloaded but not trimmed during bidsify; further physio trimming can be done as a later manual step if needed.
 
 ---
 
@@ -775,7 +559,6 @@ Generate BIDS-compliant events.tsv files for each task-based BOLD scan, with ons
 
 ### Expected Inputs
 - Behavioral CSV files in `sourcedata/behavioral_data/` (Phase 2b output)
-- Event adjustment metadata in `sourcedata/exclusions.json` (Phase 3 output)
 - Task-to-behavioral-file mappings
 
 ### Expected Outputs
@@ -797,13 +580,11 @@ onset	duration	trial_type	response_time	correct
 uv run python src/neuro_workflow/events/generate_events.py \
     --bids-dir /scratch/users/logben/discovery_bids \
     --behavioral-mapping config/behavioral_session_mapping.json \
-    --exclusions-manifest /scratch/users/logben/discovery_bids/sourcedata/exclusions.json \
     -v
 ```
 
 ### Notes for Implementation
-- Must preserve dummy scan offset (-10.43s) applied in Phase 3
-- Handle behavioral cutoff scans (event file length matches trimmed BOLD)
+- Must account for dummy scan offset (-10.43s) already applied during bidsify
 - Generate missing trial_type/response_time from behavioral CSV columns
 - Validate event timing against BOLD file duration
 
@@ -815,7 +596,7 @@ uv run python src/neuro_workflow/events/generate_events.py \
 Apply standard fMRI preprocessing including motion correction, registration to standard space, and multi-echo ICA denoising (Tedana).
 
 ### Prerequisites
-- Completed Phase 1-3 (Bidsify, Behavioral, BOLD Trimming)
+- Completed Phase 1 (Bidsify) and Phase 2 (Behavioral Migration)
 - Phase 4 events.tsv files (when ready) - optional but recommended
 - fMRIPrep and Tedana available (Singularity or conda)
 
@@ -843,7 +624,7 @@ singularity run --cleanenv -B /scratch/users/logben:/scratch/users/logben \
 
 | Parameter | Value | Reason |
 |-----------|-------|--------|
-| `--dummy-scans 0` | 0 | Already removed in Phase 3 |
+| `--dummy-scans 0` | 0 | Already removed during bidsify (Phase 1) |
 | `--fd-spike-threshold` | 0.5 | Moderate motion threshold |
 | `--dvars-spike-threshold` | 1.5 | Detect signal spikes |
 | `--output-spaces` | MNI152NLin2009cAsym fsaverage5 | Standard spaces for fMRI |
@@ -948,7 +729,7 @@ cat /scratch/users/logben/discovery_bids/derivatives/tedana/sub-03/ses-01/sub-03
 |-------|-------|----------|
 | `Critical: Missing .json sidecars` | Phase 1 incomplete or JSON creation failed | Rerun bidsify with retry logic |
 | `Issue: Missing task definition in events.tsv` | Phase 4 not yet run | Generated in Phase 4 (future) |
-| `Invalid duration in events.tsv` | Event beyond BOLD file end | Check Phase 3 trimming calculations |
+| `Invalid duration in events.tsv` | Event beyond BOLD file end | Check event timing against trimmed BOLD duration |
 
 ### Phase-Specific Troubleshooting
 
@@ -958,13 +739,10 @@ cat /scratch/users/logben/discovery_bids/derivatives/tedana/sub-03/ses-01/sub-03
 #### Phase 2: Behavioral Migration
 - See "Phase 2: Common Issues and Solutions"
 
-#### Phase 3: BOLD Trimming
-- See "Phase 3: Common Issues and Solutions"
-
 #### Phase 4: Events (When Ready)
 - Check behavioral CSV format matches task_definitions.json
 - Verify onsets fall within BOLD file duration
-- Confirm dummy scan offset (-10.43s) applied
+- Confirm dummy scan offset (-10.43s) accounted for
 
 #### Phase 5: Preprocessing
 - See "Preprocessing Checkpoints"
@@ -1014,14 +792,11 @@ find /scratch/users/logben/discovery_bids -type f -exec file {} \; | \
 │   ├── sub-XXX/
 │   ├── sourcedata/
 │   │   ├── reconciliation.json
+│   │   ├── session_timestamps.tsv
 │   │   ├── bidsify_log.json
-│   │   ├── exclusions.json           [Phase 3]
 │   │   ├── behavioral_data/          [Phase 2b]
 │   │   ├── out_scanner_behavior/     [Phase 2c]
 │   │   └── survey_data/              [Phase 2c]
-│   ├── .bidsignore
-│   ├── .bids-validation/
-│   │   └── analysis.json
 │   └── derivatives/
 │       ├── fmriprep/                 [Phase 5]
 │       └── tedana/                   [Phase 5]
@@ -1060,17 +835,16 @@ find /scratch/users/logben/discovery_bids -type f -exec file {} \; | \
 ├── src/neuro_workflow/
 │   ├── cli.py                        (Entry point)
 │   ├── bidsify/
-│   │   ├── run.py                    (Phase 1 orchestrator)
+│   │   ├── run.py                    (Phase 1 orchestrator: sequential, dummy trim, run numbering)
 │   │   ├── bids_writer.py
-│   │   ├── flywheel_downloader.py
-│   │   └── integration.py
+│   │   ├── config.py                 (load_pipeline_config from config/pipeline_config.json)
+│   │   ├── file_selector.py
+│   │   ├── flywheel_query.py
+│   │   ├── physio.py
+│   │   └── physio_query.py
 │   ├── behavioral_archive/
 │   │   ├── sample_validation.py      (Load sample config)
 │   │   └── migrate.py                (Phase 2c core)
-│   ├── post_processing/
-│   │   └── post_process_bids.py      (Phase 3 orchestrator)
-│   ├── bids_validation/
-│   │   └── bold_analyzer.py          (TR-based short scan detection)
 │   └── events/                       (Phase 4 placeholder)
 │       └── generate_events.py        (Future)
 │
@@ -1080,22 +854,17 @@ find /scratch/users/logben/discovery_bids -type f -exec file {} \; | \
 │   └── migrate_archive_behavioral_data.py (Phase 2c)
 │
 ├── config/
-│   ├── reconciliation_config.json    (Session overrides, excluded subjects)
+│   ├── pipeline_config.json          (Session overrides, excluded subjects)
 │   ├── behavioral_session_mapping.json (Phase 2 output)
-│   ├── task_tr_counts.json           (Task-specific TR counts)
 │   └── task_definitions.json         (Phase 4 placeholder)
 │
 ├── docs/
 │   ├── WORKFLOW.md                   (This file)
 │   ├── ARCHITECTURE.md               (Technical deep dive)
-│   ├── BIDS-TRIMMING-AUDIT-2026-03-16.md
-│   ├── STATUS-UPDATE-MAR16-2026.md
-│   └── TR-BASED-SHORT-SCAN-DETECTION.md
+│   └── BIDS-ARCHITECTURE.md          (Data organization)
 │
 ├── tests/
-│   ├── bids_validation/
-│   ├── behavioral_archive/
-│   └── post_processing/
+│   └── behavioral_archive/
 │
 └── pyproject.toml                    (Dependencies)
 ```
@@ -1121,7 +890,7 @@ cat /scratch/users/logben/discovery_bids/sourcedata/reconciliation.json | \
 
 ### Session Reconciliation
 
-Flywheel acquisition IDs don't map cleanly to BIDS session numbers. Phase 1 uses `reconciliation_config.json` to map.
+Flywheel acquisition IDs don't map cleanly to BIDS session numbers. Phase 1 uses `config/pipeline_config.json` to map.
 
 **Example Override:**
 ```json
@@ -1157,7 +926,7 @@ cat /scratch/users/logben/discovery_bids/sourcedata/reconciliation.json | \
 - Separate sourcedata: `/network_grant/excluded_sourcedata`
 - NOT included in main analysis pipelines
 
-**Marked in reconciliation_config.json:**
+**Marked in config/pipeline_config.json:**
 ```json
 {
   "excluded_subjects": {
@@ -1176,42 +945,12 @@ Standard fMRI preprocessing step: discard first N volumes to allow magnetization
 - **Scans to remove:** First 7 volumes per BOLD file
 - **TR:** 1.49 seconds
 - **Time removed:** 7 × 1.49s = 10.43 seconds
-- **When:** Phase 3 (automatically)
-- **Impact:** Event onsets shifted by -10.43s
+- **When:** During Phase 1 (Bidsify), immediately after NIfTI download
+- **Impact:** Event onsets must account for -10.43s offset
 
 **Why this matters:**
-- fMRIPrep expects original unprocessed BOLD files
-- Use `--dummy-scans 0` flag (already removed pre-preprocessing)
+- Use `--dummy-scans 0` flag in fMRIPrep (already removed during bidsify)
 - Event timing must match trimmed BOLD duration
-
-### Behavioral Cutoff Trimming
-
-Some participants stopped responding before end of task (e.g., fell asleep).
-
-**Detection method:** Behavioral CSV has fewer rows than expected
-
-**Action taken (Phase 3):**
-- Trim BOLD file to match behavioral duration
-- Trim behavioral CSV to match BOLD volume count
-- Document in `sourcedata/exclusions.json`
-
-**Affected scans (15 total):**
-- Discovery: 5 scans (s19, s43)
-- Validation: 9 scans (s76, s1057, s1058, s1175, s1314, s247, s599, s874, s956)
-- Excluded: 0 scans
-
-### Physiological Data Synchronization
-
-Cardiac and respiratory data collected during fMRI at different sampling rates.
-
-**Synchronization (Phase 3):**
-- Cardiac (100 Hz): Downsampled to match BOLD TR (1.49s ≈ 0.67 Hz)
-- Respiratory (25 Hz): Interpolated to BOLD TR grid
-- Timing: Adjusted for dummy scan removal and behavioral cutoffs
-
-**Output format:** BIDS-standard gzip-compressed TSV
-
-**Usage in Tedana:** Automatic inclusion in ICA denoising
 
 ---
 
@@ -1227,13 +966,14 @@ Cardiac and respiratory data collected during fMRI at different sampling rates.
 
 ### Phase 1 Checkpoints
 
-- [ ] Bidsify discovery completed (57 GB, 1,307 files)
-- [ ] Bidsify validation completed (810 GB, 24,872 files)
-- [ ] Bidsify excluded completed (49 GB, 1,551 files)
+- [ ] Bidsify discovery completed (5 subjects)
+- [ ] Bidsify validation completed (41 subjects)
+- [ ] Bidsify excluded completed (11 subjects)
+- [ ] 7 dummy volumes trimmed from all BOLD files
+- [ ] Duplicate scans have run numbering (run-01, run-02)
 - [ ] BIDS validator shows 0 critical errors (may have warnings)
 - [ ] `sourcedata/reconciliation.json` created with subject/session mapping
-- [ ] `.bids-validation/analysis.json` shows BOLD quality assessment
-- [ ] `.bidsignore` includes duplicate scans and 3D BOLDs
+- [ ] `sourcedata/session_timestamps.tsv` created
 
 ### Phase 2 Checkpoints
 
@@ -1250,19 +990,6 @@ Cardiac and respiratory data collected during fMRI at different sampling rates.
   - 552 survey data files (sample-filtered)
   - 2,437 mTurk files (all subjects)
   - Excluded subjects in separate directory
-
-### Phase 3 Checkpoints
-
-- [ ] Dummy scans removed from all BOLD files (7 volumes × 15,851 scans = 110,957 volumes)
-- [ ] `sourcedata/exclusions.json` created with trimming statistics
-- [ ] Behavioral cutoff trimming applied (15 scans)
-  - 5 discovery scans trimmed
-  - 9 validation scans trimmed
-  - 1 validation scan marked with "fell_asleep" flag
-- [ ] Physiological data synchronized with BOLD
-- [ ] Event onsets adjusted by -10.43s (dummy scan offset)
-- [ ] BIDS validator still shows 0 critical errors after trimming
-- [ ] All BIDS directories made read-only
 
 ### Phase 4 Checkpoints (Future)
 
@@ -1295,11 +1022,10 @@ Cardiac and respiratory data collected during fMRI at different sampling rates.
 
 This document provides a complete walkthrough of the neuro_workflow pipeline from Flywheel acquisition data through preprocessing. Each phase is self-contained but depends on successful completion of previous phases.
 
-### Current Status (as of 2026-03-16)
-- **Phase 1 (Bidsify):** ✓ Complete - 57 subjects across 3 BIDS directories
-- **Phase 2 (Behavioral):** ✓ Complete - 2,344 behavioral files organized
-- **Phase 3 (BOLD Trimming):** ✓ Complete - 110,957 dummy volumes removed
-- **Phase 4 (Events):** ⏳ Planned
-- **Phase 5 (Preprocessing):** 📋 Ready
+### Current Status (as of 2026-04-08)
+- **Phase 1 (Bidsify):** Complete - 57 subjects across 3 BIDS directories (7 dummy vols trimmed, sequential processing, run numbering for duplicates)
+- **Phase 2 (Behavioral):** Complete - 2,344 behavioral files organized
+- **Phase 4 (Events):** Planned
+- **Phase 5 (Preprocessing):** Ready
 
-For technical details beyond this guide, see `ARCHITECTURE.md` and individual phase audit reports.
+For technical details beyond this guide, see `ARCHITECTURE.md`.
