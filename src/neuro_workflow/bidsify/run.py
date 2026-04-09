@@ -58,9 +58,9 @@ def build_reconciliation(canonical_label, sessions, fw_sources):
     }
 
 
-def write_session_timestamps(rows, sourcedata_dir):
+def write_session_timestamps(rows, sourcedata_dir, suffix=""):
     """Write session_timestamps.tsv to sourcedata directory."""
-    tsv_path = Path(sourcedata_dir) / "session_timestamps.tsv"
+    tsv_path = Path(sourcedata_dir) / f"session_timestamps{suffix}.tsv"
     header = "subject\tbids_session\tflywheel_session_label\tflywheel_timestamp"
     lines = [header]
     for row in sorted(rows, key=lambda r: (r["subject"], r["bids_session"])):
@@ -335,6 +335,12 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
     skip = set(fw_config["skip_subjects"])
     session_overrides = fw_config.get("session_overrides", {})
 
+    # When --subjects targets a subset, suffix metadata files to avoid
+    # overwriting the original full-run logs (preserves provenance).
+    rerun_suffix = ""
+    if subjects is not None:
+        rerun_suffix = f"_rerun-{'-'.join(subjects)}"
+
     if subjects is None:
         sample_data = config["samples"].get(sample_name, [])
         subjects = list(sample_data.keys()) if isinstance(sample_data, dict) else sample_data
@@ -384,10 +390,10 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
     sourcedata_dir = output_dir / "sourcedata"
     sourcedata_dir.mkdir(parents=True, exist_ok=True)
 
-    with open(sourcedata_dir / "reconciliation.json", "w") as f:
+    with open(sourcedata_dir / f"reconciliation{rerun_suffix}.json", "w") as f:
         json.dump(reconciliation, f, indent=2)
 
-    write_session_timestamps(all_timestamp_rows, sourcedata_dir)
+    write_session_timestamps(all_timestamp_rows, sourcedata_dir, suffix=rerun_suffix)
 
     sample_notes = config.get("notes", {}).get(sample_name, [])
     if sample_notes:
@@ -399,7 +405,7 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
         "total_files": len(all_log_entries),
         "files": all_log_entries,
     }
-    with open(sourcedata_dir / "bidsify_log.json", "w") as f:
+    with open(sourcedata_dir / f"bidsify_log{rerun_suffix}.json", "w") as f:
         json.dump(log, f, indent=2)
 
     logger.info(
