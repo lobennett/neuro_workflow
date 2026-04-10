@@ -393,9 +393,18 @@ def reconcile(
             raw_other = raw_sessions_by_subj_task.get(
                 (subject, task), set()
             ) - {session}
-            all_other = sorted(bids_other | raw_other)
-            if all_other:
-                other_sessions = ",".join(all_other)
+            parts = []
+            for ses in sorted(bids_other | raw_other):
+                in_bids = ses in bids_other
+                in_raw = ses in raw_other
+                if in_bids and in_raw:
+                    parts.append(f"{ses}:matched")
+                elif in_bids:
+                    parts.append(f"{ses}:bold_only")
+                else:
+                    parts.append(f"{ses}:behavioral_only")
+            if parts:
+                other_sessions = ",".join(parts)
 
         notes = ""
         if scan_notes_text:

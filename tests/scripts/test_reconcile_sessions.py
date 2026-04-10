@@ -443,7 +443,7 @@ class TestReconcile:
         bold_only = [r for r in rows if r["status"] == "bold_without_behavioral"]
         assert len(bold_only) == 1
         assert bold_only[0]["session"] == "ses-02"
-        assert "ses-01" in bold_only[0]["same_task_other_sessions"]
+        assert "ses-01:matched" in bold_only[0]["same_task_other_sessions"]
 
     def test_matched_rows_have_empty_other_sessions(self, tmp_path):
         """Matched rows should have empty same_task_other_sessions."""
