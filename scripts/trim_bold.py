@@ -24,7 +24,7 @@ def trim_bold_directory(bids_dir: Path) -> dict:
     skipped_too_short.
     """
     bids_dir = Path(bids_dir)
-    summary = {"trimmed": 0, "skipped_already_trimmed": 0, "skipped_too_short": 0}
+    summary = {"trimmed": 0, "skipped_already_trimmed": 0, "skipped_too_short": 0, "errors": 0}
 
     for nifti_path in sorted(bids_dir.glob("sub-*/ses-*/func/*_bold.nii.gz")):
         json_path = nifti_path.with_name(
@@ -41,17 +41,24 @@ def trim_bold_directory(bids_dir: Path) -> dict:
         else:
             sidecar = {}
 
-        img = nib.load(str(nifti_path))
-        n_vols = img.shape[3] if len(img.shape) > 3 else 1
+        try:
+            img = nib.load(str(nifti_path))
+            n_vols = img.shape[3] if len(img.shape) > 3 else 1
+        except Exception as e:
+            log.error("Failed to load %s: %s", nifti_path.name, e)
+            summary["errors"] += 1
+            continue
 
         if n_vols <= N_DUMMY:
             log.warning("Too short to trim (dim4=%d): %s", n_vols, nifti_path.name)
             summary["skipped_too_short"] += 1
             continue
 
-        # Trim first N_DUMMY volumes
+        # Trim first N_DUMMY volumes (write to temp file, then atomic rename)
         trimmed_data = img.slicer[:, :, :, N_DUMMY:]
-        nib.save(trimmed_data, str(nifti_path))
+        tmp_path = nifti_path.parent / nifti_path.name.replace("_bold.nii.gz", "_bold_tmp.nii.gz")
+        nib.save(trimmed_data, str(tmp_path))
+        tmp_path.rename(nifti_path)
 
         # Update sidecar
         sidecar["NumberOfVolumesDiscardedByUser"] = N_DUMMY
@@ -79,6 +86,7 @@ def main():
     print(f"Trimmed: {summary['trimmed']}")
     print(f"Skipped (already trimmed): {summary['skipped_already_trimmed']}")
     print(f"Skipped (too short): {summary['skipped_too_short']}")
+    print(f"Errors: {summary['errors']}")
 
 
 if __name__ == "__main__":
