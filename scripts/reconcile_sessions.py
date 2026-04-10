@@ -58,6 +58,9 @@ _DASH_TO_BIDS: dict[str, str] = {
     "cued-task-switching": "cuedTS",
     "directed-forgetting": "directedForgetting",
     "n-back": "nBack",
+    # Full camelCase variants (used by s76)
+    "cuedTaskSwitching": "cuedTS",
+    "spatialTaskSwitching": "spatialTS",
 }
 
 # Known camelCase BIDS task names (passthrough)
