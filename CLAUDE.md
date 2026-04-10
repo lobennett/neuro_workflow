@@ -49,8 +49,10 @@ The bidsify pipeline is **sequential** (no parallel processing, no ThreadPoolExe
 ### What Bidsify Does
 
 1. **Downloads NIfTI and sidecar JSON** from Flywheel for each scan
-2. **Trims 7 dummy BOLD volumes** inline using nibabel (7 TRs x 1.49s = 10.43s offset)
-   - Downstream preprocessing should use `--dummy-scans 0` (volumes already removed)
+2. **Does NOT trim BOLD volumes** — trimming is done post-bidsify via `scripts/trim_bold.py`
+   - Run `uv run python scripts/trim_bold.py <bids_dir>` after bidsify completes
+   - After trimming, use `--dummy-scans 0` in fMRIPrep (volumes already removed)
+   - If trim_bold.py has NOT been run, use `--dummy-scans 7` in fMRIPrep instead
 3. **Downloads and converts physiological data** to BIDS format (cardiac + respiratory)
    - Physio is NOT trimmed during bidsify; trimming deferred to preprocessing
 4. **Handles duplicate scans** with run numbering (run-01, run-02) instead of filtering or .bidsignore
@@ -64,9 +66,19 @@ The following modules were removed as part of the April 2026 simplification:
 - `trimming_orchestrator` -- no orchestrated multi-step trimming
 - `exclusions_manifest` -- no automatic exclusion manifest generation
 - `behavioral_trimming` -- behavioral trimming moved out of bidsify
-- `bold_trimming` -- dummy volume trimming is now inline in run.py
+- `bold_trimming` -- dummy volume trimming is now done via `scripts/trim_bold.py`
 - `integration` -- removed
 - `bids_validation` -- validation done externally via bids-validator
+
+### Post-Bidsify Scripts
+
+Three standalone scripts in `scripts/` for post-processing:
+
+1. **`scripts/trim_bold.py`** -- Trim 7 dummy volumes from all BOLD NIfTIs in a BIDS directory. Updates sidecar JSONs with `NumberOfVolumesDiscardedByUser: 7`. Idempotent (safe to run twice).
+2. **`scripts/reconcile_sessions.py`** -- Read-only analysis matching BIDS functional scans to raw behavioral CSVs. Produces a TSV manifest for human (or Claude-assisted) review.
+3. **`scripts/migrate_behavioral.py`** -- Consumes the reviewed TSV manifest and copies behavioral CSVs to BIDS sourcedata with BIDS naming.
+
+Workflow: `reconcile_sessions.py` -> review manifest -> `migrate_behavioral.py` -> `.bidsignore` for excluded scans.
 
 ### Three Samples
 
@@ -86,7 +98,10 @@ uv run neuro-run submit bidsify discovery \
 # Run BIDS validator after bidsify completes
 bids-validator /scratch/users/logben/discovery_bids
 
-# Preprocessing note: Use fMRIPrep with --dummy-scans 0
+# Trim 7 dummy volumes (run once after bidsify, idempotent)
+uv run python scripts/trim_bold.py /scratch/users/logben/discovery_bids
+
+# Preprocessing note: Use fMRIPrep with --dummy-scans 0 (volumes already trimmed)
 fmriprep --dummy-scans 0 /scratch/users/logben/discovery_bids /derivatives --fs-license /path/to/license
 ```
 
