@@ -96,10 +96,10 @@ _TRIAL_TYPE_LOOKUP = {
 def add_cols(df: pd.DataFrame, exp_id: str) -> pd.DataFrame:
     """Select task-specific columns and construct trial_type."""
     if "cued_task_switching" in exp_id:
-        df["task_condition"] = df["task_condition"].replace("na", "n/a")
-        df["cue_condition"] = df["cue_condition"].replace("na", "n/a")
+        df["task_condition"] = df["task_condition"].astype(object).replace("na", "n/a")
+        df["cue_condition"] = df["cue_condition"].astype(object).replace("na", "n/a")
     if exp_id == "spatial_task_switching_with_cued_task_switching__fmri":
-        df["task_switch"] = df["task_switch"].replace("na", "n/a")
+        df["task_switch"] = df["task_switch"].astype(object).replace("na", "n/a")
 
     to_add = _COLS_LOOKUP.get(exp_id)
     if to_add is None:

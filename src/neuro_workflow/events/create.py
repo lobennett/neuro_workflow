@@ -51,6 +51,7 @@ def _rename_cells(df: pd.DataFrame, exp_id: str) -> pd.DataFrame:
     for key, value in change.items():
         df["trial_id"] = df["trial_id"].replace(key, value)
     if "cued_task_switching_" in exp_id:
+        df["correct_response"] = df["correct_response"].astype(object)
         df.loc[df["trial_id"] == "test_cue", "correct_response"] = "n/a"
     return df
 
