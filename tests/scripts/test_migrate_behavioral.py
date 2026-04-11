@@ -6,7 +6,7 @@ from pathlib import Path
 def _write_manifest(tmp_path, rows):
     """Write a TSV manifest file."""
     manifest = tmp_path / "manifest.tsv"
-    header = "subject\tsession\ttask\tstatus\taction\tdest_session\traw_path\tbold_path\tsame_task_other_sessions\tnotes"
+    header = "subject\tsession\ttask\tstatus\taction\tdest_session\tdest_run\traw_path\tbold_path\tsame_task_other_sessions\tnotes"
     lines = [header]
     for r in rows:
         lines.append("\t".join(str(r.get(c, "")) for c in header.split("\t")))
@@ -129,3 +129,26 @@ def test_migrate_skips_skip_action(tmp_path):
 
     assert report["copied"] == 0
     assert report["skipped_skip"] == 1
+
+
+def test_migrate_uses_dest_run(tmp_path):
+    from scripts.migrate_behavioral import migrate_from_manifest
+
+    raw_csv = tmp_path / "raw" / "s29" / "ses-03" / "spatialTS.csv"
+    raw_csv.parent.mkdir(parents=True)
+    raw_csv.write_text("trial,rt\n1,500\n")
+
+    output_dir = tmp_path / "sourcedata"
+
+    manifest = _write_manifest(tmp_path, [{
+        "subject": "s29", "session": "ses-03", "task": "spatialTS",
+        "status": "matched", "action": "copy", "dest_session": "ses-03",
+        "dest_run": "2",
+        "raw_path": str(raw_csv), "bold_path": "", "same_task_other_sessions": "",
+        "notes": "",
+    }])
+
+    migrate_from_manifest(manifest, output_dir)
+
+    expected = output_dir / "in_scanner_behavior" / "sub-s29" / "ses-03" / "beh" / "sub-s29_ses-03_task-spatialTS_run-2_beh.csv"
+    assert expected.exists()

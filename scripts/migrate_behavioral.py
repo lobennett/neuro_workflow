@@ -85,9 +85,11 @@ def migrate_from_manifest(
         subject = row["subject"]
         dest_session = row["dest_session"]
         task = row["task"]
+        dest_run = row.get("dest_run", "").strip()
 
         sub_label = f"sub-{subject}" if not subject.startswith("sub-") else subject
-        filename = f"{sub_label}_{dest_session}_task-{task}_beh.csv"
+        run_part = f"_run-{dest_run}" if dest_run else ""
+        filename = f"{sub_label}_{dest_session}_task-{task}{run_part}_beh.csv"
         dest_path = output_dir / "in_scanner_behavior" / sub_label / dest_session / "beh" / filename
 
         dest_path.parent.mkdir(parents=True, exist_ok=True)
