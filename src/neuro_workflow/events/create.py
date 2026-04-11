@@ -16,50 +16,6 @@ from neuro_workflow.events.utils import (
 
 log = logging.getLogger(__name__)
 
-# --- Name mapping (same as rename script, also used by create_events) ---
-
-LONG_NAME_TO_SHORT = {
-    "stop_signal": "stopSignal",
-    "flanker": "flanker",
-    "go_nogo": "goNogo",
-    "n_back": "nBack",
-    "cued_task_switching": "cuedTS",
-    "spatial_task_switching": "spatialTS",
-    "directed_forgetting": "directedForgetting",
-    "shape_matching": "shapeMatching",
-    "stop_signal_with_flanker": "stopSignalWFlanker",
-    "stop_signal_with_directed_forgetting": "stopSignalWDirectedForgetting",
-    "directed_forgetting_with_flanker": "directedForgettingWFlanker",
-    "directed_forgetting_with_cued_task_switching": "directedForgettingWCuedTS",
-    "cued_task_switching_with_directed_forgetting": "directedForgettingWCuedTS",
-    "spatial_task_switching_with_cued_task_switching": "spatialTSWCuedTS",
-    "flanker_with_shape_matching": "flankerWShapeMatching",
-    "flanker_with_cued_task_switching": "cuedTSWFlanker",
-    "n_back_with_shape_matching": "nBackWShapeMatching",
-    "n_back_with_spatial_task_switching": "nBackWSpatialTS",
-    "shape_matching_with_cued_task_switching": "shapeMatchingWCuedTS",
-    "shape_matching_with_spatial_task_switching": "spatialTSWShapeMatching",
-}
-
-
-def long_name_to_short_name(long_name: str) -> str:
-    return LONG_NAME_TO_SHORT[long_name]
-
-
-def get_task_from_filename(filename: str) -> str:
-    """Extract long task name from behavioral CSV filename."""
-    long_name = filename.split("__fmri")[0]
-    if "_single_task_network" in long_name:
-        long_name = long_name.split("_single_task_network")[0]
-    elif "task-" in long_name:
-        parts = long_name.split("_")
-        for p in parts:
-            if p.startswith("task-"):
-                long_name = p.replace("task-", "").replace("-", "_")
-                break
-    return long_name
-
-
 # --- Rename cells (trial_id label standardization) ---
 
 _RENAME_CELLS_LOOKUP = {
@@ -99,6 +55,11 @@ def _rename_cells(df: pd.DataFrame, exp_id: str) -> pd.DataFrame:
     return df
 
 
+N_DUMMY = 7
+TR_SECONDS = 1.49
+DUMMY_OFFSET_S = N_DUMMY * TR_SECONDS  # 10.43s
+
+
 def _set_default_event_cols(df: pd.DataFrame) -> pd.DataFrame:
     df = df[df.time_elapsed > 0]
     df = df.rename(columns={"time_elapsed": "onset", "choice_acc": "acc", "stim_duration": "duration", "rt": "response_time"})
@@ -106,6 +67,10 @@ def _set_default_event_cols(df: pd.DataFrame) -> pd.DataFrame:
     df["duration"] = df["duration"] / 1000
     df["response_time"] = df["response_time"] / 1000
     df["response_time"] = df["response_time"].replace(-0.001, np.nan)
+
+    # Adjust onsets for trimmed dummy volumes (7 * 1.49s = 10.43s)
+    df["onset"] = df["onset"] - DUMMY_OFFSET_S
+    df = df[df["onset"] >= 0]
     first_columns = ["onset", "duration", "response_time", "trial_id", "trial_type", "key_press", "correct_response"]
     new_column_order = first_columns + [col for col in df.columns if col not in first_columns]
     df = df[new_column_order]
@@ -117,30 +82,8 @@ def _flagged_feedback(text_content: str) -> bool:
     return any(keyword in text_content.lower() for keyword in keywords)
 
 
-def is_placeholder_behavioral_csv(csv_file: Path) -> bool:
-    """Check if behavioral CSV is a placeholder (missing data marker).
-
-    Args:
-        csv_file: Path to behavioral CSV file
-
-    Returns:
-        True if file contains PLACEHOLDER marker, False otherwise
-    """
-    try:
-        with open(csv_file, encoding='utf-8') as f:
-            first_line = f.readline()
-            return "PLACEHOLDER" in first_line
-    except Exception as e:
-        log.warning("Error checking if %s is placeholder: %s", csv_file, e)
-        return False
-
-
 def create_empty_events_df() -> pd.DataFrame:
-    """Create empty events DataFrame with required BIDS columns.
-
-    Returns:
-        Empty DataFrame with standard BIDS events columns
-    """
+    """Create empty events DataFrame with required BIDS columns."""
     return pd.DataFrame(columns=[
         "onset",
         "duration",
@@ -215,6 +158,18 @@ def run_create_events(
         subjects: Optional list of subjects to process (default: all)
         sessions: Optional list of sessions to process (default: all)
     """
+    # Parse .bidsignore to skip excluded scans
+    ignored = set()
+    bidsignore_path = bids_dir / ".bidsignore"
+    if bidsignore_path.exists():
+        for line in bidsignore_path.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            m = re.search(r"sub-(\w+)/(ses-\d+)/func/.*task-(\w+)", line)
+            if m:
+                ignored.add((m.group(1), m.group(2), m.group(3)))
+
     for sub_dir in sorted(behavioral_dir.glob("sub-*")):
         if subjects and sub_dir.name not in subjects:
             continue
@@ -229,69 +184,47 @@ def run_create_events(
                 log.warning("No func dir for %s %s, skipping", sub_dir.name, ses_dir.name)
                 continue
 
-            # Get tasks that have NIfTIs
+            sub_label = sub_dir.name.replace("sub-", "")
+
+            # Get tasks that have NIfTIs, excluding bidsignored and rest
             nifti_tasks = set()
             for nii in func_dir.glob("*.nii.gz"):
                 m = re.search(r"task-([^_]+)", nii.name)
                 if m and m.group(1) != "rest":
-                    nifti_tasks.add(m.group(1))
+                    task = m.group(1)
+                    if (sub_label, ses_dir.name, task) not in ignored:
+                        nifti_tasks.add(task)
 
-            # Group CSVs by task
+            # Group CSVs by task, extracting run number from filename
             csv_files = sorted(beh_dir.glob("*.csv"))
-            task_to_files: dict[str, list[Path]] = {}
+            task_run_files: list[tuple[str, int, Path]] = []
             for csv_file in csv_files:
-                # Extract task from BIDS-style sourcedata filename (stop at underscore)
                 m = re.search(r"task-([^_]+)", csv_file.name)
-                if m:
-                    task_name = m.group(1)
-                    if task_name in nifti_tasks:
-                        task_to_files.setdefault(task_name, []).append(csv_file)
+                if not m:
+                    continue
+                task_name = m.group(1)
+                if task_name not in nifti_tasks:
+                    continue
+                # Extract run number if present, default to 1
+                run_m = re.search(r"run-(\d+)", csv_file.name)
+                run_num = int(run_m.group(1)) if run_m else 1
+                task_run_files.append((task_name, run_num, csv_file))
 
-            # Track which tasks have been processed
             tasks_with_events = set()
 
-            for task_name, files in task_to_files.items():
-                for run_idx, csv_file in enumerate(files, 1):
-                    outname = f"{sub_dir.name}_{ses_dir.name}_task-{task_name}_run-{run_idx}_events.tsv"
-                    outpath = func_dir / outname
+            for task_name, run_num, csv_file in task_run_files:
+                outname = f"{sub_dir.name}_{ses_dir.name}_task-{task_name}_run-{run_num}_events.tsv"
+                outpath = func_dir / outname
 
-                    # Check if this is a placeholder behavioral file
-                    if is_placeholder_behavioral_csv(csv_file):
-                        log.info(
-                            "Creating empty events.tsv for placeholder behavioral: %s",
-                            outpath,
-                        )
-                        df = create_empty_events_df()
-                    else:
-                        # Normal processing of behavioral CSV
-                        try:
-                            df = create_events_df(csv_file, task_name)
-                            log.info("Writing events.tsv from behavioral: %s", outpath)
-                        except Exception as e:
-                            log.warning(
-                                "Failed to process behavioral %s: %s. Creating empty events.tsv.",
-                                csv_file,
-                                e,
-                            )
-                            df = create_empty_events_df()
-
-                    df.to_csv(outpath, sep="\t", index=False)
-                    tasks_with_events.add(task_name)
-
-            # Check for BOLD scans without behavioral data
-            for bold_task in nifti_tasks:
-                if bold_task not in tasks_with_events:
+                try:
+                    df = create_events_df(csv_file, task_name)
+                    log.info("Writing events.tsv: %s", outpath)
+                except Exception as e:
                     log.warning(
-                        "BOLD scan exists without behavioral data: %s %s task-%s",
-                        sub_dir.name,
-                        ses_dir.name,
-                        bold_task,
-                    )
-                    outname = f"{sub_dir.name}_{ses_dir.name}_task-{bold_task}_run-1_events.tsv"
-                    outpath = func_dir / outname
-                    log.info(
-                        "Creating empty events.tsv for BOLD without behavioral: %s",
-                        outpath,
+                        "Failed to process %s: %s. Writing empty events.tsv.",
+                        csv_file, e,
                     )
                     df = create_empty_events_df()
-                    df.to_csv(outpath, sep="\t", index=False)
+
+                df.to_csv(outpath, sep="\t", index=False)
+                tasks_with_events.add(task_name)

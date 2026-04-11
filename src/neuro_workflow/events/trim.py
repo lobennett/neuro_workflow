@@ -25,9 +25,7 @@ def trim_nifti(
     import nibabel as nib
 
     img = nib.load(str(nifti_in))
-    data = img.get_fdata()
-    trimmed_data = data[..., :n_volumes]
-    trimmed_img = nib.Nifti1Image(trimmed_data, img.affine, img.header)
+    trimmed_img = img.slicer[:, :, :, :n_volumes]
     nifti_out.parent.mkdir(parents=True, exist_ok=True)
     nib.save(trimmed_img, str(nifti_out))
     log.info("Trimmed %s -> %s (%d volumes)", nifti_in.name, nifti_out.name, n_volumes)

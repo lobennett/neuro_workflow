@@ -254,6 +254,8 @@ def run_qc(
                 if not m:
                     continue
                 task_name = m.group(1)
+                run_m = re.search(r"run-(\d+)", csv_file.name)
+                run_label = f"run-{run_m.group(1)}" if run_m else "run-1"
 
                 # Compute metrics
                 metrics = compute_metrics_from_csv(csv_file, task_name)
@@ -268,7 +270,7 @@ def run_qc(
                             "subject": sub_dir.name,
                             "session": ses_dir.name,
                             "task": task_name,
-                            "run": "run-1",
+                            "run": run_label,
                             "action": "exclude",
                             "source": "behavioral-qc",
                             "reason": f"RT tail cutoff before halfway (proportion_blank={cutoff_info['proportion_blank']:.2f})",

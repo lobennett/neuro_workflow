@@ -6,10 +6,13 @@ from unittest.mock import patch
 
 
 def _make_stop_signal_csv(tmp_path):
-    """Create a minimal stop signal behavioral CSV."""
+    """Create a minimal stop signal behavioral CSV with realistic timing.
+
+    Timing: trigger at 5s, events at 20s/25s/30s (well past 10.43s dummy offset).
+    """
     df = pd.DataFrame({
         "trial_id": ["design_setup", "fmri_trigger_initial", "test_fixation", "test_trial", "test_trial", "test_trial"],
-        "time_elapsed": [1000, 5000, 5500, 7000, 9000, 11000],
+        "time_elapsed": [1000, 5000, 15000, 20000, 25000, 30000],
         "block_duration": [1000, 100, 500, 1500, 1500, 1500],
         "rt": [0, 0, 0, 450, 520, -1],
         "key_press": [-1, -1, -1, 37, 39, -1],
@@ -55,21 +58,3 @@ class TestCreateEventsDf:
         assert not result.isnull().any().any()
 
 
-class TestGetTaskFromFilename:
-    def test_descriptive_single(self):
-        from neuro_workflow.events.create import get_task_from_filename
-        assert get_task_from_filename("stop_signal_single_task_network__fmri_results.csv") == "stop_signal"
-
-    def test_descriptive_dual(self):
-        from neuro_workflow.events.create import get_task_from_filename
-        assert get_task_from_filename("stop_signal_with_flanker__fmri_results.csv") == "stop_signal_with_flanker"
-
-
-class TestLongNameToShortName:
-    def test_single_task(self):
-        from neuro_workflow.events.create import long_name_to_short_name
-        assert long_name_to_short_name("stop_signal") == "stopSignal"
-
-    def test_dual_task(self):
-        from neuro_workflow.events.create import long_name_to_short_name
-        assert long_name_to_short_name("stop_signal_with_flanker") == "stopSignalWFlanker"
