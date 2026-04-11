@@ -140,6 +140,12 @@ Flywheel session 22424 (Scan 0, 2020-11-11) was a fmap-only test session and is 
 - **Scan 11:** cuedTSWFlanker missing (per behavioral notes).
 - **Scan 12:** Re-ran flankerWCuedTS to replace scan 11 issue.
 
+### s1058 — did not specify
+- ses-01 nBack is exclusions data for some reason, see /oak/stanford/groups/russpold/data/network_grant/_archive_someone_plz_clean/behavioral_data/raw_cleaned/exclusions/s180/ses-12/shape_matching_with_cued_task_switching__fmri_results (3).csv
+
+### s180 — did not specify
+- ses-12 shapeMatchingWCuedTS in exclusions for some reason, see /oak/stanford/groups/russpold/data/network_grant/_archive_someone_plz_clean/behavioral_data/raw_cleaned/exclusions/s180/ses-12/shape_matching_with_cued_task_switching__fmri_results (3).csv
+
 ---
 
 ## General Notes
