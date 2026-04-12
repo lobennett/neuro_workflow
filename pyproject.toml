@@ -3,6 +3,9 @@ name = "neuro-workflow"
 version = "0.2.0"
 description = "CLI for submitting neuroimaging SLURM array jobs"
 requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0.3",
+]
 
 [project.scripts]
 neuro-run = "neuro_workflow.cli:main"
