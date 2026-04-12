@@ -432,20 +432,24 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
         if 'left_surface' not in run_files or 'right_surface' not in run_files:
             raise ValueError(f'Missing surface files for {session}/{run}')
         n_scans_total, _ = get_surface_scan_info(run_files['left_surface'])
-        dummy_scans = task_params.get('dummy_scans', 7)
-        n_scans = n_scans_total - dummy_scans
+        # BOLD is already trimmed by trim_bold.py; do not remove dummy scans again
+        dummy_scans = 0
+        n_scans = n_scans_total
     else:
         mask_key = f'{args.space.lower()}_brain_mask'
         data_key = f'{args.space.lower()}_data'
         if mask_key not in run_files or data_key not in run_files:
             raise ValueError(f'Missing required files for {session}/{run}')
-        bold_data = load_bold_data_with_dummy_removal(run_files[data_key])
+        # BOLD is already trimmed by trim_bold.py; load without further removal
+        bold_data = load_bold_data_with_dummy_removal(run_files[data_key], dummy_scans=0)
         n_scans = bold_data.shape[3]
 
     # Load and preprocess events
+    # Onsets are already adjusted for dummy scans during event file creation
+    # (shifted by -7*1.49s = -10.43s); do not adjust again
     events_df = pd.read_csv(run_files['events'], sep='\t')
     processed_events = preprocess_events(
-        events_df, args.task_name, adjust_for_dummy_scans=True,
+        events_df, args.task_name, adjust_for_dummy_scans=False,
         subject_id=args.subj_id, session_id=session,
     )
     processed_events_with_junk, percent_junk = add_junk_trials(
@@ -505,13 +509,13 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
             confounds_df = pd.read_csv(run_files['confounds'], sep='\t', na_values=['n/a']).fillna(0)
             fc_confounds_df = get_fc_confounds(confounds_df)
             if not fc_confounds_df.empty:
-                dummy_scans = task_params.get('dummy_scans', 7)
-                fc_confounds = fc_confounds_df.iloc[dummy_scans:].values
+                # BOLD already trimmed; confounds need same trimming applied
+                fc_confounds = fc_confounds_df.iloc[task_params.get('dummy_scans', 7):].values
                 logger.info('FC confounds: %d columns', fc_confounds.shape[1])
 
         process_surface_run(
             run_files, design_matrix, contrasts, args, dirs,
-            base_filename, tr, task_params.get('dummy_scans', 7),
+            base_filename, tr, 0,  # BOLD already trimmed
             compute_residuals=args.residuals,
             surface_space=surface_space,
             fc_confounds=fc_confounds,

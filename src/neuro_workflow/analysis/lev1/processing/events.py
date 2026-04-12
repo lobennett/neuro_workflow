@@ -199,6 +199,11 @@ def preprocess_events(
     """
     events_df = events_df.copy()
 
+    # Convert columns that may contain "n/a" strings to numeric
+    for col in ['onset', 'duration', 'response_time', 'key_press', 'correct_response']:
+        if col in events_df.columns:
+            events_df[col] = pd.to_numeric(events_df[col], errors='coerce')
+
     # Adjust event onsets for dummy scan removal
     if adjust_for_dummy_scans and dummy_scans > 0:
         adjustment = dummy_scans * tr
