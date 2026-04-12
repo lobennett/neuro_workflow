@@ -228,5 +228,5 @@ def run_create_events(
                     )
                     df = create_empty_events_df()
 
-                df.to_csv(outpath, sep="\t", index=False)
+                df.to_csv(outpath, sep="\t", index=False, na_rep="n/a")
                 tasks_with_events.add(task_name)
