@@ -137,10 +137,11 @@ def create_events_df(filename: Path, short_name: str) -> pd.DataFrame:
         df.loc[(df["trial_id"] == "test_trial") & (df["trial_type"] == "na"), "trial_type"] = "tn/a_cn/a"
         df.loc[(df["trial_id"] == "test_trial") & (df["trial_type"] == "tn/a_cn/a"), "task_switch"] = "tn/a_cn/a"
 
-    # Detect performance feedback blocks
+    # Detect performance feedback blocks (only for rows still in df after filtering)
     feedback_block_rows, indices_to_change = _get_rows_with_feedback(df, original_df)
     for index in indices_to_change:
-        df.loc[index, "trial_id"] = "break_with_performance_feedback"
+        if index in df.index:
+            df.loc[index, "trial_id"] = "break_with_performance_feedback"
 
     return df
 

@@ -98,7 +98,7 @@ def add_cols(df: pd.DataFrame, exp_id: str) -> pd.DataFrame:
     if "cued_task_switching" in exp_id:
         df["task_condition"] = df["task_condition"].astype(object).replace("na", "n/a")
         df["cue_condition"] = df["cue_condition"].astype(object).replace("na", "n/a")
-    if exp_id == "spatial_task_switching_with_cued_task_switching__fmri":
+    if "task_switch" in df.columns:
         df["task_switch"] = df["task_switch"].astype(object).replace("na", "n/a")
 
     to_add = _COLS_LOOKUP.get(exp_id)
