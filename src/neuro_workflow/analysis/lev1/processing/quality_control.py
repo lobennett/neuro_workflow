@@ -41,7 +41,7 @@ def est_contrast_vifs(desmat, contrasts):
             @ np.linalg.inv(desmat_copy.transpose() @ desmat_copy)
             @ contrast_cvec.transpose()
         )
-        # The following is the "best case" scenario because the between condition regressor correlations are set to 0
+        # The folllowing is the "best case" scenario because the between condition regressor correlations are set to 0
         best_var_contrast = (
             contrast_cvec
             @ np.linalg.inv(
