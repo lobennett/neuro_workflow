@@ -32,6 +32,10 @@ events = [
     "numpy>=1.24",
     "nibabel>=5.0",
 ]
+datalad = [
+    "datalad>=1.4.1",
+    "datalad-installer>=1.1.1",
+]
 
 [build-system]
 requires = ["hatchling"]
