@@ -50,31 +50,12 @@ wheels = [
 ]
 
 [[package]]
-name = "boto3"
-version = "1.42.88"
+name = "boto"
+version = "2.49.0"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "botocore" },
-    { name = "jmespath" },
-    { name = "s3transfer" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/da/bb/7d4435cca6fccf235dd40c891c731bcb9078e815917b57ebadd1e0ffabaf/boto3-1.42.88.tar.gz", hash = "sha256:2d22c70de5726918676a06f1a03acfb4d5d9ea92fc759354800b67b22aaeef19", size = 113238, upload-time = "2026-04-10T19:41:06.912Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c8/af/54a920ff4255664f5d238b5aebd8eedf7a07c7a5e71e27afcfe840b82f51/boto-2.49.0.tar.gz", hash = "sha256:ea0d3b40a2d852767be77ca343b58a9e3a4b00d9db440efb8da74b4e58025e5a", size = 1478498, upload-time = "2018-07-11T20:58:58.057Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0a/2b/8bfddb39a19f5fbc16a869f1a394771e6223f07160dbc0ff6b38e05ea0ae/boto3-1.42.88-py3-none-any.whl", hash = "sha256:2d0f52c971503377e4370d2a83edee6f077ddb8e684366ff38df4f13581d9cfc", size = 140557, upload-time = "2026-04-10T19:41:05.309Z" },
-]
-
-[[package]]
-name = "botocore"
-version = "1.42.88"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "jmespath" },
-    { name = "python-dateutil" },
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/93/50/87966238f7aa3f7e5f87081185d5a407a95ede8b551e11bbe134ca3306dc/botocore-1.42.88.tar.gz", hash = "sha256:cbb59ee464662039b0c2c95a520cdf85b1e8ce00b72375ab9cd9f842cc001301", size = 15195331, upload-time = "2026-04-10T19:40:57.012Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/46/ad14e41245adb8b0c83663ba13e822b68a0df08999dd250e75b0750fdf6c/botocore-1.42.88-py3-none-any.whl", hash = "sha256:032375b213305b6b81eedb269eaeefdf96f674620799bbf96117dca86052cc1a", size = 14876640, upload-time = "2026-04-10T19:40:53.663Z" },
+    { url = "https://files.pythonhosted.org/packages/23/10/c0b78c27298029e4454a472a1919bde20cb182dab1662cec7f2ca1dcc523/boto-2.49.0-py2.py3-none-any.whl", hash = "sha256:147758d41ae7240dc989f0039f27da8ca0d53734be0eb869ef16e3adcfa462e8", size = 1359202, upload-time = "2018-07-11T20:58:55.711Z" },
 ]
 
 [[package]]
@@ -421,11 +402,11 @@ wheels = [
 
 [[package]]
 name = "datalad"
-version = "1.4.1"
+version = "0.19.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "annexremote" },
-    { name = "boto3" },
+    { name = "boto" },
     { name = "chardet" },
     { name = "colorama", marker = "sys_platform == 'win32'" },
     { name = "distro" },
@@ -443,18 +424,9 @@ dependencies = [
     { name = "requests" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a7/cd/584982574f36647d67e5047ce9afee679d33a158ea2940b7a05d77896a70/datalad-1.4.1.tar.gz", hash = "sha256:9e7cecd589dd6058b84c3e93cc80af13b95aa0f938922ca6639f3d3509bc23d3", size = 1445760, upload-time = "2026-04-08T12:59:43.029Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/57/2f/10e55c07277da8ba5e2fd989d8783c2539db249d1910484a43a0396aa7d6/datalad-0.19.6.tar.gz", hash = "sha256:e0da2dbb1a9f233a18a652d59df3d63ebac3185a6713752e263e1f7b48e1c54c", size = 1420979, upload-time = "2024-02-02T23:10:51.029Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/52/1c/a84d50a0f27ba70d0e4e413c29278a3ac360907090a1925824e1b36f50ec/datalad-1.4.1-py3-none-any.whl", hash = "sha256:146cedf6df1955311cb5b19854e1ce15e547ed2682b7f5cd19e836f90fd32747", size = 1292941, upload-time = "2026-04-08T12:59:41.485Z" },
-]
-
-[[package]]
-name = "datalad-installer"
-version = "1.1.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/62/38/ce0aa6599526acee61fd909510e866c71bc36488a334683bcf9f205c441e/datalad_installer-1.1.1.tar.gz", hash = "sha256:a784658edf34059be5e7dd62297ff34de00fcd57c424f40b3a85d4142bbf2c31", size = 52708, upload-time = "2024-12-13T22:55:29.013Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0c/36/930651d815f93c5ce2a83eea4bc4ead5ea7bb247161ad59da1a1409baf33/datalad_installer-1.1.1-py3-none-any.whl", hash = "sha256:c8ace57fc80f1850d05017202f71b5ced7ad7cc4b80a0826961a40ca05d5d639", size = 32061, upload-time = "2024-12-13T22:55:23.482Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/a2/d1093eda6efd0ab353e69ca225a07886ea3dd173a3ac26f31f6e760ae03a/datalad-0.19.6-py3-none-any.whl", hash = "sha256:030c7d8a7c941a9bda92c35bc14f3f73f4e5519961ffe6b0f5e294f40ed97eed", size = 1275460, upload-time = "2024-02-02T23:10:48.285Z" },
 ]
 
 [[package]]
@@ -826,15 +798,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz", hash = "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d", size = 245115, upload-time = "2025-03-05T20:05:02.478Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl", hash = "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67", size = 134899, upload-time = "2025-03-05T20:05:00.369Z" },
-]
-
-[[package]]
-name = "jmespath"
-version = "1.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d3/59/322338183ecda247fb5d1763a6cbe46eff7222eaeebafd9fa65d4bf5cb11/jmespath-1.1.0.tar.gz", hash = "sha256:472c87d80f36026ae83c6ddd0f1d05d4e510134ed462851fd5f754c8c3cbb88d", size = 27377, upload-time = "2026-01-22T16:35:26.279Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/14/2f/967ba146e6d58cf6a652da73885f52fc68001525b4197effc174321d70b4/jmespath-1.1.0-py3-none-any.whl", hash = "sha256:a5663118de4908c91729bea0acadca56526eb2698e83de10cd116ae0f4e97c64", size = 20419, upload-time = "2026-01-22T16:35:24.919Z" },
 ]
 
 [[package]]
@@ -1342,7 +1305,6 @@ bidsify = [
 ]
 datalad = [
     { name = "datalad" },
-    { name = "datalad-installer" },
 ]
 events = [
     { name = "nibabel" },
@@ -1370,8 +1332,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "datalad", marker = "extra == 'datalad'", specifier = ">=1.4.1" },
-    { name = "datalad-installer", marker = "extra == 'datalad'", specifier = ">=1.1.1" },
+    { name = "datalad", marker = "extra == 'datalad'", specifier = "<1.0" },
     { name = "flywheel-sdk", marker = "extra == 'bidsify'", specifier = ">=17.0" },
     { name = "img2pdf", marker = "extra == 'qa'", specifier = ">=0.5" },
     { name = "matplotlib", marker = "extra == 'qa'", specifier = ">=3.0" },
@@ -2048,18 +2009,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f3/61/d7545dafb7ac2230c70d38d31cbfe4cc64f7144dc41f6e4e4b78ecd9f5bb/requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6", size = 206888, upload-time = "2023-05-01T04:11:33.229Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06", size = 54481, upload-time = "2023-05-01T04:11:28.427Z" },
-]
-
-[[package]]
-name = "s3transfer"
-version = "0.16.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "botocore" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/05/04/74127fc843314818edfa81b5540e26dd537353b123a4edc563109d8f17dd/s3transfer-0.16.0.tar.gz", hash = "sha256:8e990f13268025792229cd52fa10cb7163744bf56e719e0b9cb925ab79abf920", size = 153827, upload-time = "2025-12-01T02:30:59.114Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/fc/51/727abb13f44c1fcf6d145979e1535a35794db0f6e450a0cb46aa24732fe2/s3transfer-0.16.0-py3-none-any.whl", hash = "sha256:18e25d66fed509e3868dc1572b3f427ff947dd2c56f844a5bf09481ad3f3b2fe", size = 86830, upload-time = "2025-12-01T02:30:57.729Z" },
 ]
 
 [[package]]

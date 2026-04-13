@@ -33,8 +33,7 @@ events = [
     "nibabel>=5.0",
 ]
 datalad = [
-    "datalad>=1.4.1",
-    "datalad-installer>=1.1.1",
+    "datalad<1.0",
 ]
 
 [build-system]
