@@ -20,6 +20,16 @@ Every scan listed in `.bidsignore` is documented here with its reason. This is t
 |---------|--------|
 | `sub-*/ses-*/anat/*acq-MPRAGEPromo_run-1_T1w.*` | Old MPRAGEPromo sequence not used for analysis. Only SagMPRAGE T1w is used. |
 
+### Anatomical quality exclusions (Discovery)
+
+Per collaborator quality review. For each subject with multiple T1w/T2w, the worse-quality scan is excluded. Comparable-quality scans are both retained.
+
+| Subject | Session | Scan | Reason |
+|---------|---------|------|--------|
+| s19 | ses-03 | T1w SagMPRAGE | Slight ringing; ses-05 is best quality |
+| s19 | ses-01 | T2w CubePromo | Slight ringing; ses-03 is better |
+| s29 | ses-04 | T2w CubePromo | FOV/alignment slightly off; ses-01 is good quality |
+
 ### Missing behavioral data (irreconcilable)
 
 | Subject | Session | Task | Reason | SCAN-NOTES ref |
@@ -60,6 +70,17 @@ Every scan listed in `.bidsignore` is documented here with its reason. This is t
 |---------|---------|------|-----|--------|
 | s480 | ses-03 | goNogo | run-1 | 3D BOLD (dim4=1). run-2 is valid; behavioral maps to run-2. |
 | s480 | ses-03 | nBack | run-1 | 3 of 505 TRs (1%). run-2 is valid; behavioral maps to run-2. |
+
+### Anatomical quality exclusions (Validation)
+
+Per collaborator quality review. For each subject with multiple T1w, the worse-quality scan is excluded. Comparable-quality scans are both retained (e.g., s1351 ses-01 and ses-08 both clean; s1399 ses-01 and ses-02 T2w both decent).
+
+| Subject | Session | Scan | Reason |
+|---------|---------|------|--------|
+| s1127 | ses-01 | T1w SagMPRAGE | Heavy ringing, use not recommended; ses-09 is clean |
+| s1258 | ses-01 | T1w SagMPRAGE | Mild ringing; ses-06 is better |
+| s1270 | ses-06 | T1w SagMPRAGE | Ringing; ses-01 is very slightly better |
+| s216 | ses-01 | T1w SagMPRAGE | Heavy ringing; ses-11 is slightly better |
 
 ### Missing behavioral data (irreconcilable)
 
