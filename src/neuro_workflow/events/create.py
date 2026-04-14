@@ -143,6 +143,10 @@ def create_events_df(filename: Path, short_name: str) -> pd.DataFrame:
         if index in df.index:
             df.loc[index, "trial_id"] = "break_with_performance_feedback"
 
+    # Flag non-monotonic onsets (from neg_rt_correction time_elapsed reconstruction)
+    if not df["onset"].is_monotonic_increasing:
+        log.warning("Non-monotonic onsets detected in %s — add to .bidsignore", short_name)
+
     return df
 
 
