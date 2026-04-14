@@ -250,7 +250,7 @@ def run_qc(
             if not beh_dir.exists():
                 continue
             for csv_file in sorted(beh_dir.glob("*.csv")):
-                m = re.search(r"task-(\w+)", csv_file.name)
+                m = re.search(r"task-([^_]+)", csv_file.name)
                 if not m:
                     continue
                 task_name = m.group(1)
