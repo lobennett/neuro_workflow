@@ -187,8 +187,7 @@ def get_task_parameters(task_name: str) -> Dict[str, Any]:
         task_name: Name of the task.
 
     Returns:
-        Dictionary with keys: tr, dummy_scans, min_rt, expected_sessions,
-        has_performance_feedback_breaks.
+        Dictionary with keys: tr, dummy_scans, min_rt, expected_sessions.
     """
     config = _get_task_config(task_name)
     return {
@@ -196,9 +195,6 @@ def get_task_parameters(task_name: str) -> Dict[str, Any]:
         'dummy_scans': config.get('dummy_scans', DEFAULT_DUMMY_SCANS),
         'min_rt': config.get('min_rt', DEFAULT_MIN_RT),
         'expected_sessions': config.get('expected_sessions', 5),
-        'has_performance_feedback_breaks': config.get(
-            'has_performance_feedback_breaks', False
-        ),
     }
 
 

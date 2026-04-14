@@ -2,7 +2,6 @@ tr: 1.49
 dummy_scans: 7
 min_rt: 0.2
 expected_sessions: 5
-has_performance_feedback_breaks: true
 
 # Shape matching task
 # Trial types: SSS, SDD, SNN, DSD, DDD, DDS, DNN
