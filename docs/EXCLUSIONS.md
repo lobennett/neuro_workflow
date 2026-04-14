@@ -59,6 +59,17 @@ Per collaborator quality review. Comparable-quality scans are both retained.
 |---------|---------|------|--------|
 | s19 | ses-09 | flanker | Omission rate 30% > 25% threshold |
 
+### Non-monotonic onsets — corrupted event timing
+
+These events files have onsets that decrease at one point, caused by the negative RT correction reconstructing `time_elapsed` out of order. Cannot be reliably modeled.
+
+| Subject | Session | Task | Onset break |
+|---------|---------|------|-------------|
+| s03 | ses-11 | stopSignalWDirectedForgetting | 221.0s → 211.9s |
+| s10 | ses-01 | cuedTS | 72.1s → 70.2s |
+| s10 | ses-02 | shapeMatching | 419.7s → 413.8s |
+| s43 | ses-11 | stopSignalWFlanker | 364.3s → 363.0s |
+
 ---
 
 ## Validation Sample (.bidsignore)
@@ -161,7 +172,8 @@ These scans were prematurely ended but retained for analysis. Events that extend
 | Missing behavioral (irreconcilable) | 6 | 3 | 9 |
 | Prematurely ended (<50% TRs) | 5 | 7 | 12 |
 | Behavioral QC | 1 | 6 | 7 |
-| **Total excluded scan entries** | **16** | **22** | **38** |
+| Non-monotonic onsets | 4 | 0 | 4 |
+| **Total excluded scan entries** | **20** | **22** | **42** |
 | Salvaged scans (50-100% TRs) | 8 | 13 | 21 |
 
 ## Session offset notes
