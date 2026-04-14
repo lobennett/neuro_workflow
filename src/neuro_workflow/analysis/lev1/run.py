@@ -448,10 +448,7 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
     # Onsets are already adjusted for dummy scans during event file creation
     # (shifted by -7*1.49s = -10.43s); do not adjust again
     events_df = pd.read_csv(run_files['events'], sep='\t')
-    processed_events = preprocess_events(
-        events_df, args.task_name, adjust_for_dummy_scans=False,
-        subject_id=args.subj_id, session_id=session,
-    )
+    processed_events = preprocess_events(events_df, args.task_name)
     processed_events_with_junk, percent_junk = add_junk_trials(
         processed_events, args.task_name
     )
