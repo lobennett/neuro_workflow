@@ -30,7 +30,7 @@ regressors:
       key_press == correct_response and response_time >= 0.2
       and trial_type == 'tswitch_cswitch'
 
-  n/a:
+  task_na_cue_na:
     amplitude: 1
     duration: 1
     subset: >-
@@ -46,17 +46,17 @@ regressors:
 
   omission:
     amplitude: omission
-    duration: 1
+    duration: duration
     subset: null
 
   commission:
     amplitude: commission
-    duration: 1
+    duration: duration
     subset: null
 
   rt_fast:
     amplitude: rt_too_fast
-    duration: 1
+    duration: duration
     subset: null
 
   break_with_performance_feedback:

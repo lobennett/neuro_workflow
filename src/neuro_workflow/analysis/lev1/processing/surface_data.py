@@ -402,9 +402,16 @@ def compute_surface_fixed_effects(
             partial_nan,
         )
 
+    # Track vertices with no valid data across runs — these remain NaN
+    # in the output to avoid silently treating invalid vertices as zero
+    # during group-level thresholding.
+    valid_effects = np.isfinite(effects) & np.isfinite(variances)
+    n_valid = np.sum(valid_effects, axis=0)
+    invalid_vertices = (n_valid == 0)
+
     if precision_weighted:
         # Precision-weighted fixed effects
-        # weight = 1/variance; NaN variance → weight=0 (run excluded)
+        # weight = 1/variance; NaN/Inf variance → weight=0 (run excluded)
         with np.errstate(divide='ignore', invalid='ignore'):
             weights = 1.0 / variances
             weights = np.nan_to_num(weights, nan=0.0, posinf=0.0, neginf=0.0)
@@ -417,27 +424,26 @@ def compute_surface_fixed_effects(
         with np.errstate(divide='ignore', invalid='ignore'):
             safe_effects = np.nan_to_num(effects, nan=0.0)
             fixed_effect = np.sum(weights * safe_effects, axis=0) / sum_weights
-            fixed_effect = np.nan_to_num(fixed_effect, nan=0.0)
             fixed_variance = 1.0 / sum_weights
-            fixed_variance = np.nan_to_num(fixed_variance, nan=0.0, posinf=0.0)
     else:
         # NaN-safe unweighted averaging: use only valid runs per vertex
         import warnings
 
         with np.errstate(invalid='ignore', divide='ignore'), warnings.catch_warnings():
             warnings.simplefilter('ignore', RuntimeWarning)
-            n_valid = np.sum(np.isfinite(effects), axis=0)
             fixed_effect = np.nanmean(effects, axis=0)
             # Variance of mean = sum(var) / n_valid^2
             fixed_variance = np.nansum(variances, axis=0) / (n_valid ** 2)
-            # Where no valid runs exist, set to 0
-            fixed_effect = np.nan_to_num(fixed_effect, nan=0.0)
-            fixed_variance = np.nan_to_num(fixed_variance, nan=0.0)
 
-    # Compute z-score
+    # Compute z-score (NaN propagates through invalid vertices naturally)
     with np.errstate(divide='ignore', invalid='ignore'):
         fixed_stat = fixed_effect / np.sqrt(fixed_variance)
-        fixed_stat = np.nan_to_num(fixed_stat, nan=0.0, posinf=0.0, neginf=0.0)
+
+    # Explicitly set invalid vertices to NaN (not 0) so downstream
+    # group-level inference doesn't treat them as real zeros.
+    fixed_effect = np.where(invalid_vertices, np.nan, fixed_effect)
+    fixed_variance = np.where(invalid_vertices, np.nan, fixed_variance)
+    fixed_stat = np.where(invalid_vertices, np.nan, fixed_stat)
 
     return (
         SurfaceResult(fixed_effect),

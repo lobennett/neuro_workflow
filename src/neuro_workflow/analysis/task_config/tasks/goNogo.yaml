@@ -37,17 +37,17 @@ regressors:
 
   go_omission:
     amplitude: omission
-    duration: 1
+    duration: duration
     subset: null
 
   go_commission:
     amplitude: commission
-    duration: 1
+    duration: duration
     subset: null
 
   go_rt_fast:
     amplitude: rt_too_fast
-    duration: 1
+    duration: duration
     subset: null
 
   break_with_performance_feedback:
