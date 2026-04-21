@@ -453,9 +453,11 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
         processed_events, args.task_name
     )
 
-    # Load confounds
+    # Load confounds. BOLD is pre-trimmed by scripts/trim_bold.py and fMRIPrep
+    # is run with --dummy-scans 0, so the confounds TSV already matches the
+    # trimmed BOLD length. Do not trim confounds further.
     selected_confounds = load_and_process_confounds(
-        run_files['confounds'], args.task_name, sample_type
+        run_files['confounds'], args.task_name, sample_type, dummy_scans=0
     )
     if len(selected_confounds) != n_scans:
         raise ValueError(
@@ -506,8 +508,9 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
             confounds_df = pd.read_csv(run_files['confounds'], sep='\t', na_values=['n/a']).fillna(0)
             fc_confounds_df = get_fc_confounds(confounds_df)
             if not fc_confounds_df.empty:
-                # BOLD already trimmed; confounds need same trimming applied
-                fc_confounds = fc_confounds_df.iloc[task_params.get('dummy_scans', 7):].values
+                # BOLD is pre-trimmed and fMRIPrep runs with --dummy-scans 0,
+                # so confounds TSV already matches trimmed BOLD length.
+                fc_confounds = fc_confounds_df.values
                 logger.info('FC confounds: %d columns', fc_confounds.shape[1])
 
         process_surface_run(

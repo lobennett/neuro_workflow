@@ -23,7 +23,7 @@ def get_neg_rt_correction(df: pd.DataFrame) -> pd.DataFrame:
         block_durations = problematic["block_duration"].to_list()
         new_time_elapsed = []
         for n in range(len(block_durations)):
-            if block_durations[n] != np.nan:
+            if not pd.isna(block_durations[n]):
                 new_time_elapsed.append(trial_before + block_durations[n])
                 trial_before = trial_before + block_durations[n]
             else:
@@ -63,6 +63,7 @@ _COLS_LOOKUP = {
     "flanker_with_cued_task_switching": _COMMON_COLS + ["flanker_condition", "cue", "task_condition", "cue_condition", "flanking_number"],
     "n_back_with_shape_matching__fmri": _COMMON_COLS + ["n_back_condition", "shape_matching_condition", "probe", "distractor", "delay"],
     "shape_matching_with_spatial_task_switching__fmri": _COMMON_COLS + ["shape_matching_condition", "task_switch", "probe", "target", "distractor", "whichQuadrant"],
+    "shape_matching_with_spatial_task_switching": _COMMON_COLS + ["shape_matching_condition", "task_switch", "probe", "target", "distractor", "whichQuadrant"],
     "shape_matching_with_cued_task_switching__fmri": _COMMON_COLS + ["cue", "task_condition", "cue_condition", "shape_matching_condition", "probe", "target", "distractor"],
     "shape_matching_with_cued_task_switching": _COMMON_COLS + ["cue", "task_condition", "cue_condition", "shape_matching_condition", "probe", "target", "distractor"],
     "n_back_with_spatial_task_switching__fmri": _COMMON_COLS + ["n_back_condition", "task", "probe", "whichQuadrant"],

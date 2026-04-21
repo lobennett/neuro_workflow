@@ -19,7 +19,7 @@ from typing import Dict, Union
 import numpy as np
 import pandas as pd
 
-from neuro_workflow.analysis.task_config.loader import DUMMY_SCANS, TR
+from neuro_workflow.analysis.task_config.loader import TR
 
 logger = logging.getLogger(__name__)
 
@@ -229,16 +229,20 @@ def save_simplified_events(
 
 
 def load_bold_data_with_dummy_removal(
-    bold_file: Union[str, Path], dummy_scans: int = DUMMY_SCANS
+    bold_file: Union[str, Path], dummy_scans: int = 0
 ):
-    """Load BOLD data and remove dummy scans.
+    """Load BOLD data and optionally remove dummy scans.
+
+    Default is 0 since BOLD is pre-trimmed by scripts/trim_bold.py in this
+    project's workflow. Pass dummy_scans > 0 only if the input BOLD has not
+    been trimmed.
 
     Args:
         bold_file: Path to 4D BOLD NIfTI file
-        dummy_scans: Number of dummy scans to remove
+        dummy_scans: Number of dummy scans to remove (default 0)
 
     Returns:
-        BOLD image with dummy scans removed.
+        BOLD image with dummy scans removed (unchanged if dummy_scans=0).
     """
     from nilearn.image import load_img
 

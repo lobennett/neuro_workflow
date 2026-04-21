@@ -161,41 +161,56 @@ def compute_metrics_from_csv(csv_path: Path, task_name: str) -> dict:
         Dict of metric_name -> value
     """
     df = pd.read_csv(csv_path)
-    df["rt"] = pd.to_numeric(df.get("rt", pd.Series(dtype=float)), errors="coerce").fillna(-1)
+    if "rt" not in df.columns or "trial_id" not in df.columns:
+        log.warning("CSV missing required columns (rt, trial_id): %s", csv_path)
+        return {}
 
-    test_rows = df[df.get("trial_id", pd.Series(dtype=str)) == "test_trial"]
+    df["rt"] = pd.to_numeric(df["rt"], errors="coerce").fillna(-1)
+    test_rows = df[df["trial_id"] == "test_trial"]
     if len(test_rows) == 0:
         return {}
 
     metrics = {}
 
     if "stopSignal" in task_name:
-        go_trials = test_rows[test_rows.get("stop_signal_condition", pd.Series()) == "go"]
-        stop_trials = test_rows[test_rows.get("stop_signal_condition", pd.Series()) == "stop"]
+        if "stop_signal_condition" not in test_rows.columns:
+            log.warning("stopSignal task missing stop_signal_condition column: %s", csv_path)
+            return metrics
+        go_trials = test_rows[test_rows["stop_signal_condition"] == "go"]
+        stop_trials = test_rows[test_rows["stop_signal_condition"] == "stop"]
         if len(go_trials) > 0:
             valid_go = go_trials[go_trials["rt"] != -1]
             metrics["go_rt"] = float(valid_go["rt"].mean()) if len(valid_go) > 0 else None
             metrics["go_acc"] = float((go_trials["key_press"] == go_trials["correct_response"]).mean())
-        if len(stop_trials) > 0:
-            metrics["stop_success_rate"] = float((stop_trials.get("stop_acc", pd.Series()) == 1).mean())
+        if len(stop_trials) > 0 and "stop_acc" in stop_trials.columns:
+            metrics["stop_success_rate"] = float((stop_trials["stop_acc"] == 1).mean())
 
     elif "goNogo" in task_name:
-        go_trials = test_rows[test_rows.get("go_nogo_condition", pd.Series()) == "go"]
-        nogo_trials = test_rows[test_rows.get("go_nogo_condition", pd.Series()) == "nogo"]
+        if "go_nogo_condition" not in test_rows.columns:
+            log.warning("goNogo task missing go_nogo_condition column: %s", csv_path)
+            return metrics
+        go_trials = test_rows[test_rows["go_nogo_condition"] == "go"]
+        nogo_trials = test_rows[test_rows["go_nogo_condition"] == "nogo"]
         if len(go_trials) > 0:
             metrics["go_acc"] = float((go_trials["key_press"] == go_trials["correct_response"]).mean())
         if len(nogo_trials) > 0:
             metrics["nogo_acc"] = float((nogo_trials["rt"] == -1).mean())
 
     elif "nBack" in task_name:
+        if "n_back_condition" not in test_rows.columns:
+            log.warning("nBack task missing n_back_condition column: %s", csv_path)
+            return metrics
+        condition = test_rows["n_back_condition"].astype(str)
         for load in [1, 2]:
             load_str = f"{load}.0back"
-            load_trials = test_rows[test_rows.get("n_back_condition", pd.Series()).astype(str).str.contains(load_str, na=False)]
+            load_mask = condition.str.contains(load_str, na=False)
+            load_trials = test_rows[load_mask]
             if len(load_trials) == 0:
                 continue
-            # Match = target present, Mismatch = target absent
-            match_trials = load_trials[load_trials.get("n_back_condition", pd.Series()).str.contains("match", na=False) & ~load_trials.get("n_back_condition", pd.Series()).str.contains("mismatch", na=False)]
-            mismatch_trials = load_trials[load_trials.get("n_back_condition", pd.Series()).str.contains("mismatch", na=False)]
+            load_cond = load_trials["n_back_condition"].astype(str)
+            match_mask = load_cond.str.contains("match", na=False) & ~load_cond.str.contains("mismatch", na=False)
+            match_trials = load_trials[match_mask]
+            mismatch_trials = load_trials[load_cond.str.contains("mismatch", na=False)]
             if len(match_trials) > 0:
                 metrics[f"match_{load}back_acc"] = float((match_trials["key_press"] == match_trials["correct_response"]).mean())
             if len(mismatch_trials) > 0:
