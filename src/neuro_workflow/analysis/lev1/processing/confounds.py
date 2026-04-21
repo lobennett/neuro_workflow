@@ -6,8 +6,6 @@ from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
-from neuro_workflow.analysis.task_config.loader import DUMMY_SCANS
-
 logger = logging.getLogger(__name__)
 
 
@@ -41,7 +39,7 @@ def load_and_process_confounds(
     confounds_file: Union[str, Path],
     task_name: str,
     sample_type: str = 'validation',
-    dummy_scans: int = DUMMY_SCANS,
+    dummy_scans: int = 0,
     additional_patterns: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """Load and process confounds with task-specific selection.

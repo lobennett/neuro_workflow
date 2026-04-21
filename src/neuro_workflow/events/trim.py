@@ -27,7 +27,10 @@ def trim_nifti(
     img = nib.load(str(nifti_in))
     trimmed_img = img.slicer[:, :, :, :n_volumes]
     nifti_out.parent.mkdir(parents=True, exist_ok=True)
-    nib.save(trimmed_img, str(nifti_out))
+    # Atomic write: temp file + rename to avoid corrupt output if killed mid-write
+    tmp_path = nifti_out.parent / nifti_out.name.replace(".nii.gz", "_tmp.nii.gz")
+    nib.save(trimmed_img, str(tmp_path))
+    tmp_path.rename(nifti_out)
     log.info("Trimmed %s -> %s (%d volumes)", nifti_in.name, nifti_out.name, n_volumes)
 
     if json_in is not None and json_out is not None and json_in.exists():

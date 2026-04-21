@@ -69,6 +69,27 @@ def create_regressor(
             else np.ones(len(subset_events))
         )
 
+        # Drop rows with NaN in any of the 3 columns — nilearn's compute_regressor
+        # silently produces garbled output when passed NaN values. This protects
+        # against "n/a" strings in event columns (e.g., response_time for omissions).
+        valid = (~pd.isna(onsets)) & (~pd.isna(durations)) & (~pd.isna(amplitudes))
+        if not valid.all():
+            n_dropped = (~valid).sum()
+            logger.warning(
+                "Dropped %d rows with NaN in onset/duration/amplitude for regressor '%s'",
+                n_dropped, regressor_name,
+            )
+            onsets = onsets[valid]
+            durations = durations[valid]
+            amplitudes = amplitudes[valid]
+
+        if len(onsets) == 0:
+            logger.warning("No valid events for regressor '%s' after NaN filter", regressor_name)
+            regressor_values = np.zeros(n_scans)
+            regressor_df = pd.DataFrame({regressor_name: regressor_values})
+            regressor_3col = ([], [], [])
+            return regressor_df, regressor_3col
+
         # Shift frame_times by +TR/2 to align with fMRIPrep's slice timing
         # correction, which references the middle slice (Poldrack & Mumford,
         # 2021; https://reproducibility.stanford.edu/slice-timing-correction-in-fmriprep-and-linear-modeling/).
