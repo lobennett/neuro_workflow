@@ -13,11 +13,11 @@
 subject=$(sed "${{SLURM_ARRAY_TASK_ID}}q;d" {subjects_file})
 
 FMRIPREP_IMG="{image_path}"
-export APPTAINER_ENV_TEMPLATEFLOW_HOME="/templateflow"
 
 mkdir -p "{work_dir}"
 
 apptainer run --cleanenv \
+  --env TEMPLATEFLOW_HOME=/templateflow \
   -B {bids_dir}:/data \
   -B {templateflow_dir}:/templateflow \
   -B {work_dir}:/work \
