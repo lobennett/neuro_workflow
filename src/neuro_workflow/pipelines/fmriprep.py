@@ -26,7 +26,7 @@ class FmriprepPipeline:
         parser.add_argument("--nthreads", type=int, default=None, help="CPUs per task (default: 8)")
         parser.add_argument("--mem-per-cpu-gb", type=int, default=None, help="Memory per CPU in GB (default: 8)")
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 5-00:00:00)")
-        parser.add_argument("--array-throttle", type=int, default=3, help="Max concurrent array tasks (default: 3)")
+        parser.add_argument("--array-throttle", type=int, default=8, help="Max concurrent array tasks (default: 8)")
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
         if not getattr(args, "version", None):
@@ -61,7 +61,7 @@ class FmriprepPipeline:
             "dataset_name": dataset_name,
             "time": time,
             "n_subjects": n_subjects,
-            "array_throttle": getattr(args, "array_throttle", 3),
+            "array_throttle": getattr(args, "array_throttle", 8),
             "nthreads": nthreads,
             "mem_per_cpu_gb": mem_per_cpu_gb,
             "partition": dataset_config["partition"],
