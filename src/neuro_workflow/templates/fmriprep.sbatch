@@ -2,7 +2,7 @@
 #SBATCH -J fmriprep_{dataset_name}
 #SBATCH --time={time}
 #SBATCH -n 1
-#SBATCH --array=1-{n_subjects}
+#SBATCH --array=1-{n_subjects}%{array_throttle}
 #SBATCH --cpus-per-task={nthreads}
 #SBATCH --mem-per-cpu={mem_per_cpu_gb}G
 #SBATCH -p {partition}
