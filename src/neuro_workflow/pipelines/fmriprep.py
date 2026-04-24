@@ -23,6 +23,8 @@ class FmriprepPipeline:
         parser.add_argument("--fmriprep-args", default="", help="Additional fMRIPrep arguments")
         parser.add_argument("--fs-license", default="~/license.txt", help="FreeSurfer license file")
         parser.add_argument("--bids-filter-file", default=None, help="BIDS filter JSON file path")
+        parser.add_argument("--output-dir", default=None,
+            help="Output derivatives root (default: <bids_dir>/derivatives)")
         parser.add_argument("--nthreads", type=int, default=None, help="CPUs per task (default: 8)")
         parser.add_argument("--mem-per-cpu-gb", type=int, default=None, help="Memory per CPU in GB (default: 8)")
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 5-00:00:00)")
@@ -45,7 +47,16 @@ class FmriprepPipeline:
 
         scratch = os.environ.get("SCRATCH", "/tmp")
         work_dir = f"{scratch}/work/fmriprep_{dataset_name}_{args.version}"
-        log_dir = f"{dataset_config['bids_dir']}/derivatives/fmriprep_{args.version}/logs"
+
+        output_dir = getattr(args, "output_dir", None)
+        if output_dir:
+            output_bind_line = f"-B {output_dir}:/out \\"
+            output_container = "/out"
+            log_dir = f"{output_dir}/fmriprep_{args.version}/logs"
+        else:
+            output_bind_line = ""
+            output_container = "/data/derivatives"
+            log_dir = f"{dataset_config['bids_dir']}/derivatives/fmriprep_{args.version}/logs"
 
         mail_line = build_mail_line(dataset_config)
 
@@ -73,6 +84,8 @@ class FmriprepPipeline:
             "templateflow_dir": dataset_config["templateflow_dir"],
             "work_dir": work_dir,
             "config_bind_line": config_bind_line,
+            "output_bind_line": output_bind_line,
+            "output_container": output_container,
             "fmriprep_version": args.version,
             "mem_mb": mem_mb,
             "output_spaces": args.output_spaces,
