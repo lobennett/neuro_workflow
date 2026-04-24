@@ -21,9 +21,7 @@ apptainer run --cleanenv \
   -B {bids_dir}:/data \
   -B {templateflow_dir}:/templateflow \
   -B {work_dir}:/work \
-  {config_bind_line} \
-  {output_bind_line} \
-  "$FMRIPREP_IMG" \
+{config_bind_line}{output_bind_line}  "$FMRIPREP_IMG" \
   /data {output_container}/fmriprep_{fmriprep_version} participant \
   --participant-label "$subject" \
   -w /work \

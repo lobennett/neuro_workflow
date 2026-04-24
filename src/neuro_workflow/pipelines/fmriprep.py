@@ -50,7 +50,7 @@ class FmriprepPipeline:
 
         output_dir = getattr(args, "output_dir", None)
         if output_dir:
-            output_bind_line = f"-B {output_dir}:/out \\"
+            output_bind_line = f"  -B {output_dir}:/out \\\n"
             output_container = "/out"
             log_dir = f"{output_dir}/fmriprep_{args.version}/logs"
         else:
@@ -62,7 +62,7 @@ class FmriprepPipeline:
 
         if args.bids_filter_file:
             filter_path = Path(args.bids_filter_file)
-            config_bind_line = f"-B {filter_path.parent}:/config \\"
+            config_bind_line = f"  -B {filter_path.parent}:/config \\\n"
             bids_filter_arg = f"--bids-filter-file /config/{filter_path.name}"
         else:
             config_bind_line = ""

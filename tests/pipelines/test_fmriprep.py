@@ -123,6 +123,7 @@ def test_fmriprep_build_context_with_bids_filter(tmp_path):
 
     ctx = p.build_context("test_ds", dataset_config, args)
     assert "-B /home/user:/config" in ctx["config_bind_line"]
+    assert ctx["config_bind_line"].endswith(" \\\n")
     assert ctx["bids_filter_arg"] == "--bids-filter-file /config/filter.json"
 
 
@@ -258,6 +259,7 @@ def test_fmriprep_output_dir_override(tmp_path):
 
     ctx = p.build_context("test_ds", dataset_config, args)
     assert "-B /scratch/users/logben/fmriprep_bug_repro:/out" in ctx["output_bind_line"]
+    assert ctx["output_bind_line"].endswith(" \\\n")
     assert ctx["output_container"] == "/out"
     assert ctx["log_dir"] == "/scratch/users/logben/fmriprep_bug_repro/fmriprep_25.2.5/logs"
 
@@ -292,6 +294,13 @@ def test_fmriprep_render_with_output_dir(tmp_path):
     template_path = TEMPLATE_DIR / p.template_name
     script = render_template(template_path, ctx)
 
-    assert "-B /scratch/users/logben/fmriprep_bug_repro:/out" in script
-    assert "/out/fmriprep_25.2.5" in script
+    assert "-B /scratch/users/logben/fmriprep_bug_repro:/out \\" in script
+    assert "/data /out/fmriprep_25.2.5 participant" in script
     assert "/data/derivatives" not in script
+
+    import subprocess, tempfile
+    with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as f:
+        f.write(script)
+        path = f.name
+    r = subprocess.run(["bash", "-n", path], capture_output=True, text=True)
+    assert r.returncode == 0, f"Rendered script has bash syntax errors: {r.stderr}"
