@@ -17,3 +17,6 @@ VISUAL_GUIDE.md
 
 # Git worktrees
 .worktrees/
+
+# Local scratch: issue/PR drafts, exploration notes
+work/
