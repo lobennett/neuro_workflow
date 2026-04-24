@@ -1,5 +1,4 @@
 {
-  "fmap": {"session": ["01", "03"]},
-  "bold": {"session": ["01", "03"], "task": "stroop"},
+  "bold": {"task": "stroop"},
   "t1w": {"session": "00"}
 }
