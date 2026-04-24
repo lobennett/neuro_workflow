@@ -1,4 +1,3 @@
 {
-  "bold": {"task": "stroop"},
-  "t1w": {"session": "00"}
+  "bold": {"task": "stroop"}
 }
