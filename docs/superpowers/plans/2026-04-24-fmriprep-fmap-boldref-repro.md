@@ -287,9 +287,11 @@ Create `config/bids_filters/rdoc_s8_stroop.json`:
 {
   "fmap": {"session": ["01", "03"]},
   "bold": {"session": ["01", "03"], "task": "stroop"},
-  "t1w": {"session": "01"}
+  "t1w": {"session": "00"}
 }
 ```
+
+> **Note:** for sub-s8 (and rdoc subjects generally), T1w lives in **ses-00** only — ses-01 has T2w only, ses-02+ have no anat. The pre-existing FreeSurfer derivatives are named `sub-s8_ses-00` to match.
 
 - [ ] **Step 3: Verify JSON is valid**
 
@@ -443,12 +445,16 @@ Confirm scratch free space is >> FreeSurfer subject size (usually 1–3 GB).
 
 - [ ] **Step 3: Copy FreeSurfer (use compute node for big I/O)**
 
-Submit (not blocking):
+**Important:** the FS subject directory is named `sub-s8_ses-00` (rdoc multi-session anat convention), not `sub-s8`. Also copy `fsaverage`. Submit (not blocking):
 ```bash
+mkdir -p /scratch/users/logben/fmriprep_bug_repro/derivatives/fmriprep_25.2.5/sourcedata/freesurfer
+
 sbatch -p russpold --mem=4G --time=00:30:00 \
   --job-name=fs_copy \
   -o /tmp/fs_copy.log \
-  --wrap "cp -r /oak/stanford/groups/russpold/data/rdoc_grant/rdoc_fmri_bids/derivatives/fmriprep_25.2.0/sourcedata/freesurfer /scratch/users/logben/fmriprep_bug_repro/derivatives/fmriprep_25.2.5/sourcedata/"
+  --wrap "cp -r /oak/stanford/groups/russpold/data/rdoc_grant/rdoc_fmri_bids/derivatives/fmriprep_25.2.0/sourcedata/freesurfer/sub-s8_ses-00 /scratch/users/logben/fmriprep_bug_repro/derivatives/fmriprep_25.2.5/sourcedata/freesurfer/"
+
+cp -r /oak/stanford/groups/russpold/data/rdoc_grant/rdoc_fmri_bids/derivatives/fmriprep_25.2.0/sourcedata/freesurfer/fsaverage /scratch/users/logben/fmriprep_bug_repro/derivatives/fmriprep_25.2.5/sourcedata/freesurfer/
 ```
 
 Record JOBID. Poll `sacct -j <JOBID>` until `State=COMPLETED`. Expected runtime: 2–10 min.
@@ -456,11 +462,12 @@ Record JOBID. Poll `sacct -j <JOBID>` until `State=COMPLETED`. Expected runtime:
 - [ ] **Step 4: Verify copy integrity**
 
 ```bash
-ls /scratch/users/logben/fmriprep_bug_repro/derivatives/fmriprep_25.2.5/sourcedata/freesurfer/sub-s8/scripts/build-stamp.txt
-cat /scratch/users/logben/fmriprep_bug_repro/derivatives/fmriprep_25.2.5/sourcedata/freesurfer/sub-s8/scripts/build-stamp.txt
+ls /scratch/users/logben/fmriprep_bug_repro/derivatives/fmriprep_25.2.5/sourcedata/freesurfer/sub-s8_ses-00/scripts/build-stamp.txt
+cat /scratch/users/logben/fmriprep_bug_repro/derivatives/fmriprep_25.2.5/sourcedata/freesurfer/sub-s8_ses-00/scripts/build-stamp.txt
+du -sh /scratch/users/logben/fmriprep_bug_repro/derivatives/fmriprep_25.2.5/sourcedata/freesurfer/{sub-s8_ses-00,fsaverage}
 ```
 
-Expected: file exists, contents `freesurfer-linux-ubuntu22_x86_64-7.3.2-20220804-6354275`.
+Expected: build-stamp file exists, contents `freesurfer-linux-ubuntu22_x86_64-7.3.2-20220804-6354275`. Sizes roughly: sub-s8_ses-00 ~2 GB, fsaverage ~500 MB.
 
 ---
 
