@@ -1,4 +1,4 @@
-# fMRIPrep 25.2.4 rerun on discovery + validation: two-phase per-subject pipeline
+# fMRIPrep 25.2.4 rerun on discovery + validation: single-phase view-based pipeline
 
 **Date:** 2026-04-28
 **Author:** Logan Bennett (with brainstorming assist)
@@ -10,7 +10,7 @@
 Two prior fmriprep 25.2.4 runs against `/scratch/users/logben/{discovery,validation}_bids/` failed at scale:
 
 - **Discovery** (job 22226603): 5/5 failed. 4/5 hit FreeSurfer `talairach_afd` QC failure at ~6h. 1/5 (s19) recovered FS but timed out at 5d during BOLD processing. All 5 saturated 64 GB memory cap.
-- **Validation** (job 22226639): 0/41 completed. Of 21 tasks that ran: 8 TIMEOUT (5-day wall), 3 FAILED (nipype hash race on `fsdir_run` cache), 2 OUT_OF_MEMORY. Cancelled before remaining 20 PENDING ran. (Cancelled 2026-04-28.)
+- **Validation** (job 22226639): 0/41 completed. Of 21 tasks that ran: 8 TIMEOUT (5-day wall), 3 FAILED (nipype hash race on `fsdir_run` cache), 2 OUT_OF_MEMORY. Cancelled 2026-04-28 before remaining 20 PENDING ran.
 
 Earlier Oak runs of the same subjects with `--output-spaces res-2` (2mm) succeeded but at lower spatial resolution and without `acq-MPRAGEPromo` T1w files in the BIDS tree.
 
@@ -22,328 +22,294 @@ Reliably preprocess all 46 subjects with fmriprep 25.2.4 producing the full outp
 
 | Class | Affected | Root cause | Fix |
 |-------|----------|-----------|-----|
-| FreeSurfer Talairach AFD failure | 5/5 discovery | fmriprep selected `acq-MPRAGEPromo` T1w (lower-quality acquisition); FreeSurfer's `talairach_afd` QC failed (p=0.0082 < 0.005). `.bidsignore` listed it but **pybids does not honor `.bidsignore`** | BIDS filter file restricts T1w to `acq-SagMPRAGE` |
-| Wall-time TIMEOUT | 8 validation, 1 discovery | 5-day SLURM wall too short for 12-13 sessions × multi-echo × 1mm upsampling × CIFTI × fresh FreeSurfer | Two-phase pipeline (anat then BOLD), 7-day wall on BOLD phase, 192 GB memory |
-| OOM / memory saturation | 2 OOM, all discovery saturated 64 GB | 64 GB insufficient for 1mm + multi-echo + FS + CIFTI | 8 CPUs × 24 GB = 192 GB |
-| nipype hash race (FAILED early) | 3 validation (s1057, s1175, s1189) | Transient nipype bug in `fsdir_run` caching during workflow construction with parallel workers | Wipe affected subject's work dir + retry; usually resolves on second attempt |
+| FreeSurfer Talairach AFD failure | 5/5 discovery | fmriprep selected `acq-MPRAGEPromo` T1w (lower-quality acquisition); FreeSurfer's `talairach_afd` QC failed (p=0.0082 < 0.005). `.bidsignore` listed it but **pybids does not honor `.bidsignore`** | Symlink BIDS view that physically excludes `.bidsignore`d files from fmriprep's view |
+| Wall-time TIMEOUT | 8 validation, 1 discovery | 5-day SLURM wall too short for 12-13 sessions × multi-echo × 1mm + CIFTI + fresh FreeSurfer under memory pressure | 7-day wall + 192 GB removes memory pressure (3× headroom); resubmit-to-resume on rare timeouts |
+| OOM / memory saturation | 2 OOM, all discovery saturated 64 GB | 64 GB insufficient for 1mm + multi-echo + FS + CIFTI | 8 CPUs × 24 GB profile, 22 GB production |
+| nipype hash race (FAILED early) | 3 validation (s1057, s1175, s1189) | Transient nipype bug in `fsdir_run` caching during workflow construction | Wipe affected subject's work dir + retry |
 
 ## Key constraint discovered
 
-**`.bidsignore` is honored only by the BIDS Validator, not by BIDS apps.** pybids `BIDSLayout` does not read `.bidsignore` by default, so fmriprep saw and processed every file in the BIDS tree regardless of the patterns. The pre-flight pipeline must translate `.bidsignore` into:
-- A per-subject `--bids-filter-file` JSON (handles anat exclusions by entity)
-- A symlink BIDS view (handles BOLD exclusions which can't be expressed as entity filters)
+**`.bidsignore` is honored only by the BIDS Validator, not by BIDS apps.** pybids `BIDSLayout` does not read `.bidsignore` by default. The pre-flight pipeline must translate `.bidsignore` into something fmriprep actually respects: a **symlink BIDS view** at `<bids_dir>/derivatives/fmriprep_25.2.4_input/` containing only the non-excluded files.
 
 ## Architecture
 
 ```
-Phase 0: Pre-flight (local, no SLURM, idempotent)
-  • Generate per-subject BIDS filter JSONs (anat exclusions)
-  • Build symlink BIDS view (BOLD exclusions applied)
-  • Wipe stale work dirs and failed FS dirs
+Phase 0: Pre-flight (local script, idempotent)
+  scripts/fmriprep_preflight.py:
+    For each dataset (discovery, validation):
+      1. Build symlink BIDS view at:
+           <bids_dir>/derivatives/fmriprep_25.2.4_input/
+         Every file in BIDS tree is symlinked except those matching .bidsignore patterns
+      2. Sanity-check view:
+         - every subject has ≥ 1 T1w; abort otherwise
+         - subjects with intentional multi-anat (s1351 has 2 T1w; s1399 has 2 T2w)
+           verified to retain both; abort otherwise
+      3. Wipe stale work dirs and any failed FS dirs from prior runs
 
-Phase 1: Profile on s03
-  1A: Anat-only s03    (1 SLURM job, ~1d wall)
-  1B: BOLD s03         (1 SLURM job, ≤7d wall, depends on 1A)
+Phase 1: s03 profile  (1 SLURM job, gates Phase 2)
+  Single-phase fmriprep on s03 with full resource envelope.
+  Manual go/no-go review after completion.
 
-  Manual go/no-go gate after 1B:
-    pass → Phase 2
-    fail → triage and re-run as needed (no auto-pivot)
+Phase 2: Production  (45 jobs across 2 array submissions)
+  Discovery (4 remaining):  array of 4, throttle 4
+  Validation (41):          array of 41, throttle 12
+  Both submitted concurrently (validation has --dependency=afterany on
+  discovery to keep peak partition memory under ~62%).
 
-Phase 2: Production (45 subjects: 4 discovery + 41 validation)
-  2A: Anat-only array (45 jobs, throttle 12, ~1d wall each)
-  2B: BOLD array      (45 jobs, throttle 12, 7d wall each,
-                       --dependency=aftercorr:2A)
-
-Resume protocol (only "fallback")
-  Any 2A or 2B failure → manual single-subject resubmit:
-    - Memory issue: bump --mem-per-cpu-gb, same work dir
-    - Wall timeout: same sbatch, same work dir → fmriprep resumes
-    - nipype hash race: wipe that subject's work dir, resubmit
-    - Logic error: fix root cause, wipe work dir, resubmit
+Resume protocol (the only "fallback")
+  Any failure → resubmit just that subject (single-task array of 1).
+  Same flags + same work dir → fmriprep skips already-completed nodes.
 ```
 
-**Job count:** 92 total (46 anat + 46 BOLD). One job per (subject, phase). Failures isolated by subject.
+**Job count:** 46 total (one fmriprep job per subject). One simple mental model.
 
 ## Resource envelope
 
-| Phase | CPUs | Mem/CPU | Total Mem | Wall | Throttle |
-|-------|------|---------|-----------|------|----------|
-| 1A (s03 anat) | 8 | 24 GB | 192 GB | 1 day | n/a (1 task) |
-| 1B (s03 BOLD) | 8 | 24 GB | 192 GB | 7 days | n/a (1 task) |
-| 2A (anat × 45) | 8 | 22 GB (calibrated) | 176 GB | 1 day | 12 |
-| 2B (BOLD × 45) | 8 | 22 GB (calibrated) | 176 GB | 7 days | 12 |
+| | CPUs | Mem/CPU | Total mem | Wall | Throttle |
+|---|---|---|---|---|---|
+| Phase 1 (s03 profile) | 8 | 24 GB | 192 GB | 7 days | n/a (1 task) |
+| Phase 2 (production, 45 subjects) | 8 | 22 GB (calibrated from profile) | 176 GB | 7 days | 12 (validation), 4 (discovery) |
 
-**CPU rationale:** fmriprep performance plateaus past 8 CPUs (per fmriprep maintainers). Beyond 8, idle cores waste cluster credit; better to spend on memory.
+**CPU rationale:** fmriprep performance plateaus past 8 CPUs. Beyond 8, idle cores waste cluster credit; better to spend on memory.
 
-**Memory rationale:** Prior runs saturated 64 GB cap. 192 GB profile envelope gives 3× headroom to *measure* peak RSS rather than re-cap. Production envelope is calibrated from profile (target: ~22 GB/CPU). 22 GB/CPU = 176 GB total, fits all 16 russpold nodes (smallest is 191 GB total memory).
+**Memory rationale:** Prior runs saturated 64 GB cap. 192 GB profile envelope gives 3× headroom to *measure* peak RSS rather than re-cap. Production envelope calibrated from profile (target ~22 GB/CPU = 176 GB total). 176 GB fits all 16 russpold nodes (smallest is 191 GB total memory).
 
-**Throttle 12 rationale:** russpold has 16 nodes / 448 CPUs / 3.4 TB memory. Memory is the binding constraint. At throttle 12 with 176 GB/task = 2,112 GB peak (≈62% of partition memory). This hits "aggressive but not dominant" — leaves margin for other partition users. Throttle 16 would consume 88% of partition memory, crossing the "don't occupy all of them" line.
+**Throttle 12 rationale:** russpold has 16 nodes, 448 CPUs, 3.4 TB memory. Memory is binding constraint. At throttle 12 with 176 GB/task = 2,112 GB peak (≈62% of partition memory). "Aggressive but not dominant"; leaves margin for other partition users.
 
 ## Output spaces & flags
 
 ```
 --output-spaces "MNI152NLin2009cAsym:res-1 MNI152NLin6Asym:res-2 fsaverage6 fsnative T1w func"
 --no-submm-recon --skip-bids-validation --cifti-output 91k
---anat-only           # Phase 1A and 2A only
 ```
 
-Restores parity with the earlier Oak runs (which had `cifti-output 91k`) and adds the 1mm MNI volumetric upgrade. CIFTI is required for MSHBM and grayordinate-based group analyses. MNI152NLin6Asym:res-2 is for FSL/randomise compatibility downstream.
+Restores parity with earlier Oak workflow (CIFTI 91k preserved) plus 1mm MNI volumetric upgrade. CIFTI required for MSHBM and grayordinate-based group analyses.
 
-`--dummy-scans` is **not** used: scratch BIDS data is already trimmed by the bidsify pipeline (7 dummy volumes physically removed).
+`--dummy-scans` is **not** used: scratch BIDS data already trimmed by bidsify (7 dummy volumes physically removed from NIfTIs).
 
-## Phase 0: Pre-flight script
+## Phase 0: Pre-flight
 
-`scripts/fmriprep_preflight.py` (new). Idempotent.
+`scripts/fmriprep_preflight.py` (new). Idempotent. Run once per dataset.
 
 ### Inputs
 - Dataset name (`discovery` or `validation`) → BIDS dir from `~/.neuro_workflow/datasets.json`
 - The dataset's `.bidsignore` at BIDS root
+- `docs/EXCLUSIONS.md` (human-readable companion; informs sanity checks)
 
 ### Outputs
-1. `config/fmriprep/{dataset}/filters/sub-{SUBJECT}.json` — per-subject filter JSON
-2. `/scratch/users/logben/{dataset}_bids_view/` — symlink BIDS view (BOLD exclusions applied)
-3. Console summary table
+- `<bids_dir>/derivatives/fmriprep_25.2.4_input/` — symlink BIDS view
+- Console summary: per-subject T1w/T2w/BOLD counts in view + total files excluded
 
 ### Algorithm
 
 ```
-1. Parse .bidsignore. Classify each non-comment line:
-     pattern matches *T1w* or *T2w*  → ANAT exclusion
-     pattern matches *bold*           → BOLD exclusion
-     other                            → OTHER exclusion (treated as view-side)
-
-2. For each subject:
-     a. Enumerate anat files NOT in ANAT exclusions; record session, acquisition.
-     b. Compose filter JSON:
-          {
-            "t1w": {"datatype":"anat", "suffix":"T1w",
-                    "acquisition":"SagMPRAGE",   # discovery only; omitted for validation
-                    "session":[allowed sessions]},
-            "t2w": {"datatype":"anat", "suffix":"T2w",
-                    "session":[allowed sessions]},
-            "bold": {"datatype":"func", "suffix":"bold"},
-            "fmap": {"datatype":"fmap"}
-          }
-     c. Write to config/fmriprep/{dataset}/filters/sub-{SUBJECT}.json
-
-3. Build symlink view:
-     - Top-level files (dataset_description.json, README, participants.tsv): symlinked
-     - For each file under sub-*/:
-         matches BOLD or OTHER exclusion → SKIP
-         else → symlink to corresponding position in view tree
-     (anat exclusions NOT applied here; filter file handles them)
-
-4. Print summary table:
-     | Subject | T1w in view | T1w after filter | BOLD in view | BOLD excluded |
+1. Read .bidsignore patterns from <bids_dir>/.bidsignore
+2. Walk <bids_dir> top-down:
+     skip derivatives/, sourcedata/, code/ subtrees
+     for each file in subject subtrees + top-level metadata files:
+       if file matches any .bidsignore pattern: SKIP (don't symlink)
+       else: create symlink at corresponding position in view tree
+3. Symlink top-level files into view: dataset_description.json, README,
+   participants.tsv, .bidsignore (so view is a self-describing BIDS dataset)
+4. Sanity checks (abort with error if any fail):
+     - Every subject has ≥ 1 T1w in view
+     - Subjects with intentional multi-anat retain expected counts:
+         * Validation s1351: 2 T1w (ses-01 + ses-08)
+         * Validation s1399: 2 T2w (ses-01 + ses-02)
+     - No file in view points outside <bids_dir>
+5. Print summary table:
+     | Subject | T1w | T2w | BOLD | Excluded |
+     | s03     | 1   | 1   | 110  | 4        |
+     | ...
 ```
 
-### Why this split (filter for anat, view for BOLD)
-- Anat exclusions are entity-aligned (acquisition + session) → filter file expresses cleanly.
-- BOLD exclusions are per-(session, task) tuples → BIDS filter files cannot encode disjunction-of-conjunctions; symlink view physically removes excluded files.
-- `.bidsignore` remains the single source of truth; both artifacts are derived.
+### Multi-anat handling
+
+`docs/EXCLUSIONS.md` documents which subjects intentionally retain multiple T1w/T2w scans for fmriprep to average:
+
+- **Discovery**: every subject ends up with 1 T1w + 0-1 T2w after `.bidsignore`. No multi-anat.
+- **Validation s1351**: 2 T1w (ses-01 + ses-08) — both clean per collaborator review.
+- **Validation s1399**: 2 T2w (ses-01 + ses-02) — both decent per collaborator review.
+
+The view automatically handles these correctly: `.bidsignore` doesn't list either of s1351's T1ws nor either of s1399's T2ws, so both are symlinked into the view, and **fmriprep's default behavior averages multiple T1w/T2w into a per-subject anat template**. No special configuration needed.
+
+### Why view-only (no BIDS filter file)
+
+Earlier design considered a BIDS filter file for anat exclusions. Removed because:
+- After `.bidsignore` exclusions, every subject has the right anat count for fmriprep's default behavior (1 T1w → use it; 2 T1w → average them).
+- A filter file would add a parallel exclusion mechanism that must be kept in sync with `.bidsignore`.
+- One mechanism = one source of truth. View IS the audit trail (you can `ls` it).
 
 ## Phase 1: s03 profile
 
-### Phase 1A — anat-only s03
-
 ```bash
 neuro-run submit fmriprep discovery \
   --version 25.2.4 \
-  --bids-dir-override /scratch/users/logben/discovery_bids_view \
-  --bids-filter-dir config/fmriprep/discovery/filters \
-  --output-spaces "MNI152NLin2009cAsym:res-1 MNI152NLin6Asym:res-2 fsaverage6 fsnative T1w" \
-  --fmriprep-args "--anat-only --no-submm-recon --skip-bids-validation --cifti-output 91k" \
-  --nthreads 8 --mem-per-cpu-gb 24 --time 1-00:00:00 \
-  --array-throttle 1 \
-  --subjects-file <(echo s03)
-```
-
-### Phase 1B — BOLD s03
-
-```bash
-neuro-run submit fmriprep discovery \
-  --version 25.2.4 \
-  --bids-dir-override /scratch/users/logben/discovery_bids_view \
-  --bids-filter-dir config/fmriprep/discovery/filters \
+  --bids-dir-override /scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4_input \
   --output-spaces "MNI152NLin2009cAsym:res-1 MNI152NLin6Asym:res-2 fsaverage6 fsnative T1w func" \
   --fmriprep-args "--no-submm-recon --skip-bids-validation --cifti-output 91k" \
   --nthreads 8 --mem-per-cpu-gb 24 --time 7-00:00:00 \
   --array-throttle 1 \
-  --dependency afterok:<ANAT_S03_JID> \
   --subjects-file <(echo s03)
 ```
 
-Same work dir as 1A → fmriprep skips already-completed anat nodes.
+**Note on `--bids-dir-override`**: this is the **one** small `neuro-run` extension this design needs (~10 lines in `pipelines/fmriprep.py`). It points fmriprep at the view path (the override) while keeping derivatives output at the registered BIDS dir's `derivatives/fmriprep_25.2.4/`. The override does not change the dataset registration, so future stages (events QC, lev1, etc.) still resolve the registered BIDS path naturally.
 
-### Phase 1 success gates (manual review before launching Phase 2)
+### Phase 1 success gates (manual review)
 
 ```
-Phase 1A:
-  ✓ recon-all.log contains "finished without error"
-  ✓ No "Talairach failed" in any run logs
-  ✓ derivatives/sub-s03/anat/*MNI152NLin2009cAsym*desc-preproc_T1w.nii.gz exists
-  ✓ sourcedata/freesurfer/sub-s03_ses-05/scripts/recon-all-status.log shows DONE
-  ✓ sacct MaxRSS captured
-
-Phase 1B:
-  ✓ No "CRITICAL" lines in workflow log
-  ✓ Every non-.bidsignored BOLD has its preproc_bold.nii.gz in derivatives
-  ✓ CIFTI files (*den-91k_bold.dtseries.nii) generated
-  ✓ confounds_timeseries.tsv exists for every BOLD
-  ✓ HTML report renders cleanly
-  ✓ sacct Elapsed and MaxRSS captured for calibration
+✓ recon-all.log contains "finished without error" (no Talairach failure)
+✓ derivatives/sub-s03/anat/*MNI152NLin2009cAsym*desc-preproc_T1w.nii.gz exists
+✓ Every non-.bidsignored BOLD has *desc-preproc_bold.nii.gz in derivatives
+✓ CIFTI files (*den-91k_bold.dtseries.nii) generated
+✓ confounds_timeseries.tsv exists for every BOLD
+✓ HTML report renders cleanly
+✓ sacct Elapsed and MaxRSS captured for calibration
 ```
+
+If 1 fails: triage; resume or fix and resubmit before launching Phase 2.
 
 ### Profile report
 
-After Phase 1 completes, write `docs/superpowers/specs/2026-04-28-fmriprep-rerun-profile-report.md` capturing:
-- Anat phase: elapsed, peak RSS, FreeSurfer time vs ANTs time
-- BOLD phase: elapsed, peak RSS, breakdown by stage (STC, HMC, coregistration, resampling, CIFTI)
-- Calibration decision: production envelope and wall time, with justification
+After Phase 1 completes, write `docs/superpowers/specs/2026-04-28-fmriprep-rerun-profile-report.md`:
+- Elapsed wall time
+- Peak RSS
+- Stage breakdown: FreeSurfer time, ANTs time, BOLD per-session time, CIFTI generation time
+- Calibration decision: production envelope (CPUs × Mem) and wall time, with justification
 
 ## Phase 2: production (45 subjects)
-
-### Phase 2A — anat-only array
 
 ```bash
 # Discovery: 4 remaining (s10, s19, s29, s43)
 neuro-run submit fmriprep discovery \
-  --subjects-file subjects_phase2_discovery.txt \
-  --bids-dir-override /scratch/users/logben/discovery_bids_view \
-  --bids-filter-dir config/fmriprep/discovery/filters \
+  --version 25.2.4 \
+  --bids-dir-override /scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4_input \
   --output-spaces "..." \
-  --fmriprep-args "--anat-only ..." \
-  --nthreads 8 --mem-per-cpu-gb <calibrated> --time 1-00:00:00 \
-  --array-throttle 4
-# → DISCOVERY_2A_JID
+  --fmriprep-args "..." \
+  --nthreads 8 --mem-per-cpu-gb <calibrated> --time 7-00:00:00 \
+  --array-throttle 4 \
+  --subjects-file subjects_phase2_discovery.txt
+# → DISCOVERY_JID
 
-# Validation: 41 subjects
+# Validation: 41 subjects, dependency on discovery to keep peak load bounded
 neuro-run submit fmriprep validation \
-  --subjects-file subjects_validation.txt \
-  --bids-dir-override /scratch/users/logben/validation_bids_view \
-  --bids-filter-dir config/fmriprep/validation/filters \
+  --version 25.2.4 \
+  --bids-dir-override /scratch/users/logben/validation_bids/derivatives/fmriprep_25.2.4_input \
   --output-spaces "..." \
-  --fmriprep-args "--anat-only ..." \
-  --nthreads 8 --mem-per-cpu-gb <calibrated> --time 1-00:00:00 \
-  --array-throttle 12
-# → VALIDATION_2A_JID
+  --fmriprep-args "..." \
+  --nthreads 8 --mem-per-cpu-gb <calibrated> --time 7-00:00:00 \
+  --array-throttle 12 \
+  --dependency afterany:${DISCOVERY_JID} \
+  --subjects-file subjects_validation.txt
 ```
 
-### Phase 2B — BOLD array
+`afterany` lets validation start when discovery is complete in any state (we don't block validation if some discovery subjects need triage). With discovery at throttle 4 finishing in ≤7 days and validation at throttle 12 finishing in ~2-3 weeks, total wall time is ~3-4 weeks worst case, ~2-3 weeks typical.
+
+If you'd rather they overlap (discovery and validation running simultaneously, taking ~2-3 weeks worst case), drop the dependency and reduce validation throttle to 8 (so combined peak = 4 discovery + 8 validation = 12 concurrent).
+
+## Resume protocol (the only "fallback")
+
+If subject `s1057` validation times out at day 7:
 
 ```bash
-neuro-run submit fmriprep discovery \
-  --subjects-file subjects_phase2_discovery.txt \
-  ... (same flags as 1B except --time 7-00:00:00, --array-throttle 4) \
-  --dependency aftercorr:${DISCOVERY_2A_JID}
+sacct -j <JID>_<TASKID> --format=State,Elapsed,MaxRSS
 
+# Resume — same work dir, fmriprep skips done nodes
 neuro-run submit fmriprep validation \
-  --subjects-file subjects_validation.txt \
-  ... (same flags as 1B except --time 7-00:00:00, --array-throttle 12) \
-  --dependency aftercorr:${VALIDATION_2A_JID}
-```
-
-`aftercorr` pairs array tasks: 2B task N starts when 2A task N completes successfully. If 2A task N fails, its corresponding 2B task is held; that subject is triaged manually.
-
-### Resume protocol
-
-If subject `s1057` validation 2B times out at day 7:
-
-```bash
-sacct -j <2B_JID>_<TASKID> --format=State,Elapsed,MaxRSS
-
-# Resume — same work dir → fmriprep skips done nodes
-neuro-run submit fmriprep validation \
+  --bids-dir-override /scratch/users/logben/validation_bids/derivatives/fmriprep_25.2.4_input \
   --subjects-file <(echo s1057) \
-  ... (same flags) --array-throttle 1
+  ... (same flags as Phase 2) --array-throttle 1
 ```
 
-If memory was the issue: bump `--mem-per-cpu-gb`, do not wipe work dir.
-If logic error: wipe `/scratch/users/logben/work/fmriprep_validation_25.2.4/sub-s1057/`, resubmit.
+Per failure mode:
+- **Memory cap hit (OOM)**: bump `--mem-per-cpu-gb`; do not wipe work dir; resubmit.
+- **Wall timeout**: same flags + same work dir → fmriprep resumes from cached nodes.
+- **nipype hash race** (FileNotFoundError on `*.pklz` early): wipe that subject's work dir, resubmit.
+- **BIDS view bug** (e.g., dropped a needed file): fix in pre-flight, regenerate view, wipe work dir, resubmit.
 
-## Required `neuro-run` extensions
+## Required `neuro-run` extension
 
-Three small additions to `src/neuro_workflow/pipelines/fmriprep.py`:
+One small addition to `src/neuro_workflow/pipelines/fmriprep.py`:
 
-1. **`--bids-dir-override <PATH>`** — point fmriprep at a different input dir (the symlink view) without changing the dataset registration. Derivatives still land under the registered BIDS dir.
-2. **`--bids-filter-dir <DIR>`** — additive to the existing `--bids-filter-file`. The sbatch template resolves `<DIR>/sub-{SUBJECT}.json` per array task and passes it as `--bids-filter-file` to fmriprep. Mutually exclusive with `--bids-filter-file` for the same submission.
-3. **`--dependency <SPEC>`** — passthrough to `sbatch --dependency=<SPEC>`. Supports `afterok:JID`, `aftercorr:ARRAY_JID`, etc.
+**`--bids-dir-override <PATH>`**: when provided, the sbatch template binds this path as `/data` instead of the registered `bids_dir`. The output path remains `<registered_bids_dir>/derivatives/fmriprep_<version>/`. Approximately 10 lines of code plus a test.
 
-Total ~30 lines of code changes plus tests.
+No other changes to neuro-run, no per-subject filter files, no SLURM dependency tooling beyond what `--dependency` already passes through.
 
 ## Testing
 
 ### Pre-flight script tests (`tests/scripts/test_fmriprep_preflight.py`)
 
-- Parse actual `.bidsignore` from both datasets; assert correct anat/bold/other classification.
-- For each subject, validate filter JSON against pybids: `BIDSLayout(view_dir).get(subject=S, **filt["t1w"])` returns the expected file count.
-- Idempotency: run script twice; filter JSONs and view symlinks byte-identical.
-- Symlink view sanity: no `.bidsignore`d BOLD file in view; all non-excluded files present.
-- Edge cases: subject with multiple T1ws after `.bidsignore` (s19: ses-01 MPRAGEPromo + ses-05 SagMPRAGE → after filter, ses-05 SagMPRAGE only).
+- Idempotency: run script twice; view symlinks byte-identical.
+- Multi-anat sanity: assert s1351 view contains 2 T1w files, s1399 view contains 2 T2w files.
+- BOLD exclusion sanity: assert s03 view does not contain `*ses-11_task-stopSignalWDirectedForgetting*` (an example .bidsignored pattern), but does contain other BOLDs from ses-11.
+- Run-level exclusion: assert s10 view does not contain `*ses-01_task-goNogo_run-1*` but does contain `*ses-01_task-goNogo_run-2*`.
+- Pybids round-trip: load view with BIDSLayout; assert subject and BOLD counts match expectations.
+- Cross-check `docs/EXCLUSIONS.md`: parse the markdown tables, assert every excluded scan listed there is absent from the view.
 
 ### Pre-submission smoke tests
 
 - `neuro-run show fmriprep ...` to inspect generated sbatch before submitting.
-- pybids dry-run on s03's view + filter to confirm fmriprep sees exactly the expected files.
+- `tree <view-path>/sub-s03 | head -20` to visually inspect the symlinks for one subject.
 
 ### Phase 2 monitoring
 
-Daily check during production:
-- `sqlb | grep fmriprep` — what's running/queued.
-- `sacct -u logben --starttime=...` — completions and failures over the last 24h.
-- After first 5-10 BOLD subjects complete, compare actual peak RSS to profile envelope; bump or trim memory accordingly.
+Daily during production:
+- `sqlb | grep fmriprep` for status snapshot
+- `sacct -u logben --starttime=$(date -d '24 hours ago' +%FT%T) --format=JobID,State,Elapsed,MaxRSS,ExitCode --noheader | grep fmriprep | grep -v "extern\|batch"` for completions and failures
+- After first 5-10 subjects complete, compare actual peak RSS to profile envelope; bump or trim `--mem-per-cpu-gb` if needed for remaining subjects.
 
 ## Failure triage decision tree
 
 | Failure mode | Diagnosis signal | Action |
 |---|---|---|
-| Talairach AFD | `recon-all.log` has "Talairach failed" | Pre-run FS with `-notal-check` for that subject; resubmit anat phase |
+| Talairach AFD | `recon-all.log` has "Talairach failed" | Should not occur (view excludes bad T1ws). If it does: investigate which T1w fmriprep selected; pre-flight may have a bug. |
 | OOM | sacct State=OUT_OF_MEMORY or MaxRSS at allocation cap | Bump `--mem-per-cpu-gb`; same work dir; resubmit |
-| Wall timeout | sacct State=TIMEOUT, MaxRSS reasonable | Resubmit (resume); if 2nd timeout → bump memory or split sessions |
+| Wall timeout | sacct State=TIMEOUT, MaxRSS reasonable | Resubmit (resume); if 2nd timeout → bump memory |
 | nipype hash race | FileNotFoundError on `*.pklz` early in workflow log | Wipe that subject's work dir; resubmit |
-| BIDS filter bug | Workflow log says "no T1w found" or wrong session selected | Fix filter JSON; rerun pre-flight; resubmit |
+| BIDS view bug | Workflow log says "no T1w found" or wrong session selected | Fix pre-flight script; regenerate view; resubmit |
 
 ## Wall-time projection
 
-| Phase | Per-job wall | Throttle | Subjects | Total walls | Cumulative |
-|-------|--------------|----------|----------|-------------|------------|
-| Phase 1A | ~1 day | n/a | 1 | 1 day | day 1 |
-| Phase 1B | ~3-5 days | n/a | 1 | ~3-5 days | day 4-6 |
-| Phase 2A | ~1 day | 12 | 45 | ~4 days | day 8-10 |
-| Phase 2B | ~3-7 days | 12 | 45 | ~12-25 days | day 20-35 |
+| Phase | Per-job wall | Throttle | Subjects | Cumulative wall |
+|-------|--------------|----------|----------|-----------------|
+| Phase 0 | minutes | n/a | 2 datasets | day 0 |
+| Phase 1 | ~3-5 days | n/a | 1 (s03) | day 3-5 |
+| Phase 2 discovery | ~3-5 days | 4 | 4 | days 5-10 |
+| Phase 2 validation | ~3-5 days | 12 | 41 | days 10-25 (sequenced after discovery via `afterany`) |
 
-**Best case:** ~3 weeks (most subjects ≤4d BOLD).
-**Worst case:** ~5 weeks (many subjects need 7d resume).
+**Best case:** ~2-3 weeks (most subjects ≤4d).
+**Worst case:** ~5 weeks (multiple subjects need 7d resume).
 **Most likely:** 3-4 weeks total.
 
-## Key design decisions
+## Key design decisions (single source of reference)
 
 | Decision | Choice | Why |
 |----------|--------|-----|
-| Anat T1 selection | BIDS filter restricts to `acq-SagMPRAGE` (discovery) | Solves Talairach AFD failure root cause |
-| `.bidsignore` translation | Hybrid: filter file (anat) + symlink view (BOLD) | Filter cannot express per-(session,task) exclusions |
-| Profile-first | Yes, on s03 with full two-phase run | Validates pipeline + measures resource envelope |
-| Two-phase split | Per-subject anat then BOLD | Fail-fast on T1 issues; isolates BOLD timeouts; one job per (subject, phase) for clean tracking |
-| Per-session BOLD chunking | No (rejected) | Adds 4× job count; resume-from-work-dir achieves same robustness with less complexity |
-| Auto-fallback to per-session | No (rejected) | YAGNI; designing around unobserved failure mode |
-| Resume mechanism | Same `sbatch`, same `-w` work dir | fmriprep already memoizes nodes |
-| CPUs | 8 | Performance plateaus past 8 (fmriprep maintainers' guidance) |
+| `.bidsignore` translation | Symlink view at `<bids_dir>/derivatives/fmriprep_25.2.4_input/` | pybids ignores `.bidsignore`; one mechanism handles all exclusion patterns uniformly |
+| View nesting location | Under `derivatives/`, sibling to fmriprep output | Lineage co-located; pybids ignores `derivatives/` so no double-scanning |
+| BIDS filter file | Not used | Redundant with view; would require parallel maintenance |
+| Pipeline phases | Single-phase fmriprep per subject | Two-phase (anat then BOLD) over-engineered for a failure mode (Talairach) the view already eliminates |
+| Profile-first | Yes, on s03 | Validates view + resources before launching 45 subjects |
+| Multi-anat subjects (s1351 T1w, s1399 T2w) | View retains both; fmriprep auto-averages | Matches `docs/EXCLUSIONS.md` intent; fmriprep's default behavior |
+| Resume mechanism | Same `sbatch`, same work dir | fmriprep memoizes nodes by hash |
+| CPUs | 8 | Performance plateaus past 8 (fmriprep maintainer guidance) |
 | Memory | 8 × 24 GB profile, 8 × 22 GB production | 3× prior cap; 22 GB fits all 16 russpold nodes |
-| Wall time | 1d anat, 7d BOLD | russpold's 7d max; fits typical 12-13 session subjects with margin given 192 GB |
-| Throttle | 12 production | ~62% partition memory at peak; "aggressive but not dominant" |
-| Output spaces | Full (CIFTI + 1mm + 2mm + fsaverage6 + fsnative + T1w + func) | Restores parity with earlier Oak workflow; CIFTI needed for MSHBM |
-| Cancellation of prior runs | Yes, 22226639 cancelled 2026-04-28 | Frees credit; 13/41 already failed under wrong envelope |
+| Wall time | 7 days | russpold's 7d max; fits typical 12-13 session subjects with margin given 192 GB |
+| Throttle | 12 validation, 4 discovery | ~62% partition memory at peak; "aggressive but not dominant" |
+| Output spaces | Full (CIFTI 91k + 1mm + 2mm + fsaverage6 + fsnative + T1w + func) | Restores Oak parity; CIFTI needed for MSHBM |
+| Cancellation of prior runs | Done (22226639 cancelled 2026-04-28) | Frees credit; 13/41 already failed under wrong envelope |
+| `neuro-run` extensions | One: `--bids-dir-override` | Minimum surface area to support view-based input |
 
-## Out of scope for this plan
+## Out of scope
 
-- Changing fmriprep version (25.2.5 is available but staying on 25.2.4)
+- Changing fmriprep version (25.2.5 is available; staying on 25.2.4)
 - Re-running the Oak res-2 fmriprep outputs
 - Downstream stages (events QC, lev1, lev2, MSHBM)
 - Changing BIDS dataset structure or `.bidsignore` patterns
 
 ## Open risks
 
-1. **BOLD phase 7-day wall might be insufficient for 13-session validation subjects** even at 192 GB. Mitigation: resume protocol is documented; manual triage. If repeated timeouts, consider per-session-group BOLD as a documented escalation (not auto-pivot).
-2. **nipype hash race may recur**. Mitigation: known fix is wipe + retry; usually resolves on second attempt.
+1. **BOLD wall-time** for the heaviest 13-session validation subjects might still hit 7 days at 1mm + multi-echo + CIFTI even with 192 GB. Mitigation: resume protocol is documented; manual triage. If repeated timeouts on the same subject, escalate (split sessions or bump CPUs).
+2. **nipype hash race** may recur. Mitigation: known fix is wipe + retry; usually resolves on second attempt.
 3. **CIFTI output disk usage** ~ 2-3× the prior res-2 outputs. Mitigation: ensure scratch space has ≥5 TB free before launching.
-4. **russpold partition contention**. Mitigation: throttle 12 caps occupancy at ~62% partition memory; honors "aggressive but not dominant" goal.
+4. **russpold partition contention**. Mitigation: throttle 12 caps occupancy at ~62% partition memory.
