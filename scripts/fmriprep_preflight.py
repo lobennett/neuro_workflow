@@ -143,6 +143,62 @@ def _prune_empty_dirs(root: Path) -> None:
             dirpath.rmdir()
 
 
+def verify_view(view_dir: Path, expected_multi_anat: dict[str, dict[str, int]]) -> list[str]:
+    """Return a list of error strings; empty list means view is valid.
+
+    Checks:
+    1. Every subject directory in the view has ≥ 1 T1w file.  Subjects that are
+       present in the source BIDS directory but have no files in the view (because
+       all their files were .bidsignore'd) are also reported as missing T1w.
+    2. For each subject in `expected_multi_anat`, the view contains exactly the
+       expected number of T1w / T2w files. The dict shape is:
+         {"s1351": {"T1w": 2}, "s1399": {"T2w": 2}}
+
+    The source BIDS directory is discovered by resolving the ``dataset_description.json``
+    symlink that ``build_view`` always links into the view.
+    """
+    errors: list[str] = []
+
+    # Discover source BIDS dir so we can detect subjects entirely excluded from the view.
+    bids_dir: Path | None = None
+    desc_link = view_dir / "dataset_description.json"
+    if desc_link.is_symlink():
+        bids_dir = desc_link.resolve().parent
+
+    # Collect subjects present in the view
+    view_subjects: dict[str, Path] = {}
+    for sub_dir in sorted(view_dir.glob("sub-*")):
+        if sub_dir.is_dir():
+            view_subjects[sub_dir.name.removeprefix("sub-")] = sub_dir
+
+    # Collect all subjects present in the source BIDS dir (if discoverable)
+    all_subjects: set[str] = set(view_subjects.keys())
+    if bids_dir is not None:
+        for sub_dir in bids_dir.glob("sub-*"):
+            if sub_dir.is_dir():
+                all_subjects.add(sub_dir.name.removeprefix("sub-"))
+
+    for sub in sorted(all_subjects):
+        if sub not in view_subjects:
+            errors.append(f"sub-{sub}: no T1w in view")
+            continue
+        sub_dir = view_subjects[sub]
+        t1w_files = list(sub_dir.glob("ses-*/anat/*T1w.nii.gz"))
+        t2w_files = list(sub_dir.glob("ses-*/anat/*T2w.nii.gz"))
+        if not t1w_files:
+            errors.append(f"sub-{sub}: no T1w in view")
+            continue
+        if sub in expected_multi_anat:
+            for suffix, expected_count in expected_multi_anat[sub].items():
+                actual = len(t1w_files) if suffix == "T1w" else len(t2w_files)
+                if actual != expected_count:
+                    errors.append(
+                        f"sub-{sub}: expected {expected_count} {suffix} per EXCLUSIONS.md, "
+                        f"view has {actual}"
+                    )
+    return errors
+
+
 def _count_excluded_files(bids_dir: Path, patterns: list[str]) -> int:
     n = 0
     for sub_dir in bids_dir.glob("sub-*"):
