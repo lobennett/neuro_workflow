@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from scripts.fmriprep_preflight import parse_bidsignore
 
 
@@ -58,3 +60,84 @@ def test_path_matches_run_specific_excludes_only_that_run():
     patterns = ["sub-s10/ses-01/func/sub-s10_ses-01_task-goNogo_run-1_echo-*_bold.*"]
     assert path_matches_any("sub-s10/ses-01/func/sub-s10_ses-01_task-goNogo_run-1_echo-1_bold.nii.gz", patterns)
     assert not path_matches_any("sub-s10/ses-01/func/sub-s10_ses-01_task-goNogo_run-2_echo-1_bold.nii.gz", patterns)
+
+
+from scripts.fmriprep_preflight import build_view
+
+
+def _make_fake_bids(tmp_path: Path) -> Path:
+    """Create a tiny BIDS-like tree for testing."""
+    bids = tmp_path / "fake_bids"
+    (bids / "sub-s03" / "ses-01" / "anat").mkdir(parents=True)
+    (bids / "sub-s03" / "ses-01" / "func").mkdir(parents=True)
+    (bids / "sub-s03" / "ses-05" / "anat").mkdir(parents=True)
+    (bids / "sub-s03" / "ses-01" / "anat" / "sub-s03_ses-01_acq-MPRAGEPromo_run-1_T1w.nii.gz").touch()
+    (bids / "sub-s03" / "ses-01" / "anat" / "sub-s03_ses-01_acq-MPRAGEPromo_run-1_T1w.json").touch()
+    (bids / "sub-s03" / "ses-05" / "anat" / "sub-s03_ses-05_acq-SagMPRAGE_run-1_T1w.nii.gz").touch()
+    (bids / "sub-s03" / "ses-05" / "anat" / "sub-s03_ses-05_acq-SagMPRAGE_run-1_T1w.json").touch()
+    (bids / "sub-s03" / "ses-01" / "func" / "sub-s03_ses-01_task-flanker_run-1_echo-1_bold.nii.gz").touch()
+    (bids / "sub-s03" / "ses-01" / "func" / "sub-s03_ses-01_task-nBack_run-1_echo-1_bold.nii.gz").touch()
+    (bids / "dataset_description.json").write_text('{"Name": "fake"}')
+    (bids / "README").write_text("fake")
+    (bids / ".bidsignore").write_text(
+        "sub-*/ses-*/anat/*acq-MPRAGEPromo_run-1_T1w.*\n"
+        "sub-s03/ses-01/func/sub-s03_ses-01_task-nBack_run-1_echo-*_bold.*\n"
+    )
+    # Should be ignored entirely (not walked):
+    (bids / "derivatives" / "junk").mkdir(parents=True)
+    (bids / "derivatives" / "junk" / "should_not_appear.nii.gz").touch()
+    return bids
+
+
+def test_build_view_excludes_bidsignored_files(tmp_path):
+    bids = _make_fake_bids(tmp_path)
+    view = bids / "derivatives" / "fmriprep_25.2.4_input"
+
+    summary = build_view(bids, view)
+
+    # MPRAGEPromo files NOT in view
+    assert not (view / "sub-s03/ses-01/anat/sub-s03_ses-01_acq-MPRAGEPromo_run-1_T1w.nii.gz").exists()
+    assert not (view / "sub-s03/ses-01/anat/sub-s03_ses-01_acq-MPRAGEPromo_run-1_T1w.json").exists()
+    # SagMPRAGE files ARE in view
+    assert (view / "sub-s03/ses-05/anat/sub-s03_ses-05_acq-SagMPRAGE_run-1_T1w.nii.gz").is_symlink()
+    # nBack BOLD excluded
+    assert not (view / "sub-s03/ses-01/func/sub-s03_ses-01_task-nBack_run-1_echo-1_bold.nii.gz").exists()
+    # flanker BOLD retained
+    assert (view / "sub-s03/ses-01/func/sub-s03_ses-01_task-flanker_run-1_echo-1_bold.nii.gz").is_symlink()
+
+
+def test_build_view_includes_top_level_metadata(tmp_path):
+    bids = _make_fake_bids(tmp_path)
+    view = bids / "derivatives" / "fmriprep_25.2.4_input"
+    build_view(bids, view)
+    assert (view / "dataset_description.json").is_symlink()
+    assert (view / "README").is_symlink()
+    assert (view / ".bidsignore").is_symlink()
+
+
+def test_build_view_skips_derivatives_subtree(tmp_path):
+    bids = _make_fake_bids(tmp_path)
+    view = bids / "derivatives" / "fmriprep_25.2.4_input"
+    build_view(bids, view)
+    # The derivatives/junk/ subtree must not appear in view
+    assert not (view / "derivatives").exists()
+
+
+def test_build_view_idempotent(tmp_path):
+    bids = _make_fake_bids(tmp_path)
+    view = bids / "derivatives" / "fmriprep_25.2.4_input"
+    s1 = build_view(bids, view)
+    s2 = build_view(bids, view)
+    assert s1["files_linked"] == s2["files_linked"]
+    assert s1["files_excluded"] == s2["files_excluded"]
+
+
+def test_build_view_summary_counts(tmp_path):
+    bids = _make_fake_bids(tmp_path)
+    view = bids / "derivatives" / "fmriprep_25.2.4_input"
+    summary = build_view(bids, view)
+    # Expected: 3 top-level files (dataset_description, README, .bidsignore)
+    # + 2 SagMPRAGE files (nii.gz + json) + 1 flanker BOLD = 6 linked
+    # Excluded: 2 MPRAGEPromo + 1 nBack = 3
+    assert summary["files_linked"] == 6
+    assert summary["files_excluded"] == 3
