@@ -195,3 +195,48 @@ def test_build_view_prunes_empty_subject_dir_after_bidsignore_change(tmp_path):
     build_view(bids, view)
     # sub-s03 dir should be entirely gone (no ghost skeleton)
     assert not (view / "sub-s03").exists()
+
+
+from scripts.fmriprep_preflight import verify_view
+
+
+def test_verify_view_passes_when_every_subject_has_t1w(tmp_path):
+    bids = _make_fake_bids(tmp_path)
+    view = bids / "derivatives" / "fmriprep_25.2.4_input"
+    build_view(bids, view)
+    # Default: no expected multi-anat for this fake dataset
+    errors = verify_view(view, expected_multi_anat={})
+    assert errors == []
+
+
+def test_verify_view_fails_when_subject_has_no_t1w(tmp_path):
+    bids = tmp_path / "fake_bids"
+    (bids / "sub-s03" / "ses-01" / "anat").mkdir(parents=True)
+    # Only an MPRAGEPromo, which is .bidsignore'd
+    (bids / "sub-s03" / "ses-01" / "anat" / "sub-s03_ses-01_acq-MPRAGEPromo_run-1_T1w.nii.gz").touch()
+    (bids / "dataset_description.json").write_text("{}")
+    (bids / ".bidsignore").write_text("sub-*/ses-*/anat/*MPRAGEPromo*\n")
+    view = bids / "derivatives" / "fmriprep_25.2.4_input"
+    build_view(bids, view)
+    errors = verify_view(view, expected_multi_anat={})
+    assert any("sub-s03" in e and "no T1w" in e for e in errors)
+
+
+def test_verify_view_checks_expected_multi_anat(tmp_path):
+    bids = tmp_path / "fake_bids"
+    (bids / "sub-s1351" / "ses-01" / "anat").mkdir(parents=True)
+    (bids / "sub-s1351" / "ses-08" / "anat").mkdir(parents=True)
+    (bids / "sub-s1351" / "ses-01" / "anat" / "sub-s1351_ses-01_acq-SagMPRAGE_run-1_T1w.nii.gz").touch()
+    (bids / "sub-s1351" / "ses-08" / "anat" / "sub-s1351_ses-08_acq-SagMPRAGE_run-1_T1w.nii.gz").touch()
+    (bids / "dataset_description.json").write_text("{}")
+    (bids / ".bidsignore").write_text("")
+    view = bids / "derivatives" / "fmriprep_25.2.4_input"
+    build_view(bids, view)
+
+    # Expected 2 T1w — passes
+    errors = verify_view(view, expected_multi_anat={"s1351": {"T1w": 2}})
+    assert errors == []
+
+    # Expected 3 T1w — fails (only 2 in view)
+    errors = verify_view(view, expected_multi_anat={"s1351": {"T1w": 3}})
+    assert any("s1351" in e for e in errors)
