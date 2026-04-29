@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -65,11 +66,13 @@ TOP_LEVEL_METADATA = {
     "CITATION.cff",
 }
 
-SKIP_TOP_LEVEL_DIRS = {"derivatives", "sourcedata", "code"}
-
 
 def build_view(bids_dir: Path, view_dir: Path) -> dict:
     """Build a symlink view of `bids_dir` at `view_dir` excluding .bidsignore patterns.
+
+    Top-level non-metadata directories (derivatives/, sourcedata/, code/, etc.) are
+    skipped automatically because the algorithm only walks subject directories
+    (matched via ``glob("sub-*")``) and a curated set of top-level metadata files.
 
     Returns a summary dict with files_linked, files_excluded.
     Idempotent: existing identical symlinks are left in place; missing ones are created;
@@ -118,6 +121,8 @@ def _sync_symlinks(view_dir: Path, desired: dict[Path, Path]) -> None:
             if Path(view_path.readlink()).resolve() == target.resolve():
                 continue
             view_path.unlink()
+        elif view_path.is_dir():
+            shutil.rmtree(view_path)
         elif view_path.exists():
             view_path.unlink()
         view_path.symlink_to(target.resolve())
@@ -127,6 +132,15 @@ def _sync_symlinks(view_dir: Path, desired: dict[Path, Path]) -> None:
     for fpath in view_dir.rglob("*"):
         if fpath.is_symlink() and fpath not in desired_paths:
             fpath.unlink()
+
+    _prune_empty_dirs(view_dir)
+
+
+def _prune_empty_dirs(root: Path) -> None:
+    """Remove empty directories under `root` (deepest first). Leaves `root` itself."""
+    for dirpath in sorted(root.rglob("*"), reverse=True):
+        if dirpath.is_dir() and not any(dirpath.iterdir()):
+            dirpath.rmdir()
 
 
 def _count_excluded_files(bids_dir: Path, patterns: list[str]) -> int:
