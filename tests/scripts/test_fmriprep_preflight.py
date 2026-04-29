@@ -1,6 +1,11 @@
+import json
+import subprocess
 from pathlib import Path
 
 from scripts.fmriprep_preflight import parse_bidsignore
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_parse_bidsignore_strips_comments_and_blanks(tmp_path):
@@ -247,3 +252,31 @@ def test_verify_view_fails_when_view_dir_missing(tmp_path):
     nonexistent = tmp_path / "no_such_view"
     errors = verify_view(nonexistent, expected_multi_anat={})
     assert any("does not exist" in e for e in errors)
+
+
+def test_cli_smoke(tmp_path):
+    """End-to-end: build a fake BIDS, run the CLI against it, check view exists."""
+    bids = _make_fake_bids(tmp_path)
+
+    # Fake datasets.json
+    datasets_json = tmp_path / "datasets.json"
+    datasets_json.write_text(json.dumps({
+        "fake_ds": {"bids_dir": str(bids), "subjects_file": "ignored"}
+    }))
+
+    result = subprocess.run(
+        [
+            "uv", "run", "python",
+            str(PROJECT_ROOT / "scripts" / "fmriprep_preflight.py"),
+            "fake_ds",
+            "--version", "25.2.4",
+            "--datasets-json", str(datasets_json),
+        ],
+        capture_output=True,
+        text=True,
+        cwd=PROJECT_ROOT,
+    )
+    assert result.returncode == 0, f"stderr: {result.stderr}\nstdout: {result.stdout}"
+    view = bids / "derivatives" / "fmriprep_25.2.4_input"
+    assert view.exists()
+    assert (view / "sub-s03" / "ses-05" / "anat" / "sub-s03_ses-05_acq-SagMPRAGE_run-1_T1w.nii.gz").is_symlink()
