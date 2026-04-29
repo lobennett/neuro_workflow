@@ -154,10 +154,13 @@ def verify_view(view_dir: Path, expected_multi_anat: dict[str, dict[str, int]]) 
        expected number of T1w / T2w files. The dict shape is:
          {"s1351": {"T1w": 2}, "s1399": {"T2w": 2}}
 
-    The source BIDS directory is discovered by resolving the ``dataset_description.json``
-    symlink that ``build_view`` always links into the view.
+    The source BIDS directory is discovered by resolving the dataset_description.json
+    symlink that build_view links into the view (when present in the source BIDS dir).
     """
     errors: list[str] = []
+
+    if not view_dir.is_dir():
+        return [f"view_dir does not exist: {view_dir}"]
 
     # Discover source BIDS dir so we can detect subjects entirely excluded from the view.
     bids_dir: Path | None = None
