@@ -1,10 +1,4 @@
-import sys
-from pathlib import Path
-
-# Make scripts/ importable
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
-
-from fmriprep_preflight import parse_bidsignore
+from scripts.fmriprep_preflight import parse_bidsignore
 
 
 def test_parse_bidsignore_strips_comments_and_blanks(tmp_path):
