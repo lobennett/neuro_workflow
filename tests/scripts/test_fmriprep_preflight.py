@@ -280,3 +280,16 @@ def test_cli_smoke(tmp_path):
     view = bids / "derivatives" / "fmriprep_25.2.4_input"
     assert view.exists()
     assert (view / "sub-s03" / "ses-05" / "anat" / "sub-s03_ses-05_acq-SagMPRAGE_run-1_T1w.nii.gz").is_symlink()
+
+
+from scripts.fmriprep_preflight import _strip_echo
+
+
+def test_strip_echo_removes_echo_segment():
+    assert _strip_echo("sub-s03_ses-01_task-flanker_run-1_echo-1_bold.nii.gz") == \
+           "sub-s03_ses-01_task-flanker_run-1_bold.nii.gz"
+    assert _strip_echo("sub-s03_ses-01_task-flanker_run-1_echo-2_bold.nii.gz") == \
+           "sub-s03_ses-01_task-flanker_run-1_bold.nii.gz"
+    # Single-echo files (no _echo-N) are unchanged
+    assert _strip_echo("sub-s03_ses-01_task-rest_bold.nii.gz") == \
+           "sub-s03_ses-01_task-rest_bold.nii.gz"
