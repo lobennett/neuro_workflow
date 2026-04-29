@@ -37,6 +37,11 @@ def path_matches_any(rel_path: str, patterns: list[str]) -> bool:
 
     Implements gitignore semantics where `*` does not span `/` separators by
     splitting both path and pattern on `/` and matching segment-by-segment.
+
+    Limitation: patterns without a `/` (e.g., ``*.bak``) only match top-level
+    files, not files at arbitrary depth. All patterns in this project's
+    .bidsignore files are fully-qualified, so this is acceptable for the
+    current use case but should be revisited if bare patterns are added.
     """
     path_parts = rel_path.split("/")
     for pattern in patterns:
