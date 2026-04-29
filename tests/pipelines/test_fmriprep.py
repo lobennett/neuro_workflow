@@ -424,3 +424,18 @@ def test_fmriprep_bids_dir_override_default_none(tmp_path):
     assert ctx["bids_dir"] == "/oak/data/bids"
     assert ctx["output_bind_line"] == ""
     assert ctx["output_container"] == "/data/derivatives"
+
+
+def test_fmriprep_bids_dir_override_and_output_dir_are_mutually_exclusive():
+    """Argparse should reject --bids-dir-override and --output-dir together."""
+    import argparse
+    import pytest
+    parser = argparse.ArgumentParser()
+    p = FmriprepPipeline()
+    p.add_cli_args(parser)
+    with pytest.raises(SystemExit):
+        parser.parse_args([
+            "--version", "25.2.4",
+            "--output-dir", "/some/out",
+            "--bids-dir-override", "/some/view",
+        ])

@@ -23,9 +23,10 @@ class FmriprepPipeline:
         parser.add_argument("--fmriprep-args", default="", help="Additional fMRIPrep arguments")
         parser.add_argument("--fs-license", default="~/license.txt", help="FreeSurfer license file")
         parser.add_argument("--bids-filter-file", default=None, help="BIDS filter JSON file path")
-        parser.add_argument("--output-dir", default=None,
+        output_group = parser.add_mutually_exclusive_group()
+        output_group.add_argument("--output-dir", default=None,
             help="Output derivatives root (default: <bids_dir>/derivatives)")
-        parser.add_argument(
+        output_group.add_argument(
             "--bids-dir-override",
             default=None,
             help="Path to bind as /data instead of the registered bids_dir. Use to "
@@ -57,13 +58,6 @@ class FmriprepPipeline:
 
         bids_dir_override = getattr(args, "bids_dir_override", None)
         output_dir = getattr(args, "output_dir", None)
-
-        if bids_dir_override and output_dir:
-            print(
-                "Error: --bids-dir-override and --output-dir are mutually exclusive",
-                file=sys.stderr,
-            )
-            sys.exit(1)
 
         if bids_dir_override:
             # Input is the view; output is forced to the registered BIDS dir's derivatives/
