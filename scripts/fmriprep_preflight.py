@@ -7,14 +7,15 @@ in the BIDS tree. This script creates a parallel symlink directory under
 not linked, then sanity-checks that every subject still has a usable T1w.
 
 Usage:
-    uv run python scripts/fmriprep_preflight.py discovery
-    uv run python scripts/fmriprep_preflight.py validation
+    uv run python scripts/fmriprep_preflight.py discovery --version 25.2.4
+    uv run python scripts/fmriprep_preflight.py validation --version 25.2.4
 """
 from __future__ import annotations
 
 import argparse
 import fnmatch
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -226,7 +227,23 @@ EXPECTED_MULTI_ANAT = {
 
 
 def _load_datasets(datasets_json: Path) -> dict:
-    return json.loads(datasets_json.read_text())
+    try:
+        return json.loads(datasets_json.read_text())
+    except FileNotFoundError:
+        raise SystemExit(
+            f"ERROR: datasets.json not found: {datasets_json}\n"
+            f"Create it or pass --datasets-json <path>"
+        )
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"ERROR: malformed JSON in {datasets_json}: {exc}")
+
+
+_ECHO_RE = re.compile(r"_echo-\d+")
+
+
+def _strip_echo(filename: str) -> str:
+    """Return filename with the _echo-N segment removed (for multi-echo deduplication)."""
+    return _ECHO_RE.sub("", filename)
 
 
 def _print_summary(view_dir: Path, summary: dict) -> None:
@@ -242,7 +259,9 @@ def _print_summary(view_dir: Path, summary: dict) -> None:
         sub = sub_dir.name.removeprefix("sub-")
         t1 = len(list(sub_dir.glob("ses-*/anat/*T1w.nii.gz")))
         t2 = len(list(sub_dir.glob("ses-*/anat/*T2w.nii.gz")))
-        bold = len(list(sub_dir.glob("ses-*/func/*_bold.nii.gz")))
+        # Count unique (session, task, run) BOLDs across multi-echo files
+        bold_files = list(sub_dir.glob("ses-*/func/*_bold.nii.gz"))
+        bold = len({_strip_echo(f.name) for f in bold_files})
         print(f"  {sub:<10} {t1:>4} {t2:>4} {bold:>5}")
 
 
