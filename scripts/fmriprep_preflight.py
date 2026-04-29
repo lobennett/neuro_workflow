@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import sys
 from pathlib import Path
@@ -29,3 +30,19 @@ def parse_bidsignore(path: Path) -> list[str]:
             continue
         patterns.append(stripped)
     return patterns
+
+
+def path_matches_any(rel_path: str, patterns: list[str]) -> bool:
+    """Return True if `rel_path` matches any gitignore-style pattern.
+
+    Implements gitignore semantics where `*` does not span `/` separators by
+    splitting both path and pattern on `/` and matching segment-by-segment.
+    """
+    path_parts = rel_path.split("/")
+    for pattern in patterns:
+        pattern_parts = pattern.split("/")
+        if len(path_parts) != len(pattern_parts):
+            continue
+        if all(fnmatch.fnmatchcase(p, pat) for p, pat in zip(path_parts, pattern_parts)):
+            return True
+    return False
