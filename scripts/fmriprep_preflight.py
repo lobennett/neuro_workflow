@@ -214,3 +214,71 @@ def _count_excluded_files(bids_dir: Path, patterns: list[str]) -> int:
             if path_matches_any(rel, patterns):
                 n += 1
     return n
+
+
+EXPECTED_MULTI_ANAT = {
+    "discovery": {},  # no multi-anat subjects in discovery
+    "validation": {
+        "s1351": {"T1w": 2},  # ses-01 + ses-08 SagMPRAGE
+        "s1399": {"T2w": 2},  # ses-01 + ses-02 CubePromo
+    },
+}
+
+
+def _load_datasets(datasets_json: Path) -> dict:
+    return json.loads(datasets_json.read_text())
+
+
+def _print_summary(view_dir: Path, summary: dict) -> None:
+    print(f"View: {view_dir}")
+    print(f"  Files linked:   {summary['files_linked']}")
+    print(f"  Files excluded: {summary['files_excluded']}")
+    print(f"  Patterns:       {len(summary['patterns'])}")
+    print()
+    print(f"  {'Subject':<10} {'T1w':>4} {'T2w':>4} {'BOLD':>5}")
+    for sub_dir in sorted(view_dir.glob("sub-*")):
+        if not sub_dir.is_dir():
+            continue
+        sub = sub_dir.name.removeprefix("sub-")
+        t1 = len(list(sub_dir.glob("ses-*/anat/*T1w.nii.gz")))
+        t2 = len(list(sub_dir.glob("ses-*/anat/*T2w.nii.gz")))
+        bold = len(list(sub_dir.glob("ses-*/func/*_bold.nii.gz")))
+        print(f"  {sub:<10} {t1:>4} {t2:>4} {bold:>5}")
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser.add_argument("dataset", help="dataset name registered with neuro-run")
+    parser.add_argument("--version", required=True, help="fmriprep version (e.g., 25.2.4)")
+    parser.add_argument(
+        "--datasets-json",
+        default=str(Path.home() / ".neuro_workflow" / "datasets.json"),
+        help="path to datasets.json (default: ~/.neuro_workflow/datasets.json)",
+    )
+    args = parser.parse_args(argv)
+
+    datasets = _load_datasets(Path(args.datasets_json))
+    if args.dataset not in datasets:
+        print(f"ERROR: dataset '{args.dataset}' not found in {args.datasets_json}", file=sys.stderr)
+        return 2
+
+    bids_dir = Path(datasets[args.dataset]["bids_dir"])
+    view_dir = bids_dir / "derivatives" / f"fmriprep_{args.version}_input"
+
+    summary = build_view(bids_dir, view_dir)
+
+    expected = EXPECTED_MULTI_ANAT.get(args.dataset, {})
+    errors = verify_view(view_dir, expected)
+    if errors:
+        print("VIEW VERIFICATION FAILED:", file=sys.stderr)
+        for e in errors:
+            print(f"  - {e}", file=sys.stderr)
+        return 3
+
+    _print_summary(view_dir, summary)
+    print(f"\nView ready: {view_dir}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
