@@ -25,6 +25,13 @@ class FmriprepPipeline:
         parser.add_argument("--bids-filter-file", default=None, help="BIDS filter JSON file path")
         parser.add_argument("--output-dir", default=None,
             help="Output derivatives root (default: <bids_dir>/derivatives)")
+        parser.add_argument(
+            "--bids-dir-override",
+            default=None,
+            help="Path to bind as /data instead of the registered bids_dir. Use to "
+                 "point fmriprep at a symlink BIDS view. Output derivatives still go "
+                 "to <registered bids_dir>/derivatives/fmriprep_<version>/.",
+        )
         parser.add_argument("--nthreads", type=int, default=None, help="CPUs per task (default: 8)")
         parser.add_argument("--mem-per-cpu-gb", type=int, default=None, help="Memory per CPU in GB (default: 8)")
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 5-00:00:00)")
@@ -48,12 +55,30 @@ class FmriprepPipeline:
         scratch = os.environ.get("SCRATCH", "/tmp")
         work_dir = f"{scratch}/work/fmriprep_{dataset_name}_{args.version}"
 
+        bids_dir_override = getattr(args, "bids_dir_override", None)
         output_dir = getattr(args, "output_dir", None)
-        if output_dir:
+
+        if bids_dir_override and output_dir:
+            print(
+                "Error: --bids-dir-override and --output-dir are mutually exclusive",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        if bids_dir_override:
+            # Input is the view; output is forced to the registered BIDS dir's derivatives/
+            bids_dir_for_bind = bids_dir_override
+            registered_derivs = f"{dataset_config['bids_dir']}/derivatives"
+            output_bind_line = f"  -B {registered_derivs}:/out \\\n"
+            output_container = "/out"
+            log_dir = f"{registered_derivs}/fmriprep_{args.version}/logs"
+        elif output_dir:
+            bids_dir_for_bind = dataset_config["bids_dir"]
             output_bind_line = f"  -B {output_dir}:/out \\\n"
             output_container = "/out"
             log_dir = f"{output_dir}/fmriprep_{args.version}/logs"
         else:
+            bids_dir_for_bind = dataset_config["bids_dir"]
             output_bind_line = ""
             output_container = "/data/derivatives"
             log_dir = f"{dataset_config['bids_dir']}/derivatives/fmriprep_{args.version}/logs"
@@ -80,7 +105,7 @@ class FmriprepPipeline:
             "mail_line": mail_line,
             "subjects_file": dataset_config["subjects_file"],
             "image_path": image_path,
-            "bids_dir": dataset_config["bids_dir"],
+            "bids_dir": bids_dir_for_bind,
             "templateflow_dir": dataset_config["templateflow_dir"],
             "work_dir": work_dir,
             "config_bind_line": config_bind_line,
