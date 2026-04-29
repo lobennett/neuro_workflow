@@ -240,3 +240,10 @@ def test_verify_view_checks_expected_multi_anat(tmp_path):
     # Expected 3 T1w — fails (only 2 in view)
     errors = verify_view(view, expected_multi_anat={"s1351": {"T1w": 3}})
     assert any("s1351" in e for e in errors)
+
+
+def test_verify_view_fails_when_view_dir_missing(tmp_path):
+    """Calling verify_view on a non-existent view should not silently pass."""
+    nonexistent = tmp_path / "no_such_view"
+    errors = verify_view(nonexistent, expected_multi_anat={})
+    assert any("does not exist" in e for e in errors)
