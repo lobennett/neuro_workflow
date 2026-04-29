@@ -127,9 +127,24 @@ def test_build_view_idempotent(tmp_path):
     bids = _make_fake_bids(tmp_path)
     view = bids / "derivatives" / "fmriprep_25.2.4_input"
     s1 = build_view(bids, view)
+    # Capture symlink lstat (so we read the symlink's metadata, not the target's).
+    # If a second run perturbed the symlinks, lstat ctime/mtime would change.
+    snapshot_1 = {
+        p: p.lstat().st_ctime_ns
+        for p in view.rglob("*") if p.is_symlink()
+    }
+    assert snapshot_1, "fixture should produce some symlinks"
+
     s2 = build_view(bids, view)
+    snapshot_2 = {
+        p: p.lstat().st_ctime_ns
+        for p in view.rglob("*") if p.is_symlink()
+    }
+
     assert s1["files_linked"] == s2["files_linked"]
     assert s1["files_excluded"] == s2["files_excluded"]
+    # The strong idempotency property: no symlinks were touched on the second run.
+    assert snapshot_1 == snapshot_2, "second run perturbed existing symlinks"
 
 
 def test_build_view_summary_counts(tmp_path):
@@ -141,3 +156,42 @@ def test_build_view_summary_counts(tmp_path):
     # Excluded: 2 MPRAGEPromo + 1 nBack = 3
     assert summary["files_linked"] == 6
     assert summary["files_excluded"] == 3
+
+
+def test_build_view_replaces_stale_directory_with_symlink(tmp_path):
+    """A pre-existing directory at a desired symlink path must be replaced cleanly."""
+    bids = _make_fake_bids(tmp_path)
+    view = bids / "derivatives" / "fmriprep_25.2.4_input"
+    # First run produces the view normally
+    build_view(bids, view)
+    # Simulate a prior partial run that left a directory where a symlink should be
+    target = view / "sub-s03/ses-05/anat/sub-s03_ses-05_acq-SagMPRAGE_run-1_T1w.nii.gz"
+    target.unlink()  # remove the symlink
+    target.mkdir()  # replace with a directory
+    (target / "stale_inner_file").touch()
+    # Second run must clean it up and replace with a symlink, no exception
+    build_view(bids, view)
+    assert target.is_symlink()
+    assert not target.is_dir() or target.resolve().is_file()  # symlink resolves to file
+
+
+def test_build_view_prunes_empty_subject_dir_after_bidsignore_change(tmp_path):
+    """If a subject's BOLDs all become .bidsignore'd between runs, the empty
+    subject skeleton should not remain in the view."""
+    bids = _make_fake_bids(tmp_path)
+    view = bids / "derivatives" / "fmriprep_25.2.4_input"
+
+    # First run: s03 has files in the view
+    build_view(bids, view)
+    assert (view / "sub-s03").is_dir()
+
+    # Now expand .bidsignore to exclude EVERY remaining s03 file
+    bidsignore = bids / ".bidsignore"
+    bidsignore.write_text(
+        "sub-s03/ses-*/anat/*.*\n"
+        "sub-s03/ses-*/func/*.*\n"
+    )
+
+    build_view(bids, view)
+    # sub-s03 dir should be entirely gone (no ghost skeleton)
+    assert not (view / "sub-s03").exists()
