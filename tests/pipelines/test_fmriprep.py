@@ -508,7 +508,7 @@ def test_fmriprep_template_includes_work_dir_cleanup(tmp_path):
     script = render_template(template_path, ctx)
 
     # Cleanup logic
-    assert 'Cleaning up work dir on success' in script
+    assert 'Cleaned up work dir on success' in script
     # Cleans the subject-specific subdirectory, not the whole work dir
     assert 'rm -rf "$subject_work"' in script
     # The cleanup is gated by exit code 0
