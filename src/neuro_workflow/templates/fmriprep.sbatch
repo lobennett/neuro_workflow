@@ -10,7 +10,7 @@
 #SBATCH -e {log_dir}/%x-%A-%a.err
 {mail_line}
 
-subject=$(sed "${{SLURM_ARRAY_TASK_ID}}q;d" {subjects_file})
+subject=$(sed "${{SLURM_ARRAY_TASK_ID}}q;d" {subjects_file} | tr -d '\r')
 
 FMRIPREP_IMG="{image_path}"
 
@@ -36,10 +36,17 @@ apptainer run --cleanenv \
 exitcode=$?
 
 # Workaround for fmriprep#3634 (fix in PR #3636, not yet in any LTS release):
-# fmriprep 25.2.4 occasionally exits with code 1 after a successful workflow due
-# to a typo bug in the post-workflow report generator. If the workflow log contains
-# the success message, treat exit-1 as success.
+# fmriprep 25.2.4 (verified at the success-message string "fMRIPrep finished
+# successfully") occasionally exits with code 1 after a successful workflow due
+# to a typo bug in the post-workflow report generator. If the workflow log
+# contains the success message, treat exit-1 as success. When upgrading
+# fmriprep, verify this string is still produced or remove this block.
+#
+# Lustre flush note: the .out file lives on /scratch (Lustre). Brief sync+sleep
+# ensures the trailing lines from apptainer's stdio buffer are visible to grep.
 log_file="{log_dir}/fmriprep_{dataset_name}-${{SLURM_ARRAY_JOB_ID}}-${{SLURM_ARRAY_TASK_ID}}.out"
+sync
+sleep 2
 if [ "$exitcode" -eq 1 ] && [ -f "$log_file" ] && grep -q "fMRIPrep finished successfully" "$log_file"; then
   echo "Detected fmriprep#3634 benign exit-1 (workflow finished successfully); treating as exit 0."
   exitcode=0
@@ -50,8 +57,11 @@ fi
 if [ "$exitcode" -eq 0 ]; then
   subject_work="{work_dir}/sub-${{subject}}"
   if [ -d "$subject_work" ]; then
-    echo "Cleaning up work dir on success: $subject_work"
-    rm -rf "$subject_work"
+    if rm -rf "$subject_work"; then
+      echo "Cleaned up work dir on success: $subject_work"
+    else
+      echo "WARNING: cleanup failed for $subject_work (scratch may be full)"
+    fi
   fi
 fi
 
