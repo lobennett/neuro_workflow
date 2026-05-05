@@ -1357,6 +1357,7 @@ name = "neuro-workflow"
 version = "0.2.0"
 source = { editable = "." }
 dependencies = [
+    { name = "jinja2" },
     { name = "pyyaml" },
 ]
 
@@ -1401,6 +1402,7 @@ requires-dist = [
     { name = "datalad", marker = "extra == 'datalad'", specifier = "<1.0" },
     { name = "flywheel-sdk", marker = "extra == 'bidsify'", specifier = ">=17.0" },
     { name = "img2pdf", marker = "extra == 'qa'", specifier = ">=0.5" },
+    { name = "jinja2", specifier = ">=3.1.6" },
     { name = "jinja2", marker = "extra == 'qa'", specifier = ">=3.0" },
     { name = "matplotlib", marker = "extra == 'qa'", specifier = ">=3.0" },
     { name = "nibabel", marker = "extra == 'events'", specifier = ">=5.0" },
