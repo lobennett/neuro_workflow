@@ -23,6 +23,8 @@ qa = [
     "numpy>=1.24",
     "img2pdf>=0.5",
     "seaborn>=0.13",
+    "jinja2>=3.0",
+    "bold-reliability-movies>=0.1",
 ]
 bidsify = [
     "flywheel-sdk>=17.0",
@@ -52,6 +54,9 @@ markers = [
 dev = [
     "pytest>=8.4.2",
 ]
+
+[tool.uv.sources]
+bold-reliability-movies = { path = "/home/users/logben/bold-reliability-movies", editable = true }
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
