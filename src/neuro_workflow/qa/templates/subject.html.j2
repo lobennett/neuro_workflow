@@ -33,15 +33,15 @@
     mean={{ "%.1f"|format(fs_metrics.holes_mean) }}.
   </p>
   {% endif %}
-  {% if fs_metrics.brain_vol %}
+  {% if fs_metrics.brain_vol is not none or fs_metrics.gm_vol is not none or fs_metrics.wm_vol is not none or fs_metrics.csf_vol is not none or fs_metrics.etiv is not none %}
   <details>
     <summary>Volumes (aseg)</summary>
     <ul>
-      <li>Brain: {{ "%.0f"|format(fs_metrics.brain_vol) }} mm³</li>
-      <li>GM: {{ "%.0f"|format(fs_metrics.gm_vol) }} mm³</li>
-      <li>WM: {{ "%.0f"|format(fs_metrics.wm_vol) }} mm³</li>
-      <li>CSF: {{ "%.0f"|format(fs_metrics.csf_vol) }} mm³</li>
-      <li>eTIV: {{ "%.0f"|format(fs_metrics.etiv) }} mm³</li>
+      {% if fs_metrics.brain_vol is not none %}<li>Brain: {{ "%.0f"|format(fs_metrics.brain_vol) }} mm³</li>{% endif %}
+      {% if fs_metrics.gm_vol is not none %}<li>GM: {{ "%.0f"|format(fs_metrics.gm_vol) }} mm³</li>{% endif %}
+      {% if fs_metrics.wm_vol is not none %}<li>WM: {{ "%.0f"|format(fs_metrics.wm_vol) }} mm³</li>{% endif %}
+      {% if fs_metrics.csf_vol is not none %}<li>CSF: {{ "%.0f"|format(fs_metrics.csf_vol) }} mm³</li>{% endif %}
+      {% if fs_metrics.etiv is not none %}<li>eTIV: {{ "%.0f"|format(fs_metrics.etiv) }} mm³</li>{% endif %}
     </ul>
   </details>
   {% endif %}
