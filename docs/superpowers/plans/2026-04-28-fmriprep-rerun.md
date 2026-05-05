@@ -143,7 +143,7 @@ git commit -m "feat: add fmriprep_preflight skeleton with .bidsignore parser"
 Append to `tests/scripts/test_fmriprep_preflight.py`:
 
 ```python
-from fmriprep_preflight import path_matches_any
+from scripts.fmriprep_preflight import path_matches_any
 
 
 def test_path_matches_simple_pattern():
@@ -238,7 +238,7 @@ git commit -m "feat: add gitignore-style pattern matcher to fmriprep_preflight"
 Append to `tests/scripts/test_fmriprep_preflight.py`:
 
 ```python
-from fmriprep_preflight import build_view
+from scripts.fmriprep_preflight import build_view
 
 
 def _make_fake_bids(tmp_path: Path) -> Path:
@@ -450,7 +450,7 @@ The pre-flight must verify every subject has ≥1 T1w in the view and that inten
 Append to `tests/scripts/test_fmriprep_preflight.py`:
 
 ```python
-from fmriprep_preflight import verify_view
+from scripts.fmriprep_preflight import verify_view
 
 
 def test_verify_view_passes_when_every_subject_has_t1w(tmp_path):

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>QA Report — {{ subject }}</title>
+<style>{{ style_css|safe }}</style>
+</head>
+<body>
+
+<h1>{{ subject }}</h1>
+<p><b>fMRIPrep version:</b> {{ fmriprep_version }}
+{% if decision_action != 'unset' %}
+  <span class="pill {{ 'fail' if decision_action == 'exclude' else 'warn' }}">
+    Decision: {{ decision_action }} — {{ decision_reason }}
+  </span>
+{% endif %}
+</p>
+
+<h2>FreeSurfer reconstruction</h2>
+<div class="fs-card">
+  <p>
+    <b>Status:</b>
+    <span class="pill {{ 'ok' if fs_metrics.status == 'OK' else 'fail' }}">{{ fs_metrics.status }}</span>
+    {% if fs_metrics.elapsed_hours is not none %}
+    <b>Runtime:</b> {{ "%.1f"|format(fs_metrics.elapsed_hours) }}h
+    {% endif %}
+  </p>
+  {% if fs_metrics.euler_mean is not none %}
+  <p>
+    <b>Euler:</b> lh={{ fs_metrics.euler_lh }}, rh={{ fs_metrics.euler_rh }},
+    mean={{ "%.0f"|format(fs_metrics.euler_mean) }}.
+    <b>Holes:</b> lh={{ fs_metrics.holes_lh }}, rh={{ fs_metrics.holes_rh }},
+    mean={{ "%.1f"|format(fs_metrics.holes_mean) }}.
+  </p>
+  {% endif %}
+  {% if fs_metrics.brain_vol is not none or fs_metrics.gm_vol is not none or fs_metrics.wm_vol is not none or fs_metrics.csf_vol is not none or fs_metrics.etiv is not none %}
+  <details>
+    <summary>Volumes (aseg)</summary>
+    <ul>
+      {% if fs_metrics.brain_vol is not none %}<li>Brain: {{ "%.0f"|format(fs_metrics.brain_vol) }} mm³</li>{% endif %}
+      {% if fs_metrics.gm_vol is not none %}<li>GM: {{ "%.0f"|format(fs_metrics.gm_vol) }} mm³</li>{% endif %}
+      {% if fs_metrics.wm_vol is not none %}<li>WM: {{ "%.0f"|format(fs_metrics.wm_vol) }} mm³</li>{% endif %}
+      {% if fs_metrics.csf_vol is not none %}<li>CSF: {{ "%.0f"|format(fs_metrics.csf_vol) }} mm³</li>{% endif %}
+      {% if fs_metrics.etiv is not none %}<li>eTIV: {{ "%.0f"|format(fs_metrics.etiv) }} mm³</li>{% endif %}
+    </ul>
+  </details>
+  {% endif %}
+</div>
+
+<h2>Reliability movie</h2>
+<video controls width="720">
+  <source src="{{ movie_relpath }}" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+<h2>Per-scan</h2>
+<table class="scan-table">
+  <thead>
+    <tr>
+      <th>Session</th><th>Task</th><th>Run</th>
+      <th>n_vols</th>
+      <th>FD mean</th><th>%FD&gt;0.5</th>
+      <th>DVARS mean</th><th>%std_DVARS&gt;1.5</th>
+      <th>Outliers</th>
+      <th>Outputs</th>
+      <th>Flag</th>
+      <th>Decision</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for scan in scans %}
+    <tr class="{% if scan.flagged %}flagged{% endif %}">
+      <td>{{ scan.session }}</td>
+      <td>{{ scan.task }}</td>
+      <td>{{ scan.run }}</td>
+      <td>{{ scan.n_vols }}</td>
+      <td>{{ "%.3f"|format(scan.fd_mean) }}</td>
+      <td>{{ "%.1f"|format(scan.fd_prop_over_05 * 100) }}%</td>
+      <td>{{ "%.3f"|format(scan.dvars_mean) }}</td>
+      <td>{{ "%.1f"|format(scan.dvars_prop_over_15 * 100) }}%</td>
+      <td>{{ scan.n_motion_outliers }}</td>
+      <td>{{ "OK" if scan.outputs_complete else (scan.missing_outputs|length ~ " missing") }}</td>
+      <td class="flag-cell">{% if scan.flagged %}flag{% else %}—{% endif %}</td>
+      <td>{{ scan.decision_action }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Per-scan figures</h2>
+{% for scan in scans %}
+<details {% if scan.flagged %}open{% endif %}>
+  <summary>{{ scan.session }} {{ scan.task }} run-{{ scan.run }}
+    {% if scan.flagged %}<span class="pill warn">flagged: {{ scan.flag_reasons|join('; ') }}</span>{% endif %}
+  </summary>
+
+  {% if scan.carpetplot_svg %}
+  <div class="svg-block"><h4>Carpet plot</h4>{{ scan.carpetplot_svg|safe }}</div>
+  {% endif %}
+  {% if scan.coreg_svg %}
+  <div class="svg-block"><h4>Coregistration (BOLD ↔ T1w)</h4>{{ scan.coreg_svg|safe }}</div>
+  {% endif %}
+  {% if scan.sdc_svg %}
+  <div class="svg-block"><h4>Susceptibility distortion correction</h4>{{ scan.sdc_svg|safe }}</div>
+  {% endif %}
+
+</details>
+{% endfor %}
+
+</body>
+</html>
