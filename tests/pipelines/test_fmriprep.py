@@ -304,3 +304,257 @@ def test_fmriprep_render_with_output_dir(tmp_path):
         path = f.name
     r = subprocess.run(["bash", "-n", path], capture_output=True, text=True)
     assert r.returncode == 0, f"Rendered script has bash syntax errors: {r.stderr}"
+
+
+def test_fmriprep_bids_dir_override(tmp_path):
+    """When --bids-dir-override is set, /data binds the override path and
+    derivatives output redirects to the original BIDS dir's derivatives/."""
+    subs = tmp_path / "subs.txt"
+    subs.write_text("s03\n")
+
+    p = FmriprepPipeline()
+    dataset_config = {
+        "bids_dir": "/scratch/users/logben/discovery_bids",
+        "subjects_file": str(subs),
+        "partition": "russpold",
+        "image_dir": "/images",
+        "templateflow_dir": "/tf",
+        "mail_user": None,
+    }
+    args = Namespace(
+        version="25.2.4",
+        output_spaces="MNI152NLin2009cAsym:res-1",
+        fmriprep_args="",
+        fs_license="~/license.txt",
+        bids_filter_file=None,
+        nthreads=None,
+        mem_per_cpu_gb=None,
+        time=None,
+        output_dir=None,
+        bids_dir_override="/scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4_input",
+    )
+
+    ctx = p.build_context("discovery", dataset_config, args)
+
+    # /data should bind the override path
+    assert ctx["bids_dir"] == "/scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4_input"
+    # Output should bind the registered BIDS dir's derivatives/ as /out
+    assert "-B /scratch/users/logben/discovery_bids/derivatives:/out" in ctx["output_bind_line"]
+    assert ctx["output_container"] == "/out"
+    # Logs should still go to the registered BIDS dir
+    assert ctx["log_dir"] == "/scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4/logs"
+
+
+def test_fmriprep_bids_dir_override_in_rendered_template(tmp_path):
+    """Full render confirms /data and /out paths are correct in the sbatch."""
+    subs = tmp_path / "subs.txt"
+    subs.write_text("s03\n")
+
+    p = FmriprepPipeline()
+    dataset_config = {
+        "bids_dir": "/scratch/users/logben/discovery_bids",
+        "subjects_file": str(subs),
+        "partition": "russpold",
+        "image_dir": "/images",
+        "templateflow_dir": "/tf",
+        "mail_user": None,
+    }
+    args = Namespace(
+        version="25.2.4",
+        output_spaces="MNI152NLin2009cAsym:res-1",
+        fmriprep_args="--no-submm-recon --skip-bids-validation --cifti-output 91k",
+        fs_license="/home/user/license.txt",
+        bids_filter_file=None,
+        nthreads=None,
+        mem_per_cpu_gb=None,
+        time=None,
+        output_dir=None,
+        bids_dir_override="/scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4_input",
+    )
+
+    ctx = p.build_context("discovery", dataset_config, args)
+    template_path = TEMPLATE_DIR / p.template_name
+    script = render_template(template_path, ctx)
+
+    # /data binds the view, not the original BIDS dir
+    assert "-B /scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4_input:/data" in script
+    # /out binds the original BIDS dir's derivatives/
+    assert "-B /scratch/users/logben/discovery_bids/derivatives:/out" in script
+    # fmriprep CLI uses /data input, /out/fmriprep_25.2.4 output
+    assert "/data /out/fmriprep_25.2.4 participant" in script
+    # No /data/derivatives anywhere (would mean output is going under the view)
+    assert "/data/derivatives" not in script
+    # bash syntax
+    import subprocess, tempfile
+    with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as f:
+        f.write(script)
+        path = f.name
+    r = subprocess.run(["bash", "-n", path], capture_output=True, text=True)
+    assert r.returncode == 0, f"bash syntax error: {r.stderr}"
+
+
+def test_fmriprep_bids_dir_override_default_none(tmp_path):
+    """Without --bids-dir-override, behavior is unchanged."""
+    subs = tmp_path / "subs.txt"
+    subs.write_text("s03\n")
+
+    p = FmriprepPipeline()
+    dataset_config = {
+        "bids_dir": "/oak/data/bids",
+        "subjects_file": str(subs),
+        "partition": "russpold",
+        "image_dir": "/images",
+        "templateflow_dir": "/tf",
+        "mail_user": None,
+    }
+    args = Namespace(
+        version="25.2.4",
+        output_spaces="MNI152NLin2009cAsym:res-2",
+        fmriprep_args="",
+        fs_license="~/license.txt",
+        bids_filter_file=None,
+        nthreads=None,
+        mem_per_cpu_gb=None,
+        time=None,
+        output_dir=None,
+        bids_dir_override=None,
+    )
+
+    ctx = p.build_context("test_ds", dataset_config, args)
+    assert ctx["bids_dir"] == "/oak/data/bids"
+    assert ctx["output_bind_line"] == ""
+    assert ctx["output_container"] == "/data/derivatives"
+
+
+def test_fmriprep_bids_dir_override_and_output_dir_are_mutually_exclusive():
+    """Argparse should reject --bids-dir-override and --output-dir together."""
+    import argparse
+    import pytest
+    parser = argparse.ArgumentParser()
+    p = FmriprepPipeline()
+    p.add_cli_args(parser)
+    with pytest.raises(SystemExit):
+        parser.parse_args([
+            "--version", "25.2.4",
+            "--output-dir", "/some/out",
+            "--bids-dir-override", "/some/view",
+        ])
+
+
+def test_fmriprep_template_includes_exit_1_workaround(tmp_path):
+    """The rendered sbatch must detect fmriprep#3634 benign exit-1 and treat as success."""
+    subs = tmp_path / "subs.txt"
+    subs.write_text("s03\n")
+
+    p = FmriprepPipeline()
+    dataset_config = {
+        "bids_dir": "/scratch/users/logben/discovery_bids",
+        "subjects_file": str(subs),
+        "partition": "russpold",
+        "image_dir": "/images",
+        "templateflow_dir": "/tf",
+        "mail_user": None,
+    }
+    args = Namespace(
+        version="25.2.4",
+        output_spaces="MNI152NLin2009cAsym:res-1",
+        fmriprep_args="",
+        fs_license="~/license.txt",
+        bids_filter_file=None,
+        nthreads=None,
+        mem_per_cpu_gb=None,
+        time=None,
+        output_dir=None,
+        bids_dir_override=None,
+    )
+    ctx = p.build_context("discovery", dataset_config, args)
+    template_path = TEMPLATE_DIR / p.template_name
+    script = render_template(template_path, ctx)
+
+    # The success-detection workaround must be present
+    assert 'fMRIPrep finished successfully' in script
+    assert 'fmriprep#3634' in script
+    assert 'exitcode=0' in script  # the line that flips exit-1 to 0
+
+
+def test_fmriprep_template_includes_work_dir_cleanup(tmp_path):
+    """The rendered sbatch must clean up the per-subject work dir on success."""
+    subs = tmp_path / "subs.txt"
+    subs.write_text("s03\n")
+
+    p = FmriprepPipeline()
+    dataset_config = {
+        "bids_dir": "/scratch/users/logben/discovery_bids",
+        "subjects_file": str(subs),
+        "partition": "russpold",
+        "image_dir": "/images",
+        "templateflow_dir": "/tf",
+        "mail_user": None,
+    }
+    args = Namespace(
+        version="25.2.4",
+        output_spaces="MNI152NLin2009cAsym:res-1",
+        fmriprep_args="",
+        fs_license="~/license.txt",
+        bids_filter_file=None,
+        nthreads=None,
+        mem_per_cpu_gb=None,
+        time=None,
+        output_dir=None,
+        bids_dir_override=None,
+    )
+    ctx = p.build_context("discovery", dataset_config, args)
+    template_path = TEMPLATE_DIR / p.template_name
+    script = render_template(template_path, ctx)
+
+    # Cleanup logic
+    assert 'Cleaned up work dir on success' in script
+    # Cleans the subject-specific subdirectory, not the whole work dir
+    assert 'rm -rf "$subject_work"' in script
+    # The cleanup is gated by exit code 0
+    assert 'if [ "$exitcode" -eq 0 ]' in script
+
+
+def test_fmriprep_template_log_path_uses_array_job_id(tmp_path):
+    """The wrapper must reference the actual .out file path used by SLURM."""
+    subs = tmp_path / "subs.txt"
+    subs.write_text("s03\n")
+
+    p = FmriprepPipeline()
+    dataset_config = {
+        "bids_dir": "/scratch/users/logben/discovery_bids",
+        "subjects_file": str(subs),
+        "partition": "russpold",
+        "image_dir": "/images",
+        "templateflow_dir": "/tf",
+        "mail_user": None,
+    }
+    args = Namespace(
+        version="25.2.4",
+        output_spaces="MNI152NLin2009cAsym:res-1",
+        fmriprep_args="",
+        fs_license="~/license.txt",
+        bids_filter_file=None,
+        nthreads=None,
+        mem_per_cpu_gb=None,
+        time=None,
+        output_dir=None,
+        bids_dir_override=None,
+    )
+    ctx = p.build_context("discovery", dataset_config, args)
+    template_path = TEMPLATE_DIR / p.template_name
+    script = render_template(template_path, ctx)
+
+    # Must reference SLURM array job ID and task ID in the log file path
+    assert "${SLURM_ARRAY_JOB_ID}" in script
+    assert "${SLURM_ARRAY_TASK_ID}" in script
+    # The log filename pattern must match the SBATCH -o directive: fmriprep_<ds>-%A-%a.out
+    assert 'fmriprep_discovery-${SLURM_ARRAY_JOB_ID}-${SLURM_ARRAY_TASK_ID}.out' in script
+
+    # Bash syntax must be valid
+    import subprocess, tempfile
+    with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as f:
+        f.write(script)
+        path = f.name
+    r = subprocess.run(["bash", "-n", path], capture_output=True, text=True)
+    assert r.returncode == 0, f"bash syntax error: {r.stderr}"
