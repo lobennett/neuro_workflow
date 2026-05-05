@@ -26,6 +26,8 @@ def test_compute_motion_returns_dataclass(tmp_path):
     assert m.n_vols == 5
     assert m.fd_mean == pytest.approx(0.25)
     assert m.dvars_mean == pytest.approx(1.15)
+    assert m.fd_max == pytest.approx(0.4)
+    assert m.dvars_max == pytest.approx(1.3)
 
 
 def test_compute_motion_counts_motion_outliers(tmp_path):
@@ -54,9 +56,13 @@ def test_compute_motion_handles_all_nan(tmp_path):
     df.to_csv(path, sep="\t", index=False, na_rep="n/a")
     m = compute_motion(path)
     assert m.n_vols == 5
-    # When all values are NaN, mean is NaN; we report 0.0 instead so the table
-    # column stays numeric.
-    assert m.fd_mean == 0.0 or (m.fd_mean != m.fd_mean)  # 0.0 or NaN both acceptable
+    # All-NaN must report 0.0 (the documented contract), never NaN.
+    assert m.fd_mean == 0.0
+    assert m.fd_max == 0.0
+    assert m.fd_prop_over_05 == 0.0
+    assert m.dvars_mean == 0.0
+    assert m.dvars_max == 0.0
+    assert m.dvars_prop_over_15 == 0.0
 
 
 def test_compute_motion_missing_columns(tmp_path):

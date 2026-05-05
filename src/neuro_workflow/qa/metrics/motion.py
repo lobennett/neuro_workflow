@@ -1,7 +1,7 @@
 """Motion metrics extracted from fmriprep confounds TSV files."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import pandas as pd
@@ -17,8 +17,8 @@ class MotionMetrics:
     dvars_max: float
     dvars_prop_over_15: float
     n_motion_outliers: int
-    fd_series: pd.Series
-    dvars_series: pd.Series
+    fd_series: pd.Series = field(compare=False, repr=False)
+    dvars_series: pd.Series = field(compare=False, repr=False)
 
 
 def compute_motion(confounds_tsv: Path) -> MotionMetrics:
@@ -29,8 +29,10 @@ def compute_motion(confounds_tsv: Path) -> MotionMetrics:
     """
     df = pd.read_csv(confounds_tsv, sep="\t")
 
-    fd = df["framewise_displacement"].dropna() if "framewise_displacement" in df.columns else pd.Series(dtype=float)
-    dvars = df["std_dvars"].dropna() if "std_dvars" in df.columns else pd.Series(dtype=float)
+    fd = (df["framewise_displacement"].dropna().reset_index(drop=True)
+          if "framewise_displacement" in df.columns else pd.Series(dtype=float))
+    dvars = (df["std_dvars"].dropna().reset_index(drop=True)
+             if "std_dvars" in df.columns else pd.Series(dtype=float))
 
     n_motion_outliers = sum(1 for c in df.columns if c.startswith("motion_outlier"))
 
