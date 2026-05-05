@@ -114,3 +114,27 @@ def test_render_subject_html_auto_expands_flagged_scans():
     )
     # Flagged scan's <details> should be open by default
     assert "<details open" in html
+
+
+def test_render_subject_html_partial_volumes_no_crash():
+    # Real-world: aseg.stats may have brain_vol but lack csf_vol etc.
+    # Template must not crash on `"%.0f"|format(None)`.
+    fs = FreeSurferMetrics(
+        status="OK", elapsed_hours=3.0,
+        euler_lh=-50, euler_rh=-60, euler_mean=-55.0,
+        holes_lh=26, holes_rh=31, holes_mean=28.5,
+        brain_vol=1100000.0, gm_vol=None, wm_vol=None,
+        csf_vol=None, etiv=None,
+    )
+    html = render_subject_html(
+        subject="sub-s03",
+        fs_metrics=fs,
+        scans=[],
+        fmriprep_version="25.2.4",
+        movie_relpath="../movies/sub-s03.mp4",
+        decision_action="unset",
+        decision_reason="",
+        embed_svg=lambda p: "",
+    )
+    assert "Brain" in html
+    assert "GM:" not in html  # gm_vol is None — should be omitted
