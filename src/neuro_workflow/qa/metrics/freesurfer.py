@@ -44,13 +44,20 @@ def parse_euler_from_log(recon_all_log: Path) -> tuple[int, int] | None:
 
 
 def parse_recon_all_status(status_log: Path) -> Status:
-    """Return OK / FAILED / INCOMPLETE based on recon-all-status.log content."""
+    """Return OK / FAILED / INCOMPLETE based on recon-all-status.log content.
+
+    A status log is considered FAILED only if it contains the canonical
+    'exited with ERRORS' marker that recon-all writes for run failures.
+    Other appearances of the substring 'ERROR' (e.g., from ancillary log
+    text in interrupted runs) are not treated as failures here — those
+    runs are reported as INCOMPLETE.
+    """
     if not status_log.is_file():
         return "INCOMPLETE"
     text = status_log.read_text()
     if "finished without error" in text:
         return "OK"
-    if "exited with ERRORS" in text or "ERROR" in text:
+    if "exited with ERRORS" in text:
         return "FAILED"
     return "INCOMPLETE"
 
@@ -64,7 +71,7 @@ def parse_aseg_stats(aseg_stats: Path) -> dict[str, float]:
         "BrainSeg": "brain_vol",
         "TotalGray": "gm_vol",
         "CerebralWhiteMatter": "wm_vol",
-        "CSF": "csf_vol",
+        "VentricleChoroidVol": "csf_vol",   # ventricular CSF (no global CSF in modern FS)
         "EstimatedTotalIntraCranialVol": "etiv",
     }
     out: dict[str, float] = {}
@@ -78,13 +85,18 @@ def parse_aseg_stats(aseg_stats: Path) -> dict[str, float]:
 
 
 def _parse_elapsed(recon_all_log: Path) -> float | None:
+    """Sum all per-stage runtimes from recon-all.log into total wall hours.
+
+    fmriprep's recon-all runs in multiple invocations (autorecon1, autorecon2,
+    autorecon3, etc.). Each stage emits its own ``recon-all-run-time-hours`` line.
+    The total is the sum across all stages.
+    """
     if not recon_all_log.is_file():
         return None
-    for line in recon_all_log.read_text().splitlines():
-        m = _ELAPSED_RE.search(line)
-        if m:
-            return float(m.group(1))
-    return None
+    matches = _ELAPSED_RE.findall(recon_all_log.read_text())
+    if not matches:
+        return None
+    return sum(float(m) for m in matches)
 
 
 def compute_freesurfer(fs_subject_dir: Path) -> FreeSurferMetrics:

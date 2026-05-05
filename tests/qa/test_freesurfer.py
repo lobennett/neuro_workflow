@@ -32,12 +32,13 @@ def _make_fs_dir(tmp_path, status="OK", euler_lh=-100, euler_rh=-80,
     elif status == "INCOMPLETE":
         (fs / "scripts" / "recon-all-status.log").write_text("Started\n#@# Tessellate\n")
 
-    # recon-all.log with Euler info + runtime
+    # recon-all.log with Euler info + multi-stage runtime
     (fs / "scripts" / "recon-all.log").write_text(
         f"#@# Topology lh\n"
         f"orig.nofix lheno = {euler_lh}, rheno = {euler_rh}\n"
         f"#@# DONE\n"
-        f"#@#%# recon-all-run-time-hours {elapsed_hours}\n"
+        f"#@#%# recon-all-run-time-hours {elapsed_hours / 2.0}\n"   # stage 1
+        f"#@#%# recon-all-run-time-hours {elapsed_hours / 2.0}\n"   # stage 2
     )
 
     # aseg.stats
@@ -46,7 +47,7 @@ def _make_fs_dir(tmp_path, status="OK", euler_lh=-100, euler_rh=-80,
         f"{brain_vol}, mm^3\n"
         "# Measure TotalGray, TotalGrayVol, Total gray matter volume, 600000.0, mm^3\n"
         "# Measure CerebralWhiteMatter, CerebralWhiteMatterVol, Cerebral White Matter Volume, 500000.0, mm^3\n"
-        "# Measure CSF, CSFVol, CSF Volume, 1500.0, mm^3\n"
+        "# Measure VentricleChoroidVol, VentricleChoroidVol, Volume of ventricles and choroid plexus, 12000.0, mm^3\n"
         "# Measure EstimatedTotalIntraCranialVol, eTIV, Estimated Total Intracranial Volume, 1500000.0, mm^3\n"
     )
     return fs
@@ -93,14 +94,14 @@ def test_parse_aseg_stats(tmp_path):
         "# Measure BrainSeg, BrainSegVol, Brain Segmentation Volume, 1100000.5, mm^3\n"
         "# Measure TotalGray, TotalGrayVol, Total gray matter volume, 600000.0, mm^3\n"
         "# Measure CerebralWhiteMatter, CerebralWhiteMatterVol, Cerebral White Matter Volume, 500000.0, mm^3\n"
-        "# Measure CSF, CSFVol, CSF Volume, 1500.0, mm^3\n"
+        "# Measure VentricleChoroidVol, VentricleChoroidVol, Volume of ventricles and choroid plexus, 12000.0, mm^3\n"
         "# Measure EstimatedTotalIntraCranialVol, eTIV, Estimated Total Intracranial Volume, 1500000.0, mm^3\n"
     )
     vols = parse_aseg_stats(f)
     assert vols["brain_vol"] == pytest.approx(1100000.5)
     assert vols["gm_vol"] == pytest.approx(600000.0)
     assert vols["wm_vol"] == pytest.approx(500000.0)
-    assert vols["csf_vol"] == pytest.approx(1500.0)
+    assert vols["csf_vol"] == pytest.approx(12000.0)
     assert vols["etiv"] == pytest.approx(1500000.0)
 
 
@@ -136,3 +137,18 @@ def test_compute_freesurfer_incomplete_recon(tmp_path):
     fs = _make_fs_dir(tmp_path, status="INCOMPLETE")
     m = compute_freesurfer(fs)
     assert m.status == "INCOMPLETE"
+
+
+def test_parse_elapsed_sums_multiple_stages(tmp_path):
+    """recon-all-run-time-hours can appear once per stage; total = sum."""
+    from neuro_workflow.qa.metrics.freesurfer import _parse_elapsed
+    log = tmp_path / "recon-all.log"
+    log.write_text(
+        "#@#%# recon-all-run-time-hours 0.149\n"
+        "#@#%# recon-all-run-time-hours 0.027\n"
+        "#@#%# recon-all-run-time-hours 1.518\n"
+        "#@#%# recon-all-run-time-hours 1.344\n"
+        "#@#%# recon-all-run-time-hours 0.130\n"
+    )
+    total = _parse_elapsed(log)
+    assert total == pytest.approx(0.149 + 0.027 + 1.518 + 1.344 + 0.130)
