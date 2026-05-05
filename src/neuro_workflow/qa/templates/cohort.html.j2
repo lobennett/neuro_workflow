@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>QA Cohort Report — fmriprep {{ fmriprep_version }}</title>
+<style>{{ datatables_css|safe }}</style>
+<style>{{ style_css|safe }}</style>
+</head>
+<body>
+<div class="banner">
+  <h1>QA Cohort Report</h1>
+  <p><b>fMRIPrep version:</b> {{ fmriprep_version }} —
+     <b>Subjects:</b> {{ n_subjects }} —
+     <b>Scans:</b> {{ n_scans }} —
+     <b>Flagged scans:</b> {{ n_flagged_scans }}</p>
+</div>
+
+<table id="cohort" class="display">
+  <thead>
+    <tr>
+      <th>Subject</th>
+      <th>Sessions</th>
+      <th>Scans</th>
+      <th>FS Euler (mean)</th>
+      <th>FS holes (mean)</th>
+      <th>FS status</th>
+      <th>Motion flags</th>
+      <th>Output flags</th>
+      <th>Total flags</th>
+      <th>Decision</th>
+      <th>Note</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for row in rows %}
+    <tr class="{% if row.decision_action == 'exclude' %}excluded{% elif row.decision_action == 'review' %}review{% elif row.scan_flags_total > 0 %}flagged{% endif %}">
+      <td><a href="subjects/{{ row.subject }}.html">{{ row.subject }}</a></td>
+      <td>{{ row.sessions }}</td>
+      <td>{{ row.scans }}</td>
+      <td>{{ "%.0f"|format(row.fs_euler_mean) if row.fs_euler_mean is not none else "—" }}</td>
+      <td>{{ "%.0f"|format(row.fs_holes_mean) if row.fs_holes_mean is not none else "—" }}</td>
+      <td>{{ row.fs_status }}</td>
+      <td>{{ row.scans_flagged_motion }}</td>
+      <td>{{ row.scans_flagged_outputs }}</td>
+      <td class="flag-cell">{{ row.scan_flags_total }}</td>
+      <td>{{ row.decision_action }}</td>
+      <td>{{ row.decision_reason }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<script>{{ datatables_js|safe }}</script>
+<script>
+$(function() {
+  $('#cohort').DataTable({
+    pageLength: 100,
+    order: [[8, 'desc']],   // Total flags desc — flagged subjects on top
+  });
+});
+</script>
+</body>
+</html>
