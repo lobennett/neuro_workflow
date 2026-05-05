@@ -1,0 +1,21 @@
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+       margin: 1.5em; line-height: 1.4; color: #222; }
+.banner { padding: 1em; background: #f5f5f5; border-radius: 6px; margin-bottom: 1em; }
+.pill { display: inline-block; padding: 0.2em 0.6em; border-radius: 12px;
+        font-size: 0.85em; margin-right: 0.4em; font-weight: 600; }
+.pill.ok { background: #d4edda; color: #155724; }
+.pill.warn { background: #fff3cd; color: #856404; }
+.pill.fail { background: #f8d7da; color: #721c24; }
+.flagged { background: #fff8e6; }
+.excluded { text-decoration: line-through; opacity: 0.6; }
+.review { background: #fff3cd; }
+.svg-block { margin: 1em 0; }
+.svg-block img { max-width: 100%; }
+.cohort-bar { display: inline-block; height: 0.8em; vertical-align: middle;
+              background: linear-gradient(to right, #d4edda, #fff3cd, #f8d7da); }
+details { margin: 0.5em 0; padding: 0.5em; background: #fafafa; border-left: 3px solid #ddd; }
+details[open] { background: #fff; }
+summary { cursor: pointer; font-weight: 600; }
+table.scan-table td.flag-cell { font-weight: 600; }
+.mark-review-btn { font-size: 0.8em; padding: 0.2em 0.6em; }
+video { display: block; margin: 1em 0; max-width: 100%; }
