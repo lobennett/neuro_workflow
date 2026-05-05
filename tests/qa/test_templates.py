@@ -52,3 +52,65 @@ def test_render_cohort_html_marks_excluded():
     html = render_cohort_html(rows=rows, n_subjects=1, n_scans=50,
                               n_flagged_scans=0, fmriprep_version="25.2.4")
     assert "excluded" in html.lower()
+
+
+def test_render_subject_html_contains_fs_card():
+    fs = _fs_ok(euler=-200)
+    html = render_subject_html(
+        subject="sub-s03",
+        fs_metrics=fs,
+        scans=[],
+        fmriprep_version="25.2.4",
+        movie_relpath="../movies/sub-s03.mp4",
+        decision_action="unset",
+        decision_reason="",
+        embed_svg=lambda p: "",  # no SVGs in this minimal test
+    )
+    assert "sub-s03" in html
+    assert "FreeSurfer" in html
+    assert "Euler" in html
+    assert "-200" in html
+
+
+def test_render_subject_html_embeds_video():
+    fs = _fs_ok()
+    html = render_subject_html(
+        subject="sub-s03",
+        fs_metrics=fs,
+        scans=[],
+        fmriprep_version="25.2.4",
+        movie_relpath="../movies/sub-s03.mp4",
+        decision_action="unset",
+        decision_reason="",
+        embed_svg=lambda p: "",
+    )
+    assert "<video" in html
+    assert "sub-s03.mp4" in html
+
+
+def test_render_subject_html_auto_expands_flagged_scans():
+    fs = _fs_ok()
+    scans = [
+        {
+            "session": "ses-01", "task": "rest", "run": "1",
+            "n_vols": 154, "fd_mean": 0.3, "fd_prop_over_05": 0.05,
+            "dvars_mean": 1.2, "dvars_prop_over_15": 0.05,
+            "n_motion_outliers": 2,
+            "outputs_complete": True, "missing_outputs": [],
+            "flagged": True, "flag_reasons": ["rest FD mean 0.300 > 0.2"],
+            "decision_action": "unset", "decision_reason": "",
+            "carpetplot_svg": "", "coreg_svg": "", "sdc_svg": "",
+        }
+    ]
+    html = render_subject_html(
+        subject="sub-s03",
+        fs_metrics=fs,
+        scans=scans,
+        fmriprep_version="25.2.4",
+        movie_relpath="../movies/sub-s03.mp4",
+        decision_action="unset",
+        decision_reason="",
+        embed_svg=lambda p: "",
+    )
+    # Flagged scan's <details> should be open by default
+    assert "<details open" in html
