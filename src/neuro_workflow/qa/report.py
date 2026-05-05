@@ -12,7 +12,6 @@ from __future__ import annotations
 import csv
 import logging
 import re
-from dataclasses import asdict
 from pathlib import Path
 
 from neuro_workflow.qa.cohort import cohort_euler_outliers
@@ -42,6 +41,15 @@ def _discover_scans(fmriprep_dir: Path, subject: str) -> list[ScanID]:
             out.append(ScanID(subject=m.group(1), session=m.group(2),
                               task=m.group(3), run=m.group(4)))
     return sorted(out, key=lambda s: (s.session, s.task, s.run))
+
+
+def _missing_fs_metrics() -> FreeSurferMetrics:
+    return FreeSurferMetrics(
+        status="MISSING", elapsed_hours=None,
+        euler_lh=None, euler_rh=None, euler_mean=None,
+        holes_lh=None, holes_rh=None, holes_mean=None,
+        brain_vol=None, gm_vol=None, wm_vol=None, csf_vol=None, etiv=None,
+    )
 
 
 def _find_fs_dir(fmriprep_dir: Path, subject: str) -> Path | None:
@@ -148,7 +156,7 @@ def build_reports(
     fs_metrics: dict[str, FreeSurferMetrics] = {}
     for sub in subjects:
         fs_dir = _find_fs_dir(fmriprep_dir, sub)
-        fs_metrics[sub] = compute_freesurfer(fs_dir) if fs_dir else compute_freesurfer(Path("/nonexistent"))
+        fs_metrics[sub] = compute_freesurfer(fs_dir) if fs_dir else _missing_fs_metrics()
 
     # 2) Cohort outlier set
     outliers = cohort_euler_outliers(fs_metrics, n_sigma=euler_n_sigma)
