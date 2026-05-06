@@ -193,19 +193,21 @@ def build_reports(
         sub_action = sub_decision.action if sub_decision else "unset"
         sub_reason = sub_decision.reason if sub_decision else ""
 
-        movie_result = movies.get(sub)
-        movie_relpath = (
-            f"../movies/{movie_result.path.name}"
-            if movie_result and movie_result.path
-            else ""
-        )
+        # Build a per-space list for the template (label + relpath/error).
+        movie_entries = []
+        for mr in movies.get(sub, []):
+            movie_entries.append({
+                "label": mr.space_label,
+                "relpath": f"../movies/{mr.path.name}" if mr.path else "",
+                "error": mr.error,
+            })
 
         subject_html = render_subject_html(
             subject=sub,
             fs_metrics=fs_metrics[sub],
             scans=scan_dicts,
             fmriprep_version=fmriprep_dir.name.replace("fmriprep_", ""),
-            movie_relpath=movie_relpath,
+            movies=movie_entries,
             decision_action=sub_action,
             decision_reason=sub_reason,
             embed_svg=_embed_svg,

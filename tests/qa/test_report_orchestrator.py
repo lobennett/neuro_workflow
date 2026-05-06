@@ -58,7 +58,9 @@ def test_build_reports_emits_cohort_and_subject_html(tmp_path):
     out = tmp_path / "qa_html"
 
     with patch("neuro_workflow.qa.report.render_reliability_movies") as MV:
-        MV.return_value = {"sub-s03": MovieResult(out / "movies/sub-s03.mp4", None)}
+        MV.return_value = {"sub-s03": [
+            MovieResult("T1w", out / "movies/sub-s03_space-T1w.mp4", None)
+        ]}
         build_reports(
             fmriprep_dir=deriv,
             output_dir=out,
@@ -101,7 +103,9 @@ def test_build_reports_renders_decision_from_tsv(tmp_path):
     )
 
     with patch("neuro_workflow.qa.report.render_reliability_movies") as MV:
-        MV.return_value = {"sub-s03": MovieResult(out / "movies/sub-s03.mp4", None)}
+        MV.return_value = {"sub-s03": [
+            MovieResult("T1w", out / "movies/sub-s03_space-T1w.mp4", None)
+        ]}
         build_reports(
             fmriprep_dir=deriv,
             output_dir=out,
