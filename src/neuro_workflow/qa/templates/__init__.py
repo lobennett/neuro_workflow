@@ -35,7 +35,7 @@ def render_cohort_html(*, rows, n_subjects, n_scans, n_flagged_scans, fmriprep_v
 
 
 def render_subject_html(*, subject, fs_metrics, scans, fmriprep_version,
-                        movie_relpath, decision_action, decision_reason,
+                        movies, decision_action, decision_reason,
                         embed_svg) -> str:
     template = _env.get_template("subject.html.j2")
     return template.render(
@@ -43,7 +43,7 @@ def render_subject_html(*, subject, fs_metrics, scans, fmriprep_version,
         fs_metrics=fs_metrics,
         scans=scans,
         fmriprep_version=fmriprep_version,
-        movie_relpath=movie_relpath,
+        movies=movies,
         decision_action=decision_action,
         decision_reason=decision_reason,
         embed_svg=embed_svg,
