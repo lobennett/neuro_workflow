@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=qa_report
 #SBATCH --partition=russpold
-#SBATCH --time=06:00:00
-#SBATCH --mem=64G
-#SBATCH --cpus-per-task=4
+#SBATCH --time=12:00:00
+#SBATCH --mem=128G
+#SBATCH --cpus-per-task=6
 #SBATCH --output=logs/qa_report-%j.out
 #SBATCH --error=logs/qa_report-%j.err
 
