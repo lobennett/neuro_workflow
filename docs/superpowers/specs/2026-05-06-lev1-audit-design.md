@@ -76,16 +76,16 @@ def detect_lev1_outliers(
     *,
     lev1_dirs: list[Path],
     output_dir: Path,
-    n_std: float = 3.0,                  # Jeanette's run_network.py default
+    n_std: float = 3.0,                                    # Jeanette's run_network.py default
     vif_threshold: float = 5.0,
     outlier_pct_threshold: float = 10.0,
-    exclusions: set[str] | None = None,  # placeholder for Project B
+    contrast_glob: str = "sub-s*/task-*/indiv_contrasts/*stat-effect-size.nii.gz",
+    vif_glob: str = "sub-s*/task-*/quality_control/*_desc-contrastVIFs.csv",
+    exclusions: set[str] | None = None,                    # placeholder for Project B
 ) -> None: ...
 ```
 
-**Discovery globs** (lev1 already emits these — no lev1 change required):
-- `<lev1_dir>/sub-s*/task-*/indiv_contrasts/*stat-effect-size.nii.gz` — contrast effect-size NIfTIs
-- `<lev1_dir>/sub-s*/task-*/quality_control/*_desc-contrastVIFs.csv` — per-contrast VIFs
+**Discovery globs** are parameterized (defaults match lev1's current output structure). If lev1 reorganizes its output paths (or a third-party lev1 implementation has different ones), pass overrides at the CLI; the module logic is unchanged.
 
 **Computation** (per (task, contrast) group):
 1. Stack contrast NIfTIs across subjects.
@@ -101,7 +101,7 @@ def detect_lev1_outliers(
 
 **CLI**: `scripts/lev1_outliers.py` + `scripts/run_lev1_outliers.sbatch`.
 
-**Plotting**: vendor or import the relevant logic from Jeanette's `plotting_functions.py`. If the dependency is light, prefer importing as `bold-reliability-movies` is set up — `uv tool install` her package and call it as a subprocess from our wrapper. If the dependency is heavy or her package isn't installable cleanly, port the plotting logic to our module (with attribution comment). Decision deferred to implementation; either is acceptable as long as the user-visible artifact matches her output.
+**Plotting**: port the plotting logic to our module (matplotlib + nilearn slicing for the per-subject panels, matplotlib hist for the histograms) with an attribution comment pointing at Jeanette's `plotting_functions.py`. We are not depending on her package as a `uv tool`. Output PDF layout matches hers: (1) one page per (task, contrast) with a slice grid of subject contrast images labeled with subject ID + VIF + outlier %, (2) a final page with a single all-cohort outlier-% histogram, (3) one page per contrast with that contrast's outlier-% histogram.
 
 #### 2C. Dual-task placeholder YAMLs
 
@@ -200,11 +200,11 @@ This spec inherits the project's existing pattern (see `qa_report.py`, `reliabil
 
 ## Open questions / decisions deferred to implementation
 
-These are non-blocking; the implementer can choose at write time and surface for review.
+1. **YAML↔events query floor (80% by default)**: the `test_yaml_events_alignment.py` check asserts each regressor's `subset` query returns ≥1 row in at least 80% of scans of that task. The 80% number balances "regressor is fundamentally broken" (caught) against "rare-but-real trial types" (e.g., `break_with_performance_feedback` may be missing in salvaged-truncated scans). Two options at implementation:
+   - **(default) global 80% floor** — simple, may produce false negatives for rare regressors.
+   - **per-task configurable floor** — add an `events_query_min_coverage:` field per regressor in the YAML, default to 0.8 if absent. More annotation but tighter. **The implementer should pick whichever produces fewer noisy test failures on the real data; if 80% global passes cleanly across all 8 tasks, leave it global. Otherwise add per-regressor overrides.**
 
-1. **Plotting library for `lev1_outliers.pdf`**: import Jeanette's `plotting_functions.py` via subprocess (her package as `uv tool`) vs port to our module. Both acceptable. Decision based on whether her package is `uv tool install`-clean.
-2. **Cohort QC discovery glob fixed-string vs configurable**: currently fixed strings matching lev1's existing output structure. If lev1 output paths change later, update the globs in one place. No env-var overrides.
-3. **`outlier_pct_threshold = 10.0`**: this is my placeholder default. Jeanette's tool emits the metric but doesn't auto-flag on it (her CSV is post-hoc filtered by humans). I'm picking 10% as a starting threshold for our auto-flag to make it useful as an input to Project B; the user can override at the CLI. Confirm at implementation.
+The earlier two open questions (plotting library, glob configurability) are resolved in the design above: plotting is ported to our module; globs are parameterized.
 
 ---
 
