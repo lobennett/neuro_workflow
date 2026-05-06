@@ -87,20 +87,26 @@ def test_regressor_columns_exist_in_events(task: str) -> None:
 
 @pytest.mark.parametrize("task", BASE_TASKS)
 def test_regressor_queries_return_rows(task: str) -> None:
-    """Each regressor's subset query must return >=1 row in at least 80% of scans for that task."""
+    """Each regressor's subset query must:
+    1. Return >=1 row in at least `events_query_min_coverage` of scans (default 0.8).
+    2. Return >=1 row in at least one scan cohort-wide, regardless of the floor —
+       this catches dead regressors that have a coverage override of 0.0 but never
+       fire anywhere (e.g. queries built from copy-paste typos).
+    """
     cfg = _load_yaml(task)
     events_files = _events_for_task(task)
     if not events_files:
         pytest.skip(f"no events.tsv files for task {task}")
 
     regressors = cfg.get("regressors") or {}
-    floor = 0.80
+    default_floor = 0.80
 
     failures: list[str] = []
     for reg_name, reg_cfg in regressors.items():
         subset = reg_cfg.get("subset")
         if subset is None:
             continue
+        floor = float(reg_cfg.get("events_query_min_coverage", default_floor))
         n_with_rows = 0
         for fp in events_files:
             df = pd.read_csv(fp, sep="\t")
@@ -114,9 +120,15 @@ def test_regressor_queries_return_rows(task: str) -> None:
         coverage = n_with_rows / len(events_files) if events_files else 0.0
         if coverage < floor:
             failures.append(
-                f"task={task} regressor={reg_name!r}: only "
-                f"{n_with_rows}/{len(events_files)} ({coverage:.0%}) scans have ≥1 matching row "
-                f"(floor={floor:.0%})"
+                f"task={task} regressor={reg_name!r}: per-scan coverage "
+                f"{n_with_rows}/{len(events_files)} ({coverage:.0%}) below floor "
+                f"events_query_min_coverage={floor:.0%}"
+            )
+        # Cohort-wide presence check: regressor must fire somewhere, even when floor=0.
+        if n_with_rows < 1:
+            failures.append(
+                f"task={task} regressor={reg_name!r}: dead query — 0/{len(events_files)} "
+                f"scans cohort-wide have any matching rows (subset={subset!r})"
             )
 
     assert not failures, "\n".join(failures)
