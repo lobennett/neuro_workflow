@@ -16,6 +16,7 @@ import logging
 import re
 import subprocess
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -169,24 +170,35 @@ def render_reliability_movies(
     subjects: list[str],
     *,
     include_native: bool = False,
+    max_parallel: int = 3,
 ) -> dict[str, list[MovieResult]]:
     """Render one movie per (subject, space) combination.
+
+    brm calls are dispatched to a ThreadPoolExecutor; each call is itself a
+    subprocess so the GIL is not in play. Memory budget assumed ~24 GB per
+    concurrent brm process at peak (1 mm BOLDs, ~57 frames).
 
     Args:
         fmriprep_dir: fmriprep derivatives directory (input).
         output_movies_dir: where mp4 files are written.
         subjects: list of subject IDs (e.g., ["sub-s03"]) to render.
         include_native: also render the no-`_space-` (native) variant.
+        max_parallel: number of brm subprocesses to run concurrently.
 
     Returns:
         Dict mapping subject ID -> list of MovieResult, one per space found.
-        Ordered by SpaceKey (alphabetical by space then res).
+        Each subject's list is sorted alphabetically by space label.
     """
     output_movies_dir.mkdir(parents=True, exist_ok=True)
-    results: dict[str, list[MovieResult]] = {}
+
+    results: dict[str, list[MovieResult]] = {sub: [] for sub in subjects}
+    work: list[tuple[str, SpaceKey, list[_Frame]]] = []
+
     for sub in subjects:
         try:
-            groups = _discover_by_space(fmriprep_dir, sub, include_native=include_native)
+            groups = _discover_by_space(
+                fmriprep_dir, sub, include_native=include_native
+            )
         except Exception as exc:  # noqa: BLE001
             log.exception("brm discovery raised for %s", sub)
             results[sub] = [MovieResult("(discovery)", None, str(exc))]
@@ -194,14 +206,22 @@ def render_reliability_movies(
         if not groups:
             results[sub] = [MovieResult("(none)", None, "no preproc BOLDs found")]
             continue
-        per_subject: list[MovieResult] = []
         for space in sorted(groups):
-            try:
-                per_subject.append(
-                    _run_brm_for_group(output_movies_dir, sub, space, groups[space])
-                )
-            except Exception as exc:  # noqa: BLE001
-                log.exception("brm wrapper raised for %s %s", sub, space.label)
-                per_subject.append(MovieResult(space.label, None, str(exc)))
-        results[sub] = per_subject
+            work.append((sub, space, groups[space]))
+
+    def _do_one(item: tuple[str, SpaceKey, list[_Frame]]) -> tuple[str, MovieResult]:
+        sub, space, frames = item
+        try:
+            return sub, _run_brm_for_group(output_movies_dir, sub, space, frames)
+        except Exception as exc:  # noqa: BLE001
+            log.exception("brm wrapper raised for %s %s", sub, space.label)
+            return sub, MovieResult(space.label, None, str(exc))
+
+    if work:
+        with ThreadPoolExecutor(max_workers=max_parallel) as ex:
+            for sub, mr in ex.map(_do_one, work):
+                results[sub].append(mr)
+
+    for sub in results:
+        results[sub].sort(key=lambda m: m.space_label)
     return results
