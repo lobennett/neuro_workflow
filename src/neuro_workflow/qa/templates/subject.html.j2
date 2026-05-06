@@ -48,10 +48,14 @@
 </div>
 
 <h2>Reliability movie</h2>
+{% if movie_relpath %}
 <video controls width="720">
   <source src="{{ movie_relpath }}" type="video/mp4">
   Your browser does not support the video tag.
 </video>
+{% else %}
+<p class="muted"><em>Reliability movie not generated (run with brm enabled to populate).</em></p>
+{% endif %}
 
 <h2>Per-scan</h2>
 <table class="scan-table">
