@@ -61,7 +61,7 @@ def test_render_subject_html_contains_fs_card():
         fs_metrics=fs,
         scans=[],
         fmriprep_version="25.2.4",
-        movie_relpath="../movies/sub-s03.mp4",
+        movies=[{"label": "T1w", "relpath": "../movies/sub-s03_space-T1w.mp4", "error": None}],
         decision_action="unset",
         decision_reason="",
         embed_svg=lambda p: "",  # no SVGs in this minimal test
@@ -79,13 +79,13 @@ def test_render_subject_html_embeds_video():
         fs_metrics=fs,
         scans=[],
         fmriprep_version="25.2.4",
-        movie_relpath="../movies/sub-s03.mp4",
+        movies=[{"label": "T1w", "relpath": "../movies/sub-s03_space-T1w.mp4", "error": None}],
         decision_action="unset",
         decision_reason="",
         embed_svg=lambda p: "",
     )
     assert "<video" in html
-    assert "sub-s03.mp4" in html
+    assert "sub-s03_space-T1w.mp4" in html
 
 
 def test_render_subject_html_auto_expands_flagged_scans():
@@ -107,7 +107,7 @@ def test_render_subject_html_auto_expands_flagged_scans():
         fs_metrics=fs,
         scans=scans,
         fmriprep_version="25.2.4",
-        movie_relpath="../movies/sub-s03.mp4",
+        movies=[{"label": "T1w", "relpath": "../movies/sub-s03_space-T1w.mp4", "error": None}],
         decision_action="unset",
         decision_reason="",
         embed_svg=lambda p: "",
@@ -131,10 +131,68 @@ def test_render_subject_html_partial_volumes_no_crash():
         fs_metrics=fs,
         scans=[],
         fmriprep_version="25.2.4",
-        movie_relpath="../movies/sub-s03.mp4",
+        movies=[{"label": "T1w", "relpath": "../movies/sub-s03_space-T1w.mp4", "error": None}],
         decision_action="unset",
         decision_reason="",
         embed_svg=lambda p: "",
     )
     assert "Brain" in html
     assert "GM:" not in html  # gm_vol is None — should be omitted
+
+
+def test_render_subject_html_one_video_per_space():
+    """Each entry in `movies` becomes its own h3 + <video>."""
+    fs = _fs_ok()
+    movies = [
+        {"label": "T1w", "relpath": "../movies/sub-s03_space-T1w.mp4", "error": None},
+        {"label": "MNI152NLin2009cAsym (res-1)",
+         "relpath": "../movies/sub-s03_space-MNI152NLin2009cAsym_res-1.mp4",
+         "error": None},
+        {"label": "MNI152NLin6Asym (res-2)",
+         "relpath": "../movies/sub-s03_space-MNI152NLin6Asym_res-2.mp4",
+         "error": None},
+    ]
+    html = render_subject_html(
+        subject="sub-s03",
+        fs_metrics=fs,
+        scans=[],
+        fmriprep_version="25.2.4",
+        movies=movies,
+        decision_action="unset",
+        decision_reason="",
+        embed_svg=lambda p: "",
+    )
+    # One subheader per space
+    assert "<h3>T1w</h3>" in html
+    assert "<h3>MNI152NLin2009cAsym (res-1)</h3>" in html
+    assert "<h3>MNI152NLin6Asym (res-2)</h3>" in html
+    # One <source> per space
+    assert html.count("<video") == 3
+    assert "sub-s03_space-T1w.mp4" in html
+    assert "sub-s03_space-MNI152NLin2009cAsym_res-1.mp4" in html
+    assert "sub-s03_space-MNI152NLin6Asym_res-2.mp4" in html
+
+
+def test_render_subject_html_per_space_failure_renders_message():
+    """If brm failed for one space, that space shows a message instead of <video>."""
+    fs = _fs_ok()
+    movies = [
+        {"label": "T1w", "relpath": "../movies/sub-s03_space-T1w.mp4", "error": None},
+        {"label": "MNI152NLin6Asym (res-2)", "relpath": "",
+         "error": "ffmpeg crashed"},
+    ]
+    html = render_subject_html(
+        subject="sub-s03",
+        fs_metrics=fs,
+        scans=[],
+        fmriprep_version="25.2.4",
+        movies=movies,
+        decision_action="unset",
+        decision_reason="",
+        embed_svg=lambda p: "",
+    )
+    # Successful one renders a video
+    assert "sub-s03_space-T1w.mp4" in html
+    # Failed one renders the error message instead of a video
+    assert html.count("<video") == 1
+    assert "ffmpeg crashed" in html

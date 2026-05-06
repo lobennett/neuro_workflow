@@ -1,79 +1,227 @@
 """Wrapper around bold-reliability-movies for cohort QA report integration.
 
-Catches per-subject failures so one bad subject doesn't abort the cohort.
+Invokes the `brm` CLI as a subprocess so brm can run in its own Python 3.12
+environment (installed via `uv tool install bold-reliability-movies`). The
+project venv is Python 3.13, where brm's scipy<1.15 constraint can't resolve.
+
+Renders one movie per (space, res) combination found in the derivatives so
+each space gets its own header in the QA report. We bypass brm's bids
+discovery (which sweeps in mismatched-shape variants together) and feed
+brm a manifest TSV per (subject, space) group via `brm list`.
 """
 from __future__ import annotations
 
+import csv
 import logging
-from dataclasses import dataclass
+import re
+import subprocess
+import tempfile
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
 from pathlib import Path
 
-try:
-    from bold_reliability_movies import FmriprepFrameSource, make_videos
-    from bold_reliability_movies.renderers import get_renderer
-except ImportError:  # pragma: no cover
-    FmriprepFrameSource = None  # type: ignore[assignment,misc]
-    make_videos = None  # type: ignore[assignment]
-    get_renderer = None  # type: ignore[assignment]
-
 log = logging.getLogger(__name__)
+
+_BRM_CMD = "brm"
+_PREPROC_RE = re.compile(
+    r"^(?P<sub>sub-[A-Za-z0-9]+)_"
+    r"(?P<ses>ses-[A-Za-z0-9]+)_"
+    r"task-(?P<task>[A-Za-z0-9]+)_"
+    r"run-(?P<run>\d+)_"
+    r"(?:space-(?P<space>[A-Za-z0-9]+)_"
+    r"(?:res-(?P<res>[A-Za-z0-9]+)_)?)?"
+    r"desc-preproc_bold\.nii\.gz$"
+)
+
+
+@dataclass(frozen=True, order=True)
+class SpaceKey:
+    """One (space, res) combination — one movie's worth of frames."""
+    space: str            # "T1w", "MNI152NLin2009cAsym", or "" for native
+    res: str = ""         # "1", "2", or "" if not present in filename
+
+    @property
+    def label(self) -> str:
+        if not self.space:
+            return "native"
+        if self.res:
+            return f"{self.space} (res-{self.res})"
+        return self.space
+
+    @property
+    def slug(self) -> str:
+        """Used in output filename and manifest group name."""
+        if not self.space:
+            return "native"
+        if self.res:
+            return f"space-{self.space}_res-{self.res}"
+        return f"space-{self.space}"
 
 
 @dataclass
 class MovieResult:
+    space_label: str
     path: Path | None
     error: str | None
+
+
+@dataclass
+class _Frame:
+    path: Path
+    ses: str
+    task: str
+    run: int
+
+    @property
+    def ses_num(self) -> int:
+        m = re.search(r"\d+", self.ses)
+        return int(m.group()) if m else 0
+
+    @property
+    def sort_key(self) -> int:
+        return self.ses_num * 1000 + self.run
+
+    @property
+    def label(self) -> str:
+        return f"{self.ses} task-{self.task} run-{self.run}"
+
+
+def _discover_by_space(
+    fmriprep_dir: Path, subject: str, *, include_native: bool
+) -> dict[SpaceKey, list[_Frame]]:
+    """Find preproc BOLDs for one subject, grouped by SpaceKey."""
+    groups: dict[SpaceKey, list[_Frame]] = {}
+    sub_dir = fmriprep_dir / subject
+    if not sub_dir.is_dir():
+        return groups
+    for path in sub_dir.glob("ses-*/func/*_desc-preproc_bold.nii.gz"):
+        m = _PREPROC_RE.match(path.name)
+        if not m:
+            continue
+        space = m.group("space") or ""
+        if not space and not include_native:
+            continue
+        key = SpaceKey(space=space, res=m.group("res") or "")
+        frame = _Frame(
+            path=path,
+            ses=m.group("ses"),
+            task=m.group("task"),
+            run=int(m.group("run")),
+        )
+        groups.setdefault(key, []).append(frame)
+    for frames in groups.values():
+        frames.sort(key=lambda f: f.sort_key)
+    return groups
+
+
+def _write_manifest(frames: list[_Frame], group: str, manifest: Path) -> None:
+    with manifest.open("w", newline="") as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerow(["path", "label", "group", "sort_key"])
+        for fr in frames:
+            writer.writerow([str(fr.path), fr.label, group, fr.sort_key])
+
+
+def _run_brm_for_group(
+    output_movies_dir: Path,
+    subject: str,
+    space: SpaceKey,
+    frames: list[_Frame],
+) -> MovieResult:
+    """Render one movie for a single (subject, space) group via brm."""
+    group_name = f"{subject}_{space.slug}"
+    expected_path = output_movies_dir / f"{group_name}.mp4"
+
+    with tempfile.NamedTemporaryFile(
+        "w", suffix=".tsv", prefix=f"brm_{group_name}_", delete=False
+    ) as tf:
+        manifest_path = Path(tf.name)
+    try:
+        _write_manifest(frames, group=group_name, manifest=manifest_path)
+        cmd = [
+            _BRM_CMD, "list", str(manifest_path),
+            "--out", str(output_movies_dir),
+            "--renderer", "mosaic",
+            "--no-cache",
+        ]
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        except FileNotFoundError:
+            return MovieResult(space.label, None, "brm CLI not found on PATH")
+    finally:
+        manifest_path.unlink(missing_ok=True)
+
+    if proc.returncode != 0:
+        msg = (proc.stderr or proc.stdout or "").strip().splitlines()
+        tail = " | ".join(msg[-3:]) if msg else f"exit {proc.returncode}"
+        return MovieResult(space.label, None, f"brm failed: {tail}")
+
+    if not expected_path.is_file():
+        return MovieResult(
+            space.label, None, "brm exited 0 but produced no output file"
+        )
+
+    return MovieResult(space.label, expected_path, None)
 
 
 def render_reliability_movies(
     fmriprep_dir: Path,
     output_movies_dir: Path,
     subjects: list[str],
-) -> dict[str, MovieResult]:
-    """Render one reliability movie per requested subject.
+    *,
+    include_native: bool = False,
+    max_parallel: int = 3,
+) -> dict[str, list[MovieResult]]:
+    """Render one movie per (subject, space) combination.
+
+    brm calls are dispatched to a ThreadPoolExecutor; each call is itself a
+    subprocess so the GIL is not in play. Memory budget assumed ~24 GB per
+    concurrent brm process at peak (1 mm BOLDs, ~57 frames).
 
     Args:
         fmriprep_dir: fmriprep derivatives directory (input).
         output_movies_dir: where mp4 files are written.
-        subjects: list of subject IDs (e.g., ["sub-s03"]) to render. Other
-            subjects in the derivatives dir are ignored.
+        subjects: list of subject IDs (e.g., ["sub-s03"]) to render.
+        include_native: also render the no-`_space-` (native) variant.
+        max_parallel: number of brm subprocesses to run concurrently.
 
     Returns:
-        Dict mapping subject ID -> MovieResult. On error, MovieResult.path
-        is None and .error contains a short message.
+        Dict mapping subject ID -> list of MovieResult, one per space found.
+        Each subject's list is sorted alphabetically by space label.
     """
     output_movies_dir.mkdir(parents=True, exist_ok=True)
-    requested = set(subjects)
 
-    source = FmriprepFrameSource(fmriprep_dir, group_by="subject")
-    all_groups = source.discover()
-    groups = [g for g in all_groups if g.name in requested]
+    results: dict[str, list[MovieResult]] = {sub: [] for sub in subjects}
+    work: list[tuple[str, SpaceKey, list[_Frame]]] = []
 
-    results: dict[str, MovieResult] = {s: MovieResult(None, "not discovered by brm") for s in subjects}
-
-    renderer = get_renderer("mosaic")
-
-    for group in groups:
-        sub_id = group.name
+    for sub in subjects:
         try:
-            summaries = make_videos(
-                groups=[group],
-                renderer=renderer,
-                out_dir=output_movies_dir,
-                fps=2,
-                codec="libx264",
+            groups = _discover_by_space(
+                fmriprep_dir, sub, include_native=include_native
             )
-            if summaries:
-                s = summaries[0]
-                err = getattr(s, "error", None)
-                results[sub_id] = MovieResult(
-                    path=Path(s.path) if not err and getattr(s, "path", None) else None,
-                    error=str(err) if err else None,
-                )
-            else:
-                results[sub_id] = MovieResult(None, "brm returned no summaries")
         except Exception as exc:  # noqa: BLE001
-            log.exception("brm make_videos failed for %s", sub_id)
-            results[sub_id] = MovieResult(None, str(exc))
+            log.exception("brm discovery raised for %s", sub)
+            results[sub] = [MovieResult("(discovery)", None, str(exc))]
+            continue
+        if not groups:
+            results[sub] = [MovieResult("(none)", None, "no preproc BOLDs found")]
+            continue
+        for space in sorted(groups):
+            work.append((sub, space, groups[space]))
 
+    def _do_one(item: tuple[str, SpaceKey, list[_Frame]]) -> tuple[str, MovieResult]:
+        sub, space, frames = item
+        try:
+            return sub, _run_brm_for_group(output_movies_dir, sub, space, frames)
+        except Exception as exc:  # noqa: BLE001
+            log.exception("brm wrapper raised for %s %s", sub, space.label)
+            return sub, MovieResult(space.label, None, str(exc))
+
+    if work:
+        with ThreadPoolExecutor(max_workers=max_parallel) as ex:
+            for sub, mr in ex.map(_do_one, work):
+                results[sub].append(mr)
+
+    for sub in results:
+        results[sub].sort(key=lambda m: m.space_label)
     return results
