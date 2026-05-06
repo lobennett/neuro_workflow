@@ -14,9 +14,6 @@ BIDS_DIRS = [
 ]
 TASK_CONFIG_DIR = Path(__file__).resolve().parents[2] / "src/neuro_workflow/analysis/task_config/tasks"
 
-# Discovery: collect events.tsv per task across both cohorts.
-EVENTS_RE = re.compile(r"^sub-\w+_ses-\w+_task-(?P<task>\w+)_run-\w+_events\.tsv$")
-
 # Tasks in scope (8 base tasks)
 BASE_TASKS = [
     "cuedTS", "directedForgetting", "flanker", "goNogo",
