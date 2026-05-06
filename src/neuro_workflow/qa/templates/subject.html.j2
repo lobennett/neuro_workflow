@@ -47,14 +47,21 @@
   {% endif %}
 </div>
 
-<h2>Reliability movie</h2>
-{% if movie_relpath %}
+<h2>Reliability movies</h2>
+{% if movies %}
+{% for movie in movies %}
+<h3>{{ movie.label }}</h3>
+{% if movie.relpath %}
 <video controls width="720">
-  <source src="{{ movie_relpath }}" type="video/mp4">
+  <source src="{{ movie.relpath }}" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 {% else %}
-<p class="muted"><em>Reliability movie not generated (run with brm enabled to populate).</em></p>
+<p class="muted"><em>Movie not generated{% if movie.error %}: {{ movie.error }}{% endif %}.</em></p>
+{% endif %}
+{% endfor %}
+{% else %}
+<p class="muted"><em>Reliability movies not generated (run with brm enabled to populate).</em></p>
 {% endif %}
 
 <h2>Per-scan</h2>
