@@ -58,6 +58,11 @@ s03 × all 8 base tasks × MNI space (alphabetical, single-task per submission, 
 
 **Total: 39/40 (s03) per-run lev1 fits succeeded. 1 legit behavioral exclusion. 0 unexplained failures.**
 
+Extended smoke for cohort QC validation (s03 + s10, 8 tasks each, MNI):
+
+- s10 × 8 tasks submitted in parallel (jobs 24190335–24190344). Result: 7/8 fully clean; goNogo had ses-03 excluded for legit behavioral junk (30.6% > 30% threshold), matching s03's pattern.
+- Cohort QC on 2-subject cohort (job 24192035): 408 (scan, contrast) rows in `lev1_outliers.csv`, 216 flagged for VIF > 5, but **all `outlier_pct` values are 0.0**. This is mathematically expected: with N subjects and population SD, the maximum |z-score| at any voxel is `sqrt(N−1)`, so n_std=3 (Jeanette's default) requires ≥10 subjects per (task, contrast) group to detect any outliers (cohort=2 gives max |z|=1.0; cohort=5 gives 2.0; cohort=10 gives 3.0). Implication: outlier voxel detection is meaningful only at full discovery+validation cohort (N=46). For discovery alone (N=5), VIF flagging in `lev1_flagged.tsv` is the only useful signal from cohort QC. No code change needed; `lev1_outliers.py` runs correctly at any N — the outlier_pct values are just degenerate by construction at small N.
+
 Bugs surfaced + fixed during smoke (4 real lev1 fixes):
 
 - **2026-05-06 `c41a662`** — `file_discovery.py` had `MNI152NLin2009cAsym_res-2` hardcoded; our fmriprep produced `:res-1` for that template and `:res-2` only for `MNI152NLin6Asym`. Added `--mni-template` / `--mni-res` CLI args (defaults to `MNI152NLin6Asym` + `2`).
