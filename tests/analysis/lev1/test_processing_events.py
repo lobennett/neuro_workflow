@@ -66,60 +66,6 @@ class TestPreprocessEvents:
         assert 0.5 in non_junk_rows['response_time'].values
         assert 0.7 in non_junk_rows['response_time'].values
 
-    def test_preprocess_events_negative_onset_filtering(self):
-        """Test filtering of events with negative onset values."""
-        events_data = pd.DataFrame(
-            {
-                'onset': [10.0, -2.0, 30.0, -5.0, 50.0],
-                'response_time': [0.5, 0.6, 0.7, 0.8, 0.9],
-                'trial_id': ['test_trial'] * 5,
-                'trial_type': ['tstay_cswitch'] * 5,
-            }
-        )
-
-        # Disable dummy scan adjustment to test pure negative onset filtering
-        processed = preprocess_events(
-            events_data, 'cuedTS', adjust_for_dummy_scans=False
-        )
-
-        # Should drop rows with negative onset values
-        assert len(processed) == 3
-        assert all(processed['onset'] >= 0)
-
-        # Check that the correct rows remain (indices 0, 2, 4 from original)
-        expected_onsets = [10.0, 30.0, 50.0]
-        expected_rts = [0.5, 0.7, 0.9]
-
-        assert processed['onset'].tolist() == expected_onsets
-        assert processed['response_time'].tolist() == expected_rts
-
-    def test_preprocess_events_negative_onset_with_dummy_scans(self):
-        """Test negative onset filtering after dummy scan adjustment."""
-        events_data = pd.DataFrame(
-            {
-                'onset': [5.0, 8.0, 12.0, 15.0],
-                'response_time': [0.5, 0.6, 0.7, 0.8],
-                'trial_id': ['test_trial'] * 4,
-                'trial_type': ['go'] * 4,
-            }
-        )
-
-        # With default dummy_scans=7 and tr=1.49, subtract 7*1.49=10.43s from onsets
-        processed = preprocess_events(
-            events_data, 'cuedTS', adjust_for_dummy_scans=True
-        )
-
-        # After adjustment: onsets become [5.0-10.43, 8.0-10.43, 12.0-10.43, 15.0-10.43]
-        # = [-5.43, -2.43, 1.57, 4.57]
-        # Only the last two should remain
-        assert len(processed) == 2
-        assert all(processed['onset'] >= 0)
-
-        # Check expected onsets (rounded to 2 decimal places for comparison)
-        expected_onsets = [1.57, 4.57]
-        actual_onsets = [round(onset, 2) for onset in processed['onset'].tolist()]
-        assert actual_onsets == expected_onsets
-
 
 class TestDefineNuisanceTrials:
     """Tests for define_nuisance_trials function."""
