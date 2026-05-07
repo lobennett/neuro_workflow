@@ -33,6 +33,7 @@ def preprocess_events(
     adjust_for_dummy_scans: bool = False,
     dummy_scans: int = 0,
     tr: float = TR,
+    n_scans: int | None = None,
 ) -> pd.DataFrame:
     """Preprocess events dataframe for GLM modeling.
 
@@ -50,6 +51,9 @@ def preprocess_events(
         adjust_for_dummy_scans: Whether to adjust onsets (default False — already done)
         dummy_scans: Number of dummy scans (default 0 — already trimmed)
         tr: Repetition time in seconds
+        n_scans: Total BOLD timepoints. When set, drop rows whose
+            ``onset >= n_scans * tr`` (handles salvaged scans where the BOLD
+            is shorter than the original behavioral session).
 
     Returns:
         Preprocessed events dataframe with additional columns.
@@ -67,6 +71,18 @@ def preprocess_events(
         logger.info('Adjusting onsets by -%.2fs for dummy scan removal', adjustment)
         events_df['onset'] -= adjustment
         events_df = events_df[events_df['onset'] >= 0].copy()
+
+    # Drop events whose onset is past the BOLD's wall time (salvaged scans).
+    if n_scans is not None and 'onset' in events_df.columns:
+        bold_duration = n_scans * tr
+        before = len(events_df)
+        events_df = events_df[events_df['onset'] < bold_duration].copy()
+        dropped = before - len(events_df)
+        if dropped > 0:
+            logger.info(
+                'Dropped %d event(s) with onset >= BOLD duration (%.2fs)',
+                dropped, bold_duration,
+            )
 
     # Add constant column for modeling
     events_df['constant_1_column'] = 1
