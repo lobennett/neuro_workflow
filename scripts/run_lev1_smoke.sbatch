@@ -4,8 +4,8 @@
 #SBATCH --time=02:00:00
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
-#SBATCH --output=logs/lev1_smoke_%x_%j.out
-#SBATCH --error=logs/lev1_smoke_%x_%j.err
+#SBATCH --output=logs/%x_%j.out
+#SBATCH --error=logs/%x_%j.err
 
 # Smoke-test lev1 on ONE subject × ONE base task in MNI space.
 # Iterate by submitting per (subject, task) so failures are isolated and
