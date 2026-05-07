@@ -135,3 +135,66 @@ def test_per_scan_aggregation_collapses_multiple_contrasts(tmp_path):
     assert set(e["metrics"]["rules_fired"]) == {"strict_vif", "combined"}
     assert e["metrics"]["max_vif"] == pytest.approx(18.09)
     assert e["metrics"]["max_outlier_pct"] == pytest.approx(12.3)
+
+
+def test_threshold_configurability(tmp_path):
+    """Bumping combined_vif to 20 makes a vif=11 row stop firing combined.
+
+    The same row with strict_vif=12 still fires strict_vif. Demonstrates
+    each threshold can be tuned independently.
+    """
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+    csv_path = tmp_path / "lev1_outliers.csv"
+    _write_csv(csv_path, [
+        {"subject": "sub-s10", "session": "ses-02", "run": "1", "task": "cuedTS",
+         "contrast": "response_time", "outlier_pct": "11.0", "vif": "11.0",
+         "flagged_outliers": "1", "flagged_vif": "1"},
+    ])
+
+    # default thresholds: combined fires
+    e_default = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
+    assert "combined" in e_default[0]["metrics"]["rules_fired"]
+
+    # combined_vif bumped to 20: combined no longer fires; outlier_pct=11 < strict 15;
+    # vif=11 < strict 15 -> nothing fires, no entry.
+    args_loose = _make_args(csv_path, combined_vif=20.0)
+    e_loose = Lev1OutlierGenerator().generate("discovery", {}, args_loose)
+    assert e_loose == []
+
+    # strict_vif bumped down to 10: strict_vif fires for vif=11 even though combined
+    # still fires too. Just confirms independent threshold tuning works.
+    args_tight = _make_args(csv_path, combined_vif=20.0, strict_vif=10.0)
+    e_tight = Lev1OutlierGenerator().generate("discovery", {}, args_tight)
+    assert len(e_tight) == 1
+    assert "strict_vif" in e_tight[0]["metrics"]["rules_fired"]
+
+
+def test_empty_outlier_pct_treated_as_zero(tmp_path):
+    """Cohort-of-1 / degenerate case: outlier_pct is empty string. Must not fire rules."""
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+    csv_path = tmp_path / "lev1_outliers.csv"
+    _write_csv(csv_path, [
+        # outlier_pct empty (cohort QC couldn't compute) and vif=4 -> no rule fires.
+        {"subject": "sub-s43", "session": "ses-01", "run": "1", "task": "nBack",
+         "contrast": "twoBack-oneBack", "outlier_pct": "", "vif": "4.0",
+         "flagged_outliers": "0", "flagged_vif": "0"},
+    ])
+    entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
+    assert entries == []
+
+
+def test_missing_csv_raises_clear_error(tmp_path):
+    """Missing input CSV -> FileNotFoundError with the path in the message."""
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+    bogus = tmp_path / "does_not_exist.csv"
+    with pytest.raises(FileNotFoundError, match=str(bogus)):
+        Lev1OutlierGenerator().generate("discovery", {}, _make_args(bogus))
+
+
+def test_empty_csv_returns_empty_list(tmp_path):
+    """CSV with only the header row returns []."""
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+    csv_path = tmp_path / "lev1_outliers.csv"
+    _write_csv(csv_path, [])  # header only, no rows
+    entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
+    assert entries == []
