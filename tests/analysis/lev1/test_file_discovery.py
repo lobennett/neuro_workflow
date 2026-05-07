@@ -63,13 +63,13 @@ class TestFileFinderIntegration:
             'sub-s001_ses-01_task-rest_run-01_desc-confounds_timeseries.tsv',
             'sub-s001_ses-01_task-rest_run-01_space-T1w_desc-preproc_bold.nii.gz',
             'sub-s001_ses-01_task-rest_run-01_space-T1w_desc-brain_mask.nii.gz',
-            'sub-s001_ses-01_task-rest_run-01_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz',
-            'sub-s001_ses-01_task-rest_run-01_space-MNI152NLin2009cAsym_res-2_desc-brain_mask.nii.gz',
+            'sub-s001_ses-01_task-rest_run-01_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz',
+            'sub-s001_ses-01_task-rest_run-01_space-MNI152NLin6Asym_res-2_desc-brain_mask.nii.gz',
             'sub-s001_ses-01_task-rest_run-02_desc-confounds_timeseries.tsv',
             'sub-s001_ses-01_task-rest_run-02_space-T1w_desc-preproc_bold.nii.gz',
             'sub-s001_ses-01_task-rest_run-02_space-T1w_desc-brain_mask.nii.gz',
-            'sub-s001_ses-01_task-rest_run-02_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz',
-            'sub-s001_ses-01_task-rest_run-02_space-MNI152NLin2009cAsym_res-2_desc-brain_mask.nii.gz',
+            'sub-s001_ses-01_task-rest_run-02_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz',
+            'sub-s001_ses-01_task-rest_run-02_space-MNI152NLin6Asym_res-2_desc-brain_mask.nii.gz',
         ]
 
         for filename in file_patterns:
@@ -292,3 +292,43 @@ class TestFileFinderEdgeCases:
 
         # Should return empty dict without crashing
         assert files == {}
+
+
+def test_filefinder_respects_mni_template_and_res(tmp_path):
+    """FileFinder builds mni_data/mni_brain_mask patterns from mni_template + mni_res kwargs."""
+    bids = tmp_path / 'bids'
+    fmriprep = tmp_path / 'fmriprep'
+    func = fmriprep / 'sub-s01' / 'ses-01' / 'func'
+    func.mkdir(parents=True)
+    base = 'sub-s01_ses-01_task-rest_run-1'
+    # Create a NLin6Asym res-2 BOLD; NOT NLin2009cAsym res-2
+    (func / f'{base}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz').touch()
+    (func / f'{base}_space-MNI152NLin6Asym_res-2_desc-brain_mask.nii.gz').touch()
+    (func / f'{base}_desc-confounds_timeseries.tsv').touch()
+    # events.tsv in BIDS
+    bids_func = bids / 'sub-s01' / 'ses-01' / 'func'
+    bids_func.mkdir(parents=True)
+    (bids_func / f'{base}_events.tsv').touch()
+
+    from neuro_workflow.analysis.io.file_discovery import FileFinder
+
+    # Default (NLin6Asym res-2) should find the file
+    finder_default = FileFinder(bids_dir=bids, fmriprep_dir=fmriprep)
+    files = finder_default.get_files(
+        subject_id='sub-s01', task_name='rest',
+        required_files=['mni_data', 'mni_brain_mask'],
+    )
+    flat = str(files)
+    assert 'MNI152NLin6Asym_res-2' in flat
+
+    # Override to NLin2009cAsym res-1 should NOT find anything (no matching file present)
+    finder_override = FileFinder(
+        bids_dir=bids, fmriprep_dir=fmriprep,
+        mni_template='MNI152NLin2009cAsym', mni_res='1',
+    )
+    files2 = finder_override.get_files(
+        subject_id='sub-s01', task_name='rest',
+        required_files=['mni_data', 'mni_brain_mask'],
+    )
+    # No matching files, so the filter drops everything
+    assert files2 == {}

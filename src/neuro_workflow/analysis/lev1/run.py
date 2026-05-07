@@ -153,6 +153,17 @@ def get_parser() -> argparse.ArgumentParser:
         'for FC analysis. Requires --residuals. Follows Du et al. 2025.',
     )
     parser.add_argument(
+        '--mni-template',
+        default='MNI152NLin6Asym',
+        help='fMRIPrep MNI template name for --space MNI '
+        '(default: MNI152NLin6Asym)',
+    )
+    parser.add_argument(
+        '--mni-res',
+        default='2',
+        help='Resolution suffix for --space MNI (default: 2)',
+    )
+    parser.add_argument(
         '--verbose',
         action='store_true',
         default=False,
@@ -208,7 +219,12 @@ def discover_and_validate_files(config, args):
     Returns:
         files dict from FileFinder.
     """
-    finder = FileFinder(config.bids_dir, config.fmriprep_dir)
+    finder = FileFinder(
+        config.bids_dir,
+        config.fmriprep_dir,
+        mni_template=getattr(args, 'mni_template', 'MNI152NLin6Asym'),
+        mni_res=getattr(args, 'mni_res', '2'),
+    )
     required_files = FileFinder.get_required_files_for_space(args.space)
     surface_space = resolve_surface_space(args.space)
     files = finder.get_files(
@@ -448,7 +464,9 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
     # Onsets are already adjusted for dummy scans during event file creation
     # (shifted by -7*1.49s = -10.43s); do not adjust again
     events_df = pd.read_csv(run_files['events'], sep='\t')
-    processed_events = preprocess_events(events_df, args.task_name)
+    processed_events = preprocess_events(
+        events_df, args.task_name, n_scans=n_scans, tr=tr
+    )
     processed_events_with_junk, percent_junk = add_junk_trials(
         processed_events, args.task_name
     )

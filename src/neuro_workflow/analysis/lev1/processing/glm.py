@@ -140,6 +140,40 @@ def fit_run_glm(
     return fitted_model
 
 
+class RankDeficientDesignError(ValueError):
+    """Raised when the design matrix is rank-deficient (perfect collinearity)."""
+
+
+def check_design_matrix_health(design_matrix: pd.DataFrame) -> None:
+    """Fail fast on degenerate design matrices.
+
+    Checks rank deficiency only — raises RankDeficientDesignError when
+    matrix_rank < n_columns and names the most-correlated column pair.
+
+    Per-column VIFs are intentionally NOT checked here. Nuisance regressors
+    (motion + motion**2, cosine drift bases) routinely have inter-column VIFs
+    of 100–1500 by design, which doesn't impair contrast estimation. The
+    research-relevant signal is the per-contrast VIF, computed in
+    `quality_control.py:est_contrast_vifs()` and threshold-checked inside
+    `run_quality_control` (default threshold = 5).
+    """
+    arr = np.asarray(design_matrix.to_numpy(dtype=float, copy=True))
+    n_cols = arr.shape[1]
+    rank = np.linalg.matrix_rank(arr)
+    if rank < n_cols:
+        # Find the most-correlated column pair as a hint
+        corr = pd.DataFrame(arr, columns=design_matrix.columns).corr().abs()
+        corr_vals = corr.to_numpy(copy=True)
+        np.fill_diagonal(corr_vals, 0.0)
+        corr = pd.DataFrame(corr_vals, index=corr.index, columns=corr.columns)
+        worst_pair = corr.stack().idxmax()
+        worst_val = corr.stack().max()
+        raise RankDeficientDesignError(
+            f"design matrix rank {rank} < n_columns {n_cols}; "
+            f"most-correlated pair {worst_pair} (|r|={worst_val:.4f})"
+        )
+
+
 def validate_glm_inputs(
     data_img: Union[str, Path],
     design_matrix: pd.DataFrame,
@@ -232,5 +266,13 @@ def validate_glm_inputs(
         validation['warnings'].append(
             'No constant/intercept term found in design matrix'
         )
+
+    # Inline design-matrix sanity (rank only — contrast VIFs are research-level
+    # and live in run_quality_control, saved per-run for cohort-QC review).
+    try:
+        check_design_matrix_health(design_matrix)
+    except RankDeficientDesignError as exc:
+        validation['errors'].append(str(exc))
+        validation['is_valid'] = False
 
     return validation
