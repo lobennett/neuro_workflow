@@ -181,3 +181,39 @@ def test_render_pdf_smoke(tmp_path: Path):
     render_outlier_pdf(results, vif_table={}, output_path=pdf_path)
     assert pdf_path.is_file()
     assert pdf_path.stat().st_size > 1000  # at least a few KB; not empty
+
+
+def test_detect_lev1_outliers_end_to_end(tmp_path: Path):
+    import nibabel as nib
+    import numpy as np
+
+    # Build a tiny lev1 fixture with 3 subjects × 1 contrast × VIF CSVs
+    lev1 = tmp_path / "lev1"
+    out = tmp_path / "qa_out"
+    for i in range(3):
+        sub = f"sub-s{i:02d}"
+        # contrast NIfTI
+        cp = (lev1 / sub / "task-goNogo/indiv_contrasts" /
+              f"{sub}_ses-01_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz")
+        cp.parent.mkdir(parents=True, exist_ok=True)
+        rng = np.random.default_rng(i)
+        nib.save(nib.Nifti1Image(rng.normal(size=(6, 6, 6)).astype(np.float32),
+                                 np.eye(4)), str(cp))
+        # VIF CSV
+        qc = lev1 / sub / "task-goNogo/quality_control"
+        qc.mkdir(parents=True, exist_ok=True)
+        (qc / f"{sub}_ses-01_task-goNogo_run-1_desc-contrastVIFs.csv").write_text(
+            "contrast,VIF\ngo,2.0\n"
+        )
+
+    from neuro_workflow.qa.lev1_outliers import detect_lev1_outliers
+    detect_lev1_outliers(
+        lev1_dirs=[lev1],
+        output_dir=out,
+        n_std=2.0,
+        vif_threshold=5.0,
+        outlier_pct_threshold=10.0,
+    )
+    assert (out / "lev1_outliers.csv").is_file()
+    assert (out / "lev1_outliers.pdf").is_file()
+    assert (out / "lev1_flagged.tsv").is_file()
