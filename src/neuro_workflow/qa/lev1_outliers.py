@@ -73,3 +73,57 @@ def discover_contrast_files(
     for d in lev1_dirs:
         out.extend(d.glob(glob_pattern))
     return sorted(out)
+
+
+@dataclass(frozen=True)
+class OutlierResult:
+    scan: ScanContrast
+    outlier_pct: float          # percent of voxels >n_std SD from cohort mean
+    n_voxels: int               # total voxels in the volume
+
+
+def _load_volume(path: Path) -> "np.ndarray":
+    import nibabel as nib  # local import keeps top-level cheap
+    return nib.load(str(path)).get_fdata()
+
+
+def compute_cohort_outliers(
+    contrast_paths: list[Path],
+    *,
+    n_std: float = 3.0,
+) -> list[OutlierResult]:
+    """For each (task, contrast) group, compute per-voxel cohort mean/SD and
+    count voxels >n_std SD per subject.
+
+    Returns one OutlierResult per scan-contrast.
+    """
+    import numpy as np
+
+    scans = [parse_contrast_path(p) for p in contrast_paths]
+
+    # Group by (task, contrast)
+    groups: dict[tuple[str, str], list[ScanContrast]] = {}
+    for sc in scans:
+        groups.setdefault((sc.task, sc.contrast), []).append(sc)
+
+    results: list[OutlierResult] = []
+    for (task, contrast), members in groups.items():
+        # Stack volumes: shape (n_subjects, X, Y, Z)
+        stacked = np.stack([_load_volume(m.path) for m in members], axis=0)
+        cohort_mean = stacked.mean(axis=0)
+        cohort_std = stacked.std(axis=0, ddof=0)
+        # Avoid divide-by-zero: voxels with zero cohort std contribute 0 outliers
+        with np.errstate(divide="ignore", invalid="ignore"):
+            z = np.where(cohort_std > 0,
+                         (stacked - cohort_mean) / cohort_std,
+                         0.0)
+        outlier_mask = np.abs(z) >= n_std  # shape (n_subjects, X, Y, Z)
+        n_vox = int(stacked.shape[1] * stacked.shape[2] * stacked.shape[3])
+        for i, member in enumerate(members):
+            n_out = int(outlier_mask[i].sum())
+            results.append(OutlierResult(
+                scan=member,
+                outlier_pct=100.0 * n_out / n_vox if n_vox else 0.0,
+                n_voxels=n_vox,
+            ))
+    return results
