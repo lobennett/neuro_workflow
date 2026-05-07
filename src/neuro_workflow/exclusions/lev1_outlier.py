@@ -131,7 +131,7 @@ class Lev1OutlierGenerator:
 
     def add_cli_args(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "--lev1-outliers-csv", type=Path,
+            "--lev1-outliers-csv", type=Path, required=True,
             help="Path to cohort QC's lev1_outliers.csv (full per-(scan, contrast) table).",
         )
         parser.add_argument("--combined-vif", type=float, default=10.0)
