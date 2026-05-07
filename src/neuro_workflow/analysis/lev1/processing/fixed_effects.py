@@ -211,15 +211,16 @@ class FixedEffectsAnalyzer:
                 fixed_variance_img = fixed_variance_result
                 fixed_stat_img = fixed_stat_result
             else:
-                # Volumetric data - use nilearn's implementation
-                fixed_effect_img, fixed_variance_img, fixed_stat_img = (
-                    compute_fixed_effects(
-                        effect_files,
-                        variance_files,
-                        mask=self.mask_img,
-                        precision_weighted=precision_weighted,
-                    )
+                # Volumetric data - use nilearn's implementation.
+                # nilearn >=0.10 returns 4 values: (effect, variance, stat, z_score).
+                # We only consume the first three (matches the surface path's 3-tuple).
+                _result = compute_fixed_effects(
+                    effect_files,
+                    variance_files,
+                    mask=self.mask_img,
+                    precision_weighted=precision_weighted,
                 )
+                fixed_effect_img, fixed_variance_img, fixed_stat_img = _result[:3]
 
             logger.info('Fixed effects for %s: %d runs included', contrast_name, len(effect_files))
 
