@@ -24,7 +24,14 @@
 
 ### Lev1 code review
 
-(none yet)
+- **2026-05-06 `a894f10`** — Inline design-matrix guard added to `glm.py`: `RankDeficientDesignError`, `PathologicalVIFError`, `check_design_matrix_health()`. Wired into `validate_glm_inputs` (records errors instead of raising). Two bugs in the spec'd code surfaced and fixed during implementation: (i) `np.fill_diagonal` requires a writable array (used `to_numpy(copy=True)`); (ii) zero-variance columns (intercept) were producing `VIF=inf` and tripping `PathologicalVIFError` on every clean design matrix — now treated as `VIF=1.0` (uninformative for collinearity).
+- **2026-05-06** — 5 pre-existing test failures unrelated to this audit, present on the `main` branch and on this audit branch before any Phase 2 changes (verified via `git stash` by implementer):
+  - `tests/analysis/lev1/test_processing_events.py::TestPreprocessEvents::test_preprocess_events_negative_onset_filtering`
+  - `tests/analysis/lev1/test_processing_events.py::TestPreprocessEvents::test_preprocess_events_negative_onset_with_dummy_scans`
+  - `tests/analysis/lev1/test_surface_fixed_effects.py::TestComputeSurfaceFixedEffects::test_all_nan_vertex` (assertion: `np.float32(nan) == 0.0`)
+  - `tests/analysis/lev1/test_task_config.py::TestGetTaskParameters::test_performance_feedback_flag` (`KeyError: 'has_performance_feedback_breaks'` — likely YAML schema drift)
+  - `tests/analysis/lev1/test_vol2fsaverage.py` collection error (import)
+  These should be triaged separately; they affect lev1 readiness but are not introduced by this audit. **Triage decision required from user.**
 
 ### Edge cases
 
