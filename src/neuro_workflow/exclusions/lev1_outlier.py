@@ -30,6 +30,97 @@ class Thresholds:
     strict_outlier_pct: float = 15.0
 
 
+def _to_float_or_zero(value: str | None) -> float:
+    """Empty string / NaN-ish -> 0.0; otherwise parsed float."""
+    if value is None or value == "":
+        return 0.0
+    try:
+        f = float(value)
+    except ValueError:
+        return 0.0
+    if f != f:  # NaN check without importing math
+        return 0.0
+    return f
+
+
+def _read_outliers_csv(path: Path) -> list[dict]:
+    """Read the lev1_outliers.csv into a list of dicts."""
+    if not path.is_file():
+        raise FileNotFoundError(f"lev1_outliers.csv not found: {path}")
+    with path.open() as f:
+        return list(csv.DictReader(f))
+
+
+def _rules_fired(vif: float, outlier_pct: float, t: Thresholds) -> list[str]:
+    """Return the names of all rules that fire for this (vif, outlier_pct) pair."""
+    fired: list[str] = []
+    if vif >= t.combined_vif and outlier_pct >= t.combined_outlier_pct:
+        fired.append("combined")
+    if vif >= t.strict_vif:
+        fired.append("strict_vif")
+    if outlier_pct >= t.strict_outlier_pct:
+        fired.append("strict_outliers")
+    return fired
+
+
+def _format_contrast_clause(contrast: str, vif: float, outlier_pct: float,
+                            rules: list[str]) -> str:
+    """Single-contrast clause for the `reason` field, e.g.
+    'response_time vif=18.09 (strict_vif)'.
+    """
+    parts: list[str] = [f"vif={vif:.2f}"]
+    if outlier_pct > 0:
+        parts.append(f"outlier={outlier_pct:.1f}%")
+    return f"{contrast} {','.join(parts)} ({','.join(rules)})"
+
+
+def _aggregate_to_scan_entries(
+    rows: list[dict], thresholds: Thresholds,
+) -> list[dict]:
+    """Group rows by (subject, session, task, run); emit one exclusion entry per
+    scan that has at least one contrast firing any rule."""
+    by_scan: dict[tuple[str, str, str, str], list[dict]] = {}
+    for row in rows:
+        key = (row["subject"], row["session"], row["task"], row["run"])
+        by_scan.setdefault(key, []).append(row)
+
+    entries: list[dict] = []
+    for (subject, session, task, run), scan_rows in sorted(by_scan.items()):
+        flagged: list[tuple[str, float, float, list[str]]] = []
+        for row in scan_rows:
+            vif = _to_float_or_zero(row.get("vif"))
+            pct = _to_float_or_zero(row.get("outlier_pct"))
+            fired = _rules_fired(vif, pct, thresholds)
+            if fired:
+                flagged.append((row["contrast"], vif, pct, fired))
+        if not flagged:
+            continue
+        clauses = [
+            _format_contrast_clause(c, v, p, r) for c, v, p, r in flagged
+        ]
+        all_rules: set[str] = set()
+        for _, _, _, r in flagged:
+            all_rules.update(r)
+        max_vif = max(v for _, v, _, _ in flagged)
+        max_pct = max(p for _, _, p, _ in flagged)
+        entries.append({
+            "subject": subject,
+            "session": session,
+            "task": f"task-{task}",
+            "run": f"run-{run}",
+            "source": "lev1_outlier",
+            "action": "exclude",
+            "reason": "lev1_outlier: " + "; ".join(clauses),
+            "metrics": {
+                "max_vif": max_vif,
+                "max_outlier_pct": max_pct,
+                "n_flagged_contrasts": len(flagged),
+                "rules_fired": sorted(all_rules),
+            },
+        })
+    return entries
+
+
 class Lev1OutlierGenerator:
     name = "lev1_outlier"
     description = (
@@ -54,8 +145,14 @@ class Lev1OutlierGenerator:
         dataset_config: dict,
         args: Namespace,
     ) -> list[dict]:
-        # Filled in by Tasks 3-6.
-        return []
+        thresholds = Thresholds(
+            combined_vif=args.combined_vif,
+            combined_outlier_pct=args.combined_outlier_pct,
+            strict_vif=args.strict_vif,
+            strict_outlier_pct=args.strict_outlier_pct,
+        )
+        rows = _read_outliers_csv(args.lev1_outliers_csv)
+        return _aggregate_to_scan_entries(rows, thresholds)
 
 
 register_generator(Lev1OutlierGenerator())
