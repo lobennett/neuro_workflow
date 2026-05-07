@@ -1,20 +1,20 @@
 #!/bin/bash
-#SBATCH --job-name=lev1_smoke_s03
+#SBATCH --job-name=lev1_smoke
 #SBATCH --partition=russpold
 #SBATCH --time=02:00:00
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
-#SBATCH --output=logs/lev1_smoke_s03-%j.out
-#SBATCH --error=logs/lev1_smoke_s03-%j.err
+#SBATCH --output=logs/lev1_smoke_%x_%j.out
+#SBATCH --error=logs/lev1_smoke_%x_%j.err
 
-# Smoke-test lev1 on sub-s03 for ONE base task in MNI space.
-# Iterate alphabetically through tasks, gating each on the prior succeeding,
-# rather than running 24 combos at once and burning compute on cascading failures.
+# Smoke-test lev1 on ONE subject × ONE base task in MNI space.
+# Iterate by submitting per (subject, task) so failures are isolated and
+# compute isn't wasted on cascades.
 #
 # Usage:
-#   sbatch scripts/run_lev1_smoke_s03.sbatch <task-name>
+#   sbatch scripts/run_lev1_smoke.sbatch <subject> <task>
 # Example:
-#   sbatch scripts/run_lev1_smoke_s03.sbatch cuedTS
+#   sbatch scripts/run_lev1_smoke.sbatch sub-s10 cuedTS
 #
 # Prerequisite: compiled discovery exclusions must exist at
 #   ~/.neuro_workflow/exclusions/discovery/compiled_exclusions.json
@@ -26,12 +26,14 @@ mkdir -p logs
 
 module load uv
 
-if [[ $# -lt 1 ]]; then
-  echo "Usage: sbatch $0 <task-name>" >&2
-  echo "Tasks: cuedTS directedForgetting flanker goNogo nBack shapeMatching spatialTS stopSignal" >&2
+if [[ $# -lt 2 ]]; then
+  echo "Usage: sbatch $0 <subject> <task>" >&2
+  echo "  subject: e.g. sub-s03, sub-s10, sub-s19, sub-s29, sub-s43" >&2
+  echo "  task:    cuedTS|directedForgetting|flanker|goNogo|nBack|shapeMatching|spatialTS|stopSignal" >&2
   exit 1
 fi
-TASK="$1"
+SUBJECT="$1"
+TASK="$2"
 
 BIDS_DIR="/scratch/users/logben/discovery_bids"
 FMRIPREP_DIR="/scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4"
@@ -44,9 +46,9 @@ if [[ ! -f "${EXCLUSIONS_FILE}" ]]; then
   exit 1
 fi
 
-echo "===== sub-s03 task=${TASK} space=MNI ====="
+echo "===== ${SUBJECT} task=${TASK} space=MNI ====="
 uv run python -m neuro_workflow.analysis.lev1.run \
-  --subj-id sub-s03 \
+  --subj-id "${SUBJECT}" \
   --task-name "${TASK}" \
   --bids-dir "${BIDS_DIR}" \
   --fmriprep-dir "${FMRIPREP_DIR}" \
@@ -57,4 +59,4 @@ uv run python -m neuro_workflow.analysis.lev1.run \
   --mni-res 2 \
   --within-subject-threshold 1.0
 
-echo "Done: sub-s03 task=${TASK} space=MNI"
+echo "Done: ${SUBJECT} task=${TASK} space=MNI"
