@@ -144,10 +144,6 @@ class RankDeficientDesignError(ValueError):
     """Raised when the design matrix is rank-deficient (perfect collinearity)."""
 
 
-class PathologicalVIFError(ValueError):
-    """Raised when any regressor's VIF exceeds the sentinel threshold (default 100)."""
-
-
 def check_design_matrix_health(design_matrix: pd.DataFrame) -> None:
     """Fail fast on degenerate design matrices.
 
@@ -271,10 +267,11 @@ def validate_glm_inputs(
             'No constant/intercept term found in design matrix'
         )
 
-    # Inline design-matrix sanity (rank + VIF sentinel).
+    # Inline design-matrix sanity (rank only — contrast VIFs are research-level
+    # and live in run_quality_control, saved per-run for cohort-QC review).
     try:
         check_design_matrix_health(design_matrix)
-    except (RankDeficientDesignError, PathologicalVIFError) as exc:
+    except RankDeficientDesignError as exc:
         validation['errors'].append(str(exc))
         validation['is_valid'] = False
 
