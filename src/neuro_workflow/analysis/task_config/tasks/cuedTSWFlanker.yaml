@@ -1,0 +1,11 @@
+# DRAFT — dual-task config not yet defined.
+# Will be filled in with regressor configurations from a reference codebase.
+# Lev1 raises TaskNotConfiguredError on this task until `regressors:` is non-empty.
+
+tr: 1.49
+dummy_scans: 7  # informational; lev1 sets dummy_scans=0 (BOLDs pre-trimmed)
+expected_sessions: null
+min_rt: 0.2
+
+regressors: null
+contrasts: null
