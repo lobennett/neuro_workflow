@@ -198,3 +198,37 @@ def test_empty_csv_returns_empty_list(tmp_path):
     _write_csv(csv_path, [])  # header only, no rows
     entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
     assert entries == []
+
+
+def test_generator_output_flows_through_compile(tmp_path, monkeypatch):
+    """End-to-end through compile_exclusions: generator entries appear in compiled output."""
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+    from neuro_workflow.core import exclusions as core_excl
+
+    # Redirect EXCLUSIONS_DIR to a tmp path so compile_exclusions writes there.
+    monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
+
+    # Generate entries from a small CSV
+    csv_path = tmp_path / "lev1_outliers.csv"
+    _write_csv(csv_path, [
+        {"subject": "sub-s03", "session": "ses-02", "run": "1", "task": "cuedTS",
+         "contrast": "response_time", "outlier_pct": "2.0", "vif": "18.09",
+         "flagged_outliers": "0", "flagged_vif": "1"},
+    ])
+    entries = Lev1OutlierGenerator().generate(
+        "discovery", {}, _make_args(csv_path)
+    )
+    assert len(entries) == 1
+
+    # Save to sources/<dataset>/lev1_outlier.json (matches what cmd_exclusions_generate does)
+    core_excl.save_source_entries("discovery", "lev1_outlier", entries)
+
+    # Run compile (load_overrides returns [] for missing file, so no overrides.json needed)
+    compiled = core_excl.compile_exclusions("discovery")
+
+    # Compiled output should contain our entry, with source preserved
+    assert len(compiled) == 1
+    assert compiled[0]["source"] == "lev1_outlier"
+    assert compiled[0]["subject"] == "sub-s03"
+    assert compiled[0]["task"] == "task-cuedTS"
+    assert compiled[0]["action"] == "exclude"
