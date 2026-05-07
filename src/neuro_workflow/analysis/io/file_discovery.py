@@ -11,15 +11,29 @@ logger = logging.getLogger(__name__)
 class FileFinder:
     """Find and organize BIDS and fMRIPrep files."""
 
-    def __init__(self, bids_dir: Path, fmriprep_dir: Path):
+    def __init__(
+        self,
+        bids_dir: Path,
+        fmriprep_dir: Path,
+        mni_template: str = 'MNI152NLin6Asym',
+        mni_res: str = '2',
+    ):
         """Initialize file finder.
 
         Args:
             bids_dir: Path to BIDS dataset directory
             fmriprep_dir: Path to fMRIPrep derivatives directory
+            mni_template: fMRIPrep MNI template name to look for in derivative
+                filenames (e.g., 'MNI152NLin2009cAsym', 'MNI152NLin6Asym').
+                Defaults to 'MNI152NLin6Asym' to match this project's
+                fmriprep production output for the 2mm MNI variant.
+            mni_res: Resolution suffix for the MNI BOLD/mask files
+                (e.g., '1', '2'). Defaults to '2'.
         """
         self.bids_dir = Path(bids_dir)
         self.fmriprep_dir = Path(fmriprep_dir)
+        self.mni_template = mni_template
+        self.mni_res = mni_res
         self.run_pattern = re.compile(r'run-\d+')
 
     # Surface file patterns keyed by space name
@@ -120,8 +134,8 @@ class FileFinder:
             'confounds': 'desc-confounds_timeseries.tsv',
             't1w_data': 'space-T1w_desc-preproc_bold.nii.gz',
             't1w_brain_mask': 'space-T1w_desc-brain_mask.nii.gz',
-            'mni_data': 'space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz',
-            'mni_brain_mask': 'space-MNI152NLin2009cAsym_res-2_desc-brain_mask.nii.gz',
+            'mni_data': f'space-{self.mni_template}_res-{self.mni_res}_desc-preproc_bold.nii.gz',
+            'mni_brain_mask': f'space-{self.mni_template}_res-{self.mni_res}_desc-brain_mask.nii.gz',
             **surface_patterns,
         }
 
