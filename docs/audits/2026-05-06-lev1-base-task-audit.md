@@ -34,7 +34,7 @@
 
 ### Edge cases
 
-- **2026-05-06 `<commit-sha>`** — Salvaged scans: lev1 didn't trim events whose `onset >= n_scans * tr`. GLM output was unaffected (nilearn silently truncated past-end events) but `*_simplifiedEvents.csv` was writing phantom rows for past-end events. Fixed by adding optional `n_scans` kwarg to `preprocess_events`; `run.py` now passes it. 5 tests in `test_salvaged_scans.py` cover the fix.
+- **2026-05-06 `d3a1359`** — Salvaged scans: lev1 didn't trim events whose `onset >= n_scans * tr`. GLM output was unaffected (nilearn silently truncated past-end events) but `*_simplifiedEvents.csv` was writing phantom rows for past-end events. Fixed by adding optional `n_scans` kwarg to `preprocess_events`; `run.py` now passes it. 5 tests in `test_salvaged_scans.py` cover the fix.
 
 ### Smoke test
 
