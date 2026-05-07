@@ -148,22 +148,18 @@ class PathologicalVIFError(ValueError):
     """Raised when any regressor's VIF exceeds the sentinel threshold (default 100)."""
 
 
-def check_design_matrix_health(
-    design_matrix: pd.DataFrame,
-    *,
-    vif_sentinel: float = 10000.0,
-) -> None:
+def check_design_matrix_health(design_matrix: pd.DataFrame) -> None:
     """Fail fast on degenerate design matrices.
 
-    Two checks:
-    - Rank deficiency: matrix_rank < n_columns -> raise RankDeficientDesignError
-      naming the most-correlated column pair.
-    - Pathological VIF: any column's VIF > vif_sentinel -> raise PathologicalVIFError.
-      Sentinel (default 10000) catches catastrophic collinearity (perfect duplicates,
-      all-NaN regressors with VIF -> infinity) without flagging the routine
-      collinearity between motion and motion**2 (or motion derivatives), which
-      hit VIFs of 100–1500 routinely on real data without indicating a design bug.
-      Research-level VIF thresholds (e.g., 5) live at the cohort QC step.
+    Checks rank deficiency only — raises RankDeficientDesignError when
+    matrix_rank < n_columns and names the most-correlated column pair.
+
+    Per-column VIFs are intentionally NOT checked here. Nuisance regressors
+    (motion + motion**2, cosine drift bases) routinely have inter-column VIFs
+    of 100–1500 by design, which doesn't impair contrast estimation. The
+    research-relevant signal is the per-contrast VIF, computed in
+    `quality_control.py:est_contrast_vifs()` and threshold-checked inside
+    `run_quality_control` (default threshold = 5).
     """
     arr = np.asarray(design_matrix.to_numpy(dtype=float, copy=True))
     n_cols = arr.shape[1]
@@ -179,35 +175,6 @@ def check_design_matrix_health(
         raise RankDeficientDesignError(
             f"design matrix rank {rank} < n_columns {n_cols}; "
             f"most-correlated pair {worst_pair} (|r|={worst_val:.4f})"
-        )
-
-    # Per-column VIF: VIF_i = 1 / (1 - R_i^2) where R_i^2 is from regressing column i on the rest.
-    # Constant/intercept columns have zero variance by definition; assign VIF=1 (uninformative).
-    vifs = {}
-    for i, col in enumerate(design_matrix.columns):
-        others_idx = [j for j in range(n_cols) if j != i]
-        if not others_idx:
-            vifs[col] = 1.0
-            continue
-        x_i = arr[:, i]
-        ss_tot = float(((x_i - x_i.mean()) ** 2).sum())
-        if ss_tot <= 0.0:
-            # Zero-variance column (e.g. intercept); not meaningful for collinearity.
-            vifs[col] = 1.0
-            continue
-        x_rest = arr[:, others_idx]
-        # OLS: x_i = x_rest @ beta + residual
-        beta, *_ = np.linalg.lstsq(x_rest, x_i, rcond=None)
-        resid = x_i - x_rest @ beta
-        ss_res = float(resid @ resid)
-        r2 = 1.0 - (ss_res / ss_tot)
-        r2 = min(max(r2, 0.0), 1.0 - 1e-12)
-        vifs[col] = 1.0 / (1.0 - r2)
-    bad = {k: v for k, v in vifs.items() if v > vif_sentinel}
-    if bad:
-        raise PathologicalVIFError(
-            f"VIF > {vif_sentinel} for: " +
-            ", ".join(f"{k}={v:.2f}" for k, v in sorted(bad.items(), key=lambda kv: -kv[1]))
         )
 
 

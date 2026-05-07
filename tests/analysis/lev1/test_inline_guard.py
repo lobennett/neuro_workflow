@@ -1,4 +1,11 @@
-"""Inline guard: rank-deficient design matrix + pathological VIF."""
+"""Inline design-matrix guard: rank deficiency only.
+
+Per-contrast VIF is checked separately by `run_quality_control`
+(see test_quality_control_contrast_vif.py); column-VIF on the design
+matrix is intentionally not checked here because nuisance regressors
+(motion + motion**2, drift bases) routinely have high inter-column VIFs
+that don't impair contrast estimation.
+"""
 from __future__ import annotations
 
 import pytest
@@ -15,7 +22,6 @@ import numpy as np
 import pandas as pd
 
 from neuro_workflow.analysis.lev1.processing.glm import (
-    PathologicalVIFError,
     RankDeficientDesignError,
     check_design_matrix_health,
 )
@@ -47,12 +53,17 @@ def test_clean_design_matrix_passes():
     check_design_matrix_health(dm)
 
 
-def test_pathological_vif_raises():
-    # Construct a near-degenerate pair: x1 ~ x2, but with tiny noise -> VIF >> 100
+def test_high_per_column_vif_does_not_raise():
+    """Routine motion + motion**2 collinearity must NOT trip the inline guard.
+
+    Per-column VIF can hit hundreds for legitimate nuisance regressors;
+    that's contrast-VIF territory and lives in quality_control instead.
+    """
     n = 1000
     rng = np.random.default_rng(2)
     x1 = rng.normal(size=n)
+    # Build a near-duplicate column that produces a very high per-column VIF
+    # but doesn't violate rank (just very high R^2). Should not raise.
     x2 = x1 + rng.normal(scale=0.001, size=n)
     dm = pd.DataFrame({"x1": x1, "x2": x2, "constant": np.ones(n)})
-    with pytest.raises(PathologicalVIFError, match="VIF"):
-        check_design_matrix_health(dm)
+    check_design_matrix_health(dm)
