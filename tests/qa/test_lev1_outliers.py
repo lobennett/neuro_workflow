@@ -98,3 +98,57 @@ def test_compute_cohort_outliers_groups_by_task_contrast(tmp_path: Path):
     results = compute_cohort_outliers(paths, n_std=2.0)
     contrasts = {(r.scan.task, r.scan.contrast) for r in results}
     assert contrasts == {("goNogo", "go"), ("goNogo", "stop")}
+
+
+def test_aggregate_vifs_from_csv(tmp_path: Path):
+    """A VIF CSV with two contrasts → both VIFs ingested into the right ScanContrast."""
+    import pandas as pd
+
+    sub_dir = (tmp_path / "sub-s03/task-goNogo/quality_control")
+    sub_dir.mkdir(parents=True)
+    (sub_dir / "sub-s03_ses-01_task-goNogo_run-1_desc-contrastVIFs.csv").write_text(
+        "contrast,VIF\n"
+        "go,1.5\n"
+        "stop,2.7\n"
+    )
+    from neuro_workflow.qa.lev1_outliers import discover_vif_files, load_vif_table
+
+    vif_paths = discover_vif_files(
+        [tmp_path],
+        glob_pattern="sub-s*/task-*/quality_control/*_desc-contrastVIFs.csv",
+    )
+    assert len(vif_paths) == 1
+
+    table = load_vif_table(vif_paths)
+    # Key shape: (subject, session, run, task, contrast) → vif
+    assert table[("sub-s03", "ses-01", "1", "goNogo", "go")] == pytest.approx(1.5)
+    assert table[("sub-s03", "ses-01", "1", "goNogo", "stop")] == pytest.approx(2.7)
+
+
+def test_write_outputs_csv_and_flagged(tmp_path: Path):
+    from neuro_workflow.qa.lev1_outliers import (
+        FlaggedRow, write_outliers_csv, write_flagged_tsv,
+    )
+
+    rows = [
+        FlaggedRow(
+            subject="sub-s03", session="ses-01", run="1", task="goNogo",
+            contrast="go", outlier_pct=5.0, vif=1.2,
+            flagged_outliers=False, flagged_vif=False,
+        ),
+        FlaggedRow(
+            subject="sub-s10", session="ses-01", run="1", task="goNogo",
+            contrast="go", outlier_pct=15.0, vif=8.0,
+            flagged_outliers=True, flagged_vif=True,
+        ),
+    ]
+    out_csv = tmp_path / "lev1_outliers.csv"
+    out_tsv = tmp_path / "lev1_flagged.tsv"
+    write_outliers_csv(rows, out_csv)
+    write_flagged_tsv(rows, out_tsv)
+    assert out_csv.is_file()
+    assert out_tsv.is_file()
+    flagged_lines = out_tsv.read_text().splitlines()
+    # Header + only the flagged row
+    assert len(flagged_lines) == 2
+    assert "sub-s10" in flagged_lines[1]
