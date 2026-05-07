@@ -1,8 +1,11 @@
 """File discovery utilities for BIDS and fMRIPrep data."""
 
+import logging
 import re
 from pathlib import Path
 from typing import Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class FileFinder:
@@ -173,13 +176,27 @@ class FileFinder:
     def _filter_complete_runs(
         self, files: Dict, required_files: List[str]
     ) -> Dict[str, Dict[str, Dict[str, Path]]]:
-        """Filter to only include runs with all required files."""
+        """Filter to only include runs with all required files.
+
+        A run is dropped when it's missing any required file type. To make
+        skip-with-warning visible to operators (rather than a silent drop),
+        each dropped run that has at least one discovered file emits a
+        WARNING naming the missing file types. Runs with no discovered files
+        at all are not warned about (those represent absent scans, not
+        partially-incomplete ones).
+        """
         filtered_files = {}
 
         for session, runs in files.items():
             for run, file_dict in runs.items():
-                if all(file_type in file_dict for file_type in required_files):
+                missing = [ft for ft in required_files if ft not in file_dict]
+                if not missing:
                     filtered_files.setdefault(session, {})[run] = file_dict
+                elif file_dict:
+                    logger.warning(
+                        'Skipping %s/%s: missing required file(s): %s',
+                        session, run, ', '.join(sorted(missing)),
+                    )
 
         return filtered_files
 
