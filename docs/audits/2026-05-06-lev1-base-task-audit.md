@@ -44,14 +44,7 @@
 ### Visual end-check + downstream finding
 
 - **2026-05-06 `6f35957`** — Saved fixed-effects "z_score" file was actually nilearn's `fixed_fx_stat_img` (3rd return = effect/sqrt(variance)), which blows up to ±10^10 at out-of-mask voxels where variance=0. Now uses nilearn's `fixed_fx_z_score_img` (4th return) when available; values are bounded.
-- **2026-05-06 OPEN — needs investigation, surfaced for triage** — visual end-check on s03 stopSignal `stop_success-go` after the fixed-effects fix shows 28% of in-mask voxels capped at z = ±37.047 (scipy float-precision floor for `norm.ppf` near p ≈ 0). Root cause: **per-run variance maps are 99.6%+ zeros even inside the brain mask**. Example values for sub-s03 task-stopSignal `stop_success-go`:
-  - ses-02 run-1 variance: median=0, zeros=99.67%, max=667K
-  - ses-04 run-1 variance: median=0, zeros=99.37%, max=623K
-  - ses-06 run-1 variance: median=0, zeros=99.64%, max=2M
-  - Combined mask has 265K in-mask voxels (29%); variance has only ~0.4% non-zero voxels — so even within the GLM mask, most variance values are zero. This is upstream of fixed effects (in lev1's contrast computation or variance-map saving). Affects all base tasks on disk.
-  - Hypotheses: (a) the GLM applies a stricter internal mask than the saved combined mask and only writes variance for a sub-region, (b) `compute_run_contrasts` zero-fills variance outside its compute region, (c) nilearn's contrast computation has a known quirk where variance is only valid where the design has full rank locally.
-  - Lev1 contrast effect-size maps look healthy (e.g. range -350 to +464). The bug is specific to variance.
-  - **Triage decision required from user.**
+- **2026-05-06 RESOLVED** — variance maps appearing 99.6%+ zero. Root cause was uint8 dtype quantization on save, not anything to do with the GLM compute or masking. nilearn's `compute_contrast` returns `Nifti1Image` instances whose data dtype defaults to the BOLD's storage convention; nibabel's `to_filename` then auto-quantizes to uint8 with a 256-level cal_min..cal_max linear mapping. For variance with range 0–667K, that's a ~2618 step size — most values truncate to 0. Effect-size and z_score had only 256 quantization levels too, but the symptom is harder to spot because the spatial extent of the activation/deactivation is preserved. Fix: cast contrast outputs and fixed-effects outputs to `float32` explicitly before `to_filename`. After fix: variance is non-zero across 30.43% of voxels (matching the per-run brain mask exactly), fixed-effects z range is bounded -15 to +20, glass-brain visual on s03 stopSignal stop_success-go shows expected anatomical pattern (rIFG / parieto-occipital activation, default-mode deactivation). Affects all base tasks on disk; the contrast NIfTIs from earlier smoke runs need re-rendering. Cohort QC reads effect-size only, so cohort QC outputs are usable but with reduced precision.
 
 ### Smoke test
 
@@ -85,4 +78,4 @@ Bugs surfaced + fixed during smoke (4 real lev1 fixes):
 
 Task: render `stopSignal stop_success-go` for s03 in MNI / T1w / surface. Confirm canonical anatomy (rIFG / pre-SMA).
 
-(filled in when run)
+- **2026-05-06** — Rendered after the float32-cast fix. Glass brain (`docs/audits/figures/s03_stopSignal_stop_success-go_glass.png`) shows red activation peak at right inferior frontal gyrus (anterior-inferior on the sagittal view) plus bilateral parieto-occipital activation, with blue deactivation in default-mode regions. Z range bounded ±20. **Pass** — matches canonical inhibition-task anatomy.
