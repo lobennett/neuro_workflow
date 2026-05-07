@@ -65,3 +65,45 @@ def test_strict_vif_rule_fires(tmp_path):
     assert e["action"] == "exclude"
     assert "strict_vif" in e["reason"]
     assert "stop_success-go" in e["reason"]
+
+
+def test_combined_rule_fires(tmp_path):
+    """A row with vif>=combined_vif AND outlier_pct>=combined_outlier_pct fires combined."""
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+    csv_path = tmp_path / "lev1_outliers.csv"
+    _write_csv(csv_path, [
+        {"subject": "sub-s10", "session": "ses-02", "run": "1", "task": "cuedTS",
+         "contrast": "response_time", "outlier_pct": "11.0", "vif": "11.0",
+         "flagged_outliers": "1", "flagged_vif": "1"},
+    ])
+    entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
+    assert len(entries) == 1
+    assert "combined" in entries[0]["reason"]
+    assert "combined" in entries[0]["metrics"]["rules_fired"]
+
+
+def test_strict_outliers_rule_fires(tmp_path):
+    """A row with outlier_pct >= strict_outlier_pct fires strict_outliers."""
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+    csv_path = tmp_path / "lev1_outliers.csv"
+    _write_csv(csv_path, [
+        {"subject": "sub-s19", "session": "ses-03", "run": "1", "task": "flanker",
+         "contrast": "incongruent-congruent", "outlier_pct": "18.0", "vif": "4.0",
+         "flagged_outliers": "1", "flagged_vif": "0"},
+    ])
+    entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
+    assert len(entries) == 1
+    assert "strict_outliers" in entries[0]["reason"]
+
+
+def test_below_all_thresholds_emits_nothing(tmp_path):
+    """A row that fails all three rules produces no entry."""
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+    csv_path = tmp_path / "lev1_outliers.csv"
+    _write_csv(csv_path, [
+        {"subject": "sub-s29", "session": "ses-04", "run": "1", "task": "goNogo",
+         "contrast": "go", "outlier_pct": "8.0", "vif": "8.0",
+         "flagged_outliers": "0", "flagged_vif": "0"},
+    ])
+    entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
+    assert entries == []
