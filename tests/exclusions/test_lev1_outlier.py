@@ -107,3 +107,31 @@ def test_below_all_thresholds_emits_nothing(tmp_path):
     ])
     entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
     assert entries == []
+
+
+def test_per_scan_aggregation_collapses_multiple_contrasts(tmp_path):
+    """Two flagged contrasts on the same (subject, session, task, run) -> one entry."""
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+    csv_path = tmp_path / "lev1_outliers.csv"
+    _write_csv(csv_path, [
+        {"subject": "sub-s03", "session": "ses-02", "run": "1", "task": "cuedTS",
+         "contrast": "response_time", "outlier_pct": "2.0", "vif": "18.09",
+         "flagged_outliers": "0", "flagged_vif": "1"},
+        {"subject": "sub-s03", "session": "ses-02", "run": "1", "task": "cuedTS",
+         "contrast": "cue_switch_cost", "outlier_pct": "12.3", "vif": "11.5",
+         "flagged_outliers": "1", "flagged_vif": "1"},
+        # An untouched contrast on the same scan — should NOT show in reason.
+        {"subject": "sub-s03", "session": "ses-02", "run": "1", "task": "cuedTS",
+         "contrast": "task-baseline", "outlier_pct": "1.0", "vif": "1.2",
+         "flagged_outliers": "0", "flagged_vif": "0"},
+    ])
+    entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
+    assert len(entries) == 1
+    e = entries[0]
+    assert "response_time" in e["reason"]
+    assert "cue_switch_cost" in e["reason"]
+    assert "task-baseline" not in e["reason"]
+    assert e["metrics"]["n_flagged_contrasts"] == 2
+    assert set(e["metrics"]["rules_fired"]) == {"strict_vif", "combined"}
+    assert e["metrics"]["max_vif"] == pytest.approx(18.09)
+    assert e["metrics"]["max_outlier_pct"] == pytest.approx(12.3)
