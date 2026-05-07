@@ -73,14 +73,12 @@ class TestPreprocessEventsBoldEndFilter:
     is added, remove the xfail markers and the tests should pass.
     """
 
-    @pytest.mark.xfail(strict=True, reason=_AUDIT_GAP_REASON)
     def test_preprocess_events_supports_bold_end_filter(self):
         """preprocess_events accepts an n_scans (or bold_duration) parameter."""
         sig = inspect.signature(preprocess_events)
         params = set(sig.parameters)
         assert {'n_scans', 'bold_duration'} & params
 
-    @pytest.mark.xfail(strict=True, reason=_AUDIT_GAP_REASON)
     def test_preprocess_events_drops_past_end_onsets(self):
         """When given n_scans + tr, preprocess_events drops onset >= n_scans*tr."""
         events = _build_events_with_overrun()
@@ -134,10 +132,11 @@ class TestSimplifiedEventsDropsOrphanOnsets:
     or (b) drop upstream in preprocess_events.
     """
 
-    @pytest.mark.xfail(strict=True, reason=_AUDIT_GAP_REASON)
     def test_three_column_format_omits_past_end_onsets(self):
         events = _build_events_with_overrun()
-        events['constant_1_column'] = 1
+        # Mirror the run.py pipeline: preprocess (with n_scans) drops past-end
+        # onsets before they reach create_regressor.
+        events = preprocess_events(events, 'stopSignal', n_scans=N_TR, tr=TR)
         config = {
             'amplitude_column': 'constant_1_column',
             'duration_column': 'constant_1_column',
