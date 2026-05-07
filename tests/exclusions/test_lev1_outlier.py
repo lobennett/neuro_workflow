@@ -232,3 +232,36 @@ def test_generator_output_flows_through_compile(tmp_path, monkeypatch):
     assert compiled[0]["subject"] == "sub-s03"
     assert compiled[0]["task"] == "task-cuedTS"
     assert compiled[0]["action"] == "exclude"
+
+
+def test_end_to_end_on_real_discovery_cohort_qc():
+    """Smoke: generator runs against real cohort QC output and produces sensible entries.
+
+    Skipped if the discovery cohort QC output isn't present.
+    """
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+
+    real_csv = Path("/scratch/users/logben/qa_lev1_discovery/lev1_outliers.csv")
+    if not real_csv.is_file():
+        pytest.skip(f"discovery cohort QC output not present at {real_csv}")
+
+    entries = Lev1OutlierGenerator().generate(
+        "discovery", {}, _make_args(real_csv)
+    )
+
+    # Discovery cohort N=5: only strict_vif rule should fire (per the math finding
+    # in docs/audits/2026-05-06-lev1-base-task-audit.md — outlier_pct bounded by
+    # sqrt(N-1) ~= 2.0 for N=5, so neither combined nor strict_outliers fires).
+    # Just assert the shape is sound; counts depend on the actual data.
+    for e in entries:
+        assert e["source"] == "lev1_outlier"
+        assert e["action"] == "exclude"
+        assert e["subject"].startswith("sub-")
+        assert e["session"].startswith("ses-")
+        assert e["task"].startswith("task-")
+        assert e["run"].startswith("run-")
+        assert "lev1_outlier:" in e["reason"]
+        assert "max_vif" in e["metrics"]
+        assert e["metrics"]["n_flagged_contrasts"] >= 1
+        # Discovery shouldn't fire outlier-based rules
+        assert "strict_outliers" not in e["metrics"]["rules_fired"]
