@@ -315,3 +315,62 @@ def render_outlier_pdf(
             ax.set_title(f"{task} / {contrast} — outlier % per scan")
             pdf.savefig(fig)
             plt.close(fig)
+
+
+def detect_lev1_outliers(
+    *,
+    lev1_dirs: list[Path],
+    output_dir: Path,
+    n_std: float = 3.0,
+    vif_threshold: float = 5.0,
+    outlier_pct_threshold: float = 10.0,
+    contrast_glob: str = "sub-s*/task-*/indiv_contrasts/*stat-effect-size.nii.gz",
+    vif_glob: str = "sub-s*/task-*/quality_control/*_desc-contrastVIFs.csv",
+    exclusions: set[str] | None = None,
+) -> None:
+    """Top-level: run the full cohort outlier detection pass.
+
+    Args:
+        lev1_dirs: directories containing lev1 subject outputs.
+        output_dir: where qa_out/lev1_outliers.{csv,pdf}, lev1_flagged.tsv go.
+        n_std: SD threshold for outlier voxel definition (Jeanette default 3.0).
+        vif_threshold: per-contrast VIF flag threshold (default 5.0).
+        outlier_pct_threshold: per-scan outlier voxel % flag threshold (default 10.0).
+        contrast_glob: pattern (relative to each lev1_dir) for effect-size NIfTIs.
+        vif_glob: pattern for per-contrast VIF CSVs.
+        exclusions: placeholder for Project B's exclusion registry. Currently a no-op.
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    contrast_paths = discover_contrast_files(lev1_dirs, glob_pattern=contrast_glob)
+    if not contrast_paths:
+        raise RuntimeError(
+            f"no contrast NIfTIs found under {lev1_dirs} with glob {contrast_glob!r}"
+        )
+
+    if exclusions:
+        contrast_paths = [
+            p for p in contrast_paths
+            if _make_exclusion_key(parse_contrast_path(p)) not in exclusions
+        ]
+
+    outlier_results = compute_cohort_outliers(contrast_paths, n_std=n_std)
+
+    vif_paths = discover_vif_files(lev1_dirs, glob_pattern=vif_glob)
+    vif_table = load_vif_table(vif_paths)
+
+    rows = assemble_flagged_rows(
+        outlier_results, vif_table,
+        outlier_pct_threshold=outlier_pct_threshold,
+        vif_threshold=vif_threshold,
+    )
+
+    write_outliers_csv(rows, output_dir / "lev1_outliers.csv")
+    write_flagged_tsv(rows, output_dir / "lev1_flagged.tsv")
+    render_outlier_pdf(outlier_results, vif_table=vif_table,
+                        output_path=output_dir / "lev1_outliers.pdf")
+
+
+def _make_exclusion_key(sc: ScanContrast) -> str:
+    """Stable key matching the Project B exclusion registry format."""
+    return f"{sc.subject}_{sc.session}_task-{sc.task}_run-{sc.run}"
