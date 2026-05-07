@@ -68,6 +68,17 @@ def run_quality_control(
 ) -> Tuple[Dict[str, float], bool]:
     """Run quality control analysis.
 
+    Computes per-contrast VIFs and writes them to a CSV alongside the design
+    matrix. Does NOT fail-fast on high VIFs — those are surfaced for manual
+    review by the cohort QC step (`neuro_workflow.qa.lev1_outliers`) which
+    aggregates VIFs across subjects and flags >threshold (default 5) entries
+    in `lev1_flagged.tsv`.
+
+    QA fails (`any_fail=True`) only on:
+        - design matrix < 100 rows
+        - regressors used in contrasts that are all-zero
+        - junk percentage > 30%
+
     Args:
         design_matrix: Design matrix dataframe
         contrasts: Dictionary of contrast formulas
@@ -129,7 +140,8 @@ def run_quality_control(
         any_fail = True
         logger.warning('QA FAIL: High junk percentage: %.1f%% (> 30%%)', percent_junk * 100)
 
-    # Calculate contrast VIFs
+    # Calculate contrast VIFs (saved to CSV; not used to fail QA — cohort QC
+    # at neuro_workflow.qa.lev1_outliers handles thresholding for review).
     try:
         vifs = est_contrast_vifs(design_matrix, contrasts)
     except Exception as e:
