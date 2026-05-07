@@ -35,6 +35,10 @@ _REQUIRED_FIELDS = {'regressors', 'contrasts'}
 _REQUIRED_REGRESSOR_FIELDS = {'amplitude', 'duration', 'subset'}
 
 
+class TaskNotConfiguredError(ValueError):
+    """Raised when a task's YAML exists but has `regressors: null` (placeholder)."""
+
+
 def _load_yaml(task_name: str) -> Dict[str, Any]:
     """Load a single task YAML file.
 
@@ -65,6 +69,11 @@ def _load_yaml(task_name: str) -> Dict[str, Any]:
         raise ValueError(
             f"Task config '{task_name}' is missing required fields: {missing}"
         )
+
+    # Skip per-regressor validation for placeholder YAMLs (regressors: null).
+    # get_regressor_config raises TaskNotConfiguredError on these.
+    if config.get('regressors') is None:
+        return config
 
     # Validate each regressor has required fields
     for reg_name, reg_config in config.get('regressors', {}).items():
@@ -145,9 +154,15 @@ def get_regressor_config(task_name: str) -> Dict[str, Dict[str, str]]:
 
     Raises:
         FileNotFoundError: If no YAML file exists for the task.
+        TaskNotConfiguredError: If the YAML is a placeholder (regressors: null).
         ValueError: If the regressor config is empty.
     """
     config = _get_task_config(task_name)
+    if config.get('regressors') is None:
+        raise TaskNotConfiguredError(
+            f"task {task_name!r} has no regressors defined "
+            f"(placeholder YAML — fill in regressors: and contrasts: before running lev1)"
+        )
     regressors = config.get('regressors', {})
     if not regressors:
         raise ValueError(
@@ -155,6 +170,10 @@ def get_regressor_config(task_name: str) -> Dict[str, Dict[str, str]]:
             'Define regressors in the YAML file before running.'
         )
     return _convert_regressor_config(regressors)
+
+
+# Canonical name used by lev1 callers; alias kept for backward compatibility.
+get_task_regressors = get_regressor_config
 
 
 def get_task_contrasts(task_name: str) -> Dict[str, str]:
