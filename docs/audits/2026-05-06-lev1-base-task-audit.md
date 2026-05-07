@@ -43,7 +43,26 @@
 
 ### Smoke test
 
-(none yet)
+s03 × all 8 base tasks × MNI space (alphabetical, single-task per submission, gating each on the prior succeeding):
+
+| Task | Job ID | Runs | Contrasts | Notes |
+|---|---|---|---|---|
+| cuedTS | 24132551 | 5/5 | 5 | clean (after VIF + 4-tuple fixes) |
+| directedForgetting | 24133294 | 5/5 | 3 | clean |
+| flanker | 24135244 | 5/5 | 3 | clean |
+| goNogo | 24138005 | 4/5 | 4 | ses-01 legit behavioral exclusion (junk 32.8% > 30%) |
+| nBack | 24138867 | 5/5 | 4 | clean |
+| shapeMatching | 24139689 | 5/5 | 10 | clean |
+| spatialTS | 24140329 | 5/5 | 5 | clean |
+| stopSignal | 24143959 | 5/5 | 8 | clean |
+
+**Total: 39/40 (s03) per-run lev1 fits succeeded. 1 legit behavioral exclusion. 0 unexplained failures.**
+
+Bugs surfaced + fixed during smoke (4 real lev1 fixes):
+
+- **2026-05-06 `c41a662`** — `file_discovery.py` had `MNI152NLin2009cAsym_res-2` hardcoded; our fmriprep produced `:res-1` for that template and `:res-2` only for `MNI152NLin6Asym`. Added `--mni-template` / `--mni-res` CLI args (defaults to `MNI152NLin6Asym` + `2`).
+- **2026-05-06 `3cc916a`** — nilearn 0.10+'s `compute_fixed_effects` returns 4 values (added z-score image); lev1 was unpacking 3. Now takes `result[:3]` to match the surface path's 3-tuple.
+- **2026-05-06 `33f23b5` → `473ab6e` → `2d42f51`** — VIF inline guard was too aggressive on per-column motion + motion² + drift collinearity (real BOLDs hit VIFs 100–1500). Iterated: 100 → 1000 → 10000, then refactored entirely. Now: inline guard checks rank deficiency only; contrast VIFs are computed and saved to `*_desc-contrastVIFs.csv` for review by `neuro_workflow.qa.lev1_outliers` (which thresholds at default 5 and emits `lev1_flagged.tsv`). Lev1 does NOT auto-skip scans on contrast VIF — researchers can review flagged scans manually.
 
 ## Visual end-check
 
