@@ -213,14 +213,19 @@ class FixedEffectsAnalyzer:
             else:
                 # Volumetric data - use nilearn's implementation.
                 # nilearn >=0.10 returns 4 values: (effect, variance, stat, z_score).
-                # We only consume the first three (matches the surface path's 3-tuple).
+                # We use the z_score (4th) — nilearn's stat (3rd) is effect/sqrt(variance)
+                # and blows up to +/- 1e10 at out-of-mask voxels where variance == 0.
+                # The z_score uses a stabler formulation. Files saved under the
+                # `-z_score` filename suffix correctly hold z-scores.
                 _result = compute_fixed_effects(
                     effect_files,
                     variance_files,
                     mask=self.mask_img,
                     precision_weighted=precision_weighted,
                 )
-                fixed_effect_img, fixed_variance_img, fixed_stat_img = _result[:3]
+                fixed_effect_img = _result[0]
+                fixed_variance_img = _result[1]
+                fixed_stat_img = _result[3] if len(_result) >= 4 else _result[2]
 
             logger.info('Fixed effects for %s: %d runs included', contrast_name, len(effect_files))
 
