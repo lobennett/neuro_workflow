@@ -41,6 +41,18 @@
 - **2026-05-06 `a50e6f5`** — Cross-session anat (s19/s10/s29/s43 etc. with anat from a different BIDS session than their BOLDs): real fmriprep layout is per-session (`sub-X/ses-Y/anat/`), not subject-level (`sub-X/anat/`) as the plan assumed. Lev1 base GLM doesn't reference anatomical T1w directly (only mshbm does, via `find_anat_dir`). 9 tests in `test_cross_session_anat.py` confirm the real layout and the resolution path.
   - **Follow-up note:** `surface_data.py:506` has a stale subject-level (`sub-X/anat/`) fallback for finding anat. It's a fallback after FreeSurfer dirs are checked and "almost never fires" per the implementer's read, but the assumption is wrong for this project. Worth a follow-up fix when convenient — not in scope for this audit.
 
+### Visual end-check + downstream finding
+
+- **2026-05-06 `6f35957`** — Saved fixed-effects "z_score" file was actually nilearn's `fixed_fx_stat_img` (3rd return = effect/sqrt(variance)), which blows up to ±10^10 at out-of-mask voxels where variance=0. Now uses nilearn's `fixed_fx_z_score_img` (4th return) when available; values are bounded.
+- **2026-05-06 OPEN — needs investigation, surfaced for triage** — visual end-check on s03 stopSignal `stop_success-go` after the fixed-effects fix shows 28% of in-mask voxels capped at z = ±37.047 (scipy float-precision floor for `norm.ppf` near p ≈ 0). Root cause: **per-run variance maps are 99.6%+ zeros even inside the brain mask**. Example values for sub-s03 task-stopSignal `stop_success-go`:
+  - ses-02 run-1 variance: median=0, zeros=99.67%, max=667K
+  - ses-04 run-1 variance: median=0, zeros=99.37%, max=623K
+  - ses-06 run-1 variance: median=0, zeros=99.64%, max=2M
+  - Combined mask has 265K in-mask voxels (29%); variance has only ~0.4% non-zero voxels — so even within the GLM mask, most variance values are zero. This is upstream of fixed effects (in lev1's contrast computation or variance-map saving). Affects all base tasks on disk.
+  - Hypotheses: (a) the GLM applies a stricter internal mask than the saved combined mask and only writes variance for a sub-region, (b) `compute_run_contrasts` zero-fills variance outside its compute region, (c) nilearn's contrast computation has a known quirk where variance is only valid where the design has full rank locally.
+  - Lev1 contrast effect-size maps look healthy (e.g. range -350 to +464). The bug is specific to variance.
+  - **Triage decision required from user.**
+
 ### Smoke test
 
 s03 × all 8 base tasks × MNI space (alphabetical, single-task per submission, gating each on the prior succeeding):
