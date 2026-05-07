@@ -152,3 +152,32 @@ def test_write_outputs_csv_and_flagged(tmp_path: Path):
     # Header + only the flagged row
     assert len(flagged_lines) == 2
     assert "sub-s10" in flagged_lines[1]
+
+
+def test_render_pdf_smoke(tmp_path: Path):
+    """End-to-end smoke: 3 synthetic subjects × 1 contrast → PDF written, non-empty."""
+    import nibabel as nib
+    import numpy as np
+
+    paths: list[Path] = []
+    for i in range(3):
+        sub = f"sub-s{i:02d}"
+        p = (tmp_path / sub / "task-goNogo/indiv_contrasts" /
+             f"{sub}_ses-01_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz")
+        p.parent.mkdir(parents=True, exist_ok=True)
+        # 8x8x8 with random values — large enough for nilearn slicing
+        rng = np.random.default_rng(i)
+        nib.save(nib.Nifti1Image(rng.normal(size=(8, 8, 8)).astype(np.float32),
+                                 np.eye(4)), str(p))
+        paths.append(p)
+
+    from neuro_workflow.qa.lev1_outliers import (
+        compute_cohort_outliers,
+        render_outlier_pdf,
+    )
+
+    results = compute_cohort_outliers(paths, n_std=2.0)
+    pdf_path = tmp_path / "lev1_outliers.pdf"
+    render_outlier_pdf(results, vif_table={}, output_path=pdf_path)
+    assert pdf_path.is_file()
+    assert pdf_path.stat().st_size > 1000  # at least a few KB; not empty

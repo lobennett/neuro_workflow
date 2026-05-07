@@ -240,3 +240,78 @@ def write_outliers_csv(rows: list[FlaggedRow], path: Path) -> None:
 def write_flagged_tsv(rows: list[FlaggedRow], path: Path) -> None:
     flagged = [r for r in rows if r.flagged_outliers or r.flagged_vif]
     _write_table(flagged, path, delimiter="\t")
+
+
+def render_outlier_pdf(
+    outlier_results: list[OutlierResult],
+    *,
+    vif_table: dict[tuple[str, str, str, str, str], float],
+    output_path: Path,
+) -> None:
+    """Render a Jeanette-style PDF: one page per (task, contrast) with subject panels,
+    plus an all-cohort histogram and per-contrast histograms.
+
+    Layout ported from Jeanette Mumford's fmri-outlier-detector/plotting_functions.py.
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.backends.backend_pdf import PdfPages
+    import numpy as np
+    from nilearn.plotting import plot_stat_map
+
+    # Group results by (task, contrast)
+    groups: dict[tuple[str, str], list[OutlierResult]] = {}
+    for r in outlier_results:
+        groups.setdefault((r.scan.task, r.scan.contrast), []).append(r)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with PdfPages(output_path) as pdf:
+        # 1) One page per (task, contrast) — subject panels
+        for (task, contrast), members in sorted(groups.items()):
+            n = len(members)
+            ncols = min(4, n)
+            nrows = (n + ncols - 1) // ncols
+            fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 3 * nrows))
+            axes = np.atleast_1d(axes).flatten()
+            for ax, r in zip(axes, members):
+                key = (r.scan.subject, r.scan.session, r.scan.run, r.scan.task, r.scan.contrast)
+                vif = vif_table.get(key)
+                vif_label = f"vif={vif:.2f}" if vif is not None else "vif=?"
+                title = (
+                    f"{r.scan.subject} {r.scan.session} run-{r.scan.run}\n"
+                    f"{vif_label}, outlier={r.outlier_pct:.1f}%"
+                )
+                try:
+                    plot_stat_map(str(r.scan.path), axes=ax, title=title,
+                                  display_mode="z", cut_coords=1,
+                                  colorbar=False, annotate=False)
+                except Exception as exc:  # noqa: BLE001
+                    ax.text(0.5, 0.5, f"render failed: {exc}",
+                            ha="center", va="center", transform=ax.transAxes)
+            for ax in axes[n:]:
+                ax.axis("off")
+            fig.suptitle(f"{task} / {contrast}", fontsize=14)
+            fig.tight_layout()
+            pdf.savefig(fig)
+            plt.close(fig)
+
+        # 2) All-cohort outlier-% histogram
+        all_pcts = [r.outlier_pct for r in outlier_results]
+        if all_pcts:
+            fig, ax = plt.subplots(figsize=(8, 5))
+            ax.hist(all_pcts, bins=30)
+            ax.set_xlabel("outlier voxel %")
+            ax.set_ylabel("count")
+            ax.set_title("Outlier % across all cohort scan-contrasts")
+            pdf.savefig(fig)
+            plt.close(fig)
+
+        # 3) Per-contrast outlier-% histogram
+        for (task, contrast), members in sorted(groups.items()):
+            pcts = [r.outlier_pct for r in members]
+            fig, ax = plt.subplots(figsize=(8, 5))
+            ax.hist(pcts, bins=20)
+            ax.set_xlabel("outlier voxel %")
+            ax.set_ylabel("count")
+            ax.set_title(f"{task} / {contrast} — outlier % per scan")
+            pdf.savefig(fig)
+            plt.close(fig)
