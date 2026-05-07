@@ -84,6 +84,7 @@ regressors:
     amplitude: 1
     duration: 1
     subset: "trial_id == 'break_with_performance_feedback'"
+    events_query_min_coverage: 0.0
 
 contrasts:
   task-baseline: "1/7 * (SSS + SDD + SNN + DSD + DDD + DDS + DNN)"
