@@ -71,7 +71,12 @@ class TestComputeSurfaceFixedEffects:
         assert np.isfinite(fs.data[1])
 
     def test_all_nan_vertex(self, tmp_path):
-        """Vertex with NaN in ALL runs → z-score should be 0."""
+        """Vertex with NaN in ALL runs → output preserves NaN.
+
+        compute_surface_fixed_effects deliberately keeps NaN at fully-invalid
+        vertices to avoid silently treating them as zero during group-level
+        thresholding (see surface_data.py:invalid_vertices block).
+        """
         effects = [np.array([2.0, np.nan]), np.array([4.0, np.nan])]
         variances = [np.array([1.0, np.nan]), np.array([1.0, np.nan])]
 
@@ -88,9 +93,9 @@ class TestComputeSurfaceFixedEffects:
 
         # Vertex 0 is normal
         np.testing.assert_allclose(fe.data[0], 3.0)
-        # Vertex 1: all NaN → should be 0 (no data)
-        assert fe.data[1] == 0.0
-        assert fs.data[1] == 0.0
+        # Vertex 1: all NaN across runs → preserved as NaN
+        assert np.isnan(fe.data[1])
+        assert np.isnan(fs.data[1])
 
     def test_precision_weighted_with_nan(self, tmp_path):
         """Precision-weighted path should exclude NaN runs per vertex."""

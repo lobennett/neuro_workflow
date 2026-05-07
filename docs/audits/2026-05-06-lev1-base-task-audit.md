@@ -25,13 +25,12 @@
 ### Lev1 code review
 
 - **2026-05-06 `a894f10`** — Inline design-matrix guard added to `glm.py`: `RankDeficientDesignError`, `PathologicalVIFError`, `check_design_matrix_health()`. Wired into `validate_glm_inputs` (records errors instead of raising). Two bugs in the spec'd code surfaced and fixed during implementation: (i) `np.fill_diagonal` requires a writable array (used `to_numpy(copy=True)`); (ii) zero-variance columns (intercept) were producing `VIF=inf` and tripping `PathologicalVIFError` on every clean design matrix — now treated as `VIF=1.0` (uninformative for collinearity).
-- **2026-05-06** — 5 pre-existing test failures unrelated to this audit, present on the `main` branch and on this audit branch before any Phase 2 changes (verified via `git stash` by implementer):
-  - `tests/analysis/lev1/test_processing_events.py::TestPreprocessEvents::test_preprocess_events_negative_onset_filtering`
-  - `tests/analysis/lev1/test_processing_events.py::TestPreprocessEvents::test_preprocess_events_negative_onset_with_dummy_scans`
-  - `tests/analysis/lev1/test_surface_fixed_effects.py::TestComputeSurfaceFixedEffects::test_all_nan_vertex` (assertion: `np.float32(nan) == 0.0`)
-  - `tests/analysis/lev1/test_task_config.py::TestGetTaskParameters::test_performance_feedback_flag` (`KeyError: 'has_performance_feedback_breaks'` — likely YAML schema drift)
-  - `tests/analysis/lev1/test_vol2fsaverage.py` collection error (import)
-  These should be triaged separately; they affect lev1 readiness but are not introduced by this audit. **Triage decision required from user.**
+- **2026-05-06** — 5 pre-existing test failures triaged and resolved (none reflected real lev1 bugs; all were stale tests):
+  - `test_preprocess_events_negative_onset_filtering` and `test_preprocess_events_negative_onset_with_dummy_scans` — DELETED. They asserted `preprocess_events` filters negative onsets, but the function's docstring explicitly says onset adjustment is upstream (`events/create.py`). Tests checked behavior the function doesn't claim. The second test also had a latent bug (`adjust_for_dummy_scans=True` with default `dummy_scans=0`).
+  - `test_all_nan_vertex` (surface fixed effects) — UPDATED. Asserted output `0.0` for all-NaN vertices, but `compute_surface_fixed_effects` deliberately preserves NaN at fully-invalid vertices to avoid silently treating them as zero during group-level thresholding (per its own code comment). Test now asserts `np.isnan(...)`.
+  - `test_performance_feedback_flag` — DELETED. Tested for `has_performance_feedback_breaks` key in `get_task_parameters` output that doesn't exist anywhere in the codebase. Functionality is now superseded by the per-regressor `events_query_min_coverage` override added in Task 1.
+  - `tests/analysis/lev1/test_vol2fsaverage.py` — DELETED. Imported from `prepare_mshbm_inputs` which doesn't exist in the repo (orphaned test, deleted module).
+  After cleanup: 175/175 `tests/analysis/lev1/` tests pass.
 
 ### Edge cases
 
