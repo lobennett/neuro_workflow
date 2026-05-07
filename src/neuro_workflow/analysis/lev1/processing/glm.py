@@ -151,7 +151,7 @@ class PathologicalVIFError(ValueError):
 def check_design_matrix_health(
     design_matrix: pd.DataFrame,
     *,
-    vif_sentinel: float = 100.0,
+    vif_sentinel: float = 1000.0,
 ) -> None:
     """Fail fast on degenerate design matrices.
 
@@ -159,8 +159,11 @@ def check_design_matrix_health(
     - Rank deficiency: matrix_rank < n_columns -> raise RankDeficientDesignError
       naming the most-correlated column pair.
     - Pathological VIF: any column's VIF > vif_sentinel -> raise PathologicalVIFError.
-      Sentinel (default 100) catches catastrophic collinearity, not research-level
-      thresholds; that lives at the cohort QC step.
+      Sentinel (default 1000) catches catastrophic collinearity (perfect duplicates,
+      all-NaN regressors with VIF -> infinity) without flagging the routine
+      collinearity between motion and motion**2 (or motion derivatives), which
+      can hit VIFs of several hundred without indicating a design bug.
+      Research-level VIF thresholds (e.g., 5) live at the cohort QC step.
     """
     arr = np.asarray(design_matrix.to_numpy(dtype=float, copy=True))
     n_cols = arr.shape[1]
