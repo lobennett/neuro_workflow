@@ -35,6 +35,7 @@
 ### Edge cases
 
 - **2026-05-06 `d3a1359`** — Salvaged scans: lev1 didn't trim events whose `onset >= n_scans * tr`. GLM output was unaffected (nilearn silently truncated past-end events) but `*_simplifiedEvents.csv` was writing phantom rows for past-end events. Fixed by adding optional `n_scans` kwarg to `preprocess_events`; `run.py` now passes it. 5 tests in `test_salvaged_scans.py` cover the fix.
+- **2026-05-06 `9fc145b`** — Missing events.tsv: `_filter_complete_runs` in `file_discovery.py` was silently dropping any run that lacked a required file (events, BOLD, etc.) with no log. Real salvaged subjects could lose scans without anyone noticing. Fixed by emitting `logger.warning("Skipping %s/%s: missing required file(s): %s", ...)` per partially-discovered run while still ignoring fully-absent runs (no noise for subjects with no scans for a task). 4 tests in `test_missing_events.py` cover the fix.
 
 ### Smoke test
 
