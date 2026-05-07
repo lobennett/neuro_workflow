@@ -16,6 +16,7 @@ outlier %, reads the per-contrast VIF CSVs lev1 already emits, writes:
 """
 from __future__ import annotations
 
+import csv
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -127,3 +128,115 @@ def compute_cohort_outliers(
                 n_voxels=n_vox,
             ))
     return results
+
+
+_VIF_FILENAME_RE = re.compile(
+    r"^(?P<subject>sub-[A-Za-z0-9]+)"
+    r"_(?P<session>ses-[A-Za-z0-9]+)"
+    r"_task-(?P<task>[A-Za-z0-9]+)"
+    r"_run-(?P<run>\d+)"
+    r"_desc-contrastVIFs\.csv$"
+)
+
+
+@dataclass(frozen=True)
+class FlaggedRow:
+    """One row in the per-scan-contrast outputs."""
+    subject: str
+    session: str
+    run: str
+    task: str
+    contrast: str
+    outlier_pct: float
+    vif: float | None
+    flagged_outliers: bool
+    flagged_vif: bool
+
+
+def discover_vif_files(
+    lev1_dirs: list[Path],
+    *,
+    glob_pattern: str = "sub-s*/task-*/quality_control/*_desc-contrastVIFs.csv",
+) -> list[Path]:
+    out: list[Path] = []
+    for d in lev1_dirs:
+        out.extend(d.glob(glob_pattern))
+    return sorted(out)
+
+
+def load_vif_table(
+    vif_paths: list[Path],
+) -> dict[tuple[str, str, str, str, str], float]:
+    """Read each contrastVIFs CSV; return {(subject, session, run, task, contrast) -> vif}."""
+    import pandas as pd
+
+    table: dict[tuple[str, str, str, str, str], float] = {}
+    for fp in vif_paths:
+        m = _VIF_FILENAME_RE.match(fp.name)
+        if not m:
+            continue
+        df = pd.read_csv(fp)
+        if not {"contrast", "VIF"}.issubset(df.columns):
+            continue
+        for _, row in df.iterrows():
+            key = (
+                m.group("subject"), m.group("session"),
+                m.group("run"), m.group("task"), str(row["contrast"]),
+            )
+            table[key] = float(row["VIF"])
+    return table
+
+
+def assemble_flagged_rows(
+    outlier_results: list[OutlierResult],
+    vif_table: dict[tuple[str, str, str, str, str], float],
+    *,
+    outlier_pct_threshold: float,
+    vif_threshold: float,
+) -> list[FlaggedRow]:
+    rows: list[FlaggedRow] = []
+    for r in outlier_results:
+        sc = r.scan
+        key = (sc.subject, sc.session, sc.run, sc.task, sc.contrast)
+        vif = vif_table.get(key)
+        rows.append(FlaggedRow(
+            subject=sc.subject,
+            session=sc.session,
+            run=sc.run,
+            task=sc.task,
+            contrast=sc.contrast,
+            outlier_pct=r.outlier_pct,
+            vif=vif,
+            flagged_outliers=r.outlier_pct > outlier_pct_threshold,
+            flagged_vif=(vif is not None and vif > vif_threshold),
+        ))
+    return rows
+
+
+def _write_table(rows: list[FlaggedRow], path: Path, delimiter: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "subject", "session", "run", "task", "contrast",
+        "outlier_pct", "vif", "flagged_outliers", "flagged_vif",
+    ]
+    with path.open("w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=delimiter)
+        writer.writeheader()
+        for r in rows:
+            writer.writerow({
+                "subject": r.subject, "session": r.session, "run": r.run,
+                "task": r.task, "contrast": r.contrast,
+                "outlier_pct": f"{r.outlier_pct:.4f}",
+                "vif": "" if r.vif is None else f"{r.vif:.4f}",
+                "flagged_outliers": int(r.flagged_outliers),
+                "flagged_vif": int(r.flagged_vif),
+            })
+
+
+def write_outliers_csv(rows: list[FlaggedRow], path: Path) -> None:
+    _write_table(rows, path, delimiter=",")
+
+
+def write_flagged_tsv(rows: list[FlaggedRow], path: Path) -> None:
+    flagged = [r for r in rows if r.flagged_outliers or r.flagged_vif]
+    _write_table(flagged, path, delimiter="\t")
