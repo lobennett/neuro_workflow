@@ -1,22 +1,39 @@
 """File discovery utilities for BIDS and fMRIPrep data."""
 
+import logging
 import re
 from pathlib import Path
 from typing import Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class FileFinder:
     """Find and organize BIDS and fMRIPrep files."""
 
-    def __init__(self, bids_dir: Path, fmriprep_dir: Path):
+    def __init__(
+        self,
+        bids_dir: Path,
+        fmriprep_dir: Path,
+        mni_template: str = 'MNI152NLin6Asym',
+        mni_res: str = '2',
+    ):
         """Initialize file finder.
 
         Args:
             bids_dir: Path to BIDS dataset directory
             fmriprep_dir: Path to fMRIPrep derivatives directory
+            mni_template: fMRIPrep MNI template name to look for in derivative
+                filenames (e.g., 'MNI152NLin2009cAsym', 'MNI152NLin6Asym').
+                Defaults to 'MNI152NLin6Asym' to match this project's
+                fmriprep production output for the 2mm MNI variant.
+            mni_res: Resolution suffix for the MNI BOLD/mask files
+                (e.g., '1', '2'). Defaults to '2'.
         """
         self.bids_dir = Path(bids_dir)
         self.fmriprep_dir = Path(fmriprep_dir)
+        self.mni_template = mni_template
+        self.mni_res = mni_res
         self.run_pattern = re.compile(r'run-\d+')
 
     # Surface file patterns keyed by space name
@@ -117,8 +134,8 @@ class FileFinder:
             'confounds': 'desc-confounds_timeseries.tsv',
             't1w_data': 'space-T1w_desc-preproc_bold.nii.gz',
             't1w_brain_mask': 'space-T1w_desc-brain_mask.nii.gz',
-            'mni_data': 'space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz',
-            'mni_brain_mask': 'space-MNI152NLin2009cAsym_res-2_desc-brain_mask.nii.gz',
+            'mni_data': f'space-{self.mni_template}_res-{self.mni_res}_desc-preproc_bold.nii.gz',
+            'mni_brain_mask': f'space-{self.mni_template}_res-{self.mni_res}_desc-brain_mask.nii.gz',
             **surface_patterns,
         }
 
@@ -173,13 +190,27 @@ class FileFinder:
     def _filter_complete_runs(
         self, files: Dict, required_files: List[str]
     ) -> Dict[str, Dict[str, Dict[str, Path]]]:
-        """Filter to only include runs with all required files."""
+        """Filter to only include runs with all required files.
+
+        A run is dropped when it's missing any required file type. To make
+        skip-with-warning visible to operators (rather than a silent drop),
+        each dropped run that has at least one discovered file emits a
+        WARNING naming the missing file types. Runs with no discovered files
+        at all are not warned about (those represent absent scans, not
+        partially-incomplete ones).
+        """
         filtered_files = {}
 
         for session, runs in files.items():
             for run, file_dict in runs.items():
-                if all(file_type in file_dict for file_type in required_files):
+                missing = [ft for ft in required_files if ft not in file_dict]
+                if not missing:
                     filtered_files.setdefault(session, {})[run] = file_dict
+                elif file_dict:
+                    logger.warning(
+                        'Skipping %s/%s: missing required file(s): %s',
+                        session, run, ', '.join(sorted(missing)),
+                    )
 
         return filtered_files
 

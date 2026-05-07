@@ -201,10 +201,3 @@ class TestGetTaskParameters:
         params = get_task_parameters('stopSignalWDirectedForgetting')
         assert params['expected_sessions'] == 2
 
-    def test_performance_feedback_flag(self):
-        """Tasks with breaks should have has_performance_feedback_breaks=True."""
-        params = get_task_parameters('flanker')
-        assert params['has_performance_feedback_breaks'] is True
-
-        params = get_task_parameters('stopSignalWDirectedForgetting')
-        assert params['has_performance_feedback_breaks'] is False

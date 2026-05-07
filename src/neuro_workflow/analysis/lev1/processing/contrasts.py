@@ -134,23 +134,29 @@ def compute_run_contrasts(
             contrast_base = f'{base_filename}{hemi_part}_contrast-{contrast_name}_rtmodel-RTDur'
 
             saved_files = {}
-            # Save effect size map
-            effect_filename = f'{contrast_base}_stat-effect-size{file_ext}'
-            effect_path = output_dir / effect_filename
-            contrast_result['effect_size'].to_filename(effect_path)
-            saved_files['effect_size'] = effect_path
-
-            # Save variance map
-            var_filename = f'{contrast_base}_stat-variance{file_ext}'
-            var_path = output_dir / var_filename
-            contrast_result['effect_variance'].to_filename(var_path)
-            saved_files['effect_variance'] = var_path
-
-            # Save z-score map
-            z_filename = f'{contrast_base}_stat-z_score{file_ext}'
-            z_path = output_dir / z_filename
-            contrast_result['z_score'].to_filename(z_path)
-            saved_files['z_score'] = z_path
+            # Save contrast outputs as float32. nilearn's compute_contrast returns
+            # Nifti1Images that, on to_filename(), get auto-scaled to the input
+            # BOLD's storage dtype — for fmriprep preproc BOLDs this lands as uint8
+            # with only 256 quantization levels across cal_min..cal_max. That kills
+            # variance maps (most values truncate to 0) and degrades z_score and
+            # effect_size precision. Cast to float32 explicitly.
+            for stat_key, suffix in [
+                ('effect_size', 'effect-size'),
+                ('effect_variance', 'variance'),
+                ('z_score', 'z_score'),
+            ]:
+                img = contrast_result[stat_key]
+                # Skip surface (GIFTI) — only volumetric NIfTIs need the dtype fix.
+                if hemisphere is None:
+                    img = img.__class__(
+                        img.get_fdata().astype('float32'),
+                        img.affine,
+                        header=img.header,
+                    )
+                    img.set_data_dtype('float32')
+                path = output_dir / f'{contrast_base}_stat-{suffix}{file_ext}'
+                img.to_filename(path)
+                saved_files[stat_key] = path
 
             all_saved_files[contrast_name] = saved_files
 
