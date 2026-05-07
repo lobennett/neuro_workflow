@@ -53,6 +53,8 @@ uv run python -m neuro_workflow.analysis.lev1.run \
   --results-dir "${LEV1_OUT}" \
   --exclusions-file "${EXCLUSIONS_FILE}" \
   --space MNI \
+  --mni-template MNI152NLin6Asym \
+  --mni-res 2 \
   --within-subject-threshold 1.0
 
 echo "Done: sub-s03 task=${TASK} space=MNI"
