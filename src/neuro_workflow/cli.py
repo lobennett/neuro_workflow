@@ -151,7 +151,7 @@ def cmd_exclusions_generate(args, remaining):
         sys.exit(1)
     config = get_dataset(args.dataset)
     entries = generator.generate(args.dataset, config, args)
-    save_source_entries(args.dataset, generator.name, entries)
+    save_source_entries(args.dataset, generator.name, entries, args=args)
     print(f"Saved {len(entries)} entries to sources/{generator.name}.json")
 
 
@@ -193,7 +193,7 @@ def cmd_exclusions_import(args, remaining):
         entries = json.load(f)
     for entry in entries:
         entry["source"] = args.source_name
-    save_source_entries(args.dataset, args.source_name, entries)
+    save_source_entries(args.dataset, args.source_name, entries, args=args)
     print(f"Imported {len(entries)} entries as source '{args.source_name}'")
 
 
@@ -237,7 +237,7 @@ def cmd_events_qc(args, remaining):
     behavioral_dir = Path(args.behavioral_dir) if args.behavioral_dir else bids_dir / "sourcedata"
     exclusion_entries, trim_entries = run_qc(behavioral_dir=behavioral_dir, bids_dir=bids_dir)
     if exclusion_entries:
-        save_source_entries(args.dataset, "behavioral-qc", exclusion_entries)
+        save_source_entries(args.dataset, "behavioral-qc", exclusion_entries, args=args)
         print(f"Saved {len(exclusion_entries)} behavioral-qc exclusion entries")
     print(f"Found {len(trim_entries)} runs needing trimming")
 
