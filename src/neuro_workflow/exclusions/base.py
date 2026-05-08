@@ -90,18 +90,35 @@ def _git_sha() -> str | None:
 
 
 def _jsonify(value):
-    """Convert non-JSON-native values (Path, set, etc.) to JSON-safe forms.
+    """Convert non-JSON-native values to JSON-safe forms.
 
-    Walks dicts and lists recursively. Path becomes str. Other unknown types
-    are returned as-is and may fail json.dumps loudly downstream — that's fine.
+    Walks dicts and lists recursively. Path becomes str. Callables are
+    stripped from dicts (argparse Namespaces carry an internal `func`
+    callback that's not user-meaningful and not JSON-serializable). Other
+    unknown types are stringified with their class name so json.dumps
+    doesn't crash on the audit-trail write path.
     """
     if isinstance(value, Path):
         return str(value)
+    if callable(value):
+        # Skip at dict level; here we land on a top-level callable, which
+        # shouldn't happen but stringify defensively.
+        return f"<callable:{getattr(value, '__name__', type(value).__name__)}>"
     if isinstance(value, dict):
-        return {k: _jsonify(v) for k, v in value.items()}
+        out = {}
+        for k, v in value.items():
+            if callable(v):
+                # argparse subparsers attach a `func` callback to every
+                # parsed Namespace; drop it from the audit trail.
+                continue
+            out[k] = _jsonify(v)
+        return out
     if isinstance(value, (list, tuple)):
         return [_jsonify(v) for v in value]
-    return value
+    if isinstance(value, (str, int, float, bool, type(None))):
+        return value
+    # Unknown type — stringify so json.dumps doesn't crash.
+    return f"<{type(value).__name__}:{value!r}>"
 
 
 def make_meta(
