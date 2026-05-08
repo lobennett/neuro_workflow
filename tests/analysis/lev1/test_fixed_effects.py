@@ -142,3 +142,14 @@ def test_lev1_cli_min_runs_must_be_positive():
     parser = get_parser()
     with _pytest.raises(SystemExit):
         parser.parse_args([*_MINIMAL_ARGS, '--min-runs', '0'])
+
+
+def test_no_high_exclusion_attribute():
+    """Regression: high_exclusion plumbing must stay deleted."""
+    from neuro_workflow.analysis.lev1.processing.fixed_effects import (
+        FixedEffectsAnalyzer,
+    )
+    a = FixedEffectsAnalyzer('sub-x', 'flanker')
+    assert not hasattr(a, 'high_exclusion'), (
+        'FixedEffectsAnalyzer should not carry a high_exclusion attribute'
+    )
