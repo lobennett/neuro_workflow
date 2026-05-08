@@ -18,7 +18,7 @@ from argparse import ArgumentParser, Namespace
 from dataclasses import dataclass
 from pathlib import Path
 
-from neuro_workflow.exclusions.base import register_generator
+from neuro_workflow.exclusions.base import load_dataset_subjects, register_generator
 
 
 @dataclass(frozen=True)
@@ -49,29 +49,6 @@ def _read_outliers_csv(path: Path) -> list[dict]:
         raise FileNotFoundError(f"lev1_outliers.csv not found: {path}")
     with path.open() as f:
         return list(csv.DictReader(f))
-
-
-def _load_dataset_subjects(dataset_config: dict) -> set[str] | None:
-    """Return the dataset's subject IDs (with `sub-` prefix) from `subjects_file`,
-    or None if the config has no resolvable subjects file. Bare IDs in the file
-    (e.g. `s10`) are normalised to `sub-s10` to match CSV row IDs."""
-    raw = dataset_config.get("subjects_file")
-    if not raw:
-        return None
-    path = Path(raw)
-    if not path.is_absolute():
-        # subjects_file is stored relative to the cwd at registration time.
-        # Try cwd first; the user runs CLI from the repo root.
-        path = Path.cwd() / raw
-    if not path.is_file():
-        return None
-    subjects: set[str] = set()
-    for line in path.read_text().splitlines():
-        sid = line.strip()
-        if not sid or sid.startswith("#"):
-            continue
-        subjects.add(sid if sid.startswith("sub-") else f"sub-{sid}")
-    return subjects or None
 
 
 def _rules_fired(vif: float, outlier_pct: float, t: Thresholds) -> list[str]:
@@ -183,7 +160,7 @@ class Lev1OutlierGenerator:
                 "lev1_outlier generator requires --lev1-outliers-csv"
             )
         rows = _read_outliers_csv(args.lev1_outliers_csv)
-        sample = _load_dataset_subjects(dataset_config)
+        sample = load_dataset_subjects(dataset_config)
         if sample is not None:
             before = len(rows)
             rows = [r for r in rows if r["subject"] in sample]
