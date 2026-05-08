@@ -723,8 +723,9 @@ def get_parser() -> argparse.ArgumentParser:
         help='Subject ID (e.g., s03)',
     )
     parser.add_argument(
-        '--glm-dir', type=str, required=True,
-        help='GLM results directory containing sub-s*/task-*/task_residuals/',
+        '--glm-dir', type=str, default=None,
+        help='GLM results directory containing sub-s*/task-*/task_residuals/. '
+             'Required unless --rest-only is set.',
     )
     parser.add_argument(
         '--fmriprep-dir', type=str, required=True,
@@ -750,6 +751,11 @@ def get_parser() -> argparse.ArgumentParser:
         '--sessions', nargs='+', default=None,
         help='Only process these sessions (e.g., --sessions 01 02). '
         'Default: all sessions.',
+    )
+    parser.add_argument(
+        '--rest-only', action='store_true', default=False,
+        help='Skip task-residual discovery + processing. Only rest BOLD '
+             'is projected to fsaverage6. Mutually exclusive with --glm-dir.',
     )
     parser.add_argument(
         '--verbose', action='store_true', default=False,
