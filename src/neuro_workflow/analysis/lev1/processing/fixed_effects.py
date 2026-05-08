@@ -27,6 +27,7 @@ class FixedEffectsAnalyzer:
         task_name: str,
         mask_img: Optional[Union[str, Path]] = None,
         high_exclusion: bool = False,
+        min_runs: int = 2,
         hemisphere: Optional[str] = None,
         surface_space: str = 'fsnative',
     ):
@@ -37,6 +38,7 @@ class FixedEffectsAnalyzer:
             task_name: Task name
             mask_img: Optional brain mask image
             high_exclusion: Whether >50% of runs were excluded
+            min_runs: Minimum runs required to compute a non-tagged fixed-effects map (default: 2).
             hemisphere: Optional hemisphere ('L' or 'R') for surface data
             surface_space: Surface space name for output filenames (default 'fsnative')
 
@@ -48,6 +50,7 @@ class FixedEffectsAnalyzer:
         self.task_name = task_name
         self.mask_img = mask_img
         self.high_exclusion = high_exclusion
+        self.min_runs = min_runs
         self.hemisphere = hemisphere
         self.surface_space = surface_space
         self.contrast_results = {}
