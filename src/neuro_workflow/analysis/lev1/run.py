@@ -53,6 +53,14 @@ from neuro_workflow.analysis.task_config.loader import get_task_contrasts, get_t
 logger = logging.getLogger(__name__)
 
 
+def _positive_int(value: str) -> int:
+    """Argparse type that accepts only integers >= 1."""
+    iv = int(value)
+    if iv < 1:
+        raise argparse.ArgumentTypeError('--min-runs must be >= 1')
+    return iv
+
+
 def setup_logging(verbose: bool = False) -> None:
     """Configure root logger for the analysis pipeline.
 
@@ -162,6 +170,14 @@ def get_parser() -> argparse.ArgumentParser:
         '--mni-res',
         default='2',
         help='Resolution suffix for --space MNI (default: 2)',
+    )
+    parser.add_argument(
+        '--min-runs',
+        type=_positive_int,
+        default=2,
+        help='Minimum runs required to compute a non-tagged fixed-effects map. '
+             'Below this threshold, the saved map is tagged _desc-belowMinRuns '
+             'and lev2 will filter it out (default: 2).',
     )
     parser.add_argument(
         '--verbose',
