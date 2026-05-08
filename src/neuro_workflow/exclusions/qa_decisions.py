@@ -69,15 +69,31 @@ class QADecisionsGenerator:
         sample = load_dataset_subjects(dataset_config)
 
         entries: list[dict] = []
+        n_scan = n_expanded = n_subj_rows = n_review = n_pass = 0
+
         for key, decision in decisions.items():
-            if decision.action != "exclude":
+            if decision.action == "review":
+                n_review += 1
                 continue
+            if decision.action == "pass":
+                n_pass += 1
+                continue
+            # decision.action == "exclude"
             if isinstance(key, ScanKey):
                 if sample is not None and _norm_sub(key.subject) not in sample:
                     continue
                 entries.append(_entry_from_scan_key(key, decision.reason))
+                n_scan += 1
+            # subject-level expansion follows in Task 6
 
         entries.sort(key=lambda e: (e["subject"], e["session"], e["task"], e["run"]))
+
+        n_excluded = len(entries)
+        print(
+            f"qa_decisions: {n_excluded} excluded "
+            f"({n_scan} scan-level, {n_expanded} expanded from {n_subj_rows} subject-level), "
+            f"{n_review} review-skipped, {n_pass} pass-skipped"
+        )
         return entries
 
 
