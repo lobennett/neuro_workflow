@@ -186,7 +186,7 @@ CLI test (lightweight, in `tests/analysis/lev1/test_run.py` or nearest existing)
 
 - TDD throughout: failing test first, then implementation.
 - Each commit: one conceptual change + its test. Frequent commits.
-- No retroactive abstractions — no "policy registry", no overrideable filter hooks. The filter is one comprehension.
+- No retroactive abstractions — no "policy registry", no overridable filter hooks. The filter is one comprehension.
 - `min_runs=2` is the default in two places only: the CLI parser (canonical) and the analyzer constructor (test ergonomics). Tests construct the analyzer directly and rely on the constructor default; production runs always go through the CLI. No third copy.
 - Delete `count_subject_exclusions` or its `high_exclusion` field — don't leave dead fields.
 
