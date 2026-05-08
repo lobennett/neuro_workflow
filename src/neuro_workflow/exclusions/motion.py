@@ -32,16 +32,22 @@ def _parse_confounds_filename(filename: str) -> dict | None:
 
 
 def _compute_metrics(df: "pd.DataFrame") -> dict:
-    """Compute motion metrics from a confounds dataframe."""
+    """Compute motion metrics from a confounds dataframe.
+
+    DVARS uses fmriprep's `std_dvars` (standardized, ~0-3 z-units), not the raw
+    `dvars` column (BOLD-intensity units, ~10s-100s). The threshold convention
+    `>1.5` applies to standardized DVARS. qa/metrics/motion.py already uses
+    std_dvars; this matches.
+    """
     fd = pd.to_numeric(df.get("framewise_displacement", pd.Series(dtype=float)), errors="coerce").dropna()
-    dvars = pd.to_numeric(df.get("dvars", pd.Series(dtype=float)), errors="coerce").dropna()
+    dvars = pd.to_numeric(df.get("std_dvars", pd.Series(dtype=float)), errors="coerce").dropna()
     return {
         "fmriprep_fd_mean": float(fd.mean()) if len(fd) > 0 else 0.0,
         "fmriprep_fd_std": float(fd.std()) if len(fd) > 0 else 0.0,
         "fmriprep_proportion_fd_over_0.5": float((fd > 0.5).mean()) if len(fd) > 0 else 0.0,
-        "fmriprep_dvars_mean": float(dvars.mean()) if len(dvars) > 0 else 0.0,
-        "fmriprep_dvars_std": float(dvars.std()) if len(dvars) > 0 else 0.0,
-        "fmriprep_proportion_dvars_over_1.5": float((dvars > 1.5).mean()) if len(dvars) > 0 else 0.0,
+        "fmriprep_std_dvars_mean": float(dvars.mean()) if len(dvars) > 0 else 0.0,
+        "fmriprep_std_dvars_std": float(dvars.std()) if len(dvars) > 0 else 0.0,
+        "fmriprep_proportion_std_dvars_over_1.5": float((dvars > 1.5).mean()) if len(dvars) > 0 else 0.0,
     }
 
 
@@ -102,9 +108,9 @@ class MotionGenerator:
                         f"exceeded threshold ({prop_fd_thresh})"
                     )
 
-            if metrics["fmriprep_proportion_dvars_over_1.5"] > prop_dvars_thresh:
+            if metrics["fmriprep_proportion_std_dvars_over_1.5"] > prop_dvars_thresh:
                 reasons.append(
-                    f"Proportion DVARS > 1.5 ({metrics['fmriprep_proportion_dvars_over_1.5']:.3f}) "
+                    f"Proportion std_dvars > 1.5 ({metrics['fmriprep_proportion_std_dvars_over_1.5']:.3f}) "
                     f"exceeded threshold ({prop_dvars_thresh})"
                 )
 
