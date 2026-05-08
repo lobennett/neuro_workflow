@@ -47,3 +47,39 @@ def test_parser_glm_dir_still_accepted():
     ])
     assert args.glm_dir == "/oak/lev1"
     assert args.rest_only is False
+
+
+def test_main_errors_when_neither_rest_only_nor_glm_dir(monkeypatch, capsys):
+    """`main()` exits with a clear error when neither --rest-only nor --glm-dir is set."""
+    from neuro_workflow.analysis.mshbm import run as mshbm_run
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["mshbm.run", "--subj-id", "s03", "--fmriprep-dir", "/tmp"],
+    )
+    with pytest.raises(SystemExit) as exc_info:
+        mshbm_run.main()
+    assert exc_info.value.code != 0
+    captured = capsys.readouterr()
+    assert "rest-only" in (captured.err + captured.out).lower()
+
+
+def test_main_errors_when_both_rest_only_and_glm_dir(monkeypatch, capsys):
+    """`main()` exits with a clear error when both --rest-only and --glm-dir are set."""
+    from neuro_workflow.analysis.mshbm import run as mshbm_run
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "mshbm.run", "--subj-id", "s03",
+            "--fmriprep-dir", "/tmp",
+            "--glm-dir", "/oak/lev1",
+            "--rest-only",
+        ],
+    )
+    with pytest.raises(SystemExit) as exc_info:
+        mshbm_run.main()
+    assert exc_info.value.code != 0
+    captured = capsys.readouterr()
+    assert "rest-only" in (captured.err + captured.out).lower()
+    assert "glm-dir" in (captured.err + captured.out).lower()
