@@ -71,3 +71,31 @@ def test_build_base_filename_min_runs_is_configurable():
         'fixed_stat': None, 'input_files': {'effects': [], 'variances': []},
     }
     assert '_desc-belowMinRuns_' in a._build_base_filename('cue_switch_cost')
+
+
+def test_compute_subject_fixed_effects_accepts_min_runs(tmp_path):
+    """The module-level helper accepts and threads `min_runs` to the analyzer."""
+    from neuro_workflow.analysis.lev1.processing import fixed_effects as fe
+
+    captured = {}
+    real_init = fe.FixedEffectsAnalyzer.__init__
+
+    def spy_init(self, *args, **kwargs):
+        captured['min_runs'] = kwargs.get('min_runs', None)
+        # Avoid actually running the analysis: raise after capturing.
+        raise RuntimeError('stop after capture')
+
+    fe.FixedEffectsAnalyzer.__init__ = spy_init
+    try:
+        try:
+            fe.compute_subject_fixed_effects(
+                'sub-x', 'flanker',
+                contrast_dir=tmp_path, output_dir=tmp_path,
+                min_runs=4,
+            )
+        except RuntimeError:
+            pass
+    finally:
+        fe.FixedEffectsAnalyzer.__init__ = real_init
+
+    assert captured['min_runs'] == 4

@@ -434,6 +434,7 @@ def compute_subject_fixed_effects(
     mask_img: Optional[Union[str, Path]] = None,
     exclusions: Optional[Set[str]] = None,
     high_exclusion: bool = False,
+    min_runs: int = 2,
     hemisphere: Optional[str] = None,
     surface_space: str = 'fsnative',
 ) -> Dict[str, Dict[str, Path]]:
@@ -447,6 +448,7 @@ def compute_subject_fixed_effects(
         mask_img: Optional brain mask
         exclusions: Optional set of runs to exclude
         high_exclusion: Whether >50% of runs were excluded
+        min_runs: Minimum runs threshold passed to the analyzer (default 2).
         hemisphere: Optional hemisphere ('L' or 'R') for surface data
         surface_space: Surface space name for output filenames (default 'fsnative')
 
@@ -463,7 +465,8 @@ def compute_subject_fixed_effects(
         ... )
     """
     analyzer = FixedEffectsAnalyzer(
-        subject_id, task_name, mask_img, high_exclusion, hemisphere,
+        subject_id, task_name, mask_img, high_exclusion,
+        min_runs=min_runs, hemisphere=hemisphere,
         surface_space=surface_space,
     )
 
