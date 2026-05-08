@@ -39,3 +39,27 @@ def test_generator_has_cli_arg_for_decisions_tsv():
     QADecisionsGenerator().add_cli_args(parser)
     args = parser.parse_args(["--decisions-tsv", "/tmp/whatever.tsv"])
     assert str(args.decisions_tsv) == "/tmp/whatever.tsv"
+
+
+def test_scan_level_exclude_emits_one_entry(tmp_path):
+    """A single scan-level action=exclude row -> one entry, BIDS-prefixed."""
+    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+    tsv = tmp_path / "decisions.tsv"
+    _write_tsv(tsv, [
+        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
+         "run": "run-1", "action": "exclude", "reason": "noisy task data"},
+    ])
+
+    entries = QADecisionsGenerator().generate("discovery", {}, _make_args(tsv))
+
+    assert len(entries) == 1
+    e = entries[0]
+    assert e == {
+        "subject": "sub-s03",
+        "session": "ses-02",
+        "task": "task-cuedTS",
+        "run": "run-1",
+        "source": "qa_decisions",
+        "action": "exclude",
+        "reason": "qa_decisions: noisy task data (scan-level)",
+    }
