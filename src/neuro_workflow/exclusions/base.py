@@ -54,14 +54,25 @@ def load_dataset_subjects(dataset_config: dict) -> set[str] | None:
     return subjects or None
 
 
+# Repo root resolved from this file's location: src/neuro_workflow/exclusions/base.py
+# -> parents[0]=exclusions, parents[1]=neuro_workflow, parents[2]=src, parents[3]=repo root.
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
 def _git_sha() -> str | None:
     """Return the current git HEAD short SHA, with '+dirty' suffix if the working
     tree has uncommitted changes. Returns None if git is unavailable or this is
-    not a git repo."""
+    not a git repo.
+
+    Subprocess runs with cwd=_REPO_ROOT so SLURM jobs invoked from scratch dirs
+    still resolve the correct repo (otherwise git fails when CWD is outside any
+    repo, and code_sha drops to null in production lockfiles).
+    """
     try:
         sha = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
             capture_output=True, text=True, check=True,
+            cwd=_REPO_ROOT,
         ).stdout.strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
@@ -71,6 +82,7 @@ def _git_sha() -> str | None:
         dirty = bool(subprocess.run(
             ["git", "status", "--porcelain"],
             capture_output=True, text=True, check=True,
+            cwd=_REPO_ROOT,
         ).stdout.strip())
     except (subprocess.CalledProcessError, FileNotFoundError):
         return sha
