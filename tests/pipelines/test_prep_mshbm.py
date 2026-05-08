@@ -1,3 +1,4 @@
+import pytest
 from argparse import Namespace
 from pathlib import Path
 
@@ -40,6 +41,7 @@ def test_prep_mshbm_build_context(tmp_path):
         output_dir=str(tmp_path / "out"),
         residuals_space="surface",
         sessions=None,
+        rest_only=False,
         nthreads=None,
         mem_gb=None,
         time=None,
@@ -52,10 +54,10 @@ def test_prep_mshbm_build_context(tmp_path):
     assert ctx["nthreads"] == 1
     assert ctx["mem_gb"] == 64
     assert ctx["time"] == "24:00:00"
-    assert ctx["glm_dir"] == "/oak/lev1"
     assert ctx["fmriprep_dir"] == "/oak/fmriprep"
-    assert ctx["residuals_space"] == "surface"
-    assert ctx["extra_flags"] == ""
+    assert "--glm-dir \"/oak/lev1\"" in ctx["extra_flags"]
+    assert "--residuals-space surface" in ctx["extra_flags"]
+    assert "--rest-only" not in ctx["extra_flags"]
     assert ctx["mail_line"] == ""
 
     # Verify subject list file was written
@@ -82,6 +84,7 @@ def test_prep_mshbm_build_context_with_extras(tmp_path):
         output_dir=str(tmp_path / "out"),
         residuals_space="MNI",
         sessions=["ses-01", "ses-02"],
+        rest_only=False,
         nthreads=4,
         mem_gb=128,
         time="48:00:00",
@@ -117,6 +120,7 @@ def test_prep_mshbm_render_full_template(tmp_path):
         output_dir=str(tmp_path / "out"),
         residuals_space="surface",
         sessions=None,
+        rest_only=False,
         nthreads=None,
         mem_gb=None,
         time=None,
@@ -133,3 +137,122 @@ def test_prep_mshbm_render_full_template(tmp_path):
     assert "--fmriprep-dir \"/oak/fmriprep\"" in script
     assert "--residuals-space surface" in script
     assert "--mail-user" not in script
+
+
+def test_prep_mshbm_rest_only_renders_flag(tmp_path):
+    """When --rest-only is set, the rendered sbatch passes --rest-only and omits --glm-dir."""
+    subs = tmp_path / "subs.txt"
+    subs.write_text("sub-01\nsub-02\n")
+
+    p = PrepMshbmPipeline()
+    dataset_config = {
+        "bids_dir": "/oak/data/bids",
+        "subjects_file": str(subs),
+        "partition": "russpold",
+        "mail_user": None,
+    }
+    args = Namespace(
+        glm_dir=None,
+        fmriprep_dir="/oak/fmriprep",
+        rest_fmriprep_dir=None,
+        output_dir=str(tmp_path / "out"),
+        residuals_space="surface",
+        sessions=None,
+        rest_only=True,
+        nthreads=None,
+        mem_gb=None,
+        time=None,
+    )
+
+    ctx = p.build_context("test_ds", dataset_config, args)
+    template_path = TEMPLATE_DIR / p.template_name
+    script = render_template(template_path, ctx)
+
+    assert "--rest-only" in script
+    assert "--glm-dir" not in script
+    assert "--fmriprep-dir \"/oak/fmriprep\"" in script
+
+
+def test_prep_mshbm_glm_dir_only_renders_glm_flag(tmp_path):
+    """Backwards-compat: --glm-dir without --rest-only renders --glm-dir + --residuals-space."""
+    subs = tmp_path / "subs.txt"
+    subs.write_text("sub-01\n")
+
+    p = PrepMshbmPipeline()
+    dataset_config = {
+        "bids_dir": "/oak/data/bids",
+        "subjects_file": str(subs),
+        "partition": "russpold",
+        "mail_user": None,
+    }
+    args = Namespace(
+        glm_dir="/oak/lev1",
+        fmriprep_dir="/oak/fmriprep",
+        rest_fmriprep_dir=None,
+        output_dir=str(tmp_path / "out"),
+        residuals_space="surface",
+        sessions=None,
+        rest_only=False,
+        nthreads=None,
+        mem_gb=None,
+        time=None,
+    )
+    ctx = p.build_context("test_ds", dataset_config, args)
+    template_path = TEMPLATE_DIR / p.template_name
+    script = render_template(template_path, ctx)
+
+    assert "--glm-dir \"/oak/lev1\"" in script
+    assert "--residuals-space surface" in script
+    assert "--rest-only" not in script
+
+
+def test_prep_mshbm_neither_flag_errors(tmp_path):
+    """build_context errors when neither rest-only nor glm-dir set."""
+    subs = tmp_path / "subs.txt"
+    subs.write_text("sub-01\n")
+
+    p = PrepMshbmPipeline()
+    dataset_config = {
+        "bids_dir": "/oak/data/bids",
+        "subjects_file": str(subs),
+        "partition": "russpold",
+        "mail_user": None,
+    }
+    args = Namespace(
+        glm_dir=None,
+        fmriprep_dir="/oak/fmriprep",
+        rest_fmriprep_dir=None,
+        output_dir=str(tmp_path / "out"),
+        residuals_space="surface",
+        sessions=None,
+        rest_only=False,
+        nthreads=None, mem_gb=None, time=None,
+    )
+    with pytest.raises(SystemExit):
+        p.build_context("test_ds", dataset_config, args)
+
+
+def test_prep_mshbm_both_flags_errors(tmp_path):
+    """build_context errors when both rest-only and glm-dir set."""
+    subs = tmp_path / "subs.txt"
+    subs.write_text("sub-01\n")
+
+    p = PrepMshbmPipeline()
+    dataset_config = {
+        "bids_dir": "/oak/data/bids",
+        "subjects_file": str(subs),
+        "partition": "russpold",
+        "mail_user": None,
+    }
+    args = Namespace(
+        glm_dir="/oak/lev1",
+        fmriprep_dir="/oak/fmriprep",
+        rest_fmriprep_dir=None,
+        output_dir=str(tmp_path / "out"),
+        residuals_space="surface",
+        sessions=None,
+        rest_only=True,
+        nthreads=None, mem_gb=None, time=None,
+    )
+    with pytest.raises(SystemExit):
+        p.build_context("test_ds", dataset_config, args)
