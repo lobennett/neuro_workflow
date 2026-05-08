@@ -617,7 +617,9 @@ def compute_fixed_effects_all(
                 results = compute_subject_fixed_effects(
                     args.subj_id, args.task_name, dirs['indiv_contrasts'],
                     dirs['fixed_effects'], mask_img=None, exclusions=exclusions,
-                    high_exclusion=high_exclusion_subject, hemisphere=hemisphere,
+                    high_exclusion=high_exclusion_subject,
+                    min_runs=args.min_runs,
+                    hemisphere=hemisphere,
                     surface_space=surface_space,
                 )
                 logger.info('Fixed effects: %d contrasts (hemi-%s)', len(results), hemisphere)
@@ -626,6 +628,7 @@ def compute_fixed_effects_all(
                 args.subj_id, args.task_name, dirs['indiv_contrasts'],
                 dirs['fixed_effects'], combined_mask_path, exclusions,
                 high_exclusion=high_exclusion_subject,
+                min_runs=args.min_runs,
             )
             logger.info('Fixed effects: %d contrasts', len(results))
     except Exception as e:
