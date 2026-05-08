@@ -153,9 +153,13 @@ class Lev1OutlierGenerator:
     )
 
     def add_cli_args(self, parser: ArgumentParser) -> None:
+        # Not argparse-required: every generator's args land on the same shared
+        # subparser, so a global required=True breaks unrelated `generate motion`
+        # / `generate behavioral` invocations. The runtime guard in generate()
+        # raises the clear FileNotFoundError when this source is selected.
         parser.add_argument(
-            "--lev1-outliers-csv", type=Path, required=True,
-            help="Path to cohort QC's lev1_outliers.csv (full per-(scan, contrast) table).",
+            "--lev1-outliers-csv", type=Path,
+            help="Path to cohort QC's lev1_outliers.csv (required when source=lev1_outlier).",
         )
         parser.add_argument("--combined-vif", type=float, default=10.0)
         parser.add_argument("--combined-outlier-pct", type=float, default=10.0)
@@ -174,6 +178,10 @@ class Lev1OutlierGenerator:
             strict_vif=args.strict_vif,
             strict_outlier_pct=args.strict_outlier_pct,
         )
+        if args.lev1_outliers_csv is None:
+            raise FileNotFoundError(
+                "lev1_outlier generator requires --lev1-outliers-csv"
+            )
         rows = _read_outliers_csv(args.lev1_outliers_csv)
         sample = _load_dataset_subjects(dataset_config)
         if sample is not None:
