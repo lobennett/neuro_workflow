@@ -244,6 +244,7 @@ def test_generator_output_flows_through_compile(tmp_path, monkeypatch):
     from neuro_workflow.core import exclusions as core_excl
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
+    monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")
 
     tsv = tmp_path / "decisions.tsv"
     _write_tsv(tsv, [

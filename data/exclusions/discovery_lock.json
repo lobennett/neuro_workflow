@@ -1,7 +1,7 @@
 {
   "dataset": "discovery",
-  "compiled_at": "2026-05-08T03:46:22Z",
-  "compiled_at_code_sha": "bf2ea2e+dirty",
+  "compiled_at": "2026-05-08T03:55:42Z",
+  "compiled_at_code_sha": "7956cae+dirty",
   "compiled_path": "/home/users/logben/.neuro_workflow/exclusions/discovery/compiled_exclusions.json",
   "n_total_entries": 131,
   "n_overrides": 0,
