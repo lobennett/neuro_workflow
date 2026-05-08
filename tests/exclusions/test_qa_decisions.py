@@ -154,3 +154,57 @@ def test_subject_level_with_no_bids_files_emits_zero(tmp_path, capsys):
 
     assert entries == []
     assert "0 expanded from 1 subject-level" in captured.out
+
+
+def test_subject_filter_drops_non_member_scan_level(tmp_path):
+    """Scan-level rows whose subject isn't in subjects_file are dropped."""
+    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+    tsv = tmp_path / "decisions.tsv"
+    _write_tsv(tsv, [
+        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
+         "run": "run-1", "action": "exclude", "reason": "in dataset"},
+        {"subject": "sub-s1035", "session": "ses-02", "task": "task-flanker",
+         "run": "run-1", "action": "exclude", "reason": "out of dataset"},
+    ])
+    subjects_path = tmp_path / "subjects_discovery.txt"
+    subjects_path.write_text("s03\ns10\n")
+
+    config = {"subjects_file": str(subjects_path)}
+    entries = QADecisionsGenerator().generate("discovery", config, _make_args(tsv))
+
+    assert len(entries) == 1
+    assert entries[0]["subject"] == "sub-s03"
+
+
+def test_subject_filter_drops_subject_level_before_glob(tmp_path):
+    """Subject-level row for non-member subject is dropped before BIDS glob fires.
+
+    Even with a populated BIDS dir for the non-member subject, no entries are
+    emitted; the only entries come from the in-roster subject.
+    """
+    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+    bids_dir = _make_fake_bids(tmp_path, "sub-s03", [
+        ("ses-01", "flanker", "1"),
+    ])
+    # Out-of-dataset subject also has BIDS files — these should be ignored.
+    _make_fake_bids(tmp_path, "sub-s1035", [
+        ("ses-01", "flanker", "1"),
+        ("ses-02", "cuedTS", "1"),
+    ])
+    tsv = tmp_path / "decisions.tsv"
+    _write_tsv(tsv, [
+        {"subject": "sub-s03", "session": "-", "task": "-", "run": "-",
+         "action": "exclude", "reason": "in dataset"},
+        {"subject": "sub-s1035", "session": "-", "task": "-", "run": "-",
+         "action": "exclude", "reason": "out of dataset"},
+    ])
+    subjects_path = tmp_path / "subjects_discovery.txt"
+    subjects_path.write_text("s03\ns10\n")
+
+    config = {"bids_dir": str(bids_dir), "subjects_file": str(subjects_path)}
+    entries = QADecisionsGenerator().generate("discovery", config, _make_args(tsv))
+
+    assert len(entries) == 1
+    assert entries[0]["subject"] == "sub-s03"
+    assert entries[0]["task"] == "task-flanker"
+
