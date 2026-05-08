@@ -108,6 +108,7 @@ def test_prep_mshbm_template_renders(tmp_path: Path, dataset_config: dict) -> No
         output_dir=str(tmp_path / "out"),
         residuals_space="surface",
         sessions=None,
+        rest_only=False,
         nthreads=None,
         mem_gb=None,
         time=None,
