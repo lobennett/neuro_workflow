@@ -383,7 +383,6 @@ Group-level analysis via FSL randomise. One array task per contrast.
 neuro-run submit lev2 discovery \
   --lev1-dirs /oak/.../lev1_discovery \
   --results-dir /oak/.../lev2_discovery \
-  --exclusions-csv /oak/.../exclusions.csv \
   --base-tasks
 ```
 
