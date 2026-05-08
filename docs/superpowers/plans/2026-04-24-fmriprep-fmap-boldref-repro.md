@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Reproduce the fMRIPrep 25.2.5 fieldmap↔BOLD-reference alignment reportlet bug on sub-s8 (ses-01 good, ses-03 corrupt), using a BIDS filter file and a re-used FreeSurfer subject. Produces the output directory that a follow-up plan will inspect for root-cause.
+**Goal:** Reproduce the fMRIPrep 25.2.5 fieldmap↔BOLD-reference alignment reportlet bug on sub-s8 (ses-01 good, ses-03 corrupt), using a BIDS filter file and a reused FreeSurfer subject. Produces the output directory that a follow-up plan will inspect for root-cause.
 
 **Architecture:** Add a minimal `--output-dir` flag to `neuro_workflow`'s fmriprep pipeline so the repro can write to scratch without touching Oak. Register the rdoc sample, pre-pull the 25.2.5 image, copy existing FreeSurfer outputs to scratch, submit a filtered run. A follow-up plan (written after this one completes) covers alignment verification, issue drafting, and the upstream PR.
 
