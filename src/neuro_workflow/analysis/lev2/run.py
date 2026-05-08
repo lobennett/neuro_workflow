@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Level 2 GLM Analysis script for group-level statistical analysis."""
 
-try:
-    from randomise_prep import setup_randomise_tfce
-except ModuleNotFoundError:  # not installed in test/CI environments
-    setup_randomise_tfce = None  # type: ignore[assignment]
+# Note: `randomise_prep` is lazy-imported inside run_level2_analysis (the only
+# call site). Module-level import would force test environments without the
+# `lev1` extras installed to fail at import time, even when only testing
+# helpers like discover_input_files. Lazy import surfaces a clear
+# ModuleNotFoundError when randomise actually gets called in production.
+
 from pathlib import Path
 from nilearn.masking import intersect_masks
 from nilearn.image import math_img
@@ -117,6 +119,13 @@ def run_level2_analysis(
     print(f'--> Group mask saved to: {group_mask_path}')
 
     print('Setting up FSL randomise...')
+    # Lazy import so test environments without the lev1 extras installed
+    # can still import + exercise the helpers in this module. In production
+    # randomise_prep is in the lev1 extras group; install it via
+    # `uv pip install "randomise-prep @ git+https://github.com/jmumford/randomise-prep.git"`
+    # if missing. Failure here surfaces a clear ModuleNotFoundError.
+    from randomise_prep import setup_randomise_tfce
+
     script_path = setup_randomise_tfce(
         input_files=input_files,
         group_mask=str(group_mask_path),
