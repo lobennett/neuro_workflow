@@ -18,6 +18,5 @@ uv --directory "{neuro_workflow_dir}" run python -m neuro_workflow.analysis.lev2
     --contrast "$CONTRAST" \
     --level1-dirs {lev1_dirs} \
     --output-dir "{results_dir}" \
-    --flagged-scans-csv "{exclusions_csv}" \
     --mask-threshold {mask_threshold} \
     --num-permutations {num_permutations}

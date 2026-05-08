@@ -80,7 +80,6 @@ def test_lev2_build_context_explicit_contrasts(tmp_path):
     args = Namespace(
         lev1_dirs=["/path/to/lev1"],
         results_dir=str(tmp_path / "lev2_results"),
-        exclusions_csv="/path/to/flagged.csv",
         contrasts=["task-flanker_contrast-incongruentGtCongruent", "task-stroop_contrast-test"],
         contrasts_flag=None,
         mask_threshold=0.9,
@@ -102,7 +101,6 @@ def test_lev2_build_context_explicit_contrasts(tmp_path):
     assert ctx["mask_threshold"] == 0.9
     assert ctx["num_permutations"] == 5000
     assert ctx["lev1_dirs"] == "/path/to/lev1"
-    assert ctx["exclusions_csv"] == "/path/to/flagged.csv"
 
     # Verify contrast list file was written
     contrast_list_file = Path(ctx["contrast_list_file"])
@@ -124,7 +122,6 @@ def test_lev2_render_full_template(tmp_path):
     args = Namespace(
         lev1_dirs=["/path/to/lev1a", "/path/to/lev1b"],
         results_dir=str(tmp_path / "lev2_results"),
-        exclusions_csv="/path/to/flagged.csv",
         contrasts=["task-flanker_contrast-test"],
         contrasts_flag=None,
         mask_threshold=0.9,
@@ -147,5 +144,4 @@ def test_lev2_render_full_template(tmp_path):
     assert "--mask-threshold 0.9" in script
     assert "--num-permutations 5000" in script
     assert "--level1-dirs /path/to/lev1a /path/to/lev1b" in script
-    assert "--flagged-scans-csv" in script
     assert "--mail-user" not in script
