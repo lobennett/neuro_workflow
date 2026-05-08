@@ -17,7 +17,5 @@ module load uv
 
 uv --directory "{neuro_workflow_dir}" run python -m neuro_workflow.analysis.mshbm.run \
     --subj-id "$SUBJ_ID" \
-    --glm-dir "{glm_dir}" \
     --fmriprep-dir "{fmriprep_dir}" \
-    --output-dir "{output_dir}" \
-    --residuals-space {residuals_space} {extra_flags}
+    --output-dir "{output_dir}" {extra_flags}
