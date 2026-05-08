@@ -63,3 +63,26 @@ def test_scan_level_exclude_emits_one_entry(tmp_path):
         "action": "exclude",
         "reason": "qa_decisions: noisy task data (scan-level)",
     }
+
+
+def test_pass_and_review_rows_skipped(tmp_path, capsys):
+    """Mixed actions: only `exclude` produces entries; summary line counts the others."""
+    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+    tsv = tmp_path / "decisions.tsv"
+    _write_tsv(tsv, [
+        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
+         "run": "run-1", "action": "exclude", "reason": "noisy"},
+        {"subject": "sub-s10", "session": "ses-01", "task": "task-flanker",
+         "run": "run-1", "action": "review", "reason": "borderline RT"},
+        {"subject": "sub-s19", "session": "ses-03", "task": "task-goNogo",
+         "run": "run-1", "action": "pass", "reason": "looks fine"},
+    ])
+
+    entries = QADecisionsGenerator().generate("discovery", {}, _make_args(tsv))
+    captured = capsys.readouterr()
+
+    assert len(entries) == 1
+    assert entries[0]["subject"] == "sub-s03"
+    assert "1 excluded" in captured.out
+    assert "1 review-skipped" in captured.out
+    assert "1 pass-skipped" in captured.out
