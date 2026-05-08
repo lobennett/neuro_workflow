@@ -151,7 +151,7 @@ def cmd_exclusions_generate(args, remaining):
         sys.exit(1)
     config = get_dataset(args.dataset)
     entries = generator.generate(args.dataset, config, args)
-    save_source_entries(args.dataset, generator.name, entries)
+    save_source_entries(args.dataset, generator.name, entries, args=args)
     print(f"Saved {len(entries)} entries to sources/{generator.name}.json")
 
 
@@ -168,23 +168,42 @@ def cmd_exclusions_compile(args, remaining):
 
 
 def cmd_exclusions_show(args, remaining):
+    import json
+    from collections import Counter
+    from neuro_workflow.core.exclusions import _lockfile_path
+
     compiled = load_compiled_exclusions(args.dataset)
+
+    # Existing per-source count table (only if compiled exists).
     if not compiled:
         print(f"No compiled exclusions for '{args.dataset}'. Run 'neuro-run exclusions compile {args.dataset}' first.")
-        return
-    from collections import Counter
-    by_source = Counter(e["source"] for e in compiled)
-    by_action = Counter(e["action"] for e in compiled)
-    print(f"Exclusions for '{args.dataset}':")
-    print(f"{'Source':<15} {'Exclude':>8} {'Trim':>8} {'Total':>8}")
-    print("-" * 41)
-    for source in sorted(by_source):
-        src_entries = [e for e in compiled if e["source"] == source]
-        n_exc = sum(1 for e in src_entries if e["action"] == "exclude")
-        n_trim = sum(1 for e in src_entries if e["action"] == "trim")
-        print(f"{source:<15} {n_exc:>8} {n_trim:>8} {len(src_entries):>8}")
-    print("-" * 41)
-    print(f"{'Total':<15} {by_action.get('exclude', 0):>8} {by_action.get('trim', 0):>8} {len(compiled):>8}")
+    else:
+        by_source = Counter(e["source"] for e in compiled)
+        by_action = Counter(e["action"] for e in compiled)
+        print(f"Exclusions for '{args.dataset}':")
+        print(f"{'Source':<15} {'Exclude':>8} {'Trim':>8} {'Total':>8}")
+        print("-" * 41)
+        for source in sorted(by_source):
+            src_entries = [e for e in compiled if e["source"] == source]
+            n_exc = sum(1 for e in src_entries if e["action"] == "exclude")
+            n_trim = sum(1 for e in src_entries if e["action"] == "trim")
+            print(f"{source:<15} {n_exc:>8} {n_trim:>8} {len(src_entries):>8}")
+        print("-" * 41)
+        print(f"{'Total':<15} {by_action.get('exclude', 0):>8} {by_action.get('trim', 0):>8} {len(compiled):>8}")
+
+    # Provenance block from lockfile, if present.
+    lock_path = _lockfile_path(args.dataset)
+    if lock_path.exists():
+        lock = json.loads(lock_path.read_text())
+        print()
+        print(f"Provenance ({lock_path}):")
+        print(f"  Compiled at: {lock['compiled_at']} (code_sha: {lock.get('compiled_at_code_sha')})")
+        print(f"  Total entries: {lock['n_total_entries']}, overrides: {lock['n_overrides']}")
+        for s in lock["sources"]:
+            ran_at = s.get("ran_at") or "<unknown>"
+            sha = s.get("code_sha") or "<unknown>"
+            n = s.get("n_entries", 0)
+            print(f"  - {s['generator']:<15} ran_at={ran_at} code_sha={sha} n_entries={n}")
 
 
 def cmd_exclusions_import(args, remaining):
@@ -193,7 +212,7 @@ def cmd_exclusions_import(args, remaining):
         entries = json.load(f)
     for entry in entries:
         entry["source"] = args.source_name
-    save_source_entries(args.dataset, args.source_name, entries)
+    save_source_entries(args.dataset, args.source_name, entries, args=args)
     print(f"Imported {len(entries)} entries as source '{args.source_name}'")
 
 
@@ -237,7 +256,7 @@ def cmd_events_qc(args, remaining):
     behavioral_dir = Path(args.behavioral_dir) if args.behavioral_dir else bids_dir / "sourcedata"
     exclusion_entries, trim_entries = run_qc(behavioral_dir=behavioral_dir, bids_dir=bids_dir)
     if exclusion_entries:
-        save_source_entries(args.dataset, "behavioral-qc", exclusion_entries)
+        save_source_entries(args.dataset, "behavioral-qc", exclusion_entries, args=args)
         print(f"Saved {len(exclusion_entries)} behavioral-qc exclusion entries")
     print(f"Found {len(trim_entries)} runs needing trimming")
 

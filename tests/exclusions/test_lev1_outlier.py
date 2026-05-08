@@ -205,8 +205,10 @@ def test_generator_output_flows_through_compile(tmp_path, monkeypatch):
     from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
     from neuro_workflow.core import exclusions as core_excl
 
-    # Redirect EXCLUSIONS_DIR to a tmp path so compile_exclusions writes there.
+    # Redirect EXCLUSIONS_DIR + LOCKFILE_DIR to tmp paths so compile_exclusions
+    # doesn't leak into the real repo's data/exclusions/.
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
+    monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")
 
     # Generate entries from a small CSV
     csv_path = tmp_path / "lev1_outliers.csv"
