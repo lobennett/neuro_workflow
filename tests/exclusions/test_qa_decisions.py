@@ -86,3 +86,71 @@ def test_pass_and_review_rows_skipped(tmp_path, capsys):
     assert "1 excluded" in captured.out
     assert "1 review-skipped" in captured.out
     assert "1 pass-skipped" in captured.out
+
+
+def _make_fake_bids(tmp_path, subject: str, scans: list[tuple[str, str, str]]) -> Path:
+    """Build a minimal BIDS-like dir with empty BOLD files for the given scans.
+
+    Each scan tuple is (session, task, run), e.g. ('ses-02', 'cuedTS', '1').
+    Returns the BIDS dir root.
+    """
+    bids = tmp_path / "bids"
+    for session, task, run in scans:
+        func = bids / subject / session / "func"
+        func.mkdir(parents=True, exist_ok=True)
+        fname = f"{subject}_{session}_task-{task}_run-{run}_bold.nii.gz"
+        (func / fname).write_bytes(b"")
+    return bids
+
+
+def test_subject_level_exclude_expands_via_bids_glob(tmp_path, capsys):
+    """A subject-level exclude row -> one entry per matched BOLD file in BIDS."""
+    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+    bids_dir = _make_fake_bids(tmp_path, "sub-s03", [
+        ("ses-01", "flanker", "1"),
+        ("ses-02", "cuedTS", "1"),
+        ("ses-02", "stopSignal", "1"),
+    ])
+    tsv = tmp_path / "decisions.tsv"
+    _write_tsv(tsv, [
+        {"subject": "sub-s03", "session": "-", "task": "-", "run": "-",
+         "action": "exclude", "reason": "dropped from cohort"},
+    ])
+
+    config = {"bids_dir": str(bids_dir)}
+    entries = QADecisionsGenerator().generate("discovery", config, _make_args(tsv))
+    captured = capsys.readouterr()
+
+    assert len(entries) == 3
+    assert {e["subject"] for e in entries} == {"sub-s03"}
+    for e in entries:
+        assert "(subject-level)" in e["reason"]
+        assert "dropped from cohort" in e["reason"]
+        assert e["action"] == "exclude"
+        assert e["source"] == "qa_decisions"
+        assert e["task"].startswith("task-")
+        assert e["run"].startswith("run-")
+        assert e["session"].startswith("ses-")
+    sessions_tasks = [(e["session"], e["task"], e["run"]) for e in entries]
+    assert sessions_tasks == sorted(sessions_tasks)
+    assert "0 scan-level" in captured.out
+    assert "3 expanded from 1 subject-level" in captured.out
+
+
+def test_subject_level_with_no_bids_files_emits_zero(tmp_path, capsys):
+    """Subject-level row for a sub with no BOLD scans in BIDS -> 0 entries, no error."""
+    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+    bids_dir = tmp_path / "bids"
+    bids_dir.mkdir()
+    tsv = tmp_path / "decisions.tsv"
+    _write_tsv(tsv, [
+        {"subject": "sub-s99", "session": "-", "task": "-", "run": "-",
+         "action": "exclude", "reason": "missing data"},
+    ])
+
+    config = {"bids_dir": str(bids_dir)}
+    entries = QADecisionsGenerator().generate("discovery", config, _make_args(tsv))
+    captured = capsys.readouterr()
+
+    assert entries == []
+    assert "0 expanded from 1 subject-level" in captured.out
