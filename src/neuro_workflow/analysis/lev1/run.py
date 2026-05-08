@@ -13,7 +13,6 @@ from neuro_workflow.analysis.config import Config
 from neuro_workflow.analysis.core.task_utils import detect_sample_type, get_expected_sessions
 from neuro_workflow.analysis.core.utils import (
     check_behavioral_trim_threshold,
-    count_subject_exclusions,
     load_exclusions,
     load_exclusions_by_type,
     normalize_subject_id,
@@ -572,30 +571,6 @@ def compute_fixed_effects_all(
 
     Tags output with desc-partialRuns if any runs failed.
     """
-    # Check subject exclusion rate
-    discovered_runs = sum(len(runs) for runs in files.values())
-    subject_excluded_runs = sum(
-        1 for key in exclusions
-        if key.startswith(f'{args.subj_id}_') and f'_{args.task_name}_' in key
-    )
-    total_expected_runs = discovered_runs + subject_excluded_runs
-    if total_expected_runs == 0:
-        total_expected_runs = expected_sessions * 2
-
-    exclusion_summary = count_subject_exclusions(
-        exclusions_by_type, args.subj_id, args.task_name, total_expected_runs
-    )
-    logger.info(
-        'Exclusion rate: %d/%d (%.0f%%)',
-        exclusion_summary['total_excluded'],
-        exclusion_summary['total_expected'],
-        exclusion_summary['exclusion_rate'] * 100,
-    )
-
-    high_exclusion_subject = exclusion_summary['high_exclusion']
-    if high_exclusion_subject:
-        logger.warning('HIGH EXCLUSION SUBJECT: >%.0f%% of runs excluded', exclusion_summary['exclusion_rate'] * 100)
-
     # Compute fixed effects on available successful runs (partial run support)
     successful_runs = run_count - len(failed_runs)
     if successful_runs == 0:
@@ -617,7 +592,6 @@ def compute_fixed_effects_all(
                 results = compute_subject_fixed_effects(
                     args.subj_id, args.task_name, dirs['indiv_contrasts'],
                     dirs['fixed_effects'], mask_img=None, exclusions=exclusions,
-                    high_exclusion=high_exclusion_subject,
                     min_runs=args.min_runs,
                     hemisphere=hemisphere,
                     surface_space=surface_space,
@@ -627,7 +601,6 @@ def compute_fixed_effects_all(
             results = compute_subject_fixed_effects(
                 args.subj_id, args.task_name, dirs['indiv_contrasts'],
                 dirs['fixed_effects'], combined_mask_path, exclusions,
-                high_exclusion=high_exclusion_subject,
                 min_runs=args.min_runs,
             )
             logger.info('Fixed effects: %d contrasts', len(results))
