@@ -146,6 +146,7 @@ def test_compile_handles_mixed_wrapped_and_bare_sources(tmp_path, monkeypatch):
     from neuro_workflow.core import exclusions as core_excl
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
+    monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")
 
     sources_dir = tmp_path / "exclusions" / "discovery" / "sources"
     sources_dir.mkdir(parents=True)
@@ -247,3 +248,49 @@ def test_compile_with_bare_list_sources_records_null_meta(tmp_path, monkeypatch)
     assert s["code_sha"] is None
     assert s["args"] is None
     assert s["n_entries"] == 1
+
+
+def test_cmd_exclusions_generate_passes_args_through(tmp_path, monkeypatch):
+    """cmd_exclusions_generate passes the argparse Namespace to save_source_entries
+    so the saved _meta records the CLI args."""
+    import json
+    from argparse import Namespace
+    from neuro_workflow.core import exclusions as core_excl
+
+    monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
+    monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")
+
+    # Stub get_dataset to avoid loading real datasets.json.
+    import neuro_workflow.cli as cli_mod
+    monkeypatch.setattr(cli_mod, "get_dataset", lambda name: {"bids_dir": "/tmp"})
+
+    # Build a fake generator that returns a known entry list.
+    captured: dict = {}
+
+    class StubGenerator:
+        name = "stub_gen"
+        description = "stub"
+
+        def add_cli_args(self, parser): pass
+
+        def generate(self, dataset_name, dataset_config, args):
+            captured["args_seen"] = args
+            return [
+                {"subject": "sub-s03", "session": "ses-02", "task": "task-x",
+                 "run": "run-1", "source": "stub_gen", "action": "exclude", "reason": "y"},
+            ]
+
+    from neuro_workflow.exclusions import base as base_mod
+    base_mod.register_generator(StubGenerator())
+
+    args = Namespace(
+        dataset="discovery",
+        source="stub_gen",
+        threshold_a=42,
+    )
+    cli_mod.cmd_exclusions_generate(args, [])
+
+    on_disk = json.loads(
+        (tmp_path / "exclusions" / "discovery" / "sources" / "stub_gen.json").read_text()
+    )
+    assert on_disk["_meta"]["args"]["threshold_a"] == 42
