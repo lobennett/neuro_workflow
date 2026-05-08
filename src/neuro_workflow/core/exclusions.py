@@ -10,6 +10,11 @@ from neuro_workflow.core.config import CONFIG_DIR
 
 EXCLUSIONS_DIR = CONFIG_DIR / "exclusions"
 
+# Project-relative path for committed lockfiles. Resolved at write time
+# from the package's parent directories.
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+LOCKFILE_DIR = _REPO_ROOT / "data" / "exclusions"
+
 REQUIRED_FIELDS = {"subject", "session", "task", "run", "action", "reason"}
 VALID_ACTIONS = {"exclude", "trim", "force-include", "force-exclude"}
 
@@ -37,6 +42,10 @@ def _overrides_path(dataset_name: str) -> Path:
 
 def _compiled_path(dataset_name: str) -> Path:
     return EXCLUSIONS_DIR / dataset_name / "compiled_exclusions.json"
+
+
+def _lockfile_path(dataset_name: str) -> Path:
+    return LOCKFILE_DIR / f"{dataset_name}_lock.json"
 
 
 def _read_source_file(path: Path) -> tuple[list[dict], dict | None]:
@@ -165,6 +174,24 @@ def compile_exclusions(dataset_name: str, bids_dir: Optional[str] = None) -> lis
         deriv.mkdir(parents=True, exist_ok=True)
         with open(deriv / "compiled_exclusions.json", "w") as f:
             json.dump(all_entries, f, indent=2)
+
+    # Write the committed lockfile.
+    from neuro_workflow.exclusions.base import _git_sha
+    from datetime import datetime, timezone
+
+    lock_path = _lockfile_path(dataset_name)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock = {
+        "dataset": dataset_name,
+        "compiled_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "compiled_at_code_sha": _git_sha(),
+        "compiled_path": str(compiled_path),
+        "n_total_entries": len(all_entries),
+        "n_overrides": len(overrides),
+        "sources": sources_meta,
+    }
+    with open(lock_path, "w") as f:
+        json.dump(lock, f, indent=2)
 
     return all_entries
 
