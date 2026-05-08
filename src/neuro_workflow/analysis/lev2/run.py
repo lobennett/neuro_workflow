@@ -13,7 +13,6 @@ import sys
 import argparse
 import subprocess
 import glob
-import pandas as pd
 
 
 def compute_mask(input_files, threshold=1.0, connected=True):
@@ -50,70 +49,6 @@ def compute_mask(input_files, threshold=1.0, connected=True):
     )
 
     return group_mask
-
-
-def filter_flagged_scans(input_files: List[str], flagged_scans_csv: str, contrast_name: str) -> List[str]:
-    """
-    Filter out input files that are flagged in the flagged scans CSV.
-    
-    Args:
-        input_files: List of paths to input files
-        flagged_scans_csv: Path to CSV file with flagged scans
-        contrast_name: Name of the contrast being analyzed
-        
-    Returns:
-        Filtered list of input files with flagged scans removed
-    """
-    if not flagged_scans_csv or not Path(flagged_scans_csv).exists():
-        print(f"No flagged scans file provided or file doesn't exist: {flagged_scans_csv}")
-        return input_files
-        
-    # Load flagged scans
-    flagged_df = pd.read_csv(flagged_scans_csv)
-    
-    # Extract contrast from contrast_name (e.g., 'task-baseline' from 'cuedTS_task-baseline')
-    if '_' in contrast_name:
-        contrast_part = contrast_name.split('_', 1)[1]  # Get part after first underscore
-    else:
-        contrast_part = contrast_name
-    
-    # Filter flagged scans for this contrast
-    flagged_for_contrast = flagged_df[flagged_df['contrast_name'] == contrast_part]
-    
-    if flagged_for_contrast.empty:
-        print(f"No flagged scans found for contrast: {contrast_part}")
-        return input_files
-    
-    # Build set of flagged file identifiers
-    flagged_identifiers = set()
-    for _, row in flagged_for_contrast.iterrows():
-        # Extract subject, session, run from subject_label (e.g., 'sub-s03_ses-02_run-1')
-        subject_label = row['subject_label']
-        task_name = row['task_name']
-        
-        # Create identifier that matches the file path pattern
-        flagged_identifiers.add(f"{subject_label}_task-{task_name}")
-    
-    # Filter input files
-    filtered_files = []
-    excluded_count = 0
-    
-    for file_path in input_files:
-        file_name = Path(file_path).name
-        
-        # Check if this file matches any flagged identifier
-        is_flagged = any(flagged_id in file_name for flagged_id in flagged_identifiers)
-        
-        if not is_flagged:
-            filtered_files.append(file_path)
-        else:
-            excluded_count += 1
-            print(f"Excluding flagged file: {file_path}")
-    
-    print(f"Excluded {excluded_count} flagged files out of {len(input_files)} total files")
-    print(f"Remaining files for analysis: {len(filtered_files)}")
-    
-    return filtered_files
 
 
 def discover_input_files(level1_dirs: List[Path], contrast_name: str) -> List[str]:
@@ -236,12 +171,6 @@ def get_parser() -> argparse.ArgumentParser:
         default=5000,
         help='Number of permutations for FSL randomise',
     )
-    parser.add_argument(
-        '--flagged-scans-csv',
-        type=str,
-        required=True,
-        help='Path to CSV file containing flagged scans to exclude from analysis',
-    )
     return parser
 
 
@@ -258,7 +187,6 @@ def main() -> None:
     print(f'Output directory: {args.output_dir}')
     print(f'Mask threshold: {args.mask_threshold}')
     print(f'Permutations: {args.num_permutations}')
-    print(f'Flagged scans CSV: {args.flagged_scans_csv}')
     print('=' * 60)
     print()
 
@@ -277,14 +205,6 @@ def main() -> None:
 
     if not input_files:
         print(f'ERROR: No input files found for contrast {args.contrast}')
-        return 1
-
-    # Filter out flagged scans using provided CSV file
-    print(f'Filtering flagged scans using: {args.flagged_scans_csv}')
-    input_files = filter_flagged_scans(input_files, args.flagged_scans_csv, args.contrast)
-    
-    if not input_files:
-        print(f'ERROR: No input files remain after filtering flagged scans for contrast {args.contrast}')
         return 1
 
     # Run analysis for the specific contrast
