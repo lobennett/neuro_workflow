@@ -1,30 +1,78 @@
 {
   "dataset": "discovery",
-  "compiled_at": "2026-05-08T03:55:42Z",
-  "compiled_at_code_sha": "7956cae+dirty",
+  "compiled_at": "2026-05-08T04:11:57Z",
+  "compiled_at_code_sha": "2b72a46+dirty",
   "compiled_path": "/home/users/logben/.neuro_workflow/exclusions/discovery/compiled_exclusions.json",
-  "n_total_entries": 131,
+  "n_total_entries": 104,
   "n_overrides": 0,
   "sources": [
     {
       "generator": "behavioral",
-      "ran_at": null,
-      "code_sha": null,
-      "args": null,
+      "ran_at": "2026-05-08T04:11:49Z",
+      "code_sha": "2b72a46+dirty",
+      "args": {
+        "command": "exclusions",
+        "excl_command": "generate",
+        "source": "behavioral",
+        "dataset": "discovery",
+        "fmriprep_version": "24.1.0rc2",
+        "fd_threshold": 0.2,
+        "proportion_fd_threshold": 0.2,
+        "proportion_dvars_threshold": 0.2,
+        "behavioral_dir": null,
+        "lev1_outliers_csv": null,
+        "combined_vif": 10.0,
+        "combined_outlier_pct": 10.0,
+        "strict_vif": 15.0,
+        "strict_outlier_pct": 15.0,
+        "decisions_tsv": null
+      },
       "n_entries": 0
     },
     {
       "generator": "lev1_outlier",
-      "ran_at": null,
-      "code_sha": null,
-      "args": null,
-      "n_entries": 131
+      "ran_at": "2026-05-08T04:11:55Z",
+      "code_sha": "2b72a46+dirty",
+      "args": {
+        "command": "exclusions",
+        "excl_command": "generate",
+        "source": "lev1_outlier",
+        "dataset": "discovery",
+        "fmriprep_version": "24.1.0rc2",
+        "fd_threshold": 0.2,
+        "proportion_fd_threshold": 0.2,
+        "proportion_dvars_threshold": 0.2,
+        "behavioral_dir": null,
+        "lev1_outliers_csv": "/scratch/users/logben/qa_lev1_discovery/lev1_outliers.csv",
+        "combined_vif": 10.0,
+        "combined_outlier_pct": 10.0,
+        "strict_vif": 15.0,
+        "strict_outlier_pct": 15.0,
+        "decisions_tsv": null
+      },
+      "n_entries": 104
     },
     {
       "generator": "motion",
-      "ran_at": null,
-      "code_sha": null,
-      "args": null,
+      "ran_at": "2026-05-08T04:10:39Z",
+      "code_sha": "2b72a46+dirty",
+      "args": {
+        "command": "exclusions",
+        "excl_command": "generate",
+        "source": "motion",
+        "dataset": "discovery",
+        "fmriprep_version": "25.2.4",
+        "fd_threshold": 0.2,
+        "proportion_fd_threshold": 0.2,
+        "proportion_dvars_threshold": 0.2,
+        "behavioral_dir": null,
+        "lev1_outliers_csv": null,
+        "combined_vif": 10.0,
+        "combined_outlier_pct": 10.0,
+        "strict_vif": 15.0,
+        "strict_outlier_pct": 15.0,
+        "decisions_tsv": null
+      },
       "n_entries": 0
     }
   ]
