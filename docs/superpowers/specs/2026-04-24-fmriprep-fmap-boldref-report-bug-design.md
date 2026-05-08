@@ -64,12 +64,12 @@ maintainers expect reproduction on latest before triaging.
    ```
    Task choice: `stroop` — shortest at 243 TRs in both sessions.
 
-## Section 2 — Output layout + FreeSurfer re-use
+## Section 2 — Output layout + FreeSurfer reuse
 
 - Output root (scratch, throwaway): `/scratch/users/logben/fmriprep_bug_repro/`
 - Output derivatives: `/scratch/users/logben/fmriprep_bug_repro/derivatives/fmriprep_25.2.5`
 - Work dir: `/scratch/users/logben/fmriprep_bug_repro/work`
-- FreeSurfer re-use: both 25.2.0 and 25.2.5 ship FreeSurfer 7.3.2 build 20220804 (verified
+- FreeSurfer reuse: both 25.2.0 and 25.2.5 ship FreeSurfer 7.3.2 build 20220804 (verified
   via the 25.2.0 and 25.2.4 SIFs; CHANGES show no FS bump between 25.2.0 and 25.2.5).
   Copy (not symlink):
   ```
