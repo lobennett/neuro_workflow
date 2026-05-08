@@ -86,7 +86,6 @@ def test_lev2_template_renders(tmp_path: Path, dataset_config: dict) -> None:
     args = Namespace(
         lev1_dirs=["/lev1"],
         results_dir=str(tmp_path / "out"),
-        exclusions_csv="/flagged.csv",
         contrasts=["task-flanker_contrast-test"],
         contrasts_flag=None,
         mask_threshold=0.9,
