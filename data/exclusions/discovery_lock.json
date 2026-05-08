@@ -1,0 +1,31 @@
+{
+  "dataset": "discovery",
+  "compiled_at": "2026-05-08T03:46:22Z",
+  "compiled_at_code_sha": "bf2ea2e+dirty",
+  "compiled_path": "/home/users/logben/.neuro_workflow/exclusions/discovery/compiled_exclusions.json",
+  "n_total_entries": 131,
+  "n_overrides": 0,
+  "sources": [
+    {
+      "generator": "behavioral",
+      "ran_at": null,
+      "code_sha": null,
+      "args": null,
+      "n_entries": 0
+    },
+    {
+      "generator": "lev1_outlier",
+      "ran_at": null,
+      "code_sha": null,
+      "args": null,
+      "n_entries": 131
+    },
+    {
+      "generator": "motion",
+      "ran_at": null,
+      "code_sha": null,
+      "args": null,
+      "n_entries": 0
+    }
+  ]
+}
