@@ -26,7 +26,6 @@ class FixedEffectsAnalyzer:
         subject_id: str,
         task_name: str,
         mask_img: Optional[Union[str, Path]] = None,
-        high_exclusion: bool = False,
         min_runs: int = 2,
         hemisphere: Optional[str] = None,
         surface_space: str = 'fsnative',
@@ -37,7 +36,6 @@ class FixedEffectsAnalyzer:
             subject_id: Subject identifier
             task_name: Task name
             mask_img: Optional brain mask image
-            high_exclusion: Whether >50% of runs were excluded
             min_runs: Minimum runs required to compute a non-tagged fixed-effects map (default: 2).
             hemisphere: Optional hemisphere ('L' or 'R') for surface data
             surface_space: Surface space name for output filenames (default 'fsnative')
@@ -49,7 +47,6 @@ class FixedEffectsAnalyzer:
         self.subject_id = subject_id
         self.task_name = task_name
         self.mask_img = mask_img
-        self.high_exclusion = high_exclusion
         self.min_runs = min_runs
         self.hemisphere = hemisphere
         self.surface_space = surface_space
@@ -433,7 +430,6 @@ def compute_subject_fixed_effects(
     output_dir: Path,
     mask_img: Optional[Union[str, Path]] = None,
     exclusions: Optional[Set[str]] = None,
-    high_exclusion: bool = False,
     min_runs: int = 2,
     hemisphere: Optional[str] = None,
     surface_space: str = 'fsnative',
@@ -447,7 +443,6 @@ def compute_subject_fixed_effects(
         output_dir: Directory to save fixed effects
         mask_img: Optional brain mask
         exclusions: Optional set of runs to exclude
-        high_exclusion: Whether >50% of runs were excluded
         min_runs: Minimum runs threshold passed to the analyzer (default 2).
         hemisphere: Optional hemisphere ('L' or 'R') for surface data
         surface_space: Surface space name for output filenames (default 'fsnative')
@@ -465,7 +460,7 @@ def compute_subject_fixed_effects(
         ... )
     """
     analyzer = FixedEffectsAnalyzer(
-        subject_id, task_name, mask_img, high_exclusion,
+        subject_id, task_name, mask_img,
         min_runs=min_runs, hemisphere=hemisphere,
         surface_space=surface_space,
     )

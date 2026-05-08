@@ -234,45 +234,6 @@ def check_behavioral_trim_threshold(exclusions_file: Union[str, Path], threshold
     return trim_exclusions
 
 
-def count_subject_exclusions(exclusions_by_type: Dict[str, Set[str]], subject_id: str, task_name: str, 
-                           total_expected_runs: int) -> Dict[str, any]:
-    """Count exclusions for a subject across all exclusion types.
-    
-    Args:
-        exclusions_by_type: Dictionary mapping exclusion type to set of exclusion keys
-        subject_id: Subject identifier  
-        task_name: Task name
-        total_expected_runs: Total number of runs expected for this subject/task
-    
-    Returns:
-        Dictionary with exclusion counts and whether >50% are excluded
-    """
-    subject_exclusions = {}
-    total_excluded = set()
-    
-    # Count exclusions by type for this subject/task
-    for exclusion_type, exclusion_set in exclusions_by_type.items():
-        subject_type_exclusions = {
-            key for key in exclusion_set 
-            if key.startswith(f'{subject_id}_') and f'_{task_name}_' in key
-        }
-        subject_exclusions[exclusion_type] = len(subject_type_exclusions)
-        total_excluded.update(subject_type_exclusions)
-    
-    total_excluded_count = len(total_excluded)
-    exclusion_rate = total_excluded_count / total_expected_runs if total_expected_runs > 0 else 0
-    high_exclusion = exclusion_rate > 0.5
-    
-    return {
-        'by_type': subject_exclusions,
-        'total_excluded': total_excluded_count,
-        'total_expected': total_expected_runs,
-        'exclusion_rate': exclusion_rate,
-        'high_exclusion': high_exclusion,
-        'excluded_keys': sorted(total_excluded)
-    }
-
-
 def normalize_subject_id(subject: str) -> str:
     """Normalize subject ID by adding 'sub-' prefix if not already present.
 
