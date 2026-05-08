@@ -99,3 +99,46 @@ def test_compute_subject_fixed_effects_accepts_min_runs(tmp_path):
         fe.FixedEffectsAnalyzer.__init__ = real_init
 
     assert captured['min_runs'] == 4
+
+
+# ---------------------------------------------------------------------------
+# Task 5: --min-runs CLI flag
+# Scaffold uses: --subj-id, --task-name, --bids-dir, --fmriprep-dir (required),
+# --space MNI (valid choice), --exclusions-file (required).
+# get_parser() uses hyphenated long-form names; --space MNI152NLin2009cAsym is
+# NOT a valid choice, so MNI is used instead.
+# ---------------------------------------------------------------------------
+
+_MINIMAL_ARGS = [
+    '--subj-id', 'sub-x',
+    '--task-name', 'flanker',
+    '--bids-dir', '/tmp',
+    '--fmriprep-dir', '/tmp',
+    '--space', 'MNI',
+    '--exclusions-file', '/tmp/excl.json',
+]
+
+
+def test_lev1_cli_accepts_min_runs_flag():
+    """Parsing `--min-runs 3` produces args.min_runs == 3."""
+    from neuro_workflow.analysis.lev1.run import get_parser
+    parser = get_parser()
+    args = parser.parse_args([*_MINIMAL_ARGS, '--min-runs', '3'])
+    assert args.min_runs == 3
+
+
+def test_lev1_cli_min_runs_default_is_2():
+    """Omitting --min-runs leaves the default of 2."""
+    from neuro_workflow.analysis.lev1.run import get_parser
+    parser = get_parser()
+    args = parser.parse_args(_MINIMAL_ARGS)
+    assert args.min_runs == 2
+
+
+def test_lev1_cli_min_runs_must_be_positive():
+    """`--min-runs 0` aborts via SystemExit."""
+    import pytest as _pytest
+    from neuro_workflow.analysis.lev1.run import get_parser
+    parser = get_parser()
+    with _pytest.raises(SystemExit):
+        parser.parse_args([*_MINIMAL_ARGS, '--min-runs', '0'])
