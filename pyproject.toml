@@ -60,7 +60,7 @@ bold-reliability-movies = { git = "https://github.com/lobennett/bold-reliability
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
-skip = '.git,.gitignore,.gitattributes,*.lock,validator-outputs'
+skip = '.git,.gitignore,.gitattributes,*.lock,validator-outputs,*.min.js,*.min.css'
 check-hidden = true
 # ignore-regex = ''
 # ignore-words-list = ''
