@@ -69,7 +69,7 @@ The chain runs left-to-right, top-to-bottom. Excluded scans never reach lev1 (fi
 | `.bidsignore` (in BIDS dir) | Bad/unusable raw data (corrupt scans, withdrawn subjects, partial runs, behavioral failures) | fmriprep itself (BIDS-native; no derivatives produced) | Per-file pattern |
 | fmriprep confounds | Excessive motion (FD mean for rest, FD>0.5 proportion, std_dvars>1.5 proportion) | `motion` generator | Per-scan |
 | Sourcedata behavioral events | Behavioral QC failures (omission rate, RT) | `behavioral` generator | Per-scan |
-| Cohort QC `lev1_outliers.csv` | Per-(subject, task, contrast) high VIF or high outlier-voxel proportion | `lev1_outlier` generator | Per-scan (aggregated across contrasts) |
+| Cohort QC `lev1_outliers.csv` + Jeanette-style PDF | Per-(subject, task, contrast) high VIF or high outlier-voxel proportion | **manual review only** (the `lev1_outlier` generator was archived 2026-05-07 — see Section 3) | Visual inspection; act via `qa_decisions` or override |
 | qa_report decisions TSV | Manual annotations from the qa_report UI (`action ∈ pass/exclude/review`) | `qa_decisions` generator (scan-level rows direct; subject-level rows expanded via BIDS BOLD glob) | Per-scan or per-subject |
 | Manual override | Force-include (un-exclude) or force-exclude (add) | `data/exclusions/<ds>_overrides.json` (read by `compile_exclusions`) | Per-scan |
 | Lev1 fixed-effects min_runs | Subjects whose retained sessions for a (task, contrast) fall below `--min-runs` (default 2) | `_desc-belowMinRuns` filename tag, written by lev1, honored by lev2's `discover_input_files` glob filter | Per-(subject, task, contrast) |
@@ -99,7 +99,13 @@ All generators implement the `ExclusionGenerator` Protocol from `src/neuro_workf
 - **Logic:** internal QC rules in `events/qc.py` (omission rate, RT thresholds).
 - **Sample**: `neuro-run exclusions generate behavioral discovery`
 
-### `lev1_outlier`
+### `lev1_outlier` — **archived (2026-05-07); do not use as written**
+
+> **Status:** the generator code still exists and runs, but its output is **not in active use** for discovery (and should not be for validation either). The strict_vif=15 rule excluded whole scans based on a single contrast's VIF — most often `task-baseline`, whose collinearity with motion regressors is benign and routinely produces VIF in the 20-130 range on healthy data. On discovery this excluded 131/192 scans and produced zero fixed-effects for cuedTS, directedForgetting, and shapeMatching. The scan-level granularity itself is the design error: a high-VIF *contrast* should not preclude the *whole scan* from GLM. The cohort QC PDF + `lev1_flagged.tsv` (from `neuro_workflow.qa.lev1_outliers`) are the manual-review surface; act on them via `qa_decisions` or `data/exclusions/<ds>_overrides.json` instead.
+
+The archived discovery output (131 entries) is preserved at `~/.neuro_workflow/exclusions/discovery/sources_archived/lev1_outlier_2026-05-07_pre-rerun.json` for audit history. A future revisit may either delete the generator entirely or repurpose it to filter individual effect-size files at lev2 (per-(subject, task, contrast) granularity rather than per-scan); that decision is open.
+
+Original spec retained below for archival/reference only:
 
 - **Reads:** `lev1_outliers.csv` produced by `neuro_workflow.qa.lev1_outliers` cohort QC.
 - **Required arg**: `--lev1-outliers-csv PATH`
@@ -109,8 +115,8 @@ All generators implement the `ExclusionGenerator` Protocol from `src/neuro_workf
     - **strict_vif**: `vif >= strict-vif`
     - **strict_outliers**: `outlier_pct >= strict-outlier-pct`
   Per-scan aggregation: if any contrast on a scan fires any rule, emit one entry; reason lists every flagged contrast and its rule.
-- **Dataset filter:** when the dataset has a `subjects_file`, rows whose subject is not in the roster are dropped (lets a single pooled cohort QC CSV feed each dataset's exclusions).
-- **Sample**: `neuro-run exclusions generate lev1_outlier discovery --lev1-outliers-csv /scratch/users/logben/qa_lev1_discovery/lev1_outliers.csv`
+- **Dataset filter:** when the dataset has a `subjects_file`, rows whose subject is not in the roster are dropped.
+- **Sample (do not run on production datasets without revisiting the design):** `neuro-run exclusions generate lev1_outlier discovery --lev1-outliers-csv /scratch/users/logben/qa_lev1_discovery/lev1_outliers.csv`
 
 ### `qa_decisions`
 
@@ -256,13 +262,23 @@ Edits are tracked via git history on the override file. The override file is con
 
 ## 7. Operator playbook
 
-### Recipe: exclude a scan based on visual review
+### Recipe: exclude a scan based on visual review (qa_report)
+
+This is the primary path for adding manual exclusions to the pipeline.
 
 1. Open the qa_report HTML for the dataset.
 2. Find the scan; mark it `exclude` in the decisions TSV (or use the UI if it writes back).
 3. `uv run neuro-run exclusions generate qa_decisions <ds> --decisions-tsv <path>`
 4. `uv run neuro-run exclusions compile <ds>`
-5. Re-run lev1 for affected subjects.
+5. Re-run lev1 for affected subjects (the new exclusion is now in `compiled_exclusions.json`, which lev1's `--exclusions-file` reads).
+
+### Recipe: exclude a scan based on the cohort QC PDF / `lev1_flagged.tsv`
+
+`neuro_workflow.qa.lev1_outliers` produces a Jeanette-style cohort QC PDF and a `lev1_flagged.tsv` that surface high-VIF or high-outlier-voxel scans/contrasts. **There is no automated path from these to the exclusions registry today** (the `lev1_outlier` generator was archived 2026-05-07 — see Section 3). To act on cohort-QC findings:
+
+1. Inspect the PDF and `lev1_flagged.tsv` manually.
+2. Decide which scans to exclude. Note: the cohort QC flags individual `(subject, task, contrast)` triples, but the current exclusion registry only supports per-scan (`subject, session, task, run`) entries — there's no per-contrast filter at lev2 yet.
+3. For each scan you want excluded: either mark it in the qa_report decisions TSV (then follow the recipe above) **or** add a `force-exclude` entry to `data/exclusions/<ds>_overrides.json` (see "exclude a scan because automated thresholds didn't catch it" below).
 
 ### Recipe: exclude a scan because automated thresholds didn't catch it
 
@@ -281,8 +297,8 @@ Edits are tracked via git history on the override file. The override file is con
 1. Decide which sources are stale and re-run their generators:
     - Motion: `neuro-run exclusions generate motion <ds> --fmriprep-version <v>`
     - Behavioral: `neuro-run exclusions generate behavioral <ds>`
-    - Lev1 outlier: re-run cohort QC first (see `WORKFLOW.md`), then `neuro-run exclusions generate lev1_outlier <ds> --lev1-outliers-csv <path>`
     - QA decisions: `neuro-run exclusions generate qa_decisions <ds> --decisions-tsv <path>`
+    - **Note:** the `lev1_outlier` generator was archived 2026-05-07. Do not run it without revisiting the design (see Section 3).
 2. `uv run neuro-run exclusions compile <ds>`
 3. Inspect: `uv run neuro-run exclusions show <ds>`
 
