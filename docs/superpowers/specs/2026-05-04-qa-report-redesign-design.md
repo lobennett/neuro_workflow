@@ -284,7 +284,7 @@ Optional via `--no-reliability-movies`. Per-subject HTML still references `<vide
 |---|---|
 | Missing FreeSurfer dir | `FS status: MISSING`. Subject HTML still generated. |
 | `mris_euler_number` not on PATH | Fall back to `recon-all.log` parsing. If both fail: cells show "—", subject still renders. |
-| Confounds TSV missing | Scan row marked `motion: unparseable`. |
+| Confounds TSV missing | Scan row marked `motion: unparsable`. |
 | `decisions.tsv` references unknown scan | Warning to stderr, skip row, continue. |
 | brm fails for one subject | Per-subject `<video>` shows "reliability movie unavailable: <reason>". Cohort continues. |
 | ffmpeg / cairo modules not loaded | brm fails (see above). HTML still produced. |
