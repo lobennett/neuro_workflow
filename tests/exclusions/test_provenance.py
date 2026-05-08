@@ -169,3 +169,81 @@ def test_compile_handles_mixed_wrapped_and_bare_sources(tmp_path, monkeypatch):
     compiled = core_excl.compile_exclusions("discovery")
     subjects = {e["subject"] for e in compiled}
     assert subjects == {"sub-s03", "sub-s10"}
+
+
+def test_compile_writes_lockfile(tmp_path, monkeypatch):
+    """compile_exclusions writes data/exclusions/<ds>_lock.json with the right schema."""
+    import json
+    from argparse import Namespace
+    from neuro_workflow.core import exclusions as core_excl
+
+    monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "home" / "exclusions")
+    monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")
+
+    args = Namespace(combined_vif=10.0)
+    core_excl.save_source_entries("discovery", "lev1_outlier", [
+        {"subject": "sub-s03", "session": "ses-02", "task": "task-x",
+         "run": "run-1", "source": "lev1_outlier", "action": "exclude", "reason": "y"},
+    ], args=args)
+    core_excl.save_source_entries("discovery", "motion", [], args=Namespace(fd_threshold=0.2))
+
+    core_excl.compile_exclusions("discovery")
+
+    lock_path = tmp_path / "data" / "exclusions" / "discovery_lock.json"
+    assert lock_path.exists()
+    lock = json.loads(lock_path.read_text())
+    assert lock["dataset"] == "discovery"
+    assert lock["n_total_entries"] == 1
+    assert lock["n_overrides"] == 0
+    assert isinstance(lock["compiled_at"], str)
+    assert lock["compiled_at"].endswith("Z")
+    assert "compiled_at_code_sha" in lock
+    source_names = {s["generator"] for s in lock["sources"]}
+    assert source_names == {"lev1_outlier", "motion"}
+    lev1_meta = next(s for s in lock["sources"] if s["generator"] == "lev1_outlier")
+    assert lev1_meta["n_entries"] == 1
+    assert lev1_meta["args"] == {"combined_vif": 10.0}
+
+
+def test_compile_no_sources_writes_empty_lockfile(tmp_path, monkeypatch):
+    """No sources/*.json files -> lockfile with sources: [], n_total_entries: 0."""
+    import json
+    from neuro_workflow.core import exclusions as core_excl
+
+    monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "home" / "exclusions")
+    monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")
+
+    core_excl.compile_exclusions("discovery")
+
+    lock_path = tmp_path / "data" / "exclusions" / "discovery_lock.json"
+    assert lock_path.exists()
+    lock = json.loads(lock_path.read_text())
+    assert lock["sources"] == []
+    assert lock["n_total_entries"] == 0
+
+
+def test_compile_with_bare_list_sources_records_null_meta(tmp_path, monkeypatch):
+    """Legacy bare-list source files appear in the lockfile with null fields."""
+    import json
+    from neuro_workflow.core import exclusions as core_excl
+
+    monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "home" / "exclusions")
+    monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")
+
+    sources_dir = tmp_path / "home" / "exclusions" / "discovery" / "sources"
+    sources_dir.mkdir(parents=True)
+    (sources_dir / "old_source.json").write_text(json.dumps([
+        {"subject": "sub-s03", "session": "ses-02", "task": "task-x",
+         "run": "run-1", "source": "old_source", "action": "exclude", "reason": "y"},
+    ]))
+
+    core_excl.compile_exclusions("discovery")
+
+    lock = json.loads((tmp_path / "data" / "exclusions" / "discovery_lock.json").read_text())
+    assert len(lock["sources"]) == 1
+    s = lock["sources"][0]
+    assert s["generator"] == "old_source"
+    assert s["ran_at"] is None
+    assert s["code_sha"] is None
+    assert s["args"] is None
+    assert s["n_entries"] == 1
