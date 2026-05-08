@@ -11,16 +11,25 @@ from neuro_workflow.pipelines.lev1 import BASE_TASKS, DUAL_TASKS, ALL_TASKS
 
 
 def _discover_contrasts_from_lev1_dirs(lev1_dirs: list[str], task_filter: list[str] | None = None) -> list[str]:
-    """Glob fixed-effects files and extract contrast names."""
+    """Glob fixed-effects files and extract contrast names.
+
+    Real lev1 contrast names contain underscores (e.g. `cue_switch_cost`,
+    `response_time`, `task_switch_cue_switch-task_stay_cue_stay`). The
+    capture must take everything between `task-` and the next BIDS-entity
+    boundary (`_rtmodel-` for current outputs, `_stat-` as a fallback for
+    older fixtures), not truncate at the first underscore.
+    """
     contrasts = set()
     for lev1_dir in lev1_dirs:
         pattern = str(Path(lev1_dir) / "sub-*" / "*" / "fixed_effects" / "*_stat-fixed-effects.nii.gz")
         for fpath in glob.glob(pattern):
             fname = Path(fpath).name
-            # Extract task_contrast portion: task-TASK_contrast-NAME
-            m = re.search(r'((?:task-[^_]+_)+contrast-[^_]+)', fname)
+            # Capture task-TASK_contrast-NAME up to the next BIDS entity
+            # (rtmodel- if present; stat- as fallback). Non-greedy so multi-
+            # underscore contrast names are preserved end-to-end.
+            m = re.search(r'(task-[^_]+_contrast-.+?)_(?:rtmodel-|stat-)', fname)
             if m:
-                contrast_id = m.group(1).rstrip('_')
+                contrast_id = m.group(1)
                 if task_filter is None:
                     contrasts.add(contrast_id)
                 else:
