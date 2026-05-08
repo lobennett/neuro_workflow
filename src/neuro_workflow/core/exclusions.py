@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from argparse import Namespace
 from pathlib import Path
 from typing import Optional
 
@@ -38,12 +39,27 @@ def _compiled_path(dataset_name: str) -> Path:
     return EXCLUSIONS_DIR / dataset_name / "compiled_exclusions.json"
 
 
-def save_source_entries(dataset_name: str, source_name: str, entries: list[dict]) -> None:
-    """Write entries for a single source to its JSON file."""
+def save_source_entries(
+    dataset_name: str,
+    source_name: str,
+    entries: list[dict],
+    args: "Namespace | dict | None" = None,
+) -> None:
+    """Write entries for a single source as `{"_meta": ..., "entries": [...]}`.
+
+    args is recorded in the _meta block (as JSON-safe dict). If None, args
+    field is null — fine for callers that don't have a generator-level
+    Namespace (cmd_exclusions_import / cmd_events_qc).
+    """
+    from neuro_workflow.exclusions.base import make_meta
     d = _sources_dir(dataset_name)
     d.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "_meta": make_meta(source_name, args, len(entries)),
+        "entries": entries,
+    }
     with open(d / f"{source_name}.json", "w") as f:
-        json.dump(entries, f, indent=2)
+        json.dump(payload, f, indent=2)
 
 
 def load_source_entries(dataset_name: str, source_name: str) -> list[dict]:
