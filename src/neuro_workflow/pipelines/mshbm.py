@@ -26,8 +26,18 @@ class MshbmPipeline:
 
         output_dir = Path(args.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        sub_list_file = output_dir / "sub_list.txt"
-        sub_list_file.write_text("\n".join(subjects) + "\n")
+        sub_list_file = output_dir / "sub_list.csv"
+
+        # MSHBM_wrapper.m reads a 2-column CSV (no header):
+        #   col 1: BIDS subject ID (e.g. sub-s03) — must match prep-mshbm output dirname
+        #   col 2: data directory ending in /, joined with subject as `[datadir SUB{s}]`
+        # So col 2 is the surface_inputs_dir with a trailing slash.
+        surface_dir = args.surface_inputs_dir.rstrip("/") + "/"
+        lines = []
+        for s in subjects:
+            bids_sub = s if s.startswith("sub-") else f"sub-{s}"
+            lines.append(f"{bids_sub},{surface_dir}")
+        sub_list_file.write_text("\n".join(lines) + "\n")
 
         neuro_workflow_dir = Path(__file__).resolve().parents[3]
         mshbm_dir = args.mshbm_dir if args.mshbm_dir else str(neuro_workflow_dir.parent / "PrecisionNetworkMapping")
