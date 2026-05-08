@@ -294,3 +294,34 @@ def test_cmd_exclusions_generate_passes_args_through(tmp_path, monkeypatch):
         (tmp_path / "exclusions" / "discovery" / "sources" / "stub_gen.json").read_text()
     )
     assert on_disk["_meta"]["args"]["threshold_a"] == 42
+
+
+def test_cmd_exclusions_show_prints_provenance_when_lockfile_exists(
+    tmp_path, monkeypatch, capsys,
+):
+    """cmd_exclusions_show prints lockfile-based provenance when available."""
+    import json
+    from argparse import Namespace
+    from neuro_workflow.core import exclusions as core_excl
+    import neuro_workflow.cli as cli_mod
+
+    monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "home" / "exclusions")
+    monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")
+
+    # Compile something so a lockfile exists.
+    core_excl.save_source_entries(
+        "discovery", "lev1_outlier",
+        [{"subject": "sub-s03", "session": "ses-02", "task": "task-x",
+          "run": "run-1", "source": "lev1_outlier", "action": "exclude", "reason": "y"}],
+        args=Namespace(combined_vif=10.0),
+    )
+    core_excl.compile_exclusions("discovery")
+
+    args = Namespace(dataset="discovery")
+    cli_mod.cmd_exclusions_show(args, [])
+    captured = capsys.readouterr()
+
+    # Lockfile-derived fields visible in stdout
+    assert "lev1_outlier" in captured.out
+    assert "compiled_at" in captured.out.lower() or "compiled at" in captured.out.lower()
+    assert "1" in captured.out  # n_total_entries
