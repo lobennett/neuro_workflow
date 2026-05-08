@@ -54,6 +54,36 @@ def test_discover_contrasts_from_lev1_dirs(tmp_path):
     assert "task-stroop_contrast-incongruentGtCongruent" in contrasts
 
 
+def test_discover_contrasts_preserves_underscored_contrast_names(tmp_path):
+    """Real lev1 outputs have multi-underscore contrast names like
+    `cue_switch_cost`, `task_switch_cue_switch-task_stay_cue_stay`,
+    `response_time`, `stop_success`. The discovery regex must capture
+    the FULL contrast name, not truncate at the first underscore.
+
+    Regression test for the bug discovered 2026-05-08 when discovery
+    lev2 (job 24280825) produced contrast list entries like
+    `task-cuedTS_contrast-cue` (truncated from `cue_switch_cost`),
+    causing 23/34 array tasks to fail with `No input files found`.
+    """
+    fe_dir = tmp_path / "sub-s03" / "task-cuedTS" / "fixed_effects"
+    fe_dir.mkdir(parents=True)
+    # Real lev1 output naming: include _rtmodel-RTDur_ between contrast and stat
+    (fe_dir / "sub-s03_task-cuedTS_contrast-cue_switch_cost_rtmodel-RTDur_stat-fixed-effects.nii.gz").touch()
+    (fe_dir / "sub-s03_task-cuedTS_contrast-task_switch_cost_rtmodel-RTDur_stat-fixed-effects.nii.gz").touch()
+    (fe_dir / "sub-s03_task-cuedTS_contrast-task-baseline_rtmodel-RTDur_stat-fixed-effects.nii.gz").touch()
+    (fe_dir / "sub-s03_task-cuedTS_contrast-response_time_rtmodel-RTDur_stat-fixed-effects.nii.gz").touch()
+
+    contrasts = _discover_contrasts_from_lev1_dirs([str(tmp_path)])
+    assert "task-cuedTS_contrast-cue_switch_cost" in contrasts
+    assert "task-cuedTS_contrast-task_switch_cost" in contrasts
+    assert "task-cuedTS_contrast-task-baseline" in contrasts
+    assert "task-cuedTS_contrast-response_time" in contrasts
+    # And the truncated forms must NOT appear (would mean regex still broken)
+    assert "task-cuedTS_contrast-cue" not in contrasts
+    assert "task-cuedTS_contrast-task" not in contrasts
+    assert "task-cuedTS_contrast-response" not in contrasts
+
+
 def test_discover_contrasts_with_task_filter(tmp_path):
     """Task filter limits results to matching tasks only."""
     fe_flanker = tmp_path / "sub-s03" / "task-flanker" / "fixed_effects"
