@@ -48,6 +48,30 @@ def test_make_meta_args_none():
     assert meta["args"] is None
 
 
+def test_make_meta_strips_callable_from_args():
+    """argparse Namespaces carry a `func` callback (set via subparser
+    set_defaults). The audit-trail args dict must drop it so json.dumps
+    succeeds on the saved sources file."""
+    import json
+    from neuro_workflow.exclusions.base import make_meta
+
+    def _stub_callback(args, remaining):
+        pass
+
+    meta = make_meta(
+        "foo",
+        Namespace(dataset="discovery", source="motion", func=_stub_callback),
+        n_entries=0,
+    )
+    # callable stripped out
+    assert "func" not in meta["args"]
+    # other args preserved
+    assert meta["args"]["dataset"] == "discovery"
+    assert meta["args"]["source"] == "motion"
+    # full meta JSON-serializes without crashing
+    json.dumps(meta)
+
+
 def test_save_source_entries_wraps_with_meta(tmp_path, monkeypatch):
     """save_source_entries writes {_meta, entries} on disk, not a bare list."""
     import json
