@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Level 2 GLM Analysis script for group-level statistical analysis."""
 
-from randomise_prep import setup_randomise_tfce
+try:
+    from randomise_prep import setup_randomise_tfce
+except ModuleNotFoundError:  # not installed in test/CI environments
+    setup_randomise_tfce = None  # type: ignore[assignment]
 from pathlib import Path
 from nilearn.masking import intersect_masks
 from nilearn.image import math_img
@@ -117,17 +120,22 @@ def discover_input_files(level1_dirs: List[Path], contrast_name: str) -> List[st
     """
     Discover input files for a specific contrast from multiple level1 output directories.
 
+    Files tagged `_desc-belowMinRuns_` (subjects whose fixed-effects came
+    from fewer than `min_runs` retained sessions, see lev1 design 2026-05-07)
+    are filtered out automatically.
+
     Args:
         level1_dirs: List of paths to level1 output directories
         contrast_name: Task_contrast name (e.g., 'task-flanker_contrast-incongruent-congruent')
 
     Returns:
-        List of paths to fixed effects files for this contrast
+        List of paths to fixed effects files for this contrast (excluding
+        _desc-belowMinRuns_ files).
     """
-    all_files = []
-    
+    all_files: List[str] = []
+    n_dropped = 0
+
     for level1_dir in level1_dirs:
-        # Find all files matching this task_contrast pattern
         pattern = (
             level1_dir
             / 'sub-*'
@@ -136,7 +144,15 @@ def discover_input_files(level1_dirs: List[Path], contrast_name: str) -> List[st
             / f'*{contrast_name}_rtmodel-*_stat-fixed-effects.nii.gz'
         )
         files = glob.glob(str(pattern))
-        all_files.extend(files)
+        kept = [f for f in files if '_desc-belowMinRuns_' not in f]
+        n_dropped += len(files) - len(kept)
+        all_files.extend(kept)
+
+    if n_dropped:
+        print(
+            f'discover_input_files: dropped {n_dropped} '
+            f'_desc-belowMinRuns files for contrast {contrast_name}'
+        )
 
     return sorted(all_files)
 

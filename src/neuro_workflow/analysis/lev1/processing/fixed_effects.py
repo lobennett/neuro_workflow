@@ -26,7 +26,7 @@ class FixedEffectsAnalyzer:
         subject_id: str,
         task_name: str,
         mask_img: Optional[Union[str, Path]] = None,
-        high_exclusion: bool = False,
+        min_runs: int = 2,
         hemisphere: Optional[str] = None,
         surface_space: str = 'fsnative',
     ):
@@ -36,7 +36,7 @@ class FixedEffectsAnalyzer:
             subject_id: Subject identifier
             task_name: Task name
             mask_img: Optional brain mask image
-            high_exclusion: Whether >50% of runs were excluded
+            min_runs: Minimum runs required to compute a non-tagged fixed-effects map (default: 2).
             hemisphere: Optional hemisphere ('L' or 'R') for surface data
             surface_space: Surface space name for output filenames (default 'fsnative')
 
@@ -47,7 +47,7 @@ class FixedEffectsAnalyzer:
         self.subject_id = subject_id
         self.task_name = task_name
         self.mask_img = mask_img
-        self.high_exclusion = high_exclusion
+        self.min_runs = min_runs
         self.hemisphere = hemisphere
         self.surface_space = surface_space
         self.contrast_results = {}
@@ -244,6 +244,32 @@ class FixedEffectsAnalyzer:
             logger.error('Fixed effects failed for %s: %s', contrast_name, e)
             return None, None, None
 
+    def _build_base_filename(self, contrast_name: str) -> str:
+        """Construct the BIDS-style base filename for this contrast's saved maps.
+
+        Applies the `_desc-belowMinRuns` tag when this contrast's n_runs is
+        below `self.min_runs`. The tag substring includes the trailing
+        underscore so downstream lev2 filtering can use a substring match.
+        """
+        if self.hemisphere is not None:
+            hemi_tag = f'_hemi-{self.hemisphere}'
+            space_tag = f'_space-{self.surface_space}'
+        else:
+            hemi_tag = ''
+            space_tag = ''
+
+        n_runs = self.contrast_results[contrast_name]['n_runs']
+        below_min = n_runs < self.min_runs
+        below_min_tag = '_desc-belowMinRuns' if below_min else ''
+
+        return (
+            f'{self.subject_id}{hemi_tag}{space_tag}'
+            f'_task-{self.task_name}'
+            f'_contrast-{contrast_name}'
+            f'_rtmodel-RTDur{below_min_tag}'
+            f'_stat-fixed-effects'
+        )
+
     def save_fixed_effects_maps(
         self, contrast_name: str, output_dir: Path, base_filename: Optional[str] = None
     ) -> Dict[str, Path]:
@@ -271,19 +297,22 @@ class FixedEffectsAnalyzer:
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Determine file extension and hemisphere tag
-        if self.hemisphere is not None:
-            file_ext = '.func.gii'
-            hemi_tag = f'_hemi-{self.hemisphere}'
-            space_tag = f'_space-{self.surface_space}'
-        else:
-            file_ext = '.nii.gz'
-            hemi_tag = ''
-            space_tag = ''
+        # Determine file extension (hemisphere/space tags are now in _build_base_filename)
+        file_ext = '.func.gii' if self.hemisphere is not None else '.nii.gz'
 
         if base_filename is None:
-            high_excl_tag = '_desc-highExclusion' if self.high_exclusion else ''
-            base_filename = f'{self.subject_id}{hemi_tag}{space_tag}_task-{self.task_name}_contrast-{contrast_name}_rtmodel-RTDur{high_excl_tag}_stat-fixed-effects'
+            base_filename = self._build_base_filename(contrast_name)
+
+        # Warn whenever this contrast is below the floor, regardless of whether
+        # the caller supplied base_filename. The warning is the audit trail.
+        n_runs = self.contrast_results[contrast_name]['n_runs']
+        if n_runs < self.min_runs:
+            logger.warning(
+                'tagged %s/task-%s/contrast-%s as _desc-belowMinRuns: '
+                'n_runs=%d (min_runs=%d)',
+                self.subject_id, self.task_name, contrast_name,
+                n_runs, self.min_runs,
+            )
 
         saved_files = {}
 
@@ -404,7 +433,7 @@ def compute_subject_fixed_effects(
     output_dir: Path,
     mask_img: Optional[Union[str, Path]] = None,
     exclusions: Optional[Set[str]] = None,
-    high_exclusion: bool = False,
+    min_runs: int = 2,
     hemisphere: Optional[str] = None,
     surface_space: str = 'fsnative',
 ) -> Dict[str, Dict[str, Path]]:
@@ -417,7 +446,7 @@ def compute_subject_fixed_effects(
         output_dir: Directory to save fixed effects
         mask_img: Optional brain mask
         exclusions: Optional set of runs to exclude
-        high_exclusion: Whether >50% of runs were excluded
+        min_runs: Minimum runs threshold passed to the analyzer (default 2).
         hemisphere: Optional hemisphere ('L' or 'R') for surface data
         surface_space: Surface space name for output filenames (default 'fsnative')
 
@@ -434,7 +463,8 @@ def compute_subject_fixed_effects(
         ... )
     """
     analyzer = FixedEffectsAnalyzer(
-        subject_id, task_name, mask_img, high_exclusion, hemisphere,
+        subject_id, task_name, mask_img,
+        min_runs=min_runs, hemisphere=hemisphere,
         surface_space=surface_space,
     )
 
