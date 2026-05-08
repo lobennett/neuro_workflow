@@ -607,12 +607,13 @@ def process_rest_volume(
 
 def process_subject(
     subject: str,
-    glm_dir: Path,
+    glm_dir: Path | None,
     fmriprep_dir: Path,
     output_dir: Path,
     residuals_space: str = 'surface',
     rest_fmriprep_dir: Path | None = None,
     sessions: set[str] | None = None,
+    rest_only: bool = False,
 ) -> int:
     """Process all data for one subject. Returns error count."""
     subj_output = output_dir / subject
@@ -634,30 +635,31 @@ def process_subject(
     errors = 0
 
     # --- Task residuals -> fsaverage6 ---
-    if residuals_space == 'surface':
-        # fsnative GIFTI -> fsaverage6 (mri_surf2surf)
-        residual_files = discover_task_residuals_surface(glm_dir, subject)
-        residual_files = filter_by_sessions(residual_files, sessions)
-        errors += process_surface_residuals(
-            residual_files, subject, subjects_dir, subj_output,
-        )
-    else:
-        # Volumetric (MNI or T1w) -> fsaverage6
-        anat_dir = find_anat_dir(fmriprep_dir, subject)
-        transform = None
-        t1w_ref = None
-        if residuals_space == 'MNI':
-            transform = find_mni_to_t1w_transform(anat_dir)
-            t1w_ref_fullres = find_t1w_reference(anat_dir)
-            # Downsample T1w reference to 2mm to avoid OOM on 4D transforms
-            t1w_ref = create_lowres_reference(t1w_ref_fullres, subj_output)
+    if not rest_only:
+        if residuals_space == 'surface':
+            # fsnative GIFTI -> fsaverage6 (mri_surf2surf)
+            residual_files = discover_task_residuals_surface(glm_dir, subject)
+            residual_files = filter_by_sessions(residual_files, sessions)
+            errors += process_surface_residuals(
+                residual_files, subject, subjects_dir, subj_output,
+            )
+        else:
+            # Volumetric (MNI or T1w) -> fsaverage6
+            anat_dir = find_anat_dir(fmriprep_dir, subject)
+            transform = None
+            t1w_ref = None
+            if residuals_space == 'MNI':
+                transform = find_mni_to_t1w_transform(anat_dir)
+                t1w_ref_fullres = find_t1w_reference(anat_dir)
+                # Downsample T1w reference to 2mm to avoid OOM on 4D transforms
+                t1w_ref = create_lowres_reference(t1w_ref_fullres, subj_output)
 
-        residual_files = discover_task_residuals_volume(glm_dir, subject)
-        residual_files = filter_by_sessions(residual_files, sessions)
-        errors += process_volume_residuals(
-            residual_files, subject, subjects_dir, subj_output,
-            residuals_space, transform, t1w_ref,
-        )
+            residual_files = discover_task_residuals_volume(glm_dir, subject)
+            residual_files = filter_by_sessions(residual_files, sessions)
+            errors += process_volume_residuals(
+                residual_files, subject, subjects_dir, subj_output,
+                residuals_space, transform, t1w_ref,
+            )
 
     # --- Rest BOLD -> fsaverage6 ---
     # Priority: fsaverage6 GIFTI (from rest fmriprep) > fsnative GIFTI > T1w volume
@@ -723,8 +725,9 @@ def get_parser() -> argparse.ArgumentParser:
         help='Subject ID (e.g., s03)',
     )
     parser.add_argument(
-        '--glm-dir', type=str, required=True,
-        help='GLM results directory containing sub-s*/task-*/task_residuals/',
+        '--glm-dir', type=str, default=None,
+        help='GLM results directory containing sub-s*/task-*/task_residuals/. '
+             'Required unless --rest-only is set.',
     )
     parser.add_argument(
         '--fmriprep-dir', type=str, required=True,
@@ -752,6 +755,11 @@ def get_parser() -> argparse.ArgumentParser:
         'Default: all sessions.',
     )
     parser.add_argument(
+        '--rest-only', action='store_true', default=False,
+        help='Skip task-residual discovery + processing. Only rest BOLD '
+             'is projected to fsaverage6. Mutually exclusive with --glm-dir.',
+    )
+    parser.add_argument(
         '--verbose', action='store_true', default=False,
         help='Enable debug logging',
     )
@@ -761,6 +769,16 @@ def get_parser() -> argparse.ArgumentParser:
 def main() -> int:
     parser = get_parser()
     args = parser.parse_args()
+
+    # Validation: exactly one of --rest-only / --glm-dir must be set.
+    if args.rest_only and args.glm_dir:
+        parser.error(
+            "--rest-only and --glm-dir are mutually exclusive; pick one."
+        )
+    if not args.rest_only and not args.glm_dir:
+        parser.error(
+            "must supply either --rest-only or --glm-dir (one is required)."
+        )
 
     level = logging.DEBUG if args.verbose else logging.INFO
     logging.basicConfig(
@@ -788,12 +806,13 @@ def main() -> int:
 
     errors = process_subject(
         subject=subject,
-        glm_dir=Path(args.glm_dir),
+        glm_dir=Path(args.glm_dir) if args.glm_dir else None,
         fmriprep_dir=Path(args.fmriprep_dir),
         output_dir=Path(args.output_dir),
         residuals_space=args.residuals_space,
         rest_fmriprep_dir=rest_fmriprep_dir,
         sessions=sessions,
+        rest_only=args.rest_only,
     )
 
     if errors > 0:

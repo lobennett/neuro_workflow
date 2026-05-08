@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
@@ -14,17 +15,30 @@ class PrepMshbmPipeline:
     default_resources = {"nthreads": 1, "mem_gb": 64, "time": "24:00:00"}
 
     def add_cli_args(self, parser: ArgumentParser) -> None:
-        parser.add_argument("--glm-dir", required=True, help="Level-1 GLM results directory")
+        parser.add_argument("--glm-dir", required=False, default=None,
+                            help="Level-1 GLM results directory (required unless --rest-only is set)")
         parser.add_argument("--fmriprep-dir", required=True, help="fMRIPrep derivatives directory")
         parser.add_argument("--rest-fmriprep-dir", default=None, help="Separate fMRIPrep directory for rest BOLD (optional)")
         parser.add_argument("--output-dir", required=True, help="Output directory for MSHBM surface inputs")
         parser.add_argument("--residuals-space", default="surface", choices=["surface", "MNI", "T1w"], help="Space of task residuals (default: surface)")
+        parser.add_argument("--rest-only", action="store_true", default=False,
+                            help="Skip task-residual prep; rest BOLD only (mutually exclusive with --glm-dir)")
         parser.add_argument("--sessions", nargs="+", default=None, help="Only process these sessions (optional)")
         parser.add_argument("--nthreads", type=int, default=None, help=f"CPUs per task (default: {self.default_resources['nthreads']})")
         parser.add_argument("--mem-gb", type=int, default=None, help=f"Memory in GB (default: {self.default_resources['mem_gb']})")
         parser.add_argument("--time", default=None, help=f"SLURM time limit (default: {self.default_resources['time']})")
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
+        # Validate: exactly one of --rest-only / --glm-dir must be set.
+        if args.rest_only and args.glm_dir:
+            sys.exit(
+                "Error: --rest-only and --glm-dir are mutually exclusive; pick one."
+            )
+        if not args.rest_only and not args.glm_dir:
+            sys.exit(
+                "Error: must supply either --rest-only or --glm-dir (one is required)."
+            )
+
         subjects = load_subjects(dataset_config["subjects_file"])
 
         output_dir = Path(args.output_dir)
@@ -35,8 +49,14 @@ class PrepMshbmPipeline:
 
         resources = resolve_resources(args, self.default_resources)
 
-        # Build extra flags
+        # Build extra flags: includes --glm-dir / --residuals-space / --rest-only / etc.
         extra_flags = []
+        if args.rest_only:
+            extra_flags.append("--rest-only")
+        else:
+            # Task+rest mode: --glm-dir and --residuals-space apply
+            extra_flags.append(f'--glm-dir "{args.glm_dir}"')
+            extra_flags.append(f"--residuals-space {args.residuals_space}")
         if args.rest_fmriprep_dir:
             extra_flags.append(f"--rest-fmriprep-dir {args.rest_fmriprep_dir}")
         if args.sessions:
@@ -54,10 +74,8 @@ class PrepMshbmPipeline:
             "log_dir": str(log_dir),
             "mail_line": mail_line,
             "subject_list_file": str(subject_list_file),
-            "glm_dir": args.glm_dir,
             "fmriprep_dir": args.fmriprep_dir,
             "output_dir": str(output_dir),
-            "residuals_space": args.residuals_space,
             "extra_flags": " ".join(extra_flags),
             "neuro_workflow_dir": str(Path(__file__).resolve().parents[3]),
         }
