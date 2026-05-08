@@ -2,12 +2,18 @@
 from __future__ import annotations
 
 import json
+from argparse import Namespace
 from pathlib import Path
 from typing import Optional
 
 from neuro_workflow.core.config import CONFIG_DIR
 
 EXCLUSIONS_DIR = CONFIG_DIR / "exclusions"
+
+# Project-relative path for committed lockfiles. Resolved at write time
+# from the package's parent directories.
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+LOCKFILE_DIR = _REPO_ROOT / "data" / "exclusions"
 
 REQUIRED_FIELDS = {"subject", "session", "task", "run", "action", "reason"}
 VALID_ACTIONS = {"exclude", "trim", "force-include", "force-exclude"}
@@ -38,21 +44,63 @@ def _compiled_path(dataset_name: str) -> Path:
     return EXCLUSIONS_DIR / dataset_name / "compiled_exclusions.json"
 
 
-def save_source_entries(dataset_name: str, source_name: str, entries: list[dict]) -> None:
-    """Write entries for a single source to its JSON file."""
+def _lockfile_path(dataset_name: str) -> Path:
+    return LOCKFILE_DIR / f"{dataset_name}_lock.json"
+
+
+def _read_source_file(path: Path) -> tuple[list[dict], dict | None]:
+    """Read a sources/*.json file. Returns (entries, meta).
+
+    Handles both new wrapped format `{"_meta": ..., "entries": [...]}` and
+    legacy bare-list format `[...]`. For bare-list, meta is a synthetic
+    null-fields dict with generator inferred from the filename stem.
+    """
+    with open(path) as f:
+        loaded = json.load(f)
+    if isinstance(loaded, list):
+        # Legacy bare-list format.
+        meta = {
+            "generator": path.stem,
+            "ran_at": None,
+            "code_sha": None,
+            "args": None,
+            "n_entries": len(loaded),
+        }
+        return loaded, meta
+    # Wrapped format.
+    return loaded.get("entries", []), loaded.get("_meta")
+
+
+def save_source_entries(
+    dataset_name: str,
+    source_name: str,
+    entries: list[dict],
+    args: "Namespace | dict | None" = None,
+) -> None:
+    """Write entries for a single source as `{"_meta": ..., "entries": [...]}`.
+
+    args is recorded in the _meta block (as JSON-safe dict). If None, args
+    field is null — fine for callers that don't have a generator-level
+    Namespace (cmd_exclusions_import / cmd_events_qc).
+    """
+    from neuro_workflow.exclusions.base import make_meta
     d = _sources_dir(dataset_name)
     d.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "_meta": make_meta(source_name, args, len(entries)),
+        "entries": entries,
+    }
     with open(d / f"{source_name}.json", "w") as f:
-        json.dump(entries, f, indent=2)
+        json.dump(payload, f, indent=2)
 
 
 def load_source_entries(dataset_name: str, source_name: str) -> list[dict]:
-    """Load entries for a single source."""
+    """Load entries for a single source. Handles both wrapped and bare formats."""
     path = _sources_dir(dataset_name) / f"{source_name}.json"
     if not path.exists():
         return []
-    with open(path) as f:
-        return json.load(f)
+    entries, _meta = _read_source_file(path)
+    return entries
 
 
 def save_overrides(dataset_name: str, overrides: list[dict]) -> None:
@@ -83,10 +131,13 @@ def compile_exclusions(dataset_name: str, bids_dir: Optional[str] = None) -> lis
     sources_dir = _sources_dir(dataset_name)
     all_entries: list[dict] = []
 
+    sources_meta: list[dict] = []
     if sources_dir.exists():
         for source_file in sorted(sources_dir.glob("*.json")):
-            with open(source_file) as f:
-                all_entries.extend(json.load(f))
+            entries, meta = _read_source_file(source_file)
+            all_entries.extend(entries)
+            if meta is not None:
+                sources_meta.append(meta)
 
     overrides = load_overrides(dataset_name)
 
@@ -123,6 +174,24 @@ def compile_exclusions(dataset_name: str, bids_dir: Optional[str] = None) -> lis
         deriv.mkdir(parents=True, exist_ok=True)
         with open(deriv / "compiled_exclusions.json", "w") as f:
             json.dump(all_entries, f, indent=2)
+
+    # Write the committed lockfile.
+    from neuro_workflow.exclusions.base import _git_sha
+    from datetime import datetime, timezone
+
+    lock_path = _lockfile_path(dataset_name)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock = {
+        "dataset": dataset_name,
+        "compiled_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "compiled_at_code_sha": _git_sha(),
+        "compiled_path": str(compiled_path),
+        "n_total_entries": len(all_entries),
+        "n_overrides": len(overrides),
+        "sources": sources_meta,
+    }
+    with open(lock_path, "w") as f:
+        json.dump(lock, f, indent=2)
 
     return all_entries
 

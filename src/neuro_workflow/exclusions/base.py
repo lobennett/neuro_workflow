@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import subprocess
 from argparse import ArgumentParser, Namespace
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -50,3 +52,79 @@ def load_dataset_subjects(dataset_config: dict) -> set[str] | None:
             continue
         subjects.add(sid if sid.startswith("sub-") else f"sub-{sid}")
     return subjects or None
+
+
+# Repo root resolved from this file's location: src/neuro_workflow/exclusions/base.py
+# -> parents[0]=exclusions, parents[1]=neuro_workflow, parents[2]=src, parents[3]=repo root.
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def _git_sha() -> str | None:
+    """Return the current git HEAD short SHA, with '+dirty' suffix if the working
+    tree has uncommitted changes. Returns None if git is unavailable or this is
+    not a git repo.
+
+    Subprocess runs with cwd=_REPO_ROOT so SLURM jobs invoked from scratch dirs
+    still resolve the correct repo (otherwise git fails when CWD is outside any
+    repo, and code_sha drops to null in production lockfiles).
+    """
+    try:
+        sha = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True, text=True, check=True,
+            cwd=_REPO_ROOT,
+        ).stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    if not sha:
+        return None
+    try:
+        dirty = bool(subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True, text=True, check=True,
+            cwd=_REPO_ROOT,
+        ).stdout.strip())
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return sha
+    return f"{sha}+dirty" if dirty else sha
+
+
+def _jsonify(value):
+    """Convert non-JSON-native values (Path, set, etc.) to JSON-safe forms.
+
+    Walks dicts and lists recursively. Path becomes str. Other unknown types
+    are returned as-is and may fail json.dumps loudly downstream — that's fine.
+    """
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, dict):
+        return {k: _jsonify(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_jsonify(v) for v in value]
+    return value
+
+
+def make_meta(
+    generator_name: str,
+    args: "Namespace | dict | None",
+    n_entries: int,
+) -> dict:
+    """Build the _meta block for a generator's saved sources file.
+
+    args can be argparse.Namespace, a plain dict, or None (for callers that
+    don't have an args object — e.g., cmd_exclusions_import / cmd_events_qc).
+    """
+    if args is None:
+        args_dict = None
+    elif hasattr(args, "__dict__") and not isinstance(args, dict):
+        args_dict = vars(args)
+    else:
+        args_dict = dict(args)
+
+    return {
+        "generator": generator_name,
+        "ran_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "code_sha": _git_sha(),
+        "args": _jsonify(args_dict) if args_dict is not None else None,
+        "n_entries": n_entries,
+    }
