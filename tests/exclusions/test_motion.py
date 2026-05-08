@@ -63,6 +63,39 @@ def test_generate_finds_bad_scans(tmp_path):
     assert "sub-s01" not in subjects
 
 
+def test_generate_uses_std_dvars_not_raw_dvars(tmp_path):
+    """The generator must read fmriprep's standardized DVARS (`std_dvars`),
+    not the raw-intensity `dvars` column. Threshold ">1.5" is the standardized
+    convention; raw dvars is in BOLD-intensity units (~10s-100s) and would
+    flag every scan if used. qa_report.metrics.motion already uses std_dvars
+    (qa/metrics/motion.py:34); the generator must agree.
+    """
+    deriv = tmp_path / "bids" / "derivatives" / "fmriprep_24.1.0rc2"
+    func = deriv / "sub-s01" / "ses-01" / "func"
+    func.mkdir(parents=True)
+    # Realistic fmriprep numbers: raw dvars ~18 (always >1.5), std_dvars ~1.1 (<1.5)
+    fname = "sub-s01_ses-01_task-flanker_run-1_desc-confounds_timeseries.tsv"
+    rows = ["framewise_displacement\tdvars\tstd_dvars"]
+    for _ in range(100):
+        rows.append("0.10\t18.0\t1.10")
+    (func / fname).write_text("\n".join(rows))
+
+    g = MotionGenerator()
+    config = {"bids_dir": str(tmp_path / "bids")}
+    args = Namespace(
+        fmriprep_version="24.1.0rc2",
+        fd_threshold=0.2,
+        proportion_fd_threshold=0.2,
+        proportion_dvars_threshold=0.2,
+    )
+    entries = g.generate("discovery", config, args)
+    # Reading raw `dvars` would yield prop>1.5 = 1.0 and flag the scan.
+    # Reading `std_dvars` (1.10 < 1.5) yields prop = 0.0 and produces no entry.
+    assert entries == [], (
+        f"Expected no exclusions when std_dvars=1.10 is below threshold; got {entries}"
+    )
+
+
 def test_generate_all_actions_are_exclude(tmp_path):
     bids_dir = _make_deriv_tree(tmp_path)
     g = MotionGenerator()
