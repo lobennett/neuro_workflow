@@ -1,15 +1,15 @@
 {
   "dataset": "discovery",
-  "compiled_at": "2026-05-08T04:11:57Z",
-  "compiled_at_code_sha": "2b72a46+dirty",
+  "compiled_at": "2026-05-08T04:15:06Z",
+  "compiled_at_code_sha": "af7cbe2+dirty",
   "compiled_path": "/home/users/logben/.neuro_workflow/exclusions/discovery/compiled_exclusions.json",
-  "n_total_entries": 104,
+  "n_total_entries": 131,
   "n_overrides": 0,
   "sources": [
     {
       "generator": "behavioral",
-      "ran_at": "2026-05-08T04:11:49Z",
-      "code_sha": "2b72a46+dirty",
+      "ran_at": "2026-05-08T04:15:03Z",
+      "code_sha": "af7cbe2+dirty",
       "args": {
         "command": "exclusions",
         "excl_command": "generate",
@@ -31,8 +31,8 @@
     },
     {
       "generator": "lev1_outlier",
-      "ran_at": "2026-05-08T04:11:55Z",
-      "code_sha": "2b72a46+dirty",
+      "ran_at": "2026-05-08T04:14:51Z",
+      "code_sha": "af7cbe2+dirty",
       "args": {
         "command": "exclusions",
         "excl_command": "generate",
@@ -50,12 +50,12 @@
         "strict_outlier_pct": 15.0,
         "decisions_tsv": null
       },
-      "n_entries": 104
+      "n_entries": 131
     },
     {
       "generator": "motion",
-      "ran_at": "2026-05-08T04:10:39Z",
-      "code_sha": "2b72a46+dirty",
+      "ran_at": "2026-05-08T04:15:00Z",
+      "code_sha": "af7cbe2+dirty",
       "args": {
         "command": "exclusions",
         "excl_command": "generate",
