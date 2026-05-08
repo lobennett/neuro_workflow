@@ -302,14 +302,17 @@ class FixedEffectsAnalyzer:
 
         if base_filename is None:
             base_filename = self._build_base_filename(contrast_name)
-            n_runs = self.contrast_results[contrast_name]['n_runs']
-            if n_runs < self.min_runs:
-                logger.warning(
-                    'tagged %s/task-%s/contrast-%s as _desc-belowMinRuns: '
-                    'n_runs=%d (min_runs=%d)',
-                    self.subject_id, self.task_name, contrast_name,
-                    n_runs, self.min_runs,
-                )
+
+        # Warn whenever this contrast is below the floor, regardless of whether
+        # the caller supplied base_filename. The warning is the audit trail.
+        n_runs = self.contrast_results[contrast_name]['n_runs']
+        if n_runs < self.min_runs:
+            logger.warning(
+                'tagged %s/task-%s/contrast-%s as _desc-belowMinRuns: '
+                'n_runs=%d (min_runs=%d)',
+                self.subject_id, self.task_name, contrast_name,
+                n_runs, self.min_runs,
+            )
 
         saved_files = {}
 
