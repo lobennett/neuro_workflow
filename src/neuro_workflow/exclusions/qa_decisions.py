@@ -7,6 +7,7 @@ pass/review rows are counted in a stdout summary and skipped.
 """
 from __future__ import annotations
 
+import re
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
@@ -33,6 +34,38 @@ def _entry_from_scan_key(key: ScanKey, reason: str) -> dict:
         "action": "exclude",
         "reason": f"qa_decisions: {reason} (scan-level)",
     }
+
+
+_BOLD_RE = re.compile(
+    r"^(?P<subject>sub-[A-Za-z0-9]+)"
+    r"_(?P<session>ses-[A-Za-z0-9]+)"
+    r"_task-(?P<task>[A-Za-z0-9]+)"
+    r"_run-(?P<run>[A-Za-z0-9]+)"
+    r"_bold\.nii\.gz$"
+)
+
+
+def _expand_subject_to_entries(
+    subject: str, reason: str, bids_dir: Path,
+) -> list[dict]:
+    """Glob the dataset BIDS dir for `subject`'s BOLD files and emit one
+    exclusion entry per matched file."""
+    sub = subject if subject.startswith("sub-") else f"sub-{subject}"
+    out: list[dict] = []
+    for bold in (bids_dir / sub).glob("ses-*/func/*_bold.nii.gz"):
+        m = _BOLD_RE.match(bold.name)
+        if not m:
+            continue
+        out.append({
+            "subject": m.group("subject"),
+            "session": m.group("session"),
+            "task": f"task-{m.group('task')}",
+            "run": f"run-{m.group('run')}",
+            "source": "qa_decisions",
+            "action": "exclude",
+            "reason": f"qa_decisions: {reason} (subject-level)",
+        })
+    return out
 
 
 class QADecisionsGenerator:
@@ -84,7 +117,15 @@ class QADecisionsGenerator:
                     continue
                 entries.append(_entry_from_scan_key(key, decision.reason))
                 n_scan += 1
-            # subject-level expansion follows in Task 6
+            else:
+                # subject-level: key is a bare subject string.
+                if sample is not None and _norm_sub(key) not in sample:
+                    continue
+                n_subj_rows += 1
+                bids_dir = Path(dataset_config["bids_dir"])
+                expanded = _expand_subject_to_entries(key, decision.reason, bids_dir)
+                entries.extend(expanded)
+                n_expanded += len(expanded)
 
         entries.sort(key=lambda e: (e["subject"], e["session"], e["task"], e["run"]))
 
