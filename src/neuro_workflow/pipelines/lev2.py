@@ -39,7 +39,6 @@ class Lev2Pipeline:
     def add_cli_args(self, parser: ArgumentParser) -> None:
         parser.add_argument("--lev1-dirs", nargs="+", required=True, help="Level-1 results directories")
         parser.add_argument("--results-dir", required=True, help="Level-2 output directory")
-        parser.add_argument("--exclusions-csv", required=True, help="Flagged scans CSV")
         contrast_group = parser.add_mutually_exclusive_group(required=True)
         contrast_group.add_argument("--contrasts", nargs="+", help="Specific contrast names")
         contrast_group.add_argument("--all", dest="contrasts_flag", action="store_const", const="all", help="All contrasts from lev1 dirs")
@@ -88,7 +87,6 @@ class Lev2Pipeline:
             "contrast_list_file": str(contrast_list_file),
             "lev1_dirs": " ".join(args.lev1_dirs),
             "results_dir": str(results_dir),
-            "exclusions_csv": args.exclusions_csv,
             "mask_threshold": args.mask_threshold,
             "num_permutations": args.num_permutations,
             "neuro_workflow_dir": str(Path(__file__).resolve().parents[3]),
