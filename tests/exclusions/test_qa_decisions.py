@@ -208,3 +208,32 @@ def test_subject_filter_drops_subject_level_before_glob(tmp_path):
     assert entries[0]["subject"] == "sub-s03"
     assert entries[0]["task"] == "task-flanker"
 
+
+def test_missing_tsv_raises_file_not_found_error(tmp_path):
+    """Bogus TSV path -> FileNotFoundError with the path in the message."""
+    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+    bogus = tmp_path / "does_not_exist.tsv"
+    with pytest.raises(FileNotFoundError, match=str(bogus)):
+        QADecisionsGenerator().generate("discovery", {}, _make_args(bogus))
+
+
+def test_empty_tsv_returns_empty_list(tmp_path):
+    """TSV with header only returns []."""
+    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+    tsv = tmp_path / "decisions.tsv"
+    _write_tsv(tsv, [])
+    entries = QADecisionsGenerator().generate("discovery", {}, _make_args(tsv))
+    assert entries == []
+
+
+def test_invalid_action_propagates_value_error(tmp_path):
+    """Unknown action value (e.g. 'maybe') propagates ValueError from load_decisions."""
+    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+    tsv = tmp_path / "decisions.tsv"
+    _write_tsv(tsv, [
+        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
+         "run": "run-1", "action": "maybe", "reason": "uh"},
+    ])
+    with pytest.raises(ValueError, match="invalid action"):
+        QADecisionsGenerator().generate("discovery", {}, _make_args(tsv))
+
