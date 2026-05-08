@@ -265,3 +265,43 @@ def test_end_to_end_on_real_discovery_cohort_qc():
         assert e["metrics"]["n_flagged_contrasts"] >= 1
         # Discovery shouldn't fire outlier-based rules
         assert "strict_outliers" not in e["metrics"]["rules_fired"]
+
+
+def test_dataset_filter_drops_non_member_subjects(tmp_path):
+    """A pooled CSV with discovery + validation subjects must filter to just
+    the dataset's roster when dataset_config['subjects_file'] is provided."""
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+    csv_path = tmp_path / "lev1_outliers.csv"
+    _write_csv(csv_path, [
+        {"subject": "sub-s03", "session": "ses-01", "run": "1", "task": "stopSignal",
+         "contrast": "go", "outlier_pct": "1.0", "vif": "18.0",
+         "flagged_outliers": "0", "flagged_vif": "1"},
+        {"subject": "sub-s1035", "session": "ses-02", "run": "1", "task": "flanker",
+         "contrast": "incongruent-congruent", "outlier_pct": "1.0", "vif": "20.0",
+         "flagged_outliers": "0", "flagged_vif": "1"},
+    ])
+    subjects_path = tmp_path / "subjects_discovery.txt"
+    subjects_path.write_text("s03\ns10\n")  # bare IDs, no `sub-` prefix
+
+    config = {"subjects_file": str(subjects_path)}
+    entries = Lev1OutlierGenerator().generate("discovery", config, _make_args(csv_path))
+
+    assert len(entries) == 1
+    assert entries[0]["subject"] == "sub-s03"
+
+
+def test_dataset_filter_skipped_when_no_subjects_file(tmp_path):
+    """With dataset_config={} (no subjects_file), filtering is a no-op — all flagged
+    rows pass through. Preserves backwards-compatible behavior + tmp test ergonomics."""
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+    csv_path = tmp_path / "lev1_outliers.csv"
+    _write_csv(csv_path, [
+        {"subject": "sub-s03", "session": "ses-01", "run": "1", "task": "stopSignal",
+         "contrast": "go", "outlier_pct": "1.0", "vif": "18.0",
+         "flagged_outliers": "0", "flagged_vif": "1"},
+        {"subject": "sub-s1035", "session": "ses-02", "run": "1", "task": "flanker",
+         "contrast": "incongruent-congruent", "outlier_pct": "1.0", "vif": "20.0",
+         "flagged_outliers": "0", "flagged_vif": "1"},
+    ])
+    entries = Lev1OutlierGenerator().generate("anything", {}, _make_args(csv_path))
+    assert {e["subject"] for e in entries} == {"sub-s03", "sub-s1035"}
