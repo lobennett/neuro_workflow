@@ -768,6 +768,16 @@ def main() -> int:
     parser = get_parser()
     args = parser.parse_args()
 
+    # Validation: exactly one of --rest-only / --glm-dir must be set.
+    if args.rest_only and args.glm_dir:
+        parser.error(
+            "--rest-only and --glm-dir are mutually exclusive; pick one."
+        )
+    if not args.rest_only and not args.glm_dir:
+        parser.error(
+            "must supply either --rest-only or --glm-dir (one is required)."
+        )
+
     level = logging.DEBUG if args.verbose else logging.INFO
     logging.basicConfig(
         level=level,
