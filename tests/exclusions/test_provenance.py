@@ -94,3 +94,78 @@ def test_save_source_entries_args_none_records_null(tmp_path, monkeypatch):
         (tmp_path / "exclusions" / "discovery" / "sources" / "behavioral-qc.json").read_text()
     )
     assert on_disk["_meta"]["args"] is None
+
+
+def test_load_source_entries_handles_wrapped_format(tmp_path, monkeypatch):
+    """load_source_entries returns the entries list when the file is wrapped."""
+    import json
+    from neuro_workflow.core import exclusions as core_excl
+
+    monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
+
+    sources_dir = tmp_path / "exclusions" / "discovery" / "sources"
+    sources_dir.mkdir(parents=True)
+    payload = {
+        "_meta": {"generator": "x", "ran_at": "2026-05-07T00:00:00Z",
+                  "code_sha": "abc", "args": {}, "n_entries": 1},
+        "entries": [
+            {"subject": "sub-s03", "session": "ses-02", "task": "task-x",
+             "run": "run-1", "source": "x", "action": "exclude", "reason": "y"},
+        ],
+    }
+    (sources_dir / "x.json").write_text(json.dumps(payload))
+
+    out = core_excl.load_source_entries("discovery", "x")
+    assert len(out) == 1
+    assert out[0]["subject"] == "sub-s03"
+
+
+def test_load_source_entries_handles_bare_list(tmp_path, monkeypatch):
+    """Legacy bare-list source files still load (back-compat)."""
+    import json
+    from neuro_workflow.core import exclusions as core_excl
+
+    monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
+
+    sources_dir = tmp_path / "exclusions" / "discovery" / "sources"
+    sources_dir.mkdir(parents=True)
+    bare = [
+        {"subject": "sub-s03", "session": "ses-02", "task": "task-x",
+         "run": "run-1", "source": "x", "action": "exclude", "reason": "y"},
+    ]
+    (sources_dir / "x.json").write_text(json.dumps(bare))
+
+    out = core_excl.load_source_entries("discovery", "x")
+    assert len(out) == 1
+    assert out[0]["subject"] == "sub-s03"
+
+
+def test_compile_handles_mixed_wrapped_and_bare_sources(tmp_path, monkeypatch):
+    """compile_exclusions tolerates a mix of wrapped + legacy bare files."""
+    import json
+    from neuro_workflow.core import exclusions as core_excl
+
+    monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
+
+    sources_dir = tmp_path / "exclusions" / "discovery" / "sources"
+    sources_dir.mkdir(parents=True)
+
+    wrapped = {
+        "_meta": {"generator": "lev1_outlier", "ran_at": "2026-05-07T00:00:00Z",
+                  "code_sha": "abc", "args": {}, "n_entries": 1},
+        "entries": [
+            {"subject": "sub-s03", "session": "ses-02", "task": "task-x",
+             "run": "run-1", "source": "lev1_outlier", "action": "exclude", "reason": "y"},
+        ],
+    }
+    (sources_dir / "lev1_outlier.json").write_text(json.dumps(wrapped))
+
+    bare = [
+        {"subject": "sub-s10", "session": "ses-02", "task": "task-x",
+         "run": "run-1", "source": "motion", "action": "exclude", "reason": "z"},
+    ]
+    (sources_dir / "motion.json").write_text(json.dumps(bare))
+
+    compiled = core_excl.compile_exclusions("discovery")
+    subjects = {e["subject"] for e in compiled}
+    assert subjects == {"sub-s03", "sub-s10"}

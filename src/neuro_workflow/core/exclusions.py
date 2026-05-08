@@ -39,6 +39,29 @@ def _compiled_path(dataset_name: str) -> Path:
     return EXCLUSIONS_DIR / dataset_name / "compiled_exclusions.json"
 
 
+def _read_source_file(path: Path) -> tuple[list[dict], dict | None]:
+    """Read a sources/*.json file. Returns (entries, meta).
+
+    Handles both new wrapped format `{"_meta": ..., "entries": [...]}` and
+    legacy bare-list format `[...]`. For bare-list, meta is a synthetic
+    null-fields dict with generator inferred from the filename stem.
+    """
+    with open(path) as f:
+        loaded = json.load(f)
+    if isinstance(loaded, list):
+        # Legacy bare-list format.
+        meta = {
+            "generator": path.stem,
+            "ran_at": None,
+            "code_sha": None,
+            "args": None,
+            "n_entries": len(loaded),
+        }
+        return loaded, meta
+    # Wrapped format.
+    return loaded.get("entries", []), loaded.get("_meta")
+
+
 def save_source_entries(
     dataset_name: str,
     source_name: str,
@@ -63,12 +86,12 @@ def save_source_entries(
 
 
 def load_source_entries(dataset_name: str, source_name: str) -> list[dict]:
-    """Load entries for a single source."""
+    """Load entries for a single source. Handles both wrapped and bare formats."""
     path = _sources_dir(dataset_name) / f"{source_name}.json"
     if not path.exists():
         return []
-    with open(path) as f:
-        return json.load(f)
+    entries, _meta = _read_source_file(path)
+    return entries
 
 
 def save_overrides(dataset_name: str, overrides: list[dict]) -> None:
@@ -99,10 +122,13 @@ def compile_exclusions(dataset_name: str, bids_dir: Optional[str] = None) -> lis
     sources_dir = _sources_dir(dataset_name)
     all_entries: list[dict] = []
 
+    sources_meta: list[dict] = []
     if sources_dir.exists():
         for source_file in sorted(sources_dir.glob("*.json")):
-            with open(source_file) as f:
-                all_entries.extend(json.load(f))
+            entries, meta = _read_source_file(source_file)
+            all_entries.extend(entries)
+            if meta is not None:
+                sources_meta.append(meta)
 
     overrides = load_overrides(dataset_name)
 
