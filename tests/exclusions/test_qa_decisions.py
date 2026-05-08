@@ -237,3 +237,30 @@ def test_invalid_action_propagates_value_error(tmp_path):
     with pytest.raises(ValueError, match="invalid action"):
         QADecisionsGenerator().generate("discovery", {}, _make_args(tsv))
 
+
+def test_generator_output_flows_through_compile(tmp_path, monkeypatch):
+    """Entries from QADecisionsGenerator appear in compile_exclusions output."""
+    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+    from neuro_workflow.core import exclusions as core_excl
+
+    monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
+
+    tsv = tmp_path / "decisions.tsv"
+    _write_tsv(tsv, [
+        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
+         "run": "run-1", "action": "exclude", "reason": "noisy"},
+    ])
+
+    entries = QADecisionsGenerator().generate("discovery", {}, _make_args(tsv))
+    assert len(entries) == 1
+
+    core_excl.save_source_entries("discovery", "qa_decisions", entries)
+    compiled = core_excl.compile_exclusions("discovery")
+
+    assert len(compiled) == 1
+    e = compiled[0]
+    assert e["source"] == "qa_decisions"
+    assert e["subject"] == "sub-s03"
+    assert e["task"] == "task-cuedTS"
+    assert e["action"] == "exclude"
+    assert "noisy" in e["reason"]
