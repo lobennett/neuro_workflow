@@ -38,6 +38,7 @@ import neuro_workflow.qa.fieldmap_check  # noqa: F401
 import neuro_workflow.exclusions.motion  # noqa: F401
 import neuro_workflow.exclusions.behavioral  # noqa: F401
 import neuro_workflow.exclusions.lev1_outlier  # noqa: F401
+import neuro_workflow.exclusions.qa_decisions  # noqa: F401
 
 
 def cmd_add_dataset(args):
