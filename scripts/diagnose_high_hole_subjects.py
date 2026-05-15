@@ -90,8 +90,7 @@ def main() -> int:
 
     import pandas as pd
     df = pd.read_csv(args.cohort_tsv, sep='\t')
-    df['mean_holes'] = (df['lh_holes'] + df['rh_holes']) / 2
-    flagged = df.loc[df['mean_holes'] > args.threshold]
+    flagged = df.loc[df['fs_holes_mean'] > args.threshold]
 
     if len(flagged) == 0:
         print(f'No subjects exceed {args.threshold} mean pre-fix holes; nothing to diagnose.')
@@ -104,13 +103,13 @@ def main() -> int:
         if not candidates:
             results.append(DiagnosisResult(
                 subject=row['subject'], fs_subject='(none)',
-                pre_fix_holes_mean=row['mean_holes'],
+                pre_fix_holes_mean=row['fs_holes_mean'],
                 cause='log_missing',
                 evidence='No FreeSurfer subject dir found',
             ))
             continue
         fs_subj = candidates[0].name
-        results.append(diagnose_subject(args.subjects_dir, fs_subj, row['mean_holes']))
+        results.append(diagnose_subject(args.subjects_dir, fs_subj, row['fs_holes_mean']))
 
     lines = [
         '# Surface diagnosis — high-hole subjects',

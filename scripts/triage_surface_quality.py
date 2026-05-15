@@ -13,10 +13,9 @@ import pandas as pd
 
 
 def find_high_hole_subjects(cohort_tsv: Path, threshold: int) -> pd.DataFrame:
-    """Read a cohort.tsv and return rows where mean pre-fix holes > threshold."""
+    """Read a cohort.tsv and return rows where fs_holes_mean > threshold."""
     df = pd.read_csv(cohort_tsv, sep='\t')
-    df['mean_holes'] = (df['lh_holes'] + df['rh_holes']) / 2
-    return df.loc[df['mean_holes'] > threshold].reset_index(drop=True)
+    return df.loc[df['fs_holes_mean'] > threshold].reset_index(drop=True)
 
 
 def main() -> int:
@@ -32,7 +31,7 @@ def main() -> int:
         print(f'No subjects exceed {args.threshold} mean pre-fix holes.')
         return 0
 
-    cols = ['subject', 'lh_holes', 'rh_holes', 'mean_holes']
+    cols = ['subject', 'fs_euler_mean', 'fs_holes_mean']
     print(result[cols].to_markdown(index=False))
     return 0
 

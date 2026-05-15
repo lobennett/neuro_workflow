@@ -11,8 +11,6 @@ import pandas as pd
 def render_status(pre_tsv: Path, post_tsv: Path, threshold: int) -> str:
     pre = pd.read_csv(pre_tsv, sep='\t')
     post = pd.read_csv(post_tsv, sep='\t')
-    pre['mean_holes'] = (pre['lh_holes'] + pre['rh_holes']) / 2
-    post['mean_holes'] = (post['lh_holes'] + post['rh_holes']) / 2
 
     rows = []
     for _, p in pre.iterrows():
@@ -20,11 +18,11 @@ def render_status(pre_tsv: Path, post_tsv: Path, threshold: int) -> str:
         if len(q) == 0:
             continue
         q = q.iloc[0]
-        decision = 'KEEP' if q['mean_holes'] <= threshold else 'EXCLUDE'
+        decision = 'KEEP' if q['fs_holes_mean'] <= threshold else 'EXCLUDE'
         rows.append({
             'subject': p['subject'],
-            'pre': f"{int(p['lh_holes'])}/{int(p['rh_holes'])}/{p['mean_holes']:.0f}",
-            'post': f"{int(q['lh_holes'])}/{int(q['rh_holes'])}/{q['mean_holes']:.0f}",
+            'pre': f"{p['fs_holes_mean']:.0f}",
+            'post': f"{q['fs_holes_mean']:.0f}",
             'decision': decision,
         })
 
@@ -33,7 +31,7 @@ def render_status(pre_tsv: Path, post_tsv: Path, threshold: int) -> str:
         '',
         f'Threshold: mean post-fix Euler holes ≤ {threshold} → KEEP',
         '',
-        '| Subject | Pre LH/RH/Mean | Post LH/RH/Mean | Decision |',
+        '| Subject | Pre mean holes | Post mean holes | Decision |',
         '|---|---|---|---|',
     ]
     for r in rows:

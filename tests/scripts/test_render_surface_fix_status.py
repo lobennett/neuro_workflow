@@ -22,12 +22,12 @@ def test_render_status_keep_vs_exclude(tmp_path):
     mod = _load_module()
 
     pre = pd.DataFrame([
-        {'subject': 'sub-s03', 'lh_holes': 184, 'rh_holes': 140},
-        {'subject': 'sub-sXX', 'lh_holes': 220, 'rh_holes': 195},
+        {'subject': 'sub-s03', 'fs_holes_mean': 162.0},
+        {'subject': 'sub-sXX', 'fs_holes_mean': 207.5},
     ])
     post = pd.DataFrame([
-        {'subject': 'sub-s03', 'lh_holes': 12, 'rh_holes': 8},
-        {'subject': 'sub-sXX', 'lh_holes': 198, 'rh_holes': 170},
+        {'subject': 'sub-s03', 'fs_holes_mean': 10.0},
+        {'subject': 'sub-sXX', 'fs_holes_mean': 184.0},
     ])
     pre_tsv = tmp_path / 'pre.tsv'; pre.to_csv(pre_tsv, sep='\t', index=False)
     post_tsv = tmp_path / 'post.tsv'; post.to_csv(post_tsv, sep='\t', index=False)
@@ -42,10 +42,10 @@ def test_render_status_keep_vs_exclude(tmp_path):
 def test_render_status_handles_only_subjects_in_post(tmp_path):
     """Subjects in post.tsv but not in pre.tsv are skipped."""
     mod = _load_module()
-    pre = pd.DataFrame([{'subject': 'sub-s03', 'lh_holes': 184, 'rh_holes': 140}])
+    pre = pd.DataFrame([{'subject': 'sub-s03', 'fs_holes_mean': 162.0}])
     post = pd.DataFrame([
-        {'subject': 'sub-s03', 'lh_holes': 12, 'rh_holes': 8},
-        {'subject': 'sub-other', 'lh_holes': 5, 'rh_holes': 3},
+        {'subject': 'sub-s03', 'fs_holes_mean': 10.0},
+        {'subject': 'sub-other', 'fs_holes_mean': 4.0},
     ])
     pre_tsv = tmp_path / 'pre.tsv'; pre.to_csv(pre_tsv, sep='\t', index=False)
     post_tsv = tmp_path / 'post.tsv'; post.to_csv(post_tsv, sep='\t', index=False)
