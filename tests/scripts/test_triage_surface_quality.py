@@ -57,3 +57,28 @@ def test_find_high_hole_subjects_empty_when_none_exceed(tmp_path):
 
     result = mod.find_high_hole_subjects(tsv, threshold=100)
     assert len(result) == 0
+
+
+def test_main_writes_markdown_to_stdout(tmp_path, capsys):
+    """main() prints a markdown table of flagged subjects."""
+    import sys
+    import importlib.util
+    script_path = Path(__file__).resolve().parents[2] / 'scripts' / 'triage_surface_quality.py'
+    spec = importlib.util.spec_from_file_location('triage_surface_quality', script_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    df = pd.DataFrame([
+        {'subject': 'sub-s03', 'lh_holes': 184, 'rh_holes': 140},
+        {'subject': 'sub-s10', 'lh_holes': 2, 'rh_holes': 7},
+    ])
+    tsv = tmp_path / 'cohort.tsv'
+    df.to_csv(tsv, sep='\t', index=False)
+
+    sys.argv = ['triage_surface_quality', '--cohort-tsv', str(tsv), '--threshold', '100']
+    rc = mod.main()
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert 'sub-s03' in out
+    assert 'sub-s10' not in out
+    assert '| subject' in out

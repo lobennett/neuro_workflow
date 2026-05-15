@@ -20,7 +20,21 @@ def find_high_hole_subjects(cohort_tsv: Path, threshold: int) -> pd.DataFrame:
 
 
 def main() -> int:
-    raise NotImplementedError
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--cohort-tsv', type=Path, required=True,
+                        help='Path to qa_report cohort.tsv')
+    parser.add_argument('--threshold', type=int, default=100,
+                        help='Mean pre-fix Euler hole count threshold (default 100)')
+    args = parser.parse_args()
+
+    result = find_high_hole_subjects(args.cohort_tsv, args.threshold)
+    if len(result) == 0:
+        print(f'No subjects exceed {args.threshold} mean pre-fix holes.')
+        return 0
+
+    cols = ['subject', 'lh_holes', 'rh_holes', 'mean_holes']
+    print(result[cols].to_markdown(index=False))
+    return 0
 
 
 if __name__ == '__main__':
