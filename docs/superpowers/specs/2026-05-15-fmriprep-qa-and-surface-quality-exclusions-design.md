@@ -28,14 +28,22 @@ Subsequent sub-projects (deferred):
 
 ---
 
-## Output locations
+## Output locations (BIDS-compliant — under derivatives)
 
 | Cohort | qa_html output | Re-QA after fix |
 |---|---|---|
-| discovery | `/scratch/users/logben/discovery_bids/qa_html/` | `/scratch/users/logben/discovery_bids/qa_html_post_fix/` |
-| validation | `/scratch/users/logben/validation_bids/qa_html/` | `/scratch/users/logben/validation_bids/qa_html_post_fix/` |
+| discovery | `/scratch/users/logben/discovery_bids/derivatives/qa_reports/` | `/scratch/users/logben/discovery_bids/derivatives/qa_reports_post_fix/` |
+| validation | `/scratch/users/logben/validation_bids/derivatives/qa_reports/` | `/scratch/users/logben/validation_bids/derivatives/qa_reports_post_fix/` |
 
-(Discovery's existing `qa_html_discovery` will be regenerated under the new canonical path during this sub-project.)
+QA reports are derivatives, so they live under `derivatives/`. This keeps BIDS validation status intact (the root BIDS dir stays clean). Discovery's existing `qa_html_discovery` will be regenerated under the new canonical path during this sub-project.
+
+## Pinned versions (no bumps)
+
+- fmriprep: **25.2.4** (current — do NOT upgrade)
+- FreeSurfer: **8.1.0** (current — do NOT upgrade)
+- SynthStrip: ship with FreeSurfer 8.1.0
+
+The fix attempt uses the SAME fmriprep + FreeSurfer versions as the original recon. We're investigating whether a different SKULL STRIP (SynthStrip vs the default FreeSurfer skull strip used by recon-all) improves the segmentation, not whether a newer tool version helps.
 
 ## Thresholds
 
@@ -44,6 +52,19 @@ Subsequent sub-projects (deferred):
 - **Mean FD, %TRs above thresh, std_dvars** — already encoded in `motion.py` generator; no threshold change. Just ensure they appear in `EXCLUSIONS.md`.
 
 ## Components
+
+### 0. Diagnose existing recon for high-hole subjects (do this FIRST)
+
+Before attempting any fix, investigate WHY the existing recon produced bad surfaces. `scripts/diagnose_high_hole_subjects.py`:
+
+For each subject with pre-fix holes > 100:
+1. Read `$SUBJECTS_DIR/<fs_subj>/scripts/recon-all.log` — scan for warnings, retries, anomalies.
+2. Read `$SUBJECTS_DIR/<fs_subj>/scripts/recon-all-status.log` — confirm clean termination.
+3. Check skull-strip QC: load `brainmask.mgz` + `T1.mgz` snapshots (if `freesurfer.png` exists from fmriprep's reports). Note any obvious skull-strip failures.
+4. Read fmriprep work-dir `fmriprep_25_2_wf/sub-X_*_wf/anat_fit_wf/` for SDC/recon warnings if available.
+5. Summarize per-subject in `docs/SURFACE-DIAGNOSIS.md`: likely root cause (motion / bad skull strip / anatomical anomaly / unknown), evidence pointers.
+
+This step gates the SynthStrip rerun decision — if diagnosis reveals a non-skull-strip issue (e.g., motion artifact in T1w), SynthStrip won't help and we exclude immediately rather than burn compute on a doomed fix attempt.
 
 ### 1. Validation qa_report run
 
@@ -61,12 +82,13 @@ Also re-run for discovery at the new canonical path (replaces `qa_html_discovery
 
 Columns: subject, lh_holes, rh_holes, mean_holes, recommendation.
 
-### 3. SynthStrip + recon-all rerun helper
+### 3. SynthStrip + recon-all rerun helper (conditional on diagnosis)
 
-`scripts/synthstrip_recon_all.sbatch` — per-subject sbatch script:
-1. `mri_synthstrip -i T1w.nii.gz -o brain_synthstrip.nii.gz` — better skull strip via the FreeSurfer 7.4+ ML model.
-2. `recon-all -all -i brain_synthstrip.nii.gz -subjid <SUBJ>_fix -sd <NEW_SD>` — full recon with the better skull strip.
-3. Output to `<bids_root>/derivatives/freesurfer_fix/sub-X_ses-N/` (separate from the original FreeSurfer dir; this is a parallel reconstruction, not an overwrite).
+Only run for subjects whose diagnosis (Component 0) suggests skull-stripping is the likely cause. `scripts/synthstrip_recon_all.sbatch` — per-subject sbatch:
+1. `mri_synthstrip -i T1w.nii.gz -o brain_synthstrip.nii.gz` — alternative skull strip (FreeSurfer 8.1.0 ships SynthStrip).
+2. `recon-all -all -i brain_synthstrip.nii.gz -subjid <SUBJ>_fix -sd <NEW_SD>` — full recon with the better skull strip. SAME FreeSurfer version (8.1.0) as the original.
+3. Output to `<bids_root>/derivatives/freesurfer_fix/sub-X_ses-N/` (separate from the original FreeSurfer dir; parallel reconstruction, not an overwrite).
+4. After completion: run `mris_euler_number` on `lh.orig.nofix` and `rh.orig.nofix` of the new recon and log the new hole counts. This is the fix-verification metric — used in Component 5's re-QA and the SURFACE-FIX-STATUS table.
 
 ### 4. fmriprep re-run for fixed subjects
 
@@ -125,12 +147,17 @@ Surfaces the diagnostic outcome of every fix attempt.
 ## Data flow
 
 ```
-[both cohorts] fmriprep_25.2.4 → qa_report → qa_html (cohort.tsv, cohort.html, subjects/*.html)
+[both cohorts] fmriprep_25.2.4 → qa_report → derivatives/qa_reports/ (cohort.tsv, cohort.html, subjects/*.html)
                                                 ↓
                                 triage_surface_quality.py
-                                  → fix-list (pre-fix holes > 100)
+                                  → candidate-list (pre-fix holes > 100)
                                                 ↓
-                          synthstrip_recon_all.sbatch (per subject)
+                              diagnose_high_hole_subjects.py
+                                  → SURFACE-DIAGNOSIS.md
+                                  → fix-list (skull-strip suspected)
+                                  → straight-exclude list (other causes)
+                                                ↓
+                          synthstrip_recon_all.sbatch (per fix-list subject)
                                   → freesurfer_fix/
                                                 ↓
                           fmriprep rerun --fs-subjects-dir freesurfer_fix/
