@@ -133,31 +133,30 @@ def main() -> int:
     overrides_all = fw_cfg.get('session_overrides', {})
     subject_overrides = overrides_all.get(args.subject, {})
 
-    # Use the existing bidsify FW query infrastructure
+    # Enumerate FW sessions directly: collect_subject_sessions filters out
+    # excluded/reassigned sessions, but the audit needs to surface those.
     import flywheel
-    from neuro_workflow.bidsify.flywheel_query import (
-        collect_subject_sessions, query_project_subjects,
-    )
+    from neuro_workflow.bidsify.flywheel_query import query_project_subjects
+
     fw = flywheel.Client()
     all_subjects, _project = query_project_subjects(fw, fw_cfg['project'])
-    session_infos = collect_subject_sessions(
-        canonical_label=args.subject,
-        all_subjects=all_subjects,
-        aliases=aliases,
-        session_overrides=overrides_all,
-    )
 
-    # Adapt session_infos to the audit_subject input shape
-    fw_sessions = []
-    for info in session_infos:
-        acqs = []
-        for a in info['fw_session'].acquisitions():
-            acqs.append({'label': a.label})
-        fw_sessions.append({
-            'fw_session_label': info['fw_session'].label,
-            'timestamp': info['timestamp'].isoformat() if info['timestamp'] else '',
-            'acquisitions': acqs,
-        })
+    matching_labels = {args.subject}
+    for variant, canon in aliases.items():
+        if canon == args.subject:
+            matching_labels.add(variant)
+
+    fw_sessions: list[dict[str, Any]] = []
+    for subj in all_subjects:
+        if subj.label not in matching_labels:
+            continue
+        for sess in subj.sessions():
+            acqs = [{'label': a.label} for a in sess.acquisitions()]
+            fw_sessions.append({
+                'fw_session_label': sess.label,
+                'timestamp': sess.timestamp.isoformat() if sess.timestamp else '',
+                'acquisitions': acqs,
+            })
 
     rows = audit_subject(args.subject, args.bids_dir, fw_sessions, subject_overrides)
     md = render_audit_md(args.subject, rows)
