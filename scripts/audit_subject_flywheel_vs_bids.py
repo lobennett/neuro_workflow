@@ -29,10 +29,10 @@ class SessionAuditRow:
 def _classify_acquisition(label: str) -> str:
     """Classify a Flywheel acquisition label into a BIDS scan-type bucket."""
     L = label.lower()
-    if 't2w' in L or 't2' in L.replace('t2*', ''):
-        return 't2w'
     if 't1w' in L or 'mprage' in L:
         return 't1w'
+    if 't2w' in L or ('t2' in L and 't2*' not in L and 't2star' not in L):
+        return 't2w'
     if 'bold' in L or 'task' in L or 'rest' in L:
         return 'bold'
     if 'fmap' in L or 'fieldmap' in L or 'epi' in L:

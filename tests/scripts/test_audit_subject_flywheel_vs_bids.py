@@ -75,3 +75,20 @@ def test_audit_maps_fw_session_to_bids_chronologically(tmp_path):
     by_label = {r.fw_session_label: r for r in rows}
     assert by_label['A'].bids_session == 'ses-01'
     assert by_label['B'].bids_session == 'ses-02'
+
+
+def test_audit_t1w_takes_priority_over_t2_substring(tmp_path):
+    """Labels like 'T1w_T2prep' classify as T1w, not T2w."""
+    mod = _load_module()
+    bids = tmp_path / 'bids'
+    bids.mkdir()
+    fw_sessions = [
+        {'fw_session_label': 'X', 'timestamp': '2021-01-01T00:00:00',
+         'acquisitions': [
+             {'label': 'T1w_T2prep'},
+             {'label': 'T2star_anat'},  # should NOT count as T2w (it's t2*)
+         ]},
+    ]
+    rows = mod.audit_subject('s03', bids, fw_sessions, {})
+    assert rows[0].n_t1w == 1
+    assert rows[0].n_t2w == 0
