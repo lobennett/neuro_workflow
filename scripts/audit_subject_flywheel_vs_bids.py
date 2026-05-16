@@ -26,6 +26,29 @@ class SessionAuditRow:
     notes: str
 
 
+def _classify_acquisition(label: str) -> str:
+    """Classify a Flywheel acquisition label into a BIDS scan-type bucket."""
+    L = label.lower()
+    if 't2w' in L or 't2' in L.replace('t2*', ''):
+        return 't2w'
+    if 't1w' in L or 'mprage' in L:
+        return 't1w'
+    if 'bold' in L or 'task' in L or 'rest' in L:
+        return 'bold'
+    if 'fmap' in L or 'fieldmap' in L or 'epi' in L:
+        return 'fmap'
+    return 'other'
+
+
+def _count_acquisitions(acquisitions: list[dict[str, Any]]) -> dict[str, int]:
+    counts = {'t1w': 0, 't2w': 0, 'bold': 0, 'fmap': 0}
+    for acq in acquisitions:
+        bucket = _classify_acquisition(acq.get('label', ''))
+        if bucket in counts:
+            counts[bucket] += 1
+    return counts
+
+
 def audit_subject(
     canonical_label: str,
     bids_dir: Path,
@@ -33,7 +56,46 @@ def audit_subject(
     config_overrides: dict[str, dict],
 ) -> list[SessionAuditRow]:
     """Cross-reference FW sessions for a subject against BIDS contents."""
-    raise NotImplementedError
+    # Sort FW sessions chronologically (skipping excluded/reassigned for the
+    # ses-NN numbering, since bidsify also skips them).
+    sorted_sessions = sorted(fw_sessions, key=lambda s: s.get('timestamp', ''))
+
+    bids_subj_dir = bids_dir / f'sub-{canonical_label}'
+    bids_session_counter = 0
+
+    rows: list[SessionAuditRow] = []
+    for sess in sorted_sessions:
+        label = sess['fw_session_label']
+        override = config_overrides.get(label, {})
+        counts = _count_acquisitions(sess.get('acquisitions', []))
+
+        if override.get('exclude'):
+            bids_label = 'EXCLUDED'
+            notes = override.get('reason', '')
+        elif override.get('reassign_to'):
+            bids_label = 'REASSIGNED'
+            notes = f"reassigned to {override['reassign_to']}: {override.get('reason', '')}"
+        else:
+            bids_session_counter += 1
+            candidate = f'ses-{bids_session_counter:02d}'
+            if (bids_subj_dir / candidate).is_dir():
+                bids_label = candidate
+                notes = ''
+            else:
+                bids_label = 'MISSING'
+                notes = f'FW session present but no {candidate} dir in BIDS'
+
+        rows.append(SessionAuditRow(
+            fw_session_label=label,
+            fw_timestamp=sess.get('timestamp', ''),
+            bids_session=bids_label,
+            n_t1w=counts['t1w'],
+            n_t2w=counts['t2w'],
+            n_bold=counts['bold'],
+            n_fmap=counts['fmap'],
+            notes=notes,
+        ))
+    return rows
 
 
 def render_audit_md(canonical_label: str, rows: list[SessionAuditRow]) -> str:
