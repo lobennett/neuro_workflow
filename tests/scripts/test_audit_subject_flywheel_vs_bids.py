@@ -92,3 +92,19 @@ def test_audit_t1w_takes_priority_over_t2_substring(tmp_path):
     rows = mod.audit_subject('s03', bids, fw_sessions, {})
     assert rows[0].n_t1w == 1
     assert rows[0].n_t2w == 0
+
+
+def test_render_audit_md_produces_table():
+    mod = _load_module()
+    rows = [
+        mod.SessionAuditRow(
+            fw_session_label='25210', fw_timestamp='2022-05-24T17:10:00',
+            bids_session='EXCLUDED', n_t1w=1, n_t2w=0, n_bold=0, n_fmap=0,
+            notes='Rescue T1w session',
+        ),
+    ]
+    md = mod.render_audit_md('s03', rows)
+    assert '# Audit — sub-s03' in md
+    assert '| 25210 |' in md
+    assert 'EXCLUDED' in md
+    assert 'Rescue T1w session' in md
