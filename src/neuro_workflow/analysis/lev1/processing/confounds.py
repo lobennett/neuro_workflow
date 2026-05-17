@@ -19,11 +19,24 @@ def _get_base_confound_pattern(task_name: str, sample_type: str) -> str:
     Returns:
         Regex pattern for confound selection
     """
-    # Base pattern for motion and drift regressors
+    # Base pattern for motion (24 parameter Friston model), drift (DCT
+    # cosines), and per-frame motion-outlier spike regressors.
+    #
+    # ``motion_outlier_NN`` are one-hot indicator columns fMRIPrep emits for
+    # every TR with FD > 0.5 mm. The 24-parameter model absorbs *continuous*
+    # motion variance (e.g. drift, slow head movement); isolated frame-level
+    # spikes don't get cleanly handled by it and would otherwise leak into
+    # task betas and into the residuals consumed by prep-mshbm. The one-hot
+    # spike regressors effectively delete those single TRs from the fit, the
+    # same idea XCP-D applies as a separate frame-censoring step.
+    #
+    # Run-level FD exclusion (.bidsignore: drop scans where >20% of TRs
+    # exceed FD>0.5 mm) handles whole-scan motion; the spike regressors
+    # catch the residual within-scan high-motion frames.
     base_pattern = (
         'cosine|trans_[xyz]$|trans_[xyz]_derivative1$|trans_[xyz]_power2$|'
         'trans_[xyz]_derivative1_power2$|rot_[xyz]$|rot_[xyz]_derivative1$|'
-        'rot_[xyz]_power2$|rot_[xyz]_derivative1_power2$'
+        'rot_[xyz]_power2$|rot_[xyz]_derivative1_power2$|motion_outlier\\d+'
     )
 
     # Special case for discovery nBack - limit cosine regressors
