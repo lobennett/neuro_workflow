@@ -1,0 +1,268 @@
+"""Tests for the ``--skip-qc-plots`` flag end-to-end.
+
+Surface QC plots are matplotlib renders — ~10 plots × 2 hemispheres × N runs
+per subject. At cohort scale (46 subjects × ~5 sessions × ~2 runs each) this
+adds many hours of wall time to the surface lev1 rerun for output that isn't
+needed during the rerun itself (the underlying ``.func.gii`` files are
+persisted and can be re-plotted offline).
+
+This test verifies:
+
+1. The pipeline-level flag (``neuro-run submit lev1 ... --skip-qc-plots``)
+   propagates ``--skip-qc-plots`` into the rendered sbatch script.
+2. The analysis-level flag, when set on ``args``, prevents the QC plot
+   loop in ``process_surface_run`` from calling ``plot_surface_stat_map``.
+3. Contrast files are still saved when QC plots are skipped — the flag
+   must not accidentally short-circuit the contrast-writing code.
+"""
+
+from __future__ import annotations
+
+from argparse import Namespace
+
+import numpy as np
+import pandas as pd
+import pytest
+
+
+def test_pipeline_propagates_skip_qc_plots_flag(tmp_path):
+    """The lev1 sbatch context must include ``--skip-qc-plots`` when the
+    flag is on so the rendered job inherits it."""
+    from neuro_workflow.pipelines.lev1 import Lev1Pipeline
+
+    pipeline = Lev1Pipeline()
+    subs_file = tmp_path / 'subjects.txt'
+    subs_file.write_text('sub-x\n')
+    exc_file = tmp_path / 'exclusions.json'
+    exc_file.write_text('[]')
+
+    args = Namespace(
+        tasks=['flanker'],
+        tasks_flag=None,
+        fmriprep_dir='/fmriprep',
+        results_dir=str(tmp_path / 'out'),
+        exclusions_file=str(exc_file),
+        space='fsaverage6',
+        threshold=1.0,
+        smoothing_fwhm=2.0,
+        residuals=True,
+        fc_confounds=False,
+        skip_existing=False,
+        skip_qc_plots=True,
+        nthreads=None,
+        mem_gb=None,
+        time=None,
+    )
+    cfg = {
+        'bids_dir': str(tmp_path / 'bids'),
+        'subjects_file': str(subs_file),
+        'partition': 'normal',
+        'mail_user': None,
+    }
+    ctx = pipeline.build_context('discovery', cfg, args)
+    assert '--skip-qc-plots' in ctx['extra_flags'], (
+        f'Pipeline must propagate --skip-qc-plots into extra_flags; '
+        f"got {ctx['extra_flags']!r}"
+    )
+
+
+def test_pipeline_omits_skip_qc_plots_when_unset(tmp_path):
+    """When the flag is off (default), ``--skip-qc-plots`` is NOT in
+    extra_flags so the rendered job keeps the historical QC-plot behavior."""
+    from neuro_workflow.pipelines.lev1 import Lev1Pipeline
+
+    pipeline = Lev1Pipeline()
+    subs_file = tmp_path / 'subjects.txt'
+    subs_file.write_text('sub-x\n')
+    exc_file = tmp_path / 'exclusions.json'
+    exc_file.write_text('[]')
+
+    args = Namespace(
+        tasks=['flanker'],
+        tasks_flag=None,
+        fmriprep_dir='/fmriprep',
+        results_dir=str(tmp_path / 'out'),
+        exclusions_file=str(exc_file),
+        space='MNI',
+        threshold=1.0,
+        smoothing_fwhm=None,
+        residuals=False,
+        fc_confounds=False,
+        skip_existing=False,
+        skip_qc_plots=False,
+        nthreads=None,
+        mem_gb=None,
+        time=None,
+    )
+    cfg = {
+        'bids_dir': str(tmp_path / 'bids'),
+        'subjects_file': str(subs_file),
+        'partition': 'normal',
+        'mail_user': None,
+    }
+    ctx = pipeline.build_context('discovery', cfg, args)
+    assert '--skip-qc-plots' not in ctx['extra_flags']
+
+
+def test_analysis_run_skips_plot_loop_when_flag_set(tmp_path, monkeypatch):
+    """End-to-end: ``args.skip_qc_plots=True`` prevents
+    ``plot_surface_stat_map`` from being called.
+
+    Contrast files must still be written — the flag must only gate the
+    matplotlib render loop.
+    """
+    from neuro_workflow.analysis.lev1 import run as run_module
+
+    # Stubs: surface data, SurfaceGLM, plot function
+    n_tp = 100
+    monkeypatch.setattr(
+        run_module, 'load_surface_data',
+        lambda *a, **kw: np.random.randn(n_tp, 50).astype(np.float32),
+    )
+
+    plot_calls = []
+    monkeypatch.setattr(
+        run_module, 'plot_surface_stat_map',
+        lambda *a, **kw: plot_calls.append((a, kw)),
+    )
+
+    written_paths = []
+
+    class StubResult:
+        def __init__(self, n_verts=50):
+            self.data = np.zeros(n_verts)
+        def to_filename(self, path):
+            written_paths.append(str(path))
+
+    class StubSurfaceGLM:
+        def __init__(self, *args, **kwargs):
+            pass
+        def fit(self, data, dm):
+            return self
+        def compute_contrast(self, formula, output_type='all'):
+            return {
+                'effect_size': StubResult(),
+                'effect_variance': StubResult(),
+                'z_score': StubResult(),
+            }
+
+    monkeypatch.setattr(run_module, 'SurfaceGLM', StubSurfaceGLM)
+
+    dm = pd.DataFrame({
+        'r0': np.random.randn(n_tp),
+        'constant': np.ones(n_tp),
+    })
+
+    args = Namespace(
+        fmriprep_dir=str(tmp_path),
+        subj_id='sub-test',
+        task_name='flanker',
+        smoothing_fwhm=None,
+        space='fsaverage6',
+        skip_qc_plots=True,
+    )
+
+    run_files = {'left_surface': 'L.func.gii', 'right_surface': 'R.func.gii'}
+    dirs = {'indiv_contrasts': tmp_path, 'quality_control': tmp_path,
+            'task_residuals': tmp_path}
+
+    run_module.process_surface_run(
+        run_files=run_files,
+        design_matrix=dm,
+        contrasts={'incongruent-congruent': 'r0'},
+        args=args,
+        dirs=dirs,
+        base_filename='sub-test_task-flanker_run-1',
+        tr=1.5,
+        dummy_scans=0,
+        compute_residuals=False,
+        surface_space='fsaverage6',
+    )
+
+    assert plot_calls == [], (
+        f'plot_surface_stat_map must not be called when '
+        f'--skip-qc-plots is on; got {len(plot_calls)} calls.'
+    )
+    # Contrast files (effect-size, variance, z-score) per hemisphere should
+    # still be written — verify by inspecting recorded to_filename() calls.
+    assert any('stat-effect-size' in p for p in written_paths), (
+        f'effect-size files must still be saved when QC plots are skipped; '
+        f'written: {written_paths}'
+    )
+    assert any('stat-z_score' in p for p in written_paths), (
+        f'z_score files must still be saved; written: {written_paths}'
+    )
+
+
+def test_analysis_run_keeps_plot_loop_when_flag_unset(tmp_path, monkeypatch):
+    """When ``args.skip_qc_plots=False`` (default), plots are generated."""
+    from neuro_workflow.analysis.lev1 import run as run_module
+
+    n_tp = 100
+    monkeypatch.setattr(
+        run_module, 'load_surface_data',
+        lambda *a, **kw: np.random.randn(n_tp, 50).astype(np.float32),
+    )
+
+    plot_calls = []
+    monkeypatch.setattr(
+        run_module, 'plot_surface_stat_map',
+        lambda *a, **kw: plot_calls.append((a, kw)),
+    )
+
+    class StubResult:
+        def __init__(self, n_verts=50):
+            self.data = np.zeros(n_verts)
+        def to_filename(self, path):
+            pass
+
+    class StubSurfaceGLM:
+        def __init__(self, *args, **kwargs):
+            pass
+        def fit(self, data, dm):
+            return self
+        def compute_contrast(self, formula, output_type='all'):
+            return {
+                'effect_size': StubResult(),
+                'effect_variance': StubResult(),
+                'z_score': StubResult(),
+            }
+
+    monkeypatch.setattr(run_module, 'SurfaceGLM', StubSurfaceGLM)
+
+    dm = pd.DataFrame({
+        'r0': np.random.randn(n_tp),
+        'constant': np.ones(n_tp),
+    })
+
+    args = Namespace(
+        fmriprep_dir=str(tmp_path),
+        subj_id='sub-test',
+        task_name='flanker',
+        smoothing_fwhm=None,
+        space='fsaverage6',
+        skip_qc_plots=False,
+    )
+
+    run_files = {'left_surface': 'L.func.gii', 'right_surface': 'R.func.gii'}
+    dirs = {'indiv_contrasts': tmp_path, 'quality_control': tmp_path,
+            'task_residuals': tmp_path}
+
+    run_module.process_surface_run(
+        run_files=run_files,
+        design_matrix=dm,
+        contrasts={'incongruent-congruent': 'r0'},
+        args=args,
+        dirs=dirs,
+        base_filename='sub-test_task-flanker_run-1',
+        tr=1.5,
+        dummy_scans=0,
+        compute_residuals=False,
+        surface_space='fsaverage6',
+    )
+
+    # Two hemispheres × one contrast = two plot calls
+    assert len(plot_calls) == 2, (
+        f'Expected 2 plot calls (1 contrast × 2 hemispheres); '
+        f'got {len(plot_calls)}'
+    )

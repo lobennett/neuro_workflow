@@ -180,6 +180,15 @@ def get_parser() -> argparse.ArgumentParser:
              'and lev2 will filter it out (default: 2).',
     )
     parser.add_argument(
+        '--skip-qc-plots',
+        action='store_true',
+        default=False,
+        help='Skip per-contrast surface QC plots (matplotlib renders ~10 plots '
+        'per hemisphere per run; for a 46-subject cohort this adds many hours '
+        'of wall time with no impact on the science). The contrast .func.gii '
+        'files are still saved and can be re-plotted offline.',
+    )
+    parser.add_argument(
         '--verbose',
         action='store_true',
         default=False,
@@ -414,7 +423,13 @@ def process_surface_run(
 
         logger.info('Saved %d contrasts for hemisphere %s', len(contrast_results), hemisphere)
 
-        # Generate QC plots
+        # Generate QC plots (skipped under --skip-qc-plots; matplotlib renders
+        # are slow at cohort scale — ~10 plots × 2 hemis × N runs adds many
+        # hours of wall time per subject. The .func.gii files are persisted
+        # above and can be re-plotted offline if review is needed.)
+        if getattr(args, 'skip_qc_plots', False):
+            logger.debug('Skipping QC plots for hemisphere %s (--skip-qc-plots)', hemisphere)
+            continue
         qc_count = 0
         for contrast_name, paths in contrast_results.items():
             try:
