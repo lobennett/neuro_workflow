@@ -174,6 +174,96 @@ def check_design_matrix_health(design_matrix: pd.DataFrame) -> None:
         )
 
 
+def validate_design_matrix(
+    design_matrix: pd.DataFrame,
+    n_scans: int,
+) -> Dict[str, Any]:
+    """Validate a design matrix independently of the BOLD-data container.
+
+    Used by both the volumetric path (which inlines this inside
+    ``validate_glm_inputs``) and the surface path, where the BOLD data is
+    already in memory as an ndarray and re-loading a NIfTI just to count
+    timepoints is wasteful.  Catches:
+
+      - empty design matrices
+      - row-count mismatch with the BOLD timeseries (silent broadcasting
+        upstream would otherwise produce nonsense betas)
+      - NaN values (nilearn ``run_glm`` accepts them silently and returns
+        corrupt results)
+      - infinite values (same failure mode)
+      - missing intercept (warning only)
+      - rank-deficient designs (e.g. perfectly collinear regressors)
+
+    Args:
+        design_matrix: Design matrix to check.
+        n_scans: Number of BOLD timepoints the design matrix should align with.
+
+    Returns:
+        Dict with ``is_valid`` flag, ``errors`` list, ``warnings`` list.
+    """
+    validation: Dict[str, Any] = {
+        'is_valid': True,
+        'warnings': [],
+        'errors': [],
+    }
+
+    if design_matrix.empty:
+        validation['errors'].append('Design matrix is empty')
+        validation['is_valid'] = False
+        return validation
+
+    if design_matrix.shape[0] != n_scans:
+        validation['errors'].append(
+            f'Design matrix rows ({design_matrix.shape[0]}) != '
+            f'BOLD timepoints ({n_scans})'
+        )
+        validation['is_valid'] = False
+
+    if design_matrix.isnull().any().any():
+        bad_cols = design_matrix.columns[design_matrix.isnull().any()].tolist()
+        validation['errors'].append(
+            f'Design matrix contains NaN values in columns: {bad_cols}'
+        )
+        validation['is_valid'] = False
+
+    if np.isinf(design_matrix.values).any():
+        bad_cols = design_matrix.columns[
+            np.isinf(design_matrix.values).any(axis=0)
+        ].tolist()
+        validation['errors'].append(
+            f'Design matrix contains infinite values in columns: {bad_cols}'
+        )
+        validation['is_valid'] = False
+
+    # If the matrix has fundamental data integrity issues (NaN / Inf), skip
+    # the rank check — LAPACK SVD will raise an opaque DLASCL error on
+    # such matrices, which would mask the real (already-reported) cause.
+    if not validation['is_valid']:
+        return validation
+
+    if 'constant' not in design_matrix.columns:
+        # Look for any column that's a constant-vector intercept under a
+        # different name (e.g. cosine00 from the DCT drift basis is often
+        # constant when n_scans is small).
+        has_constant = any(
+            design_matrix[col].nunique() == 1
+            and design_matrix[col].iloc[0] != 0
+            for col in design_matrix.columns
+        )
+        if not has_constant:
+            validation['warnings'].append(
+                'No constant/intercept term found in design matrix'
+            )
+
+    try:
+        check_design_matrix_health(design_matrix)
+    except RankDeficientDesignError as exc:
+        validation['errors'].append(str(exc))
+        validation['is_valid'] = False
+
+    return validation
+
+
 def validate_glm_inputs(
     data_img: Union[str, Path],
     design_matrix: pd.DataFrame,

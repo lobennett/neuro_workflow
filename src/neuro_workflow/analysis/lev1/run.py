@@ -34,6 +34,7 @@ from neuro_workflow.analysis.lev1.processing.fixed_effects import compute_subjec
 from neuro_workflow.analysis.lev1.processing.glm import (
     fit_run_glm,
     handle_zero_variance_columns,
+    validate_design_matrix,
     validate_glm_inputs,
 )
 from neuro_workflow.analysis.lev1.processing.masks import MaskProcessor
@@ -369,6 +370,19 @@ def process_surface_run(
         else:
             surface_data = load_surface_data(bold_path, dummy_scans=dummy_scans)
         logger.debug('Surface data shape: %s', surface_data.shape)
+
+        # Validate inputs before fitting. The volumetric branch (process_volumetric_run)
+        # has called validate_glm_inputs for a long time; the surface branch
+        # historically had no equivalent and would have silently propagated NaN /
+        # mis-shaped designs through nilearn run_glm into garbage contrast maps.
+        # We validate once per hemisphere because each hemisphere produces its own
+        # surface_data and the row-count check needs that array's first dim.
+        validation = validate_design_matrix(design_matrix, n_scans=surface_data.shape[0])
+        if not validation['is_valid']:
+            raise ValueError(
+                f'Surface GLM validation failed (hemi-{hemisphere}): '
+                f'{validation["errors"]}'
+            )
 
         surface_glm = SurfaceGLM(t_r=tr)
         surface_glm.fit(surface_data, design_matrix)
