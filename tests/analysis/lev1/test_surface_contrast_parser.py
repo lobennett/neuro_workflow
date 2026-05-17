@@ -212,6 +212,36 @@ def test_cognitive_contrasts_do_not_weight_pooled_rtdur_regressor(task_name):
         )
 
 
+@pytest.mark.parametrize('task_name', BASE_TASKS)
+def test_break_regressor_duration_matches_canonical_task_design(task_name):
+    """Every base-task YAML must model `break_with_performance_feedback` as
+    a 10-second epoch (the canonical break-with-feedback window).
+
+    Originally the YAML hardcoded `duration: 1`, leaving 9 of every 10 seconds
+    of feedback display as implicit baseline. The events↔config audit
+    (`scripts/audit_events_vs_task_configs.py`) confirmed
+    `break_with_performance_feedback` rows are 10.0s ± 0 across both cohorts
+    and every task that has them. This test pins the YAML duration so future
+    edits cannot silently revert to a stim-duration value.
+
+    If a future task redesign changes the break duration, update this test
+    AND re-run the audit before launching production.
+    """
+    cfg = get_regressor_config(task_name)
+    assert 'break_with_performance_feedback' in cfg, (
+        f'{task_name} regressors must include break_with_performance_feedback '
+        f'so feedback-block variance is regressed out of the task-baseline.'
+    )
+    duration_col = cfg['break_with_performance_feedback']['duration_column']
+    assert duration_col == 'constant_10_column', (
+        f'{task_name}/break_with_performance_feedback: expected duration=10 '
+        f'(canonical break-with-feedback window per events.tsv audit) but '
+        f'YAML produced duration_column={duration_col!r}. If this is a '
+        f'deliberate change, update this test AND re-run '
+        f'scripts/audit_events_vs_task_configs.py to confirm the new value.'
+    )
+
+
 def test_inhibition_rtdur_subset_excludes_failure_trials():
     """For stopSignal and goNogo, the response_time regressor's subset
     must exclude commission-error trials (stop_failure / nogo_failure).
