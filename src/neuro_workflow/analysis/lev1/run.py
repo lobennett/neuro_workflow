@@ -355,11 +355,19 @@ def process_surface_run(
     """
     all_hemisphere_results = {}
 
-    # Find FreeSurfer subjects dir + resolve the on-disk FS subject name
-    # if smoothing is requested. fMRIPrep's longitudinal anat workflow
-    # creates per-session FS subjects (`sub-X_ses-Y`) rather than the plain
-    # `sub-X`, so we resolve it here once instead of failing per-hemisphere
-    # inside mri_surf2surf with an opaque GIFTI-read error.
+    # Find FreeSurfer subjects dir + resolve the FS-subject name used by
+    # mri_surf2surf. The choice depends on the BOLD's surface space:
+    #
+    #   fsaverage / fsaverage6  -> use 'fsaverage6' (40962 v/hemi). The BOLD
+    #                              has been resampled to the group template;
+    #                              smoothing must operate on that mesh.
+    #   fsnative                -> use the per-subject FS recon (resolved via
+    #                              `resolve_freesurfer_subject` because
+    #                              fmriprep's longitudinal anat workflow
+    #                              names recons `sub-X_ses-Y`).
+    #
+    # Passing the per-subject recon while smoothing fsaverage6 BOLD produces
+    # the dimension-mismatch error (e.g. 131403 vs 40962 vertices).
     subjects_dir = None
     fs_subject = args.subj_id
     if args.smoothing_fwhm is not None:
@@ -368,7 +376,10 @@ def process_surface_run(
             raise FileNotFoundError(
                 'Cannot find FreeSurfer subjects dir for surface smoothing'
             )
-        fs_subject = resolve_freesurfer_subject(args.subj_id, subjects_dir)
+        if surface_space in ('fsaverage', 'fsaverage6'):
+            fs_subject = 'fsaverage6'
+        else:
+            fs_subject = resolve_freesurfer_subject(args.subj_id, subjects_dir)
 
     for hemisphere, bold_key in [('L', 'left_surface'), ('R', 'right_surface')]:
         bold_path = run_files[bold_key]

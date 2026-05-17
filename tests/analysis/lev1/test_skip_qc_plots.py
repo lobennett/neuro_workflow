@@ -104,6 +104,104 @@ def test_pipeline_omits_skip_qc_plots_when_unset(tmp_path):
     assert '--skip-qc-plots' not in ctx['extra_flags']
 
 
+def test_surface_smoothing_uses_fsaverage6_when_bold_is_fsaverage6(tmp_path, monkeypatch):
+    """When smoothing BOLD in fsaverage6 space, ``mri_surf2surf`` must be
+    called with the template (``fsaverage6``) as the FS subject, not the
+    per-subject recon. The BOLD has been resampled to the 40962-vertex
+    template mesh; passing the subject's fsnative recon (~150k vertices)
+    triggers ``ERROR: dimension inconsistency in source data``.
+
+    Regression guard for the failure mode observed during the surface
+    lev1 production submission.
+    """
+    from argparse import Namespace
+    import numpy as np
+    import pandas as pd
+
+    from neuro_workflow.analysis.lev1 import run as run_module
+
+    # Lay down a SUBJECTS_DIR with both a subject-specific recon and the
+    # group template, mimicking what fmriprep deposits.
+    fs_dir = tmp_path / 'fmriprep' / 'sourcedata' / 'freesurfer'
+    (fs_dir / 'sub-s10_ses-09').mkdir(parents=True)
+    (fs_dir / 'fsaverage6').mkdir(parents=True)
+
+    n_tp, n_verts = 80, 40962
+    monkeypatch.setattr(
+        run_module, 'load_surface_data',
+        lambda *a, **kw: np.random.randn(n_tp, n_verts).astype(np.float32),
+    )
+    monkeypatch.setattr(
+        run_module, 'plot_surface_stat_map', lambda *a, **kw: None,
+    )
+
+    smooth_calls = []
+    monkeypatch.setattr(
+        run_module, 'smooth_surface_gifti',
+        lambda *args, **kw: smooth_calls.append((args, kw)) or args[1],
+    )
+
+    class StubResult:
+        def __init__(self):
+            self.data = np.zeros(n_verts)
+        def to_filename(self, path):
+            pass
+
+    class StubGLM:
+        def __init__(self, *a, **kw):
+            pass
+        def fit(self, data, dm):
+            return self
+        def compute_contrast(self, formula, output_type='all'):
+            return {'effect_size': StubResult(),
+                    'effect_variance': StubResult(),
+                    'z_score': StubResult()}
+
+    monkeypatch.setattr(run_module, 'SurfaceGLM', StubGLM)
+
+    dm = pd.DataFrame({'r0': np.random.randn(n_tp),
+                       'constant': np.ones(n_tp)})
+
+    args = Namespace(
+        fmriprep_dir=str(fs_dir.parent.parent),
+        subj_id='sub-s10',
+        task_name='flanker',
+        smoothing_fwhm=2.0,
+        space='fsaverage6',
+        skip_qc_plots=True,
+    )
+    run_files = {'left_surface': 'L.func.gii', 'right_surface': 'R.func.gii'}
+    dirs = {'indiv_contrasts': tmp_path, 'quality_control': tmp_path,
+            'task_residuals': tmp_path}
+
+    run_module.process_surface_run(
+        run_files=run_files,
+        design_matrix=dm,
+        contrasts={'r0': 'r0'},
+        args=args,
+        dirs=dirs,
+        base_filename='sub-s10_task-flanker_run-1',
+        tr=1.5,
+        dummy_scans=0,
+        compute_residuals=False,
+        surface_space='fsaverage6',
+    )
+
+    # smooth_surface_gifti gets called once per hemisphere = 2 times.
+    # Each call's 3rd positional arg is the FS subject. For fsaverage6
+    # BOLD this must be 'fsaverage6', NOT 'sub-s10' nor 'sub-s10_ses-09'.
+    assert len(smooth_calls) == 2, (
+        f'Expected smooth_surface_gifti called twice; got {len(smooth_calls)}'
+    )
+    for call_args, _ in smooth_calls:
+        fs_subject_passed = call_args[2]
+        assert fs_subject_passed == 'fsaverage6', (
+            f'smooth_surface_gifti must receive fsaverage6 (the template) '
+            f'as the FS subject when BOLD is in fsaverage6 space; '
+            f'got {fs_subject_passed!r}.'
+        )
+
+
 def test_analysis_run_skips_plot_loop_when_flag_set(tmp_path, monkeypatch):
     """End-to-end: ``args.skip_qc_plots=True`` prevents
     ``plot_surface_stat_map`` from being called.
