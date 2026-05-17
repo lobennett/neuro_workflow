@@ -160,33 +160,78 @@ def test_simple_minus_contrast():
 # ---------------------------------------------------------------------------
 
 
-def test_constdur_contrast_does_not_weight_pooled_rtdur_regressor():
-    """A contrast over ConstDur trial-type regressors must have zero weight
-    on the pooled ``response_time`` (RTDur) regressor.
+# Tasks that include a pooled `response_time` (RTDur) regressor per Mumford 2023.
+# Add tasks here when their YAML gains a response_time regressor — the invariant
+# test below auto-extends to enforce the Mumford correction for them.
+TASKS_WITH_RTDUR = ['nBack', 'cuedTS', 'directedForgetting', 'flanker',
+                    'shapeMatching', 'spatialTS', 'stopSignal', 'goNogo']
 
-    Mumford's RT-modeling paradox approach uses one pooled RTDur regressor to
-    absorb trial-to-trial RT variance, leaving the ConstDur regressors to
-    capture stimulus-locked activity. A contrast like ``twoBack-oneBack``
-    should weight only ConstDur columns; if any nonzero weight lands on
-    ``response_time``, the contrast smuggles RT variance into a cognitive
-    effect and the Mumford correction is undone.
+
+@pytest.mark.parametrize('task_name', TASKS_WITH_RTDUR)
+def test_cognitive_contrasts_do_not_weight_pooled_rtdur_regressor(task_name):
+    """Cognitive (non-RT) contrasts must have zero weight on the pooled
+    ``response_time`` (RTDur) regressor.
+
+    Mumford 2023 (biorxiv 528677): the pooled RTDur regressor absorbs
+    trial-to-trial RT variance, freeing the ConstDur regressors to capture
+    stimulus-locked activity. If a cognitive contrast (e.g. ``stop_success-go``,
+    ``twoBack-oneBack``) puts any nonzero weight on ``response_time``, the
+    contrast smuggles RT variance into the cognitive effect — the Mumford
+    correction is undone and inhibition-vs-go or N-back load contrasts will
+    partially reflect RT differences.
+
+    The explicit ``response_time`` contrast is exempt — it intentionally
+    extracts the RTDur beta to provide an RT-effect map.
+
+    For the inhibition tasks (stopSignal, goNogo), RTDur is restricted to
+    correct go-trial responses only. We deliberately exclude *_failure
+    (commission-error) trials because their RTs reflect failed inhibition,
+    not clean motor readiness. See the rationale at the top of the
+    stopSignal.yaml / goNogo.yaml configs.
     """
-    regressors = list(get_regressor_config('nBack').keys())
-    # nBack includes a pooled `response_time` (RTDur) regressor
+    regressors = list(get_regressor_config(task_name).keys())
     assert 'response_time' in regressors, (
-        'nBack regressors must include the pooled RTDur regressor for this '
-        'test to be meaningful'
+        f'{task_name} regressors must include the pooled RTDur '
+        f'(response_time) regressor for this test to be meaningful. If '
+        f'this task is intentionally without RT modeling, remove it from '
+        f'TASKS_WITH_RTDUR.'
     )
     glm = _make_fitted_glm(regressors)
     rt_idx = regressors.index('response_time')
+    contrasts = get_task_contrasts(task_name)
 
-    for contrast_name in ('twoBack-oneBack', 'match-mismatch', 'task-baseline'):
-        formula = get_task_contrasts('nBack')[contrast_name]
+    for contrast_name, formula in contrasts.items():
+        if contrast_name == 'response_time':
+            continue  # explicit RT-effect contrast is exempt
         vec = glm._parse_contrast(formula)
         assert vec[rt_idx] == 0.0, (
-            f'nBack/{contrast_name}: contrast weights the pooled '
+            f'{task_name}/{contrast_name}: contrast weights the pooled '
             f'response_time RTDur regressor at {vec[rt_idx]}; this leaks '
-            f'RT variance into a ConstDur contrast (formula={formula!r})'
+            f'RT variance into a cognitive contrast and undoes the '
+            f'Mumford ConstDurRTDur correction (formula={formula!r})'
+        )
+
+
+def test_inhibition_rtdur_subset_excludes_failure_trials():
+    """For stopSignal and goNogo, the response_time regressor's subset
+    must exclude commission-error trials (stop_failure / nogo_failure).
+
+    Failed-inhibition RTs reflect partial response programming and are
+    contaminated relative to clean go-trial RTs. Including them in the
+    pooled RTDur regressor would bleed failure-trial variance into the
+    Mumford correction. This invariant is enforced at the YAML config
+    level via the subset filter.
+    """
+    for task_name in ('stopSignal', 'goNogo'):
+        config = get_regressor_config(task_name)
+        rt_subset = config['response_time']['subset']
+        # The subset must restrict to trial_type == 'go'. The most common
+        # ways to express this are explicit equality to 'go' or filtering
+        # against the failure trial types.
+        assert "trial_type == 'go'" in rt_subset, (
+            f'{task_name}: response_time subset must restrict to '
+            f"trial_type == 'go' so RTDur excludes commission-error trials. "
+            f'Current subset: {rt_subset!r}'
         )
 
 

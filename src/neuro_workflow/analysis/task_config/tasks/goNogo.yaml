@@ -7,14 +7,22 @@ expected_sessions: 5
 # Trial types: go, nogo_success, nogo_failure
 # Nuisance regressors (omission, commission, rt_fast) are computed
 # only for go trials (see define_nuisance_trials).
-# NOTE: No response_time regressor is included. RT variability in go
-# trials is intentionally left unmodeled for inhibition tasks. If needed:
-#   response_time:
-#     amplitude: 1
-#     duration: response_time
-#     subset: >-
-#       key_press == correct_response and response_time >= 0.2
-#       and trial_id == 'test_trial' and trial_type == 'go'
+#
+# RT modeling — Mumford 2023 ConstDurRTDur (biorxiv 528677):
+# We include a pooled response_time (RTDur) regressor restricted to
+# correct go-trial responses only. Subject pool:
+#   - go (correct, RT >= 0.2):           ConstDur + RTDur ✓
+#   - nogo_success (no response):        ConstDur only (no meaningful RT)
+#   - nogo_failure (commission error):   ConstDur only (RTs are contaminated
+#                                        — failed inhibition produces
+#                                        atypical, slower-than-normal RTs
+#                                        driven by partial response programming;
+#                                        modeling them as RT-modulated would
+#                                        bleed inhibition-failure variance
+#                                        into the cognitive contrasts).
+# This keeps nogo_success-go from absorbing RT variance via the go regressor
+# (the Mumford paradox) while avoiding RT modeling on trials whose RT is
+# not a clean motor-readiness signal.
 
 regressors:
   go:
@@ -34,6 +42,14 @@ regressors:
     amplitude: 1
     duration: 1
     subset: "trial_type == 'nogo_failure'"
+
+  response_time:
+    amplitude: 1
+    duration: response_time
+    subset: >-
+      trial_id == 'test_trial' and
+      key_press == correct_response and response_time >= 0.2
+      and trial_type == 'go'
 
   go_omission:
     amplitude: omission
@@ -61,3 +77,4 @@ contrasts:
   nogo_success: "nogo_success"
   nogo_success-go: "nogo_success - go"
   task-baseline: "0.5 * go + 0.5 * nogo_success"
+  response_time: "response_time"
