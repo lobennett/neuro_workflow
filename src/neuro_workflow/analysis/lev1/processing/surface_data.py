@@ -298,12 +298,15 @@ class SurfaceGLM:
         # Parse contrast definition into contrast vector
         contrast_vector = self._parse_contrast(contrast_def)
 
-        # Use nilearn's compute_contrast which properly handles AR(1) results
+        # Use nilearn's compute_contrast which properly handles AR(1) results.
+        # nilearn 0.13 renamed `contrast_type=` → `stat_type=`; keep this as
+        # `stat_type` to stay compatible with the installed version (pinned
+        # in pyproject.toml) and to avoid silent t-vs-F default switches.
         contrast_result = compute_contrast(
             self.labels_,
             self.results_,
             contrast_vector,
-            contrast_type='t',
+            stat_type='t',
         )
 
         # Extract results from nilearn's Contrast object

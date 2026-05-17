@@ -329,6 +329,38 @@ def test_inhibition_rtdur_subset_excludes_failure_trials():
 # ---------------------------------------------------------------------------
 
 
+def test_surface_compute_contrast_runs_end_to_end_on_synthetic_data():
+    """End-to-end smoke: ``SurfaceGLM.compute_contrast`` returns a populated
+    result dict for a real fit-then-contrast call against synthetic data.
+
+    Regression guard for the nilearn API rename. Nilearn 0.13 renamed
+    ``compute_contrast(contrast_type=)`` to ``compute_contrast(stat_type=)``;
+    if the kwarg drifts again every contrast in the cohort run will silently
+    fail with ``unexpected keyword argument`` and produce no z-maps even
+    though the GLM fit itself succeeds — exactly the failure mode observed
+    on smoke job 25246311 before this guard existed.
+
+    The unit-level parser tests above never exercise the actual nilearn
+    call (they stub it out), so this test runs the full fit→contrast path.
+    """
+    np.random.seed(0)
+    n_tp, n_verts = 60, 200
+    X = np.random.randn(n_tp, 3)
+    Y = X @ np.random.randn(3, n_verts) + np.random.randn(n_tp, n_verts) * 0.5
+
+    dm = pd.DataFrame(X, columns=['cond_a', 'cond_b', 'constant'])
+    glm = SurfaceGLM(t_r=1.5, noise_model='ols')
+    glm.fit(Y, dm)
+
+    result = glm.compute_contrast('cond_a - cond_b', output_type='all')
+    for key in ('effect_size', 'effect_variance', 'z_score'):
+        assert key in result, f'compute_contrast must return {key!r}'
+        assert hasattr(result[key], 'data'), (
+            f'{key} should be a SurfaceResult with a .data array'
+        )
+        assert result[key].data.shape == (n_verts,)
+
+
 def test_unknown_regressor_raises_rather_than_silently_zeroing():
     """Referencing a non-existent regressor must raise, not silently emit
     a zero-weighted contrast.
