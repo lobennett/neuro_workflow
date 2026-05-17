@@ -87,6 +87,61 @@ def find_freesurfer_subjects_dir(fmriprep_dir: Path) -> Optional[Path]:
     return None
 
 
+def resolve_freesurfer_subject(
+    canonical_subject: str,
+    subjects_dir: Union[str, Path],
+) -> str:
+    """Resolve canonical subject id to actual FreeSurfer SUBJECTS_DIR name.
+
+    fMRIPrep's longitudinal/multi-session anat workflow creates per-session
+    FS subjects named ``sub-X_ses-Y`` (one per session that contributed a
+    T1w), not the plain canonical ``sub-X``. Anywhere we shell out to a
+    FreeSurfer binary (``mri_surf2surf``, ``mris_euler_number``, etc.) we
+    have to pass the on-disk name or the binary will fail with ``failed to
+    open GIFTI XML file '/.../sub-X/surf/lh.sphere.reg.gii'``.
+
+    Resolution order:
+      1. If ``<subjects_dir>/<canonical_subject>`` exists, use it (single-anat
+         case — the plain ``sub-X`` directory is on disk).
+      2. Otherwise glob ``<subjects_dir>/<canonical_subject>_ses-*`` and
+         return the first match.  Subjects with multiple FS recons (one per
+         anat session) almost always have a single best recon and any of the
+         per-session entries works for ``--s`` operations that only need
+         the surface registration files.
+      3. Raise ``FileNotFoundError`` with a clear message if no FS subject
+         is found — silently substituting the canonical name would yield
+         the opaque "could not read surface" error far downstream.
+
+    Args:
+        canonical_subject: BIDS-style canonical subject id, e.g. ``sub-s10``.
+        subjects_dir: FreeSurfer SUBJECTS_DIR (output of
+            ``find_freesurfer_subjects_dir``).
+
+    Returns:
+        The on-disk FreeSurfer subject name (e.g. ``sub-s10_ses-09``).
+
+    Raises:
+        FileNotFoundError: If no matching FreeSurfer subject dir exists.
+    """
+    subjects_dir = Path(subjects_dir)
+
+    direct = subjects_dir / canonical_subject
+    if direct.is_dir():
+        return canonical_subject
+
+    session_matches = sorted(subjects_dir.glob(f'{canonical_subject}_ses-*'))
+    if session_matches:
+        return session_matches[0].name
+
+    raise FileNotFoundError(
+        f'No FreeSurfer subject directory found for {canonical_subject!r} '
+        f'under {subjects_dir}.  Looked for: {canonical_subject} and '
+        f'{canonical_subject}_ses-*.  Surface smoothing and other operations '
+        f'that shell out to FreeSurfer require this to exist; check that '
+        f'fMRIPrep completed the surface_recon_wf for this subject.'
+    )
+
+
 def smooth_surface_gifti(
     input_file: Union[str, Path],
     output_file: Union[str, Path],

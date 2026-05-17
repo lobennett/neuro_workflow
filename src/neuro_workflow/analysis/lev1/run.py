@@ -46,6 +46,7 @@ from neuro_workflow.analysis.lev1.processing.surface_data import (
     get_surface_scan_info,
     load_surface_data,
     plot_surface_stat_map,
+    resolve_freesurfer_subject,
     smooth_surface_gifti,
 )
 from neuro_workflow.analysis.task_config.loader import get_task_contrasts, get_task_parameters
@@ -354,14 +355,20 @@ def process_surface_run(
     """
     all_hemisphere_results = {}
 
-    # Find FreeSurfer subjects dir if smoothing is requested
+    # Find FreeSurfer subjects dir + resolve the on-disk FS subject name
+    # if smoothing is requested. fMRIPrep's longitudinal anat workflow
+    # creates per-session FS subjects (`sub-X_ses-Y`) rather than the plain
+    # `sub-X`, so we resolve it here once instead of failing per-hemisphere
+    # inside mri_surf2surf with an opaque GIFTI-read error.
     subjects_dir = None
+    fs_subject = args.subj_id
     if args.smoothing_fwhm is not None:
         subjects_dir = find_freesurfer_subjects_dir(Path(args.fmriprep_dir))
         if subjects_dir is None:
             raise FileNotFoundError(
                 'Cannot find FreeSurfer subjects dir for surface smoothing'
             )
+        fs_subject = resolve_freesurfer_subject(args.subj_id, subjects_dir)
 
     for hemisphere, bold_key in [('L', 'left_surface'), ('R', 'right_surface')]:
         bold_path = run_files[bold_key]
@@ -372,7 +379,7 @@ def process_surface_run(
             with tempfile.TemporaryDirectory() as tmp_dir:
                 smoothed_path = Path(tmp_dir) / f'smoothed_hemi-{hemisphere}.func.gii'
                 smooth_surface_gifti(
-                    bold_path, smoothed_path, args.subj_id,
+                    bold_path, smoothed_path, fs_subject,
                     hemisphere, args.smoothing_fwhm, subjects_dir,
                 )
                 surface_data = load_surface_data(smoothed_path, dummy_scans=dummy_scans)
