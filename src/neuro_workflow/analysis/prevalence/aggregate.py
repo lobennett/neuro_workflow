@@ -58,7 +58,7 @@ class PrevalenceResult:
     hpdi_hi: np.ndarray        # upper HPDI bound, shape (n_vertices,)
     k_count: np.ndarray        # int count of significant subjects per vertex
     n_subjects: int            # total subjects contributing to a vertex
-    alpha: float               # within-subject FPR used
+    alpha: float               # within-subject false-positive rate used
     z_threshold: float         # corresponding z-stat threshold
     level: float               # HPDI mass level (e.g. 0.96)
     n_vertices_invalid: int    # vertices marked NaN due to subject NaN
@@ -149,7 +149,7 @@ def stack_subject_zmaps(paths: list[Path]) -> tuple[np.ndarray, list[str]]:
 
 
 def z_alpha_two_sided(alpha: float) -> float:
-    """Return the positive z critical value for a two-sided test at FPR alpha.
+    """Return the positive z critical value for a two-sided test at false-positive rate alpha.
 
     Example: ``z_alpha_two_sided(0.05) ≈ 1.96``.
     """
