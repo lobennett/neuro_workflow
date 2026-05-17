@@ -13,7 +13,7 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 from nilearn.glm.first_level import run_glm
-from nilearn.glm.contrasts import compute_contrast
+from nilearn.glm.contrasts import compute_contrast, expression_to_contrast_vector
 
 from neuro_workflow.analysis.task_config.loader import DUMMY_SCANS
 
@@ -274,50 +274,23 @@ class SurfaceGLM:
             return results.get(output_type)
 
     def _parse_contrast(self, contrast_def: str) -> np.ndarray:
-        """Parse contrast definition string into contrast vector.
+        """Parse a contrast formula into a vector using nilearn's parser.
 
-        Args:
-            contrast_def: String like 'go-stop', 'go - stop', or 'go + stop - 2*baseline'
+        Routes through ``expression_to_contrast_vector`` — the same function used
+        by the volumetric path (``FirstLevelModel.compute_contrast``) and by the
+        VIF code in ``quality_control.est_contrast_vifs`` (which matches Mumford's
+        upstream ``jmumford/vif_contrasts``). Using the same parser everywhere
+        guarantees surface and volumetric analyses produce identical contrast
+        vectors for any formula, including fractional coefficients (``1/3 * go``)
+        and parenthesized groupings (``0.5 * (a + b - c - d)``).
 
-        Returns:
-            Contrast vector of shape (n_regressors,)
+        Raises a ValueError if any term references a regressor not in
+        ``self.regressor_names_`` — failing loudly is safer than silently
+        emitting a zero-weighted contrast.
         """
-        import re
-
-        contrast_vector = np.zeros(len(self.regressor_names_))
-
-        # Normalize: ensure spaces around + and - for consistent parsing
-        # First, add spaces around operators (handles both 'a-b' and 'a - b')
-        normalized = re.sub(r'(?<=[a-zA-Z0-9_])\s*-\s*(?=[a-zA-Z0-9_])', ' - ', contrast_def)
-        normalized = re.sub(r'(?<=[a-zA-Z0-9_])\s*\+\s*(?=[a-zA-Z0-9_])', ' + ', normalized)
-
-        # Now replace ' - ' with ' + -' for easier splitting
-        normalized = normalized.replace(' - ', ' + -')
-        terms = [t.strip() for t in normalized.split('+')]
-
-        for term in terms:
-            if not term:
-                continue
-
-            # Parse coefficient and regressor name
-            # Match optional coefficient (including negative), optional *, then regressor name
-            match = re.match(r'^(-?\d*\.?\d*)\s*\*?\s*(.+)$', term.strip())
-            if match:
-                coef_str, regressor = match.groups()
-                coef = float(coef_str) if coef_str and coef_str != '-' else (
-                    -1.0 if coef_str == '-' else 1.0
-                )
-            else:
-                coef = 1.0
-                regressor = term.strip()
-
-            # Find regressor in labels
-            regressor = regressor.strip()
-            if regressor in self.regressor_names_:
-                idx = self.regressor_names_.index(regressor)
-                contrast_vector[idx] = coef
-
-        return contrast_vector
+        return np.asarray(
+            expression_to_contrast_vector(contrast_def, self.regressor_names_)
+        )
 
 
 class SurfaceResult:
