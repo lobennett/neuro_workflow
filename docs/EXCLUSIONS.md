@@ -214,3 +214,17 @@ Where run-1 is bidsignored, the behavioral file maps to run-2 via `dest_run` in 
 | s373 | ses-02 | spatialTS | bidsignored (12 TRs) | valid | Behavioral → run-2 |
 | s216 | ses-05 | directedForgetting | bidsignored (94 TRs) | valid | Behavioral → run-2 |
 | s336 | ses-05 | goNogo | salvaged (298 TRs) | valid | Behavioral → run-2 |
+
+## Manual notes (preserved across regenerations)
+
+### sub-s03 stale T1ws (2026-05-15)
+
+Hidden via `.bidsignore` after un-excluding Flywheel session 25210 (rescue T1w → ses-13):
+
+- `sub-*/ses-*/anat/*acq-MPRAGEPromo_run-1_T1w.*` (existing global pattern) hides
+  `sub-s03/ses-01/anat/sub-s03_ses-01_acq-MPRAGEPromo_run-1_T1w.*` — 4D-saved
+  PROMO; frame 32 is the actual T1w but bidsify did not split it; kept for
+  provenance.
+- `sub-s03/ses-05/anat/*SagMPRAGE*` — produced 162 mean Euler defects in
+  FreeSurfer recon (multiple "large defect" warnings); replaced by ses-13
+  rescue T1w (NEW_Sag_MPRAGE_T1 acquired 2022-05-24).

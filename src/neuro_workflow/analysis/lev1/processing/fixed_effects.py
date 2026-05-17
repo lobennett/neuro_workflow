@@ -398,6 +398,28 @@ class FixedEffectsAnalyzer:
                     )
                     all_saved_files[contrast_name] = saved_files
 
+        # Surface silent-loss: contrasts whose per-run files never got written
+        # (e.g. all runs hit a zero-variance regressor and skipped the save in
+        # filter_contrasts_for_dropped_columns) silently disappear from the
+        # subject's output. lev2 then has to discover their absence from
+        # a glob.  Log a warning here so the loss is visible at the per-subject
+        # log level rather than buried in an absent file.
+        expected = set(contrasts.keys())
+        produced = set(all_saved_files.keys())
+        missing = expected - produced
+        if missing:
+            logger.warning(
+                '%s/%s/%s: %d of %d expected contrasts have no fixed-effects '
+                'output; missing: %s. Likely cause: every run dropped these '
+                'contrasts at write time because the contributing regressor '
+                'had zero variance in that run (rare event type or sparse '
+                'subset).',
+                getattr(self, 'subject_id', '?'),
+                getattr(self, 'task_name', '?'),
+                getattr(self, 'hemisphere', None) or 'volumetric',
+                len(missing), len(expected), sorted(missing),
+            )
+
         return all_saved_files
 
     def get_contrast_summary(self) -> Dict[str, Dict]:

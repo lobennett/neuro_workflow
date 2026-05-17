@@ -15,8 +15,7 @@
           "reason": "Session 22752 (2021-02-12) labeled under s03 on Flywheel but belongs to s10"
         },
         "25210": {
-          "exclude": true,
-          "reason": "Empty/test session -- no usable imaging data"
+          "note": "Rescue T1w session acquired 2022-05-24 after the original SagMPRAGE (ses-05) produced bad recon (162 Euler defects); becomes ses-13 in BIDS"
         }
       },
       "s29": {

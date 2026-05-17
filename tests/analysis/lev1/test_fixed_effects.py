@@ -1,6 +1,99 @@
 """Tests for src/neuro_workflow/analysis/lev1/processing/fixed_effects.py."""
 from __future__ import annotations
 
+import logging
+
+import pytest
+
+
+def test_missing_contrast_warning_lists_contrasts_with_no_files(tmp_path, caplog):
+    """``compute_all_task_fixed_effects`` must warn when expected contrasts
+    have no per-run files at all.
+
+    Previously these silently vanished from the subject's output — a regressor
+    that was zero-variance in every run got its contrast skipped at write
+    time, leaving lev2 to discover the absence from a glob. The warning
+    surfaces the loss at the per-subject log level so cohort runs don't
+    silently emit incomplete output sets.
+    """
+    from neuro_workflow.analysis.lev1.processing.fixed_effects import (
+        FixedEffectsAnalyzer,
+    )
+
+    analyzer = FixedEffectsAnalyzer('sub-x', 'flanker')
+    contrasts = {
+        'incongruent-congruent': 'incongruent - congruent',
+        'response_time': 'response_time',
+        'task-baseline': '0.5 * (congruent + incongruent)',
+    }
+
+    # No effect/variance files exist on disk → every contrast is "missing"
+    contrast_dir = tmp_path / 'contrasts'
+    contrast_dir.mkdir()
+    output_dir = tmp_path / 'fixed'
+    output_dir.mkdir()
+
+    with caplog.at_level(logging.WARNING,
+                          logger='neuro_workflow.analysis.lev1.processing.fixed_effects'):
+        result = analyzer.compute_all_task_fixed_effects(
+            contrast_dir, output_dir, exclusions=set(), contrasts=contrasts,
+        )
+
+    assert result == {}, (
+        'No contrast files exist on disk; the result map should be empty.'
+    )
+
+    warning_text = '\n'.join(rec.message for rec in caplog.records
+                              if rec.levelno == logging.WARNING)
+    assert 'sub-x' in warning_text
+    assert 'flanker' in warning_text
+    # Every contrast name should be enumerated in the warning so the user
+    # can see exactly what's missing rather than just a count.
+    for name in contrasts.keys():
+        assert name in warning_text, (
+            f'Warning text should mention missing contrast {name!r}; '
+            f'got: {warning_text!r}'
+        )
+
+
+def test_no_warning_when_every_contrast_has_files(tmp_path, caplog, monkeypatch):
+    """Inverse of the above — when every contrast has files, no warning."""
+    from neuro_workflow.analysis.lev1.processing.fixed_effects import (
+        FixedEffectsAnalyzer,
+    )
+
+    analyzer = FixedEffectsAnalyzer('sub-x', 'flanker')
+    contrasts = {'go': 'go'}
+
+    # Stub find_contrast_files to claim files exist, and stub the compute
+    # method to return a dummy result so we never touch real I/O.
+    monkeypatch.setattr(
+        analyzer, 'find_contrast_files',
+        lambda *a, **kw: (['effect.nii.gz'], ['variance.nii.gz']),
+    )
+    monkeypatch.setattr(
+        analyzer, 'compute_fixed_effects_contrast',
+        lambda *a, **kw: ('effect', 'variance', 'stat'),
+    )
+    monkeypatch.setattr(
+        analyzer, 'save_fixed_effects_maps',
+        lambda *a, **kw: {'effect': tmp_path / 'effect.nii.gz'},
+    )
+
+    with caplog.at_level(logging.WARNING,
+                          logger='neuro_workflow.analysis.lev1.processing.fixed_effects'):
+        result = analyzer.compute_all_task_fixed_effects(
+            tmp_path, tmp_path, exclusions=set(), contrasts=contrasts,
+        )
+
+    assert 'go' in result
+    missing_warning = [r for r in caplog.records
+                       if r.levelno == logging.WARNING
+                       and 'expected contrasts have no fixed-effects' in r.message]
+    assert not missing_warning, (
+        'No contrasts are missing; the silent-loss warning must not fire.'
+    )
+
 
 def test_fixed_effects_analyzer_importable():
     from neuro_workflow.analysis.lev1.processing.fixed_effects import (

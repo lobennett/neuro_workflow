@@ -20,3 +20,16 @@ VISUAL_GUIDE.md
 
 # Local scratch: issue/PR drafts, exploration notes
 work/
+scratch/
+
+# Claude Code session-local settings (cached agent config, not project state)
+.claude/
+
+# Stray top-level slurm output files from interactive sbatch runs
+/slurm-*.out
+
+# Operational subject-list scratch (canonical source of truth lives in
+# config/pipeline_config.json under `samples`).  These files are generated
+# ad hoc for SLURM array jobs and dataset registrations in
+# ~/.neuro_workflow/datasets.json; they shouldn't be in version control.
+/subjects_*.txt

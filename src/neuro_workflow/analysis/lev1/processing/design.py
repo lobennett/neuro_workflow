@@ -1,6 +1,7 @@
 """Design matrix creation for GLM analysis."""
 
 import logging
+import re
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -10,6 +11,28 @@ from nilearn.glm.first_level import compute_regressor
 from neuro_workflow.analysis.task_config.loader import get_regressor_config
 
 logger = logging.getLogger(__name__)
+
+_CONSTANT_SENTINEL_RE = re.compile(r'^constant_(-?\d+(?:\.\d+)?)_column$')
+
+
+def _resolve_column_or_constant(events: pd.DataFrame, col_spec: str) -> np.ndarray:
+    """Resolve a regressor's amplitude/duration spec to a per-event vector.
+
+    The loader encodes YAML literals as ``constant_{N}_column`` sentinels so
+    the numeric value survives round-tripping (a previous bug collapsed every
+    numeric duration to 1.0, silently making ``duration: 10`` model a
+    one-second epoch). This function:
+
+      * Parses the sentinel back to its float value and returns a constant
+        vector at that value.
+      * Otherwise treats ``col_spec`` as an events.tsv column name and pulls
+        the per-event values from it.
+    """
+    match = _CONSTANT_SENTINEL_RE.match(col_spec)
+    if match:
+        value = float(match.group(1))
+        return np.full(len(events), value, dtype=float)
+    return events[col_spec].values
 
 
 def create_regressor(
@@ -58,16 +81,8 @@ def create_regressor(
 
         # Create 3-column format (onset, duration, amplitude)
         onsets = subset_events['onset'].values
-        durations = (
-            subset_events[dur_col].values
-            if dur_col != 'constant_1_column'
-            else np.ones(len(subset_events))
-        )
-        amplitudes = (
-            subset_events[amp_col].values
-            if amp_col != 'constant_1_column'
-            else np.ones(len(subset_events))
-        )
+        durations = _resolve_column_or_constant(subset_events, dur_col)
+        amplitudes = _resolve_column_or_constant(subset_events, amp_col)
 
         # Drop rows with NaN in any of the 3 columns — nilearn's compute_regressor
         # silently produces garbled output when passed NaN values. This protects
