@@ -76,5 +76,5 @@ contrasts:
   go: "go"
   nogo_success: "nogo_success"
   nogo_success-go: "nogo_success - go"
-  task-baseline: "0.5 * go + 0.5 * nogo_success"
+  task-baseline: "1/3 * (go + nogo_success + nogo_failure)"
   response_time: "response_time"

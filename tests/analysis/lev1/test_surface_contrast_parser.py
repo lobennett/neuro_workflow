@@ -242,6 +242,65 @@ def test_break_regressor_duration_matches_canonical_task_design(task_name):
     )
 
 
+@pytest.mark.parametrize(
+    'task_name,primary_trial_types',
+    [
+        ('stopSignal', ['go', 'stop_success', 'stop_failure']),
+        ('goNogo', ['go', 'nogo_success', 'nogo_failure']),
+    ],
+)
+def test_inhibition_task_baseline_weights_all_primary_trial_types_equally(
+    task_name, primary_trial_types,
+):
+    """For the inhibition tasks, ``task-baseline`` must weight every primary
+    trial-type regressor (the *correct response*, the *successful inhibition*,
+    and the *failed inhibition*) with the same nonzero coefficient.
+
+    Why: task-baseline is the cohort-wide "is the task driving signal at all"
+    contrast.  Restricting it to the successful subset would condition the
+    contrast on performance and yield asymmetric meaning across goNogo and
+    stopSignal — a downstream interpretability hazard if a meta-analysis
+    ever combines or compares the two tasks.
+
+    Concretely: previously goNogo's task-baseline was ``0.5 * go + 0.5 *
+    nogo_success`` (omitting nogo_failure entirely), while stopSignal's was
+    ``1/3 * (go + stop_success + stop_failure)``.  This test enforces
+    symmetry so that drift in either direction fails fast.
+    """
+    regressors = list(get_regressor_config(task_name).keys())
+    formula = get_task_contrasts(task_name)['task-baseline']
+    glm = _make_fitted_glm(regressors)
+    vec = glm._parse_contrast(formula)
+
+    weights = {}
+    for trial_type in primary_trial_types:
+        assert trial_type in regressors, (
+            f'{task_name}: primary trial-type regressor {trial_type!r} is '
+            f'missing from the YAML.  Update the YAML or remove it from this '
+            f'test\'s primary_trial_types list.'
+        )
+        idx = regressors.index(trial_type)
+        weights[trial_type] = vec[idx]
+
+    # Every primary trial type must have a strictly positive weight.
+    for trial_type, w in weights.items():
+        assert w > 0, (
+            f'{task_name}/task-baseline: trial type {trial_type!r} has weight '
+            f'{w}.  task-baseline must include every primary trial-type '
+            f'regressor with a strictly positive weight (formula={formula!r}).'
+        )
+
+    # All primary weights must be approximately equal.
+    values = list(weights.values())
+    spread = max(values) - min(values)
+    assert spread < 1e-9, (
+        f'{task_name}/task-baseline: primary trial-type weights are not '
+        f'equal: {weights}.  task-baseline must average uniformly across '
+        f'go, success, and failure to keep its meaning symmetric across the '
+        f'inhibition tasks (formula={formula!r}).'
+    )
+
+
 def test_inhibition_rtdur_subset_excludes_failure_trials():
     """For stopSignal and goNogo, the response_time regressor's subset
     must exclude commission-error trials (stop_failure / nogo_failure).
