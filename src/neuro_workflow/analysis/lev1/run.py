@@ -289,9 +289,14 @@ def setup_masks(files, args, dirs):
 
 
 def process_volumetric_run(
-    bold_data, design_matrix, contrasts, run_files, args, dirs, base_filename, tr, mask_key, compute_residuals
+    bold_data, design_matrix, contrasts, run_files, args, dirs, base_filename, tr, mask_key, compute_residuals,
+    fc_confounds=None,
 ):
     """Fit volumetric GLM and compute contrasts (and optional residuals).
+
+    ``fc_confounds``, when provided, is regressed from the post-GLM residuals
+    via nilearn.signal.clean — matching the surface path so that
+    ``--fc-confounds`` produces FC-quality residuals in either space.
 
     Returns:
         Dict of contrast results.
@@ -320,7 +325,7 @@ def process_volumetric_run(
     if compute_residuals:
         residuals_result = process_run_residuals(
             fitted_glm, dirs['task_residuals'], base_filename, tr,
-            mask_img=run_mask,
+            mask_img=run_mask, fc_confounds=fc_confounds,
         )
         if not residuals_result['success']:
             logger.warning('Residuals processing had issues: %s', residuals_result['errors'])
@@ -532,19 +537,21 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
 
     base_filename = f'{args.subj_id}_{session}_task-{args.task_name}_{run}'
 
+    # Load FC confounds once if requested — used by both surface and
+    # volumetric residual paths so `--fc-confounds` has identical semantics
+    # in either space (previously volumetric silently ignored the flag).
+    fc_confounds = None
+    if args.residuals and args.fc_confounds:
+        confounds_df = pd.read_csv(run_files['confounds'], sep='\t', na_values=['n/a']).fillna(0)
+        fc_confounds_df = get_fc_confounds(confounds_df)
+        if not fc_confounds_df.empty:
+            # BOLD is pre-trimmed and fMRIPrep runs with --dummy-scans 0,
+            # so confounds TSV already matches trimmed BOLD length.
+            fc_confounds = fc_confounds_df.values
+            logger.info('FC confounds: %d columns', fc_confounds.shape[1])
+
     if is_surface_space(args.space):
         surface_space = resolve_surface_space(args.space)
-
-        # Load FC confounds if requested (for tissue signal regression)
-        fc_confounds = None
-        if args.residuals and args.fc_confounds:
-            confounds_df = pd.read_csv(run_files['confounds'], sep='\t', na_values=['n/a']).fillna(0)
-            fc_confounds_df = get_fc_confounds(confounds_df)
-            if not fc_confounds_df.empty:
-                # BOLD is pre-trimmed and fMRIPrep runs with --dummy-scans 0,
-                # so confounds TSV already matches trimmed BOLD length.
-                fc_confounds = fc_confounds_df.values
-                logger.info('FC confounds: %d columns', fc_confounds.shape[1])
 
         process_surface_run(
             run_files, design_matrix, contrasts, args, dirs,
@@ -558,6 +565,7 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
         process_volumetric_run(
             bold_data, design_matrix, contrasts, run_files, args, dirs,
             base_filename, tr, mask_key, compute_residuals,
+            fc_confounds=fc_confounds,
         )
 
     return True
