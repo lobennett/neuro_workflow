@@ -1,2 +1,15 @@
 subject	session	task	run	action	reason
 sub-s03	-	-	-	pass	test entry
+sub-s10	ses-05	task-goNogo	run-1	exclude	lev1_qa: junk-trial rate 30.6% > 30% threshold (omission/commission/rt_too_fast)
+sub-s19	ses-10	task-goNogo	run-1	exclude	lev1_qa: junk-trial rate 33.3% > 30% threshold (omission/commission/rt_too_fast)
+sub-s29	ses-10	task-goNogo	run-1	exclude	lev1_qa: junk-trial rate 30.6% > 30% threshold (omission/commission/rt_too_fast)
+sub-s394	ses-07	task-goNogo	run-1	exclude	lev1_qa: junk-trial rate 40.0% > 30% threshold (omission/commission/rt_too_fast)
+sub-s1058	ses-01	task-nBack	run-1	exclude	lev1_qa: junk-trial rate 40.3% > 30% threshold (omission/commission/rt_too_fast)
+sub-s1134	ses-08	task-flanker	run-1	exclude	lev1_qa: rank-deficient design matrix (trans_y_derivative1_power2 vs trans_z_derivative1_power2 |r|=0.9924)
+sub-s1175	ses-02	task-directedForgetting	run-1	exclude	lev1_qa: junk-trial rate 37.5% > 30% threshold (omission/commission/rt_too_fast)
+sub-s1175	ses-04	task-spatialTS	run-1	exclude	lev1_qa: junk-trial rate 32.1% > 30% threshold (omission/commission/rt_too_fast)
+sub-s1314	ses-05	task-goNogo	run-1	exclude	lev1_qa: junk-trial rate 34.4% > 30% threshold (omission/commission/rt_too_fast)
+sub-s1351	ses-06	task-nBack	run-1	exclude	lev1_qa: junk-trial rate 47.3% > 30% threshold (omission/commission/rt_too_fast)
+sub-s1351	ses-07	task-directedForgetting	run-1	exclude	lev1_qa: junk-trial rate 45.0% > 30% threshold (omission/commission/rt_too_fast)
+sub-s1351	ses-07	task-spatialTS	run-1	exclude	lev1_qa: junk-trial rate 44.9% > 30% threshold (omission/commission/rt_too_fast)
+sub-s1445	ses-04	task-goNogo	run-1	exclude	lev1_qa: junk-trial rate 36.6% > 30% threshold (omission/commission/rt_too_fast)
