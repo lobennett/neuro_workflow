@@ -13,7 +13,7 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 from nilearn.glm.first_level import run_glm
-from nilearn.glm.contrasts import compute_contrast
+from nilearn.glm.contrasts import compute_contrast, expression_to_contrast_vector
 
 from neuro_workflow.analysis.task_config.loader import DUMMY_SCANS
 
@@ -85,6 +85,61 @@ def find_freesurfer_subjects_dir(fmriprep_dir: Path) -> Optional[Path]:
         if candidate.exists():
             return candidate
     return None
+
+
+def resolve_freesurfer_subject(
+    canonical_subject: str,
+    subjects_dir: Union[str, Path],
+) -> str:
+    """Resolve canonical subject id to actual FreeSurfer SUBJECTS_DIR name.
+
+    fMRIPrep's longitudinal/multi-session anat workflow creates per-session
+    FS subjects named ``sub-X_ses-Y`` (one per session that contributed a
+    T1w), not the plain canonical ``sub-X``. Anywhere we shell out to a
+    FreeSurfer binary (``mri_surf2surf``, ``mris_euler_number``, etc.) we
+    have to pass the on-disk name or the binary will fail with ``failed to
+    open GIFTI XML file '/.../sub-X/surf/lh.sphere.reg.gii'``.
+
+    Resolution order:
+      1. If ``<subjects_dir>/<canonical_subject>`` exists, use it (single-anat
+         case — the plain ``sub-X`` directory is on disk).
+      2. Otherwise glob ``<subjects_dir>/<canonical_subject>_ses-*`` and
+         return the first match.  Subjects with multiple FS recons (one per
+         anat session) almost always have a single best recon and any of the
+         per-session entries works for ``--s`` operations that only need
+         the surface registration files.
+      3. Raise ``FileNotFoundError`` with a clear message if no FS subject
+         is found — silently substituting the canonical name would yield
+         the opaque "could not read surface" error far downstream.
+
+    Args:
+        canonical_subject: BIDS-style canonical subject id, e.g. ``sub-s10``.
+        subjects_dir: FreeSurfer SUBJECTS_DIR (output of
+            ``find_freesurfer_subjects_dir``).
+
+    Returns:
+        The on-disk FreeSurfer subject name (e.g. ``sub-s10_ses-09``).
+
+    Raises:
+        FileNotFoundError: If no matching FreeSurfer subject dir exists.
+    """
+    subjects_dir = Path(subjects_dir)
+
+    direct = subjects_dir / canonical_subject
+    if direct.is_dir():
+        return canonical_subject
+
+    session_matches = sorted(subjects_dir.glob(f'{canonical_subject}_ses-*'))
+    if session_matches:
+        return session_matches[0].name
+
+    raise FileNotFoundError(
+        f'No FreeSurfer subject directory found for {canonical_subject!r} '
+        f'under {subjects_dir}.  Looked for: {canonical_subject} and '
+        f'{canonical_subject}_ses-*.  Surface smoothing and other operations '
+        f'that shell out to FreeSurfer require this to exist; check that '
+        f'fMRIPrep completed the surface_recon_wf for this subject.'
+    )
 
 
 def smooth_surface_gifti(
@@ -243,12 +298,15 @@ class SurfaceGLM:
         # Parse contrast definition into contrast vector
         contrast_vector = self._parse_contrast(contrast_def)
 
-        # Use nilearn's compute_contrast which properly handles AR(1) results
+        # Use nilearn's compute_contrast which properly handles AR(1) results.
+        # nilearn 0.13 renamed `contrast_type=` → `stat_type=`; keep this as
+        # `stat_type` to stay compatible with the installed version (pinned
+        # in pyproject.toml) and to avoid silent t-vs-F default switches.
         contrast_result = compute_contrast(
             self.labels_,
             self.results_,
             contrast_vector,
-            contrast_type='t',
+            stat_type='t',
         )
 
         # Extract results from nilearn's Contrast object
@@ -274,50 +332,23 @@ class SurfaceGLM:
             return results.get(output_type)
 
     def _parse_contrast(self, contrast_def: str) -> np.ndarray:
-        """Parse contrast definition string into contrast vector.
+        """Parse a contrast formula into a vector using nilearn's parser.
 
-        Args:
-            contrast_def: String like 'go-stop', 'go - stop', or 'go + stop - 2*baseline'
+        Routes through ``expression_to_contrast_vector`` — the same function used
+        by the volumetric path (``FirstLevelModel.compute_contrast``) and by the
+        VIF code in ``quality_control.est_contrast_vifs`` (which matches Mumford's
+        upstream ``jmumford/vif_contrasts``). Using the same parser everywhere
+        guarantees surface and volumetric analyses produce identical contrast
+        vectors for any formula, including fractional coefficients (``1/3 * go``)
+        and parenthesized groupings (``0.5 * (a + b - c - d)``).
 
-        Returns:
-            Contrast vector of shape (n_regressors,)
+        Raises a ValueError if any term references a regressor not in
+        ``self.regressor_names_`` — failing loudly is safer than silently
+        emitting a zero-weighted contrast.
         """
-        import re
-
-        contrast_vector = np.zeros(len(self.regressor_names_))
-
-        # Normalize: ensure spaces around + and - for consistent parsing
-        # First, add spaces around operators (handles both 'a-b' and 'a - b')
-        normalized = re.sub(r'(?<=[a-zA-Z0-9_])\s*-\s*(?=[a-zA-Z0-9_])', ' - ', contrast_def)
-        normalized = re.sub(r'(?<=[a-zA-Z0-9_])\s*\+\s*(?=[a-zA-Z0-9_])', ' + ', normalized)
-
-        # Now replace ' - ' with ' + -' for easier splitting
-        normalized = normalized.replace(' - ', ' + -')
-        terms = [t.strip() for t in normalized.split('+')]
-
-        for term in terms:
-            if not term:
-                continue
-
-            # Parse coefficient and regressor name
-            # Match optional coefficient (including negative), optional *, then regressor name
-            match = re.match(r'^(-?\d*\.?\d*)\s*\*?\s*(.+)$', term.strip())
-            if match:
-                coef_str, regressor = match.groups()
-                coef = float(coef_str) if coef_str and coef_str != '-' else (
-                    -1.0 if coef_str == '-' else 1.0
-                )
-            else:
-                coef = 1.0
-                regressor = term.strip()
-
-            # Find regressor in labels
-            regressor = regressor.strip()
-            if regressor in self.regressor_names_:
-                idx = self.regressor_names_.index(regressor)
-                contrast_vector[idx] = coef
-
-        return contrast_vector
+        return np.asarray(
+            expression_to_contrast_vector(contrast_def, self.regressor_names_)
+        )
 
 
 class SurfaceResult:

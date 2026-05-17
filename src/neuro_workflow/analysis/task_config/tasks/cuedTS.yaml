@@ -61,7 +61,7 @@ regressors:
 
   break_with_performance_feedback:
     amplitude: 1
-    duration: 1
+    duration: 10
     subset: "trial_id == 'break_with_performance_feedback'"
     events_query_min_coverage: 0.0
 

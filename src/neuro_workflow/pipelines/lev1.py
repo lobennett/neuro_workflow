@@ -56,6 +56,7 @@ class Lev1Pipeline:
         parser.add_argument("--residuals", action="store_true", default=False, help="Compute task-regressed residuals")
         parser.add_argument("--fc-confounds", action="store_true", default=False, help="Regress tissue confounds from residuals")
         parser.add_argument("--skip-existing", action="store_true", default=False, help="Skip runs where outputs already exist")
+        parser.add_argument("--skip-qc-plots", action="store_true", default=False, help="Skip per-contrast surface QC plots (the .func.gii files are still saved)")
         parser.add_argument("--nthreads", type=int, default=None, help=f"CPUs per task (default: {self.default_resources['nthreads']})")
         parser.add_argument("--mem-gb", type=int, default=None, help=f"Memory in GB (default: {self.default_resources['mem_gb']})")
         parser.add_argument("--time", default=None, help=f"SLURM time limit (default: {self.default_resources['time']})")
@@ -113,6 +114,8 @@ class Lev1Pipeline:
             extra_flags.append("--fc-confounds")
         if args.skip_existing:
             extra_flags.append("--skip-existing")
+        if getattr(args, "skip_qc_plots", False):
+            extra_flags.append("--skip-qc-plots")
 
         mail_line = build_mail_line(dataset_config)
 

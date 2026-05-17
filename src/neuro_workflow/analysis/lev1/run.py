@@ -34,6 +34,7 @@ from neuro_workflow.analysis.lev1.processing.fixed_effects import compute_subjec
 from neuro_workflow.analysis.lev1.processing.glm import (
     fit_run_glm,
     handle_zero_variance_columns,
+    validate_design_matrix,
     validate_glm_inputs,
 )
 from neuro_workflow.analysis.lev1.processing.masks import MaskProcessor
@@ -45,6 +46,7 @@ from neuro_workflow.analysis.lev1.processing.surface_data import (
     get_surface_scan_info,
     load_surface_data,
     plot_surface_stat_map,
+    resolve_freesurfer_subject,
     smooth_surface_gifti,
 )
 from neuro_workflow.analysis.task_config.loader import get_task_contrasts, get_task_parameters
@@ -179,6 +181,15 @@ def get_parser() -> argparse.ArgumentParser:
              'and lev2 will filter it out (default: 2).',
     )
     parser.add_argument(
+        '--skip-qc-plots',
+        action='store_true',
+        default=False,
+        help='Skip per-contrast surface QC plots (matplotlib renders ~10 plots '
+        'per hemisphere per run; for a 46-subject cohort this adds many hours '
+        'of wall time with no impact on the science). The contrast .func.gii '
+        'files are still saved and can be re-plotted offline.',
+    )
+    parser.add_argument(
         '--verbose',
         action='store_true',
         default=False,
@@ -289,9 +300,14 @@ def setup_masks(files, args, dirs):
 
 
 def process_volumetric_run(
-    bold_data, design_matrix, contrasts, run_files, args, dirs, base_filename, tr, mask_key, compute_residuals
+    bold_data, design_matrix, contrasts, run_files, args, dirs, base_filename, tr, mask_key, compute_residuals,
+    fc_confounds=None,
 ):
     """Fit volumetric GLM and compute contrasts (and optional residuals).
+
+    ``fc_confounds``, when provided, is regressed from the post-GLM residuals
+    via nilearn.signal.clean — matching the surface path so that
+    ``--fc-confounds`` produces FC-quality residuals in either space.
 
     Returns:
         Dict of contrast results.
@@ -320,7 +336,7 @@ def process_volumetric_run(
     if compute_residuals:
         residuals_result = process_run_residuals(
             fitted_glm, dirs['task_residuals'], base_filename, tr,
-            mask_img=run_mask,
+            mask_img=run_mask, fc_confounds=fc_confounds,
         )
         if not residuals_result['success']:
             logger.warning('Residuals processing had issues: %s', residuals_result['errors'])
@@ -339,14 +355,31 @@ def process_surface_run(
     """
     all_hemisphere_results = {}
 
-    # Find FreeSurfer subjects dir if smoothing is requested
+    # Find FreeSurfer subjects dir + resolve the FS-subject name used by
+    # mri_surf2surf. The choice depends on the BOLD's surface space:
+    #
+    #   fsaverage / fsaverage6  -> use 'fsaverage6' (40962 v/hemi). The BOLD
+    #                              has been resampled to the group template;
+    #                              smoothing must operate on that mesh.
+    #   fsnative                -> use the per-subject FS recon (resolved via
+    #                              `resolve_freesurfer_subject` because
+    #                              fmriprep's longitudinal anat workflow
+    #                              names recons `sub-X_ses-Y`).
+    #
+    # Passing the per-subject recon while smoothing fsaverage6 BOLD produces
+    # the dimension-mismatch error (e.g. 131403 vs 40962 vertices).
     subjects_dir = None
+    fs_subject = args.subj_id
     if args.smoothing_fwhm is not None:
         subjects_dir = find_freesurfer_subjects_dir(Path(args.fmriprep_dir))
         if subjects_dir is None:
             raise FileNotFoundError(
                 'Cannot find FreeSurfer subjects dir for surface smoothing'
             )
+        if surface_space in ('fsaverage', 'fsaverage6'):
+            fs_subject = 'fsaverage6'
+        else:
+            fs_subject = resolve_freesurfer_subject(args.subj_id, subjects_dir)
 
     for hemisphere, bold_key in [('L', 'left_surface'), ('R', 'right_surface')]:
         bold_path = run_files[bold_key]
@@ -357,13 +390,26 @@ def process_surface_run(
             with tempfile.TemporaryDirectory() as tmp_dir:
                 smoothed_path = Path(tmp_dir) / f'smoothed_hemi-{hemisphere}.func.gii'
                 smooth_surface_gifti(
-                    bold_path, smoothed_path, args.subj_id,
+                    bold_path, smoothed_path, fs_subject,
                     hemisphere, args.smoothing_fwhm, subjects_dir,
                 )
                 surface_data = load_surface_data(smoothed_path, dummy_scans=dummy_scans)
         else:
             surface_data = load_surface_data(bold_path, dummy_scans=dummy_scans)
         logger.debug('Surface data shape: %s', surface_data.shape)
+
+        # Validate inputs before fitting. The volumetric branch (process_volumetric_run)
+        # has called validate_glm_inputs for a long time; the surface branch
+        # historically had no equivalent and would have silently propagated NaN /
+        # mis-shaped designs through nilearn run_glm into garbage contrast maps.
+        # We validate once per hemisphere because each hemisphere produces its own
+        # surface_data and the row-count check needs that array's first dim.
+        validation = validate_design_matrix(design_matrix, n_scans=surface_data.shape[0])
+        if not validation['is_valid']:
+            raise ValueError(
+                f'Surface GLM validation failed (hemi-{hemisphere}): '
+                f'{validation["errors"]}'
+            )
 
         surface_glm = SurfaceGLM(t_r=tr)
         surface_glm.fit(surface_data, design_matrix)
@@ -395,7 +441,13 @@ def process_surface_run(
 
         logger.info('Saved %d contrasts for hemisphere %s', len(contrast_results), hemisphere)
 
-        # Generate QC plots
+        # Generate QC plots (skipped under --skip-qc-plots; matplotlib renders
+        # are slow at cohort scale — ~10 plots × 2 hemis × N runs adds many
+        # hours of wall time per subject. The .func.gii files are persisted
+        # above and can be re-plotted offline if review is needed.)
+        if getattr(args, 'skip_qc_plots', False):
+            logger.debug('Skipping QC plots for hemisphere %s (--skip-qc-plots)', hemisphere)
+            continue
         qc_count = 0
         for contrast_name, paths in contrast_results.items():
             try:
@@ -532,19 +584,21 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
 
     base_filename = f'{args.subj_id}_{session}_task-{args.task_name}_{run}'
 
+    # Load FC confounds once if requested — used by both surface and
+    # volumetric residual paths so `--fc-confounds` has identical semantics
+    # in either space (previously volumetric silently ignored the flag).
+    fc_confounds = None
+    if args.residuals and args.fc_confounds:
+        confounds_df = pd.read_csv(run_files['confounds'], sep='\t', na_values=['n/a']).fillna(0)
+        fc_confounds_df = get_fc_confounds(confounds_df)
+        if not fc_confounds_df.empty:
+            # BOLD is pre-trimmed and fMRIPrep runs with --dummy-scans 0,
+            # so confounds TSV already matches trimmed BOLD length.
+            fc_confounds = fc_confounds_df.values
+            logger.info('FC confounds: %d columns', fc_confounds.shape[1])
+
     if is_surface_space(args.space):
         surface_space = resolve_surface_space(args.space)
-
-        # Load FC confounds if requested (for tissue signal regression)
-        fc_confounds = None
-        if args.residuals and args.fc_confounds:
-            confounds_df = pd.read_csv(run_files['confounds'], sep='\t', na_values=['n/a']).fillna(0)
-            fc_confounds_df = get_fc_confounds(confounds_df)
-            if not fc_confounds_df.empty:
-                # BOLD is pre-trimmed and fMRIPrep runs with --dummy-scans 0,
-                # so confounds TSV already matches trimmed BOLD length.
-                fc_confounds = fc_confounds_df.values
-                logger.info('FC confounds: %d columns', fc_confounds.shape[1])
 
         process_surface_run(
             run_files, design_matrix, contrasts, args, dirs,
@@ -558,6 +612,7 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
         process_volumetric_run(
             bold_data, design_matrix, contrasts, run_files, args, dirs,
             base_filename, tr, mask_key, compute_residuals,
+            fc_confounds=fc_confounds,
         )
 
     return True

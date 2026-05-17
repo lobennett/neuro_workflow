@@ -102,23 +102,27 @@ def _convert_regressor_config(yaml_regressors: Dict) -> Dict[str, Dict[str, str]
     """Convert YAML regressor format to the internal format used by design.py.
 
     YAML format:
-        amplitude: 1 | column_name
-        duration: 1 | column_name
+        amplitude: 1 | 10 | <column_name>
+        duration: 1 | 10 | <column_name>
         subset: null | query_string
 
     Internal format (used by create_regressor):
-        amplitude_column: 'constant_1_column' | column_name
-        duration_column: 'constant_1_column' | column_name
+        amplitude_column: 'constant_{N}_column' | <column_name>
+        duration_column: 'constant_{N}_column' | <column_name>
         subset: None | query_string
+
+    The ``constant_{N}_column`` sentinel encodes the literal numeric value so
+    a YAML ``duration: 10`` is preserved end-to-end (instead of collapsing to
+    1s). ``create_regressor`` parses the value back out by regex. Plain
+    strings are passed through as events-column names.
     """
     converted = {}
     for name, cfg in yaml_regressors.items():
         amp = cfg['amplitude']
         dur = cfg['duration']
 
-        # Convert integer/float 1 to 'constant_1_column' sentinel
-        amp_col = 'constant_1_column' if isinstance(amp, (int, float)) else str(amp)
-        dur_col = 'constant_1_column' if isinstance(dur, (int, float)) else str(dur)
+        amp_col = _encode_numeric_or_column(amp)
+        dur_col = _encode_numeric_or_column(dur)
 
         # subset: null in YAML becomes None in Python
         subset = cfg.get('subset')
@@ -130,6 +134,24 @@ def _convert_regressor_config(yaml_regressors: Dict) -> Dict[str, Dict[str, str]
         }
 
     return converted
+
+
+def _encode_numeric_or_column(value) -> str:
+    """Encode a YAML numeric value as a ``constant_{N}_column`` sentinel, or
+    pass a column-name string through unchanged.
+
+    Integer-valued floats render as integers (``1.0 -> 'constant_1_column'``)
+    so the sentinel stays canonical across float vs int YAML literals.
+    """
+    if isinstance(value, bool):
+        # Treat bools as numeric — Python's True/False are int subclasses,
+        # so explicit guard before the (int, float) check below.
+        return f'constant_{int(value)}_column'
+    if isinstance(value, (int, float)):
+        if isinstance(value, float) and value.is_integer():
+            value = int(value)
+        return f'constant_{value}_column'
+    return str(value)
 
 
 def list_available_tasks() -> List[str]:

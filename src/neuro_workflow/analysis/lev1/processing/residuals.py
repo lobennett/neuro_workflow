@@ -205,6 +205,7 @@ def process_run_residuals(
     tr: float = 1.49,
     filtering_params: Optional[dict] = None,
     mask_img: Optional[Union[str, Path]] = None,
+    fc_confounds: Optional[np.ndarray] = None,
 ) -> dict:
     """Process and save residuals for a single run.
 
@@ -213,8 +214,16 @@ def process_run_residuals(
         output_dir: Directory to save residuals
         base_filename: Base filename for saved files
         tr: Repetition time in seconds
-        filtering_params: Optional filtering parameters
+        filtering_params: Optional filtering parameters.  If provided, its
+            ``confounds`` entry takes precedence over ``fc_confounds`` (callers
+            who pass a full dict are responsible for what's in it).
         mask_img: Optional brain mask
+        fc_confounds: Optional tissue/global-signal confounds (per ``get_fc_confounds``)
+            to regress from the residuals during filtering.  Matches the
+            ``process_surface_residuals`` signature so ``--fc-confounds``
+            behaves symmetrically for volumetric and surface paths — previously
+            this was silently ignored by the volumetric branch, producing
+            task-only residuals when the user expected FC-quality residuals.
 
     Returns:
         Dictionary with processing results and saved paths
@@ -226,17 +235,22 @@ def process_run_residuals(
     """
     processor = ResidualsProcessor(fitted_glm, tr)
 
-    # Default filtering parameters
+    # Default filtering parameters.  If the caller didn't override
+    # filtering_params and supplied fc_confounds, plumb them through so the
+    # tissue/global-signal confounds are regressed during nilearn's
+    # clean_signal pass.
     if filtering_params is None:
         filtering_params = {
             'low_pass': 0.1,
             'high_pass': 0.01,
             # -- Correction --
-            # FirstLevelModel already removed trends and confounds
-            # Thus these should be set to False to avoid doing this again
+            # FirstLevelModel already removed trends and task confounds.
+            # `confounds` here are the FC-specific confounds (CSF, WM,
+            # global signal + derivatives) applied to the post-GLM residuals,
+            # which is the standard pre-FC denoising step.
             'standardize': False,
             'detrend': False,
-            'confounds': None,
+            'confounds': fc_confounds,
         }
 
     results = {

@@ -13,6 +13,10 @@ LINE="$(sed -n "${{SLURM_ARRAY_TASK_ID}}p" "{job_list_file}")"
 read -r SUBJ_ID TASK_NAME <<< "$LINE"
 
 module load uv
+# Surface smoothing (--smoothing-fwhm with a surface --space) shells out to
+# FreeSurfer's mri_surf2surf; load FreeSurfer so it's on PATH.  No-op for
+# volumetric/MNI runs that don't smooth on the surface.
+module load biology freesurfer/8.1.0
 
 uv --directory "{neuro_workflow_dir}" run python -m neuro_workflow.analysis.lev1.run \
     --subj-id "$SUBJ_ID" \
