@@ -162,7 +162,7 @@ def z_alpha_two_sided(alpha: float) -> float:
 def compute_prevalence(
     zmaps: np.ndarray,
     alpha: float = 0.05,
-    z_threshold: Optional[float] = None,
+    z_threshold: Optional[float | np.ndarray] = None,
     two_sided: bool = True,
     level: float = 0.96,
 ) -> PrevalenceResult:
@@ -171,18 +171,21 @@ def compute_prevalence(
     Args:
         zmaps: ``(n_subjects, n_vertices)`` array of fixed-effects z-stats.
         alpha: within-subject NHST false-positive rate (default 0.05).
-        z_threshold: optional explicit z critical value.  If None, derived
-            from ``alpha`` via the standard normal — see
-            :func:`z_alpha_two_sided`.  Pass an explicit, FWER-corrected
-            z-threshold (e.g. from a permutation max-statistic) to apply
-            the strong-control assumption the Ince paper requires.
+        z_threshold: optional explicit z critical value.  May be a scalar
+            (same threshold for every subject) or a ``(n_subjects,)``
+            array (per-subject FWER-corrected thresholds derived e.g.
+            from sign-flip permutations — the strong-control variant the
+            Ince paper requires).  If None, derived from ``alpha`` via
+            the standard normal — see :func:`z_alpha_two_sided`.
         two_sided: when True (default) flag vertices with ``|z| > z_α``;
             when False, only ``z > z_α`` (one-sided positive direction).
         level: HPDI mass level (default 0.96, matching the paper).
 
     Returns:
         :class:`PrevalenceResult` with MAP, HPDI bounds, k counts, and
-        bookkeeping metadata.
+        bookkeeping metadata.  The stored ``z_threshold`` is the scalar
+        threshold when provided as such, or the mean over subjects when
+        an array was passed.
     """
     if zmaps.ndim != 2:
         raise ValueError(f'zmaps must be 2-D (n_subjects, n_vertices); got shape {zmaps.shape}')
@@ -192,8 +195,24 @@ def compute_prevalence(
             f'Bayesian prevalence is meaningless for n={n_subjects} subjects; '
             f'need at least 2.'
         )
+
+    # Normalise z_threshold to a (n_subjects, 1) column array so the
+    # downstream comparison broadcasts identically for scalar and per-
+    # subject inputs.
     if z_threshold is None:
-        z_threshold = z_alpha_two_sided(alpha)
+        z_thr_arr = np.full(n_subjects, z_alpha_two_sided(alpha), dtype=np.float64)
+        z_thr_stored = float(z_thr_arr[0])
+    elif np.isscalar(z_threshold):
+        z_thr_arr = np.full(n_subjects, float(z_threshold), dtype=np.float64)
+        z_thr_stored = float(z_threshold)
+    else:
+        z_thr_arr = np.asarray(z_threshold, dtype=np.float64).ravel()
+        if z_thr_arr.shape[0] != n_subjects:
+            raise ValueError(
+                f'Per-subject z_threshold length must equal n_subjects '
+                f'({n_subjects}); got length {z_thr_arr.shape[0]}'
+            )
+        z_thr_stored = float(z_thr_arr.mean())
 
     # Per-vertex significance: handle NaN-bearing vertices (subjects that
     # had no valid data at some surface location).  A vertex with NaN in
@@ -201,9 +220,9 @@ def compute_prevalence(
     # silently counting 0/n.
     invalid_mask = ~np.isfinite(zmaps).all(axis=0)
     if two_sided:
-        sig = np.abs(zmaps) > z_threshold
+        sig = np.abs(zmaps) > z_thr_arr[:, None]
     else:
-        sig = zmaps > z_threshold
+        sig = zmaps > z_thr_arr[:, None]
     # NaN inputs would have produced False under the comparison; force the
     # invalid vertices to NaN downstream rather than counting them as 0.
     k_per_vertex = np.where(invalid_mask, -1, sig.sum(axis=0).astype(int))
@@ -233,7 +252,7 @@ def compute_prevalence(
         k_count=np.where(invalid_mask, -1, k_per_vertex),
         n_subjects=n_subjects,
         alpha=alpha,
-        z_threshold=float(z_threshold),
+        z_threshold=z_thr_stored,
         level=level,
         n_vertices_invalid=n_invalid,
     )

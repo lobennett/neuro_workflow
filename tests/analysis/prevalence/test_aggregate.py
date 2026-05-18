@@ -191,6 +191,34 @@ def test_compute_prevalence_accepts_explicit_z_threshold():
     assert res_custom.k_count[0] == 0
 
 
+def test_compute_prevalence_accepts_per_subject_z_threshold_array():
+    """Per-subject thresholds let each subject pass at its own FWER-corrected
+    level (matching the Ince 2021 strong-control prescription)."""
+    n_subjects = 5
+    z = np.zeros((n_subjects, 3))
+    z[:, 0] = 4.0   # all subjects have z=4 at vertex 0
+    z[:, 1] = 2.5   # all subjects have z=2.5 at vertex 1
+    z[:, 2] = 0.0
+    # Subject-specific thresholds: 3 subjects pass z=4 at threshold 3.0;
+    # the other 2 have threshold 5.0 (don't pass).  At vertex 1 (z=2.5),
+    # only the 3 with threshold 3.0 also fail (2.5 < 3.0), and the 2 with
+    # threshold 5.0 also fail.  k for vertex 0 should be 3; vertex 1 should
+    # be 0.
+    per_subject = np.array([3.0, 3.0, 3.0, 5.0, 5.0])
+    res = compute_prevalence(z, z_threshold=per_subject)
+    assert res.k_count[0] == 3
+    assert res.k_count[1] == 0
+    assert res.k_count[2] == 0
+    # Stored threshold is the mean over subjects.
+    np.testing.assert_allclose(res.z_threshold, np.mean(per_subject), rtol=1e-12)
+
+
+def test_compute_prevalence_per_subject_threshold_wrong_length_raises():
+    z = np.zeros((4, 2))
+    with pytest.raises(ValueError, match='Per-subject z_threshold length'):
+        compute_prevalence(z, z_threshold=np.array([1.0, 2.0, 3.0]))
+
+
 # ---------------------------------------------------------------------------
 # save_prevalence_gifti
 # ---------------------------------------------------------------------------
