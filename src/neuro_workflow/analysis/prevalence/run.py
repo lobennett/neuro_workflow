@@ -69,6 +69,12 @@ def _parse_args(argv=None) -> argparse.Namespace:
     p.add_argument('--subjects-file', type=Path, default=None,
                    help='Optional file listing sub-X ids to include (one per line). '
                         'When omitted, every subject in lev1-root with a matching contrast file is used.')
+    p.add_argument('--subject-thresholds-tsv', type=Path, default=None,
+                   help='Optional TSV from neuro_workflow.analysis.prevalence.permute_run '
+                        'with one row per subject and a z_threshold column.  When '
+                        'supplied, each subject\'s row is thresholded at its own '
+                        'permutation-derived FWER-corrected z (Ince 2021 strong-control). '
+                        'Overrides --alpha and --z-threshold.')
     p.add_argument('--hemispheres', nargs='+', default=['L', 'R'],
                    help='Which hemispheres to process (default: L R)')
     p.add_argument('--verbose', action='store_true', default=False,
@@ -88,6 +94,17 @@ def _load_subjects(path: Path | None) -> list[str] | None:
     return out
 
 
+def _load_subject_thresholds(path: Path) -> dict[str, float]:
+    """Read subject → z_threshold from a TSV produced by permute_run.py."""
+    import csv
+    out: dict[str, float] = {}
+    with path.open() as fh:
+        reader = csv.DictReader(fh, delimiter='\t')
+        for row in reader:
+            out[row['subject']] = float(row['z_threshold'])
+    return out
+
+
 def main(argv=None) -> int:
     args = _parse_args(argv)
     logging.basicConfig(
@@ -99,6 +116,18 @@ def main(argv=None) -> int:
     subjects = _load_subjects(args.subjects_file)
     if subjects is not None:
         logger.info('Restricting to %d subjects from %s', len(subjects), args.subjects_file)
+
+    subject_thresholds: dict[str, float] | None = None
+    if args.subject_thresholds_tsv is not None:
+        subject_thresholds = _load_subject_thresholds(args.subject_thresholds_tsv)
+        logger.info(
+            'Per-subject thresholds loaded for %d subjects from %s '
+            '(min=%.3f median=%.3f max=%.3f)',
+            len(subject_thresholds), args.subject_thresholds_tsv,
+            min(subject_thresholds.values()),
+            sorted(subject_thresholds.values())[len(subject_thresholds) // 2],
+            max(subject_thresholds.values()),
+        )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -118,10 +147,24 @@ def main(argv=None) -> int:
         zmaps, subj_ids = stack_subject_zmaps(paths)
         logger.info('Stacked %d subjects × %d vertices', *zmaps.shape)
 
+        # Per-subject threshold path: build a (n_subjects,) z_threshold
+        # array from the TSV, in the same order as the stacked subjects.
+        z_thr_arg: float | list[float] | None
+        if subject_thresholds is not None:
+            missing = [s for s in subj_ids if s not in subject_thresholds]
+            if missing:
+                raise SystemExit(
+                    f'Subject thresholds TSV is missing rows for '
+                    f'{len(missing)} subjects in the lev1 input: {missing[:5]}...'
+                )
+            z_thr_arg = [subject_thresholds[s] for s in subj_ids]
+        else:
+            z_thr_arg = args.z_threshold
+
         result = compute_prevalence(
             zmaps,
             alpha=args.alpha,
-            z_threshold=args.z_threshold,
+            z_threshold=z_thr_arg,
             two_sided=args.two_sided,
             level=args.level,
         )
