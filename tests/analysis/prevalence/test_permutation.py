@@ -1,7 +1,7 @@
 """Tests for sign-flip permutation derivation of per-subject FWER z-thresholds.
 
 These tests cover the math the Ince 2021 framework relies on for "strong
-control" of within-subject FPR.  The within-subject test is a permutation
+control" of within-subject false-positive rate.  The within-subject test is a permutation
 sign-flip of run-level β estimates that mirrors the unweighted fixed-
 effects combination used by ``compute_surface_fixed_effects``:
 

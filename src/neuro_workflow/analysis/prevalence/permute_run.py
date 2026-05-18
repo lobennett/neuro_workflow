@@ -65,7 +65,7 @@ def _parse_args(argv=None) -> argparse.Namespace:
     p.add_argument('--n-permutations', type=int, default=1000,
                    help='Number of sign-flip permutations per subject (default: 1000).')
     p.add_argument('--alpha', type=float, default=0.05,
-                   help='Within-subject FPR level (default: 0.05).')
+                   help='Within-subject false-positive rate (default: 0.05).')
     p.add_argument('--output-tsv', required=True, type=Path,
                    help='Where to write the per-subject thresholds TSV.')
     p.add_argument('--subjects-file', type=Path, default=None,
