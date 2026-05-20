@@ -27,6 +27,7 @@ import neuro_workflow.pipelines.lev2  # noqa: F401
 import neuro_workflow.pipelines.prep_mshbm  # noqa: F401
 import neuro_workflow.pipelines.mshbm  # noqa: F401
 import neuro_workflow.pipelines.bidsify  # noqa: F401
+import neuro_workflow.pipelines.xcpd  # noqa: F401
 
 # Import QA modules to trigger auto-registration
 import neuro_workflow.qa.global_signal  # noqa: F401
