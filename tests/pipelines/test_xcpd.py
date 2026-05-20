@@ -10,6 +10,7 @@ def make_args(**overrides):
     defaults = {
         "version": "26.0.2",
         "fmriprep_version": "25.2.4",
+        "fmriprep_dir_override": None,
         "xcpd_args": "",
         "fs_license": "~/license.txt",
         "nthreads": None,
@@ -20,6 +21,14 @@ def make_args(**overrides):
     }
     defaults.update(overrides)
     return Namespace(**defaults)
+
+
+def test_build_context_fmriprep_dir_override(tmp_path):
+    p = XcpdPipeline()
+    config = make_config(tmp_path)
+    args = make_args(fmriprep_dir_override="/scratch/fake/xcp_input_view")
+    ctx = p.build_context("discovery_xcpd", config, args)
+    assert ctx["fmriprep_dir"] == "/scratch/fake/xcp_input_view"
 
 
 def make_config(tmp_path):
