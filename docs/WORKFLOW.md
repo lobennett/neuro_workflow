@@ -156,6 +156,32 @@ singularity run -B /scratch/users/logben \
 uv run neuro-run submit fmriprep discovery --dummy-scans 0
 ```
 
+## Step 10. XCP-D post-fMRIPrep denoising
+
+Once fMRIPrep is complete for a subject, run XCP-D 26.0.2 to produce
+denoised BOLD + connectivity outputs. Uses the canonical flag set from
+the lab's PFM-compare project (Gracie Grimsrud's `run_xcpd.sh`).
+
+Per-subject resources: bigmem partition, 384 GB (16 cpus x 24 GB), 24 h
+walltime cap. Throttle the array to 8 concurrent jobs to be polite to the
+lab queue.
+
+```bash
+uv run neuro-run submit xcpd discovery_xcpd --version 26.0.2
+uv run neuro-run submit xcpd validation_xcpd --version 26.0.2
+```
+
+bigmem QOS caps account submissions at 20 queued+running. For the
+41-subject validation cohort, submit progressively as discovery jobs
+drain -- `/scratch/users/logben/xcpd_progressive_submit.sh` is a watcher
+that polls every 10 minutes and submits the next sub-array when slots
+open.
+
+Outputs land at `<bids_dir>/derivatives/xcp_d_26.0.2/sub-<S>/`.
+
+If a subject times out at 24 h, simply resubmit -- nipype reads its cached
+work dir at `$SCRATCH/work/xcpd_<dataset>_26.0.2/sub-<S>/` and resumes.
+
 ---
 
 ## Key files
