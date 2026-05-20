@@ -21,6 +21,12 @@ class XcpdPipeline:
         parser.add_argument("--version", default=None, help="XCP-D version tag (e.g. 26.0.2)")
         parser.add_argument("--fmriprep-version", default="25.2.4",
                             help="fMRIPrep derivatives version to consume (default: 25.2.4)")
+        parser.add_argument(
+            "--fmriprep-dir-override",
+            default=None,
+            help="Path to bind as /data instead of <bids_dir>/derivatives/fmriprep_<version>/. "
+                 "Use to point XCP-D at a preflight symlink view that omits T2w-only anat dirs.",
+        )
         parser.add_argument("--xcpd-args", default="", help="Additional XCP-D arguments (appended to hardcoded flags)")
         parser.add_argument("--fs-license", default="~/license.txt", help="FreeSurfer license file")
         parser.add_argument("--nthreads", type=int, default=None, help="CPUs per task (default: 16)")
@@ -47,7 +53,8 @@ class XcpdPipeline:
         scratch = os.environ.get("SCRATCH", "/tmp")
         work_dir = f"{scratch}/work/xcpd_{dataset_name}_{args.version}"
 
-        fmriprep_dir = f"{dataset_config['bids_dir']}/derivatives/fmriprep_{args.fmriprep_version}"
+        fmriprep_dir = getattr(args, "fmriprep_dir_override", None) or \
+            f"{dataset_config['bids_dir']}/derivatives/fmriprep_{args.fmriprep_version}"
         output_dir = f"{dataset_config['bids_dir']}/derivatives/xcp_d_{args.version}"
         log_dir = f"{output_dir}/logs"
 
