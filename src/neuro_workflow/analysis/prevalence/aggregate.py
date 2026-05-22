@@ -59,9 +59,10 @@ class PrevalenceResult:
     k_count: np.ndarray        # int count of significant subjects per vertex
     n_subjects: int            # total subjects contributing to a vertex
     alpha: float               # within-subject false-positive rate used
-    z_threshold: float         # corresponding z-stat threshold
+    z_threshold: float         # corresponding z-stat threshold (NaN if FDR)
     level: float               # HPDI mass level (e.g. 0.96)
     n_vertices_invalid: int    # vertices marked NaN due to subject NaN
+    fdr_q: Optional[float] = None  # BH-FDR q if per-subject FDR was used
 
 
 # ---------------------------------------------------------------------------
@@ -159,34 +160,83 @@ def z_alpha_two_sided(alpha: float) -> float:
     return float(norm.isf(alpha / 2.0))
 
 
+def _bh_fdr_significance(
+    zmaps: np.ndarray,
+    q: float,
+    two_sided: bool,
+) -> np.ndarray:
+    """Per-subject Benjamini–Hochberg FDR thresholding across vertices.
+
+    Converts each subject's z-stats to p-values (two-sided via ``|z|`` or
+    one-sided positive), then applies BH-FDR at level ``q`` across that
+    subject's finite vertices.  Returns a boolean ``(n_subj, n_vert)``
+    mask; NaN vertices are False (caller invalidates them downstream).
+    """
+    from scipy.stats import norm
+    from statsmodels.stats.multitest import multipletests
+
+    n_subj, n_vert = zmaps.shape
+    sig = np.zeros((n_subj, n_vert), dtype=bool)
+    for i in range(n_subj):
+        z = zmaps[i]
+        finite = np.isfinite(z)
+        if not finite.any():
+            continue
+        if two_sided:
+            p = 2.0 * norm.sf(np.abs(z[finite]))
+        else:
+            p = norm.sf(z[finite])
+        rej, _, _, _ = multipletests(p, alpha=q, method='fdr_bh')
+        sig[i, finite] = rej
+    return sig
+
+
 def compute_prevalence(
     zmaps: np.ndarray,
     alpha: float = 0.05,
     z_threshold: Optional[float | np.ndarray] = None,
     two_sided: bool = True,
     level: float = 0.96,
+    per_subject_fdr_q: Optional[float] = None,
 ) -> PrevalenceResult:
     """Compute per-vertex Bayesian prevalence from a stack of z-maps.
 
     Args:
         zmaps: ``(n_subjects, n_vertices)`` array of fixed-effects z-stats.
-        alpha: within-subject NHST false-positive rate (default 0.05).
+        alpha: within-subject false-positive rate used in the γ correction
+            (default 0.05).  When ``per_subject_fdr_q`` is set, alpha is
+            still applied in ``γ = (θ − α)/(1 − α)`` — pick it to reflect
+            the assumed per-vertex Type I rate (a conservative choice is
+            ``alpha = per_subject_fdr_q``).
         z_threshold: optional explicit z critical value.  May be a scalar
             (same threshold for every subject) or a ``(n_subjects,)``
             array (per-subject FWER-corrected thresholds derived e.g.
             from sign-flip permutations — the strong-control variant the
-            Ince paper requires).  If None, derived from ``alpha`` via
-            the standard normal — see :func:`z_alpha_two_sided`.
-        two_sided: when True (default) flag vertices with ``|z| > z_α``;
-            when False, only ``z > z_α`` (one-sided positive direction).
+            Ince paper requires).  If None and ``per_subject_fdr_q`` is
+            None, derived from ``alpha`` via :func:`z_alpha_two_sided`.
+            Mutually exclusive with ``per_subject_fdr_q``.
+        two_sided: when True (default) flag vertices with ``|z| > z_α``
+            or use a two-sided p-value for FDR; when False, only positive
+            direction (``z > z_α`` or one-sided p).
         level: HPDI mass level (default 0.96, matching the paper).
+        per_subject_fdr_q: when set, apply Benjamini–Hochberg FDR at level
+            ``q`` to each subject's vertices instead of a fixed z cutoff.
+            Mutually exclusive with ``z_threshold``.
 
     Returns:
         :class:`PrevalenceResult` with MAP, HPDI bounds, k counts, and
-        bookkeeping metadata.  The stored ``z_threshold`` is the scalar
-        threshold when provided as such, or the mean over subjects when
-        an array was passed.
+        bookkeeping metadata.  When FDR is used ``z_threshold`` is NaN
+        and ``fdr_q`` records the q level; otherwise ``fdr_q`` is None.
     """
+    if per_subject_fdr_q is not None and z_threshold is not None:
+        raise ValueError(
+            'per_subject_fdr_q and z_threshold are mutually exclusive — '
+            "they're alternative ways to threshold each subject's map."
+        )
+    if per_subject_fdr_q is not None and not (0.0 < per_subject_fdr_q < 1.0):
+        raise ValueError(
+            f'per_subject_fdr_q must lie in (0, 1); got {per_subject_fdr_q}'
+        )
     if zmaps.ndim != 2:
         raise ValueError(f'zmaps must be 2-D (n_subjects, n_vertices); got shape {zmaps.shape}')
     n_subjects, n_vertices = zmaps.shape
@@ -196,33 +246,43 @@ def compute_prevalence(
             f'need at least 2.'
         )
 
-    # Normalise z_threshold to a (n_subjects, 1) column array so the
-    # downstream comparison broadcasts identically for scalar and per-
-    # subject inputs.
-    if z_threshold is None:
-        z_thr_arr = np.full(n_subjects, z_alpha_two_sided(alpha), dtype=np.float64)
-        z_thr_stored = float(z_thr_arr[0])
-    elif np.isscalar(z_threshold):
-        z_thr_arr = np.full(n_subjects, float(z_threshold), dtype=np.float64)
-        z_thr_stored = float(z_threshold)
+    # Compute the per-subject significance mask via one of the supported
+    # thresholding strategies.  ``z_thr_stored`` is the scalar reported in
+    # PrevalenceResult metadata (NaN when FDR is used since the cutoff
+    # varies per vertex and subject).
+    if per_subject_fdr_q is not None:
+        sig = _bh_fdr_significance(zmaps, per_subject_fdr_q, two_sided)
+        z_thr_stored = float('nan')
+        fdr_q_stored: Optional[float] = float(per_subject_fdr_q)
     else:
-        z_thr_arr = np.asarray(z_threshold, dtype=np.float64).ravel()
-        if z_thr_arr.shape[0] != n_subjects:
-            raise ValueError(
-                f'Per-subject z_threshold length must equal n_subjects '
-                f'({n_subjects}); got length {z_thr_arr.shape[0]}'
-            )
-        z_thr_stored = float(z_thr_arr.mean())
+        fdr_q_stored = None
+        # Normalise z_threshold to a (n_subjects, 1) column array so the
+        # downstream comparison broadcasts identically for scalar and per-
+        # subject inputs.
+        if z_threshold is None:
+            z_thr_arr = np.full(n_subjects, z_alpha_two_sided(alpha), dtype=np.float64)
+            z_thr_stored = float(z_thr_arr[0])
+        elif np.isscalar(z_threshold):
+            z_thr_arr = np.full(n_subjects, float(z_threshold), dtype=np.float64)
+            z_thr_stored = float(z_threshold)
+        else:
+            z_thr_arr = np.asarray(z_threshold, dtype=np.float64).ravel()
+            if z_thr_arr.shape[0] != n_subjects:
+                raise ValueError(
+                    f'Per-subject z_threshold length must equal n_subjects '
+                    f'({n_subjects}); got length {z_thr_arr.shape[0]}'
+                )
+            z_thr_stored = float(z_thr_arr.mean())
+        if two_sided:
+            sig = np.abs(zmaps) > z_thr_arr[:, None]
+        else:
+            sig = zmaps > z_thr_arr[:, None]
 
     # Per-vertex significance: handle NaN-bearing vertices (subjects that
     # had no valid data at some surface location).  A vertex with NaN in
     # any subject is marked invalid; we set its outputs to NaN instead of
     # silently counting 0/n.
     invalid_mask = ~np.isfinite(zmaps).all(axis=0)
-    if two_sided:
-        sig = np.abs(zmaps) > z_thr_arr[:, None]
-    else:
-        sig = zmaps > z_thr_arr[:, None]
     # NaN inputs would have produced False under the comparison; force the
     # invalid vertices to NaN downstream rather than counting them as 0.
     k_per_vertex = np.where(invalid_mask, -1, sig.sum(axis=0).astype(int))
@@ -255,6 +315,7 @@ def compute_prevalence(
         z_threshold=z_thr_stored,
         level=level,
         n_vertices_invalid=n_invalid,
+        fdr_q=fdr_q_stored,
     )
 
 

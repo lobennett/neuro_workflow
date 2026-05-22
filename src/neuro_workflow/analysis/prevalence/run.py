@@ -75,6 +75,12 @@ def _parse_args(argv=None) -> argparse.Namespace:
                         'supplied, each subject\'s row is thresholded at its own '
                         'permutation-derived FWER-corrected z (Ince 2021 strong-control). '
                         'Overrides --alpha and --z-threshold.')
+    p.add_argument('--per-subject-fdr', type=float, default=None, metavar='Q',
+                   help='Apply Benjamini–Hochberg FDR at level Q (e.g. 0.05) to each '
+                        'subject\'s vertices instead of a fixed z cutoff.  Mutually '
+                        'exclusive with --z-threshold and --subject-thresholds-tsv.  '
+                        '--alpha still controls the γ = (θ − α)/(1 − α) correction; '
+                        'set --alpha to the same Q for a conservative interpretation.')
     p.add_argument('--hemispheres', nargs='+', default=['L', 'R'],
                    help='Which hemispheres to process (default: L R)')
     p.add_argument('--verbose', action='store_true', default=False,
@@ -116,6 +122,17 @@ def main(argv=None) -> int:
     subjects = _load_subjects(args.subjects_file)
     if subjects is not None:
         logger.info('Restricting to %d subjects from %s', len(subjects), args.subjects_file)
+
+    # The three thresholding strategies are mutually exclusive — verify upfront
+    # so we fail fast before any data is loaded.
+    strategies_set = sum(x is not None for x in (
+        args.z_threshold, args.subject_thresholds_tsv, args.per_subject_fdr,
+    ))
+    if strategies_set > 1:
+        raise SystemExit(
+            '--z-threshold, --subject-thresholds-tsv, and --per-subject-fdr are '
+            'mutually exclusive (only one thresholding strategy at a time).'
+        )
 
     subject_thresholds: dict[str, float] | None = None
     if args.subject_thresholds_tsv is not None:
@@ -167,6 +184,7 @@ def main(argv=None) -> int:
             z_threshold=z_thr_arg,
             two_sided=args.two_sided,
             level=args.level,
+            per_subject_fdr_q=args.per_subject_fdr,
         )
         logger.info(
             'MAP prevalence min/median/max = %.3f / %.3f / %.3f; '
@@ -185,10 +203,15 @@ def main(argv=None) -> int:
         for kind, path in files.items():
             logger.info('  %s → %s', kind, path)
 
+        import math
         summary_per_hemi[hemi] = {
             'n_subjects': result.n_subjects,
             'alpha': result.alpha,
-            'z_threshold': result.z_threshold,
+            'z_threshold': (
+                None if isinstance(result.z_threshold, float) and math.isnan(result.z_threshold)
+                else result.z_threshold
+            ),
+            'fdr_q': result.fdr_q,
             'level': result.level,
             'n_vertices_invalid': result.n_vertices_invalid,
             'subjects': subj_ids,
