@@ -220,12 +220,19 @@ def resolve_fs_subject(subjects_dir: Path, subject: str) -> str:
         ValueError: when multiple session-suffixed dirs match — caller must
             resolve which session to use.
     """
+    # FreeSurfer's spherical-registration file is normally the bare
+    # ``lh.sphere.reg`` (no extension); newer versions also accept a
+    # ``.gii`` variant.  Either is sufficient to identify a complete dir.
+    def has_sphere_reg(dir_: Path) -> bool:
+        surf = dir_ / "surf"
+        return (surf / "lh.sphere.reg").is_file() or (surf / "lh.sphere.reg.gii").is_file()
+
     bare = subjects_dir / subject
-    if (bare / "surf" / "lh.sphere.reg.gii").is_file():
+    if has_sphere_reg(bare):
         return subject
 
     candidates = sorted(p for p in subjects_dir.glob(f"{subject}_ses-*")
-                        if (p / "surf" / "lh.sphere.reg.gii").is_file())
+                        if has_sphere_reg(p))
     if len(candidates) == 1:
         return candidates[0].name
     if len(candidates) > 1:
@@ -236,7 +243,7 @@ def resolve_fs_subject(subjects_dir: Path, subject: str) -> str:
         )
     raise FileNotFoundError(
         f"No FreeSurfer subject dir found for {subject} under {subjects_dir}. "
-        f"Expected '{subject}/' or '{subject}_ses-*/' with surf/lh.sphere.reg.gii."
+        f"Expected '{subject}/' or '{subject}_ses-*/' with surf/lh.sphere.reg."
     )
 
 

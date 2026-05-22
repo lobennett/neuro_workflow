@@ -172,3 +172,16 @@ def test_resolve_fs_subject_raises_when_missing(tmp_path):
     from neuro_workflow.analysis.mshbm.run import resolve_fs_subject
     with __import__("pytest").raises(FileNotFoundError):
         resolve_fs_subject(tmp_path, "sub-s03")
+
+
+def test_resolve_fs_subject_accepts_bare_sphere_reg(tmp_path):
+    """FreeSurfer 7/8 emits bare `lh.sphere.reg` (no .gii) — must be recognized."""
+    from neuro_workflow.analysis.mshbm.run import resolve_fs_subject
+    subjects_dir = tmp_path
+    fs_dir = subjects_dir / "sub-s76_ses-01"
+    (fs_dir / "surf").mkdir(parents=True)
+    (fs_dir / "surf" / "lh.sphere.reg").touch()
+    (fs_dir / "surf" / "rh.sphere.reg").touch()
+
+    result = resolve_fs_subject(subjects_dir, "sub-s76")
+    assert result == "sub-s76_ses-01"
