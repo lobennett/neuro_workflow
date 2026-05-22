@@ -200,6 +200,46 @@ def discover_rest_bold_volume(fmriprep_dir: Path, subject: str) -> list[Path]:
 # ---------------------------------------------------------------------------
 
 
+def resolve_fs_subject(subjects_dir: Path, subject: str) -> str:
+    """Resolve the actual FreeSurfer subject directory name for a BIDS subject.
+
+    fmriprep names FS subject dirs as either ``<subject>`` (cross-session
+    anatomical) or ``<subject>_ses-<N>`` (longitudinal with a single anat
+    session). This helper checks for ``surf/lh.sphere.reg.gii`` to identify
+    the right dir, since the BIDS subject id alone is ambiguous.
+
+    Args:
+        subjects_dir: FreeSurfer SUBJECTS_DIR.
+        subject: BIDS subject id including the ``sub-`` prefix (e.g. ``sub-s03``).
+
+    Returns:
+        Actual directory name to pass as ``--srcsubject`` to ``mri_surf2surf``.
+
+    Raises:
+        FileNotFoundError: when no matching FS subject dir is found.
+        ValueError: when multiple session-suffixed dirs match — caller must
+            resolve which session to use.
+    """
+    bare = subjects_dir / subject
+    if (bare / "surf" / "lh.sphere.reg.gii").is_file():
+        return subject
+
+    candidates = sorted(p for p in subjects_dir.glob(f"{subject}_ses-*")
+                        if (p / "surf" / "lh.sphere.reg.gii").is_file())
+    if len(candidates) == 1:
+        return candidates[0].name
+    if len(candidates) > 1:
+        names = [p.name for p in candidates]
+        raise ValueError(
+            f"Multiple FS subject dirs for {subject}: {names}. "
+            "Disambiguate via single-anat-session policy upstream."
+        )
+    raise FileNotFoundError(
+        f"No FreeSurfer subject dir found for {subject} under {subjects_dir}. "
+        f"Expected '{subject}/' or '{subject}_ses-*/' with surf/lh.sphere.reg.gii."
+    )
+
+
 def ensure_fsaverage6(subjects_dir: Path) -> None:
     """Ensure fsaverage6 is available in SUBJECTS_DIR.
 
@@ -632,6 +672,11 @@ def process_subject(
 
     ensure_fsaverage6(subjects_dir)
 
+    # Resolve actual FS subject dir name (fmriprep may use sub-X or sub-X_ses-Y).
+    fs_subject = resolve_fs_subject(subjects_dir, subject)
+    if fs_subject != subject:
+        logger.info('FreeSurfer subject dir: %s (BIDS: %s)', fs_subject, subject)
+
     errors = 0
 
     # --- Task residuals -> fsaverage6 ---
@@ -641,7 +686,7 @@ def process_subject(
             residual_files = discover_task_residuals_surface(glm_dir, subject)
             residual_files = filter_by_sessions(residual_files, sessions)
             errors += process_surface_residuals(
-                residual_files, subject, subjects_dir, subj_output,
+                residual_files, fs_subject, subjects_dir, subj_output,
             )
         else:
             # Volumetric (MNI or T1w) -> fsaverage6
@@ -657,7 +702,7 @@ def process_subject(
             residual_files = discover_task_residuals_volume(glm_dir, subject)
             residual_files = filter_by_sessions(residual_files, sessions)
             errors += process_volume_residuals(
-                residual_files, subject, subjects_dir, subj_output,
+                residual_files, fs_subject, subjects_dir, subj_output,
                 residuals_space, transform, t1w_ref,
             )
 

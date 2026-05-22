@@ -121,6 +121,7 @@ def test_process_subject_rest_only_skips_task_residual_discovery(
 
     # Stub rest paths to no-op so the function returns cleanly.
     monkeypatch.setattr(mshbm_run, "ensure_fsaverage6", lambda *a, **k: None)
+    monkeypatch.setattr(mshbm_run, "resolve_fs_subject", lambda d, s: s)
     monkeypatch.setattr(mshbm_run, "discover_rest_bold_fsaverage6", lambda *a, **k: [])
     monkeypatch.setattr(mshbm_run, "discover_rest_bold_surface", lambda *a, **k: [])
     monkeypatch.setattr(mshbm_run, "discover_rest_bold_volume", lambda *a, **k: [])
@@ -140,3 +141,34 @@ def test_process_subject_rest_only_skips_task_residual_discovery(
     assert task_residual_calls == [], (
         f"task-residual functions called when rest_only=True: {task_residual_calls}"
     )
+
+
+def test_resolve_fs_subject_handles_session_suffixed_dirs(tmp_path):
+    from neuro_workflow.analysis.mshbm.run import resolve_fs_subject
+    subjects_dir = tmp_path
+    # fmriprep longitudinal naming: actual dir is sub-s03_ses-13
+    fs_dir = subjects_dir / "sub-s03_ses-13"
+    (fs_dir / "surf").mkdir(parents=True)
+    (fs_dir / "surf" / "lh.sphere.reg.gii").touch()
+    (fs_dir / "surf" / "rh.sphere.reg.gii").touch()
+
+    result = resolve_fs_subject(subjects_dir, "sub-s03")
+    assert result == "sub-s03_ses-13"
+
+
+def test_resolve_fs_subject_handles_bare_subject_dir(tmp_path):
+    from neuro_workflow.analysis.mshbm.run import resolve_fs_subject
+    subjects_dir = tmp_path
+    # cross-session: actual dir is sub-s03
+    fs_dir = subjects_dir / "sub-s03"
+    (fs_dir / "surf").mkdir(parents=True)
+    (fs_dir / "surf" / "lh.sphere.reg.gii").touch()
+
+    result = resolve_fs_subject(subjects_dir, "sub-s03")
+    assert result == "sub-s03"
+
+
+def test_resolve_fs_subject_raises_when_missing(tmp_path):
+    from neuro_workflow.analysis.mshbm.run import resolve_fs_subject
+    with __import__("pytest").raises(FileNotFoundError):
+        resolve_fs_subject(tmp_path, "sub-s03")
