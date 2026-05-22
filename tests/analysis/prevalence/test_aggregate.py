@@ -220,6 +220,79 @@ def test_compute_prevalence_per_subject_threshold_wrong_length_raises():
 
 
 # ---------------------------------------------------------------------------
+# Per-subject BH-FDR thresholding
+# ---------------------------------------------------------------------------
+
+
+def test_compute_prevalence_per_subject_fdr_rejects_only_strong_signals():
+    """BH-FDR at q across each subject's vertices should declare clearly
+    significant vertices (huge z) and leave noise alone."""
+    rng = np.random.default_rng(0)
+    n_subjects, n_vertices = 8, 1000
+    # Pure null background; inject a strong-signal block at vertices [0:50]
+    # in every subject.  Under FDR at q=0.05, BH should reject those 50
+    # (highly significant) without rejecting much of the noise.
+    z = rng.standard_normal((n_subjects, n_vertices))
+    z[:, :50] += 8.0  # huge z's
+    res = compute_prevalence(z, alpha=0.05, per_subject_fdr_q=0.05, two_sided=True)
+    # All 8 subjects significant at the strong-signal vertices.
+    assert (res.k_count[:50] == 8).all()
+    # Noise vertices: BH at q=0.05 across 950 nulls should reject few; with
+    # 8 subjects independently FDR-thresholded we expect <<8 subjects "active"
+    # at any null vertex.  Use a generous bound to keep the test robust.
+    assert (res.k_count[50:] <= 3).all()
+
+
+def test_compute_prevalence_per_subject_fdr_stores_q_in_result():
+    z = np.zeros((4, 100))
+    z[:, 0] = 10.0  # one clearly significant vertex
+    res = compute_prevalence(z, per_subject_fdr_q=0.1)
+    assert res.fdr_q == 0.1
+    # When FDR is in use, z_threshold isn't a single scalar; encoded as NaN.
+    assert np.isnan(res.z_threshold)
+
+
+def test_compute_prevalence_per_subject_fdr_one_vs_two_sided():
+    """One-sided FDR should ignore negative z; two-sided should pick them up."""
+    z = np.zeros((6, 50))
+    z[:, 0] = -8.0  # strong negative signal across all subjects
+    z[:, 1] = 8.0   # strong positive signal across all subjects
+    res_two = compute_prevalence(z, per_subject_fdr_q=0.05, two_sided=True)
+    res_one = compute_prevalence(z, per_subject_fdr_q=0.05, two_sided=False)
+    # Two-sided rejects both directions
+    assert res_two.k_count[0] == 6
+    assert res_two.k_count[1] == 6
+    # One-sided (positive) ignores the negative
+    assert res_one.k_count[0] == 0
+    assert res_one.k_count[1] == 6
+
+
+def test_compute_prevalence_per_subject_fdr_propagates_nan_vertices():
+    z = np.ones((4, 5)) * 8.0  # everywhere significant
+    z[1, 2] = np.nan  # one subject NaN at vertex 2
+    res = compute_prevalence(z, per_subject_fdr_q=0.05)
+    # Vertex 2 invalidated (NaN in subject 1)
+    assert np.isnan(res.map[2])
+    assert res.k_count[2] == -1
+    # All other vertices: 4 subjects significant
+    assert (res.k_count[[0, 1, 3, 4]] == 4).all()
+
+
+def test_compute_prevalence_per_subject_fdr_mutually_exclusive_with_z_threshold():
+    z = np.zeros((4, 10))
+    with pytest.raises(ValueError, match='mutually exclusive'):
+        compute_prevalence(z, z_threshold=2.0, per_subject_fdr_q=0.05)
+
+
+def test_compute_prevalence_per_subject_fdr_q_out_of_range_raises():
+    z = np.zeros((4, 10))
+    with pytest.raises(ValueError, match='per_subject_fdr_q must lie in'):
+        compute_prevalence(z, per_subject_fdr_q=0.0)
+    with pytest.raises(ValueError, match='per_subject_fdr_q must lie in'):
+        compute_prevalence(z, per_subject_fdr_q=1.0)
+
+
+# ---------------------------------------------------------------------------
 # save_prevalence_gifti
 # ---------------------------------------------------------------------------
 
