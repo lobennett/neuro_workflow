@@ -191,6 +191,104 @@ def _bh_fdr_significance(
     return sig
 
 
+def _validate_prevalence_args(
+    zmaps: np.ndarray,
+    z_threshold: Optional[float | np.ndarray],
+    per_subject_fdr_q: Optional[float],
+) -> None:
+    if per_subject_fdr_q is not None and z_threshold is not None:
+        raise ValueError(
+            'per_subject_fdr_q and z_threshold are mutually exclusive — '
+            "they're alternative ways to threshold each subject's map."
+        )
+    if per_subject_fdr_q is not None and not (0.0 < per_subject_fdr_q < 1.0):
+        raise ValueError(
+            f'per_subject_fdr_q must lie in (0, 1); got {per_subject_fdr_q}'
+        )
+    if zmaps.ndim != 2:
+        raise ValueError(
+            f'zmaps must be 2-D (n_subjects, n_vertices); got shape {zmaps.shape}'
+        )
+    if zmaps.shape[0] < 2:
+        raise ValueError(
+            f'Bayesian prevalence is meaningless for n={zmaps.shape[0]} subjects; '
+            f'need at least 2.'
+        )
+
+
+def _compute_sig_mask(
+    zmaps: np.ndarray,
+    alpha: float,
+    z_threshold: Optional[float | np.ndarray],
+    two_sided: bool,
+    per_subject_fdr_q: Optional[float],
+) -> tuple[np.ndarray, float, Optional[float]]:
+    """Build the per-subject significance mask via one of three strategies.
+
+    Returns ``(sig, z_thr_stored, fdr_q_stored)`` where ``sig`` is
+    ``(n_subj, n_vert)`` boolean, ``z_thr_stored`` is the scalar threshold
+    to record (NaN when FDR is used), and ``fdr_q_stored`` records the
+    FDR q level when that strategy is used (else None).
+    """
+    n_subjects = zmaps.shape[0]
+    if per_subject_fdr_q is not None:
+        sig = _bh_fdr_significance(zmaps, per_subject_fdr_q, two_sided)
+        return sig, float('nan'), float(per_subject_fdr_q)
+    # z-threshold path: scalar or per-subject array
+    if z_threshold is None:
+        z_thr_arr = np.full(n_subjects, z_alpha_two_sided(alpha), dtype=np.float64)
+        z_thr_stored = float(z_thr_arr[0])
+    elif np.isscalar(z_threshold):
+        z_thr_arr = np.full(n_subjects, float(z_threshold), dtype=np.float64)
+        z_thr_stored = float(z_threshold)
+    else:
+        z_thr_arr = np.asarray(z_threshold, dtype=np.float64).ravel()
+        if z_thr_arr.shape[0] != n_subjects:
+            raise ValueError(
+                f'Per-subject z_threshold length must equal n_subjects '
+                f'({n_subjects}); got length {z_thr_arr.shape[0]}'
+            )
+        z_thr_stored = float(z_thr_arr.mean())
+    if two_sided:
+        sig = np.abs(zmaps) > z_thr_arr[:, None]
+    else:
+        sig = zmaps > z_thr_arr[:, None]
+    return sig, z_thr_stored, None
+
+
+def _build_result(
+    k_per_vertex: np.ndarray,
+    invalid_mask: np.ndarray,
+    n_subjects: int,
+    alpha: float,
+    level: float,
+    z_thr_stored: float,
+    fdr_q_stored: Optional[float],
+) -> PrevalenceResult:
+    """Convert a per-vertex k count into a PrevalenceResult (MAP + HPDI)."""
+    map_arr = np.where(
+        invalid_mask, np.nan,
+        map_estimate_vector(np.clip(k_per_vertex, 0, n_subjects), n_subjects, alpha),
+    )
+    table = hpdi_lookup(n_subjects, alpha, level=level)
+    safe_k = np.clip(k_per_vertex, 0, n_subjects)
+    hpdi_lo = np.where(invalid_mask, np.nan, table[safe_k, 0])
+    hpdi_hi = np.where(invalid_mask, np.nan, table[safe_k, 1])
+    n_invalid = int(invalid_mask.sum())
+    return PrevalenceResult(
+        map=map_arr,
+        hpdi_lo=hpdi_lo,
+        hpdi_hi=hpdi_hi,
+        k_count=np.where(invalid_mask, -1, k_per_vertex),
+        n_subjects=n_subjects,
+        alpha=alpha,
+        z_threshold=z_thr_stored,
+        level=level,
+        n_vertices_invalid=n_invalid,
+        fdr_q=fdr_q_stored,
+    )
+
+
 def compute_prevalence(
     zmaps: np.ndarray,
     alpha: float = 0.05,
@@ -228,94 +326,121 @@ def compute_prevalence(
         bookkeeping metadata.  When FDR is used ``z_threshold`` is NaN
         and ``fdr_q`` records the q level; otherwise ``fdr_q`` is None.
     """
-    if per_subject_fdr_q is not None and z_threshold is not None:
-        raise ValueError(
-            'per_subject_fdr_q and z_threshold are mutually exclusive — '
-            "they're alternative ways to threshold each subject's map."
-        )
-    if per_subject_fdr_q is not None and not (0.0 < per_subject_fdr_q < 1.0):
-        raise ValueError(
-            f'per_subject_fdr_q must lie in (0, 1); got {per_subject_fdr_q}'
-        )
-    if zmaps.ndim != 2:
-        raise ValueError(f'zmaps must be 2-D (n_subjects, n_vertices); got shape {zmaps.shape}')
-    n_subjects, n_vertices = zmaps.shape
-    if n_subjects < 2:
-        raise ValueError(
-            f'Bayesian prevalence is meaningless for n={n_subjects} subjects; '
-            f'need at least 2.'
-        )
-
-    # Compute the per-subject significance mask via one of the supported
-    # thresholding strategies.  ``z_thr_stored`` is the scalar reported in
-    # PrevalenceResult metadata (NaN when FDR is used since the cutoff
-    # varies per vertex and subject).
-    if per_subject_fdr_q is not None:
-        sig = _bh_fdr_significance(zmaps, per_subject_fdr_q, two_sided)
-        z_thr_stored = float('nan')
-        fdr_q_stored: Optional[float] = float(per_subject_fdr_q)
-    else:
-        fdr_q_stored = None
-        # Normalise z_threshold to a (n_subjects, 1) column array so the
-        # downstream comparison broadcasts identically for scalar and per-
-        # subject inputs.
-        if z_threshold is None:
-            z_thr_arr = np.full(n_subjects, z_alpha_two_sided(alpha), dtype=np.float64)
-            z_thr_stored = float(z_thr_arr[0])
-        elif np.isscalar(z_threshold):
-            z_thr_arr = np.full(n_subjects, float(z_threshold), dtype=np.float64)
-            z_thr_stored = float(z_threshold)
-        else:
-            z_thr_arr = np.asarray(z_threshold, dtype=np.float64).ravel()
-            if z_thr_arr.shape[0] != n_subjects:
-                raise ValueError(
-                    f'Per-subject z_threshold length must equal n_subjects '
-                    f'({n_subjects}); got length {z_thr_arr.shape[0]}'
-                )
-            z_thr_stored = float(z_thr_arr.mean())
-        if two_sided:
-            sig = np.abs(zmaps) > z_thr_arr[:, None]
-        else:
-            sig = zmaps > z_thr_arr[:, None]
-
-    # Per-vertex significance: handle NaN-bearing vertices (subjects that
-    # had no valid data at some surface location).  A vertex with NaN in
-    # any subject is marked invalid; we set its outputs to NaN instead of
-    # silently counting 0/n.
-    invalid_mask = ~np.isfinite(zmaps).all(axis=0)
-    # NaN inputs would have produced False under the comparison; force the
-    # invalid vertices to NaN downstream rather than counting them as 0.
-    k_per_vertex = np.where(invalid_mask, -1, sig.sum(axis=0).astype(int))
-
-    # Vectorised MAP via closed form (cheap).
-    map_arr = np.where(
-        invalid_mask, np.nan, map_estimate_vector(np.clip(k_per_vertex, 0, n_subjects), n_subjects, alpha),
+    _validate_prevalence_args(zmaps, z_threshold, per_subject_fdr_q)
+    n_subjects = zmaps.shape[0]
+    sig, z_thr_stored, fdr_q_stored = _compute_sig_mask(
+        zmaps, alpha, z_threshold, two_sided, per_subject_fdr_q,
     )
-
-    # HPDI: precompute lookup table at every k in [0, n], then index.
-    table = hpdi_lookup(n_subjects, alpha, level=level)
-    safe_k = np.clip(k_per_vertex, 0, n_subjects)
-    hpdi_lo = np.where(invalid_mask, np.nan, table[safe_k, 0])
-    hpdi_hi = np.where(invalid_mask, np.nan, table[safe_k, 1])
-
-    n_invalid = int(invalid_mask.sum())
-    if n_invalid:
+    invalid_mask = ~np.isfinite(zmaps).all(axis=0)
+    k_per_vertex = np.where(invalid_mask, -1, sig.sum(axis=0).astype(int))
+    if int(invalid_mask.sum()):
         logger.warning(
             'Prevalence computed with %d invalid vertices (NaN in >=1 subject); '
-            'marked NaN in the output map.', n_invalid,
+            'marked NaN in the output map.', int(invalid_mask.sum()),
         )
+    return _build_result(
+        k_per_vertex, invalid_mask, n_subjects, alpha, level,
+        z_thr_stored, fdr_q_stored,
+    )
 
-    return PrevalenceResult(
-        map=map_arr,
-        hpdi_lo=hpdi_lo,
-        hpdi_hi=hpdi_hi,
-        k_count=np.where(invalid_mask, -1, k_per_vertex),
-        n_subjects=n_subjects,
-        alpha=alpha,
-        z_threshold=z_thr_stored,
-        level=level,
-        n_vertices_invalid=n_invalid,
-        fdr_q=fdr_q_stored,
+
+@dataclass
+class DirectionalPrevalenceResult:
+    """Direction-resolved Bayesian prevalence.
+
+    Built from a single per-subject significance test (typically two-sided
+    FDR-BH at level q), then partitioned by sign of z into positive and
+    negative direction subsets.  Each direction inherits the test's α /
+    z_threshold / fdr_q metadata via its own ``PrevalenceResult``.
+
+    ``consistency`` is per-vertex ``max(k_pos, k_neg) / (k_pos + k_neg)``
+    bounded in ``[0.5, 1]``: 1 = all significant subjects agree on
+    direction, 0.5 = an even split between positive and negative.  Vertices
+    with ``k_pos + k_neg == 0`` are NaN (no significant subjects either
+    way).  Invalid (NaN-bearing) vertices are NaN in every output.
+    """
+
+    overall: PrevalenceResult
+    positive: PrevalenceResult
+    negative: PrevalenceResult
+    consistency: np.ndarray
+    n_vertices_invalid: int
+
+
+def compute_directional_prevalence(
+    zmaps: np.ndarray,
+    alpha: float = 0.05,
+    z_threshold: Optional[float | np.ndarray] = None,
+    two_sided: bool = True,
+    level: float = 0.96,
+    per_subject_fdr_q: Optional[float] = None,
+) -> DirectionalPrevalenceResult:
+    """Direction-resolved per-vertex Bayesian prevalence.
+
+    The per-subject significance mask is computed exactly as in
+    :func:`compute_prevalence` (defaults to two-sided), then the rejected
+    set is partitioned by sign of z at each (subject, vertex):
+
+    - ``sig_pos = sig & (z > 0)`` — subject's positive-direction activation
+    - ``sig_neg = sig & (z < 0)`` — subject's negative-direction activation
+
+    The resulting three k-counts (overall = ``k_pos + k_neg`` modulo NaN)
+    feed the same Beta-posterior + HPDI machinery, producing three
+    prevalence maps that share the same α / threshold metadata.
+
+    A two-sided test is the natural input here (a one-sided test discards
+    one tail entirely), but ``two_sided=False`` is accepted for symmetry
+    — in that case the negative direction is always empty.
+
+    Returns:
+        :class:`DirectionalPrevalenceResult` with three
+        :class:`PrevalenceResult` objects plus a per-vertex consistency map.
+    """
+    _validate_prevalence_args(zmaps, z_threshold, per_subject_fdr_q)
+    n_subjects = zmaps.shape[0]
+    sig, z_thr_stored, fdr_q_stored = _compute_sig_mask(
+        zmaps, alpha, z_threshold, two_sided, per_subject_fdr_q,
+    )
+    invalid_mask = ~np.isfinite(zmaps).all(axis=0)
+
+    # Partition the significant set by sign.  NaN z-values produce False
+    # in both comparisons so they don't leak into either direction count.
+    positive_mask = zmaps > 0
+    negative_mask = zmaps < 0
+    sig_pos = sig & positive_mask
+    sig_neg = sig & negative_mask
+
+    k_overall = np.where(invalid_mask, -1, sig.sum(axis=0).astype(int))
+    k_pos = np.where(invalid_mask, -1, sig_pos.sum(axis=0).astype(int))
+    k_neg = np.where(invalid_mask, -1, sig_neg.sum(axis=0).astype(int))
+
+    overall = _build_result(
+        k_overall, invalid_mask, n_subjects, alpha, level, z_thr_stored, fdr_q_stored,
+    )
+    positive = _build_result(
+        k_pos, invalid_mask, n_subjects, alpha, level, z_thr_stored, fdr_q_stored,
+    )
+    negative = _build_result(
+        k_neg, invalid_mask, n_subjects, alpha, level, z_thr_stored, fdr_q_stored,
+    )
+
+    # Consistency: agreement among the directional subjects.  We use the
+    # positive counts (clipped at 0 to ignore the -1 invalid sentinel) so
+    # arithmetic is well-defined; vertices with no significant subjects
+    # at all and invalid vertices both end up NaN below.
+    safe_k_pos = np.where(invalid_mask, 0, k_pos).astype(np.float64)
+    safe_k_neg = np.where(invalid_mask, 0, k_neg).astype(np.float64)
+    total = safe_k_pos + safe_k_neg
+    with np.errstate(invalid='ignore', divide='ignore'):
+        consistency = np.maximum(safe_k_pos, safe_k_neg) / total
+    consistency = np.where(invalid_mask | (total == 0), np.nan, consistency)
+
+    return DirectionalPrevalenceResult(
+        overall=overall,
+        positive=positive,
+        negative=negative,
+        consistency=consistency,
+        n_vertices_invalid=int(invalid_mask.sum()),
     )
 
 
