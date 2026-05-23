@@ -14,7 +14,9 @@ import numpy as np
 import pytest
 
 from neuro_workflow.analysis.prevalence.aggregate import (
+    DirectionalPrevalenceResult,
     PrevalenceResult,
+    compute_directional_prevalence,
     compute_prevalence,
     find_subject_zmaps,
     load_gifti_data,
@@ -290,6 +292,77 @@ def test_compute_prevalence_per_subject_fdr_q_out_of_range_raises():
         compute_prevalence(z, per_subject_fdr_q=0.0)
     with pytest.raises(ValueError, match='per_subject_fdr_q must lie in'):
         compute_prevalence(z, per_subject_fdr_q=1.0)
+
+
+# ---------------------------------------------------------------------------
+# Direction-resolved prevalence (compute_directional_prevalence)
+# ---------------------------------------------------------------------------
+
+
+def test_compute_directional_prevalence_partitions_overall_into_pos_plus_neg():
+    """Per vertex, k_overall must equal k_pos + k_neg for non-invalid vertices."""
+    rng = np.random.default_rng(1)
+    n_subj, n_vert = 10, 200
+    z = rng.standard_normal((n_subj, n_vert))
+    z[:, :20] += 6.0   # positive signal block
+    z[:, 20:40] -= 6.0 # negative signal block
+    res = compute_directional_prevalence(z, per_subject_fdr_q=0.05, two_sided=True)
+    # Where vertices are valid, k_overall == k_pos + k_neg
+    valid = res.overall.k_count >= 0
+    assert np.all(
+        res.overall.k_count[valid]
+        == res.positive.k_count[valid] + res.negative.k_count[valid]
+    )
+
+
+def test_compute_directional_prevalence_pure_positive_signal_lands_in_positive():
+    z = np.full((6, 50), 0.0)
+    z[:, 0] = 8.0   # strong positive across all subjects
+    z[:, 1] = -8.0  # strong negative across all subjects
+    res = compute_directional_prevalence(z, per_subject_fdr_q=0.05, two_sided=True)
+    assert res.positive.k_count[0] == 6
+    assert res.negative.k_count[0] == 0
+    assert res.positive.k_count[1] == 0
+    assert res.negative.k_count[1] == 6
+
+
+def test_compute_directional_prevalence_consistency_metric_bounds():
+    """Consistency ∈ [0.5, 1] for vertices with any direction; NaN otherwise."""
+    z = np.zeros((10, 6))
+    z[:5, 0] = 8.0   # 5 positive, 0 negative → consistency = 1.0
+    z[5:, 0] = -0.1  # remaining 5 below threshold (negligible)
+    z[:5, 1] = 8.0
+    z[5:, 1] = -8.0  # 5 pos + 5 neg → consistency = 0.5
+    z[:, 2] = 8.0    # 10 positive → consistency = 1.0
+    # vertex 3,4,5: pure noise → likely k_pos = k_neg = 0 → consistency = NaN
+    res = compute_directional_prevalence(z, per_subject_fdr_q=0.05, two_sided=True)
+    assert res.consistency[0] == pytest.approx(1.0)
+    assert res.consistency[1] == pytest.approx(0.5)
+    assert res.consistency[2] == pytest.approx(1.0)
+    # NaN where no significant subjects in either direction
+    assert np.isnan(res.consistency[3])
+
+
+def test_compute_directional_prevalence_propagates_nan_vertices():
+    z = np.full((4, 4), 8.0)
+    z[1, 2] = np.nan
+    res = compute_directional_prevalence(z, per_subject_fdr_q=0.05, two_sided=True)
+    assert res.n_vertices_invalid == 1
+    assert np.isnan(res.overall.map[2])
+    assert np.isnan(res.positive.map[2])
+    assert np.isnan(res.negative.map[2])
+    assert np.isnan(res.consistency[2])
+    assert res.overall.k_count[2] == -1
+
+
+def test_compute_directional_prevalence_returns_dataclass():
+    z = np.zeros((3, 5))
+    z[:, 0] = 5.0
+    res = compute_directional_prevalence(z, per_subject_fdr_q=0.05)
+    assert isinstance(res, DirectionalPrevalenceResult)
+    assert isinstance(res.overall, PrevalenceResult)
+    assert isinstance(res.positive, PrevalenceResult)
+    assert isinstance(res.negative, PrevalenceResult)
 
 
 # ---------------------------------------------------------------------------

@@ -30,12 +30,29 @@ import logging
 import sys
 from pathlib import Path
 
+import nibabel as nib
+import numpy as np
+
 from neuro_workflow.analysis.prevalence.aggregate import (
+    compute_directional_prevalence,
     compute_prevalence,
     find_subject_zmaps,
     save_prevalence_gifti,
     stack_subject_zmaps,
 )
+
+
+def _write_single_gifti(arr: np.ndarray, path: Path) -> Path:
+    """Write a single 1-D array as a GIFTI .func.gii (used for consistency map)."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    darray = nib.gifti.GiftiDataArray(
+        data=arr, intent='NIFTI_INTENT_NORMAL', datatype='NIFTI_TYPE_FLOAT32',
+    )
+    img = nib.gifti.GiftiImage()
+    img.add_gifti_data_array(darray)
+    img.to_filename(str(path))
+    return path
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +98,11 @@ def _parse_args(argv=None) -> argparse.Namespace:
                         'exclusive with --z-threshold and --subject-thresholds-tsv.  '
                         '--alpha still controls the γ = (θ − α)/(1 − α) correction; '
                         'set --alpha to the same Q for a conservative interpretation.')
+    p.add_argument('--directional', action='store_true', default=False,
+                   help='Also write direction-resolved prevalence: pos / neg / '
+                        'consistency.  Filenames gain a direction-{overall,pos,neg} '
+                        'tag; a stat-consistency GIFTI is written alongside.  '
+                        'Manifest gains pos / neg subsections.')
     p.add_argument('--hemispheres', nargs='+', default=['L', 'R'],
                    help='Which hemispheres to process (default: L R)')
     p.add_argument('--verbose', action='store_true', default=False,
@@ -178,28 +200,63 @@ def main(argv=None) -> int:
         else:
             z_thr_arg = args.z_threshold
 
-        result = compute_prevalence(
-            zmaps,
-            alpha=args.alpha,
-            z_threshold=z_thr_arg,
-            two_sided=args.two_sided,
-            level=args.level,
-            per_subject_fdr_q=args.per_subject_fdr,
-        )
-        logger.info(
-            'MAP prevalence min/median/max = %.3f / %.3f / %.3f; '
-            'invalid vertices = %d',
-            float(min(result.map[~_isnan(result.map)], default=0.0)),
-            float(median_safe(result.map)),
-            float(max(result.map[~_isnan(result.map)], default=0.0)),
-            result.n_vertices_invalid,
-        )
-
         base = (
             f'{args.cohort}_task-{args.task}_hemi-{hemi}'
             f'_contrast-{args.contrast}_rtmodel-RTDur'
         )
-        files = save_prevalence_gifti(result, args.output_dir, base)
+
+        if args.directional:
+            dres = compute_directional_prevalence(
+                zmaps,
+                alpha=args.alpha,
+                z_threshold=z_thr_arg,
+                two_sided=args.two_sided,
+                level=args.level,
+                per_subject_fdr_q=args.per_subject_fdr,
+            )
+            result = dres.overall  # primary for log + manifest summary
+            logger.info(
+                'directional: overall median %.3f; pos median %.3f; neg median %.3f; invalid %d',
+                float(median_safe(dres.overall.map)),
+                float(median_safe(dres.positive.map)),
+                float(median_safe(dres.negative.map)),
+                dres.n_vertices_invalid,
+            )
+            files = {}
+            for direction, sub_res in (
+                ('overall', dres.overall),
+                ('pos',     dres.positive),
+                ('neg',     dres.negative),
+            ):
+                tagged = f'{base}_direction-{direction}'
+                files.update({
+                    f'{k}_{direction}': v
+                    for k, v in save_prevalence_gifti(sub_res, args.output_dir, tagged).items()
+                })
+            consistency_path = _write_single_gifti(
+                dres.consistency.astype(np.float32),
+                args.output_dir / f'{base}_stat-consistency.func.gii',
+            )
+            files['consistency'] = consistency_path
+        else:
+            result = compute_prevalence(
+                zmaps,
+                alpha=args.alpha,
+                z_threshold=z_thr_arg,
+                two_sided=args.two_sided,
+                level=args.level,
+                per_subject_fdr_q=args.per_subject_fdr,
+            )
+            logger.info(
+                'MAP prevalence min/median/max = %.3f / %.3f / %.3f; '
+                'invalid vertices = %d',
+                float(min(result.map[~_isnan(result.map)], default=0.0)),
+                float(median_safe(result.map)),
+                float(max(result.map[~_isnan(result.map)], default=0.0)),
+                result.n_vertices_invalid,
+            )
+            files = save_prevalence_gifti(result, args.output_dir, base)
+
         for kind, path in files.items():
             logger.info('  %s → %s', kind, path)
 
@@ -213,6 +270,7 @@ def main(argv=None) -> int:
             ),
             'fdr_q': result.fdr_q,
             'level': result.level,
+            'directional': args.directional,
             'n_vertices_invalid': result.n_vertices_invalid,
             'subjects': subj_ids,
             'files': {k: str(v) for k, v in files.items()},
