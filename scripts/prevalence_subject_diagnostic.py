@@ -30,29 +30,32 @@ from neuro_workflow.analysis.prevalence.visualize import _fetch_fsaverage6
 logger = logging.getLogger(__name__)
 
 
-def _plot_2panel(map_l, map_r, out_path, *, cmap, vmin, vmax, title, fsaverage,
-                 dpi=80, symmetric=False):
-    """2-panel L+R lateral brain figure with one colorbar."""
+def _plot_4panel(map_l, map_r, out_path, *, cmap, vmin, vmax, title, fsaverage,
+                 figsize=(8, 7), dpi=80, symmetric=False):
+    """4-panel (L-lat, R-lat, L-med, R-med) brain figure with one colorbar."""
     from nilearn import plotting
     fig, axes = plt.subplots(
-        1, 2, figsize=(8, 3.5),
+        2, 2, figsize=figsize,
         subplot_kw={'projection': '3d'},
-        gridspec_kw={'wspace': 0.0},
+        gridspec_kw={'wspace': 0.0, 'hspace': 0.0},
     )
-    for ax, hemi, stat_map, mesh_key, bg_key in (
-        (axes[0], 'left',  map_l, 'infl_left',  'sulc_left'),
-        (axes[1], 'right', map_r, 'infl_right', 'sulc_right'),
-    ):
+    panels = (
+        (axes[0, 0], 'left',  'lateral', map_l, 'infl_left',  'sulc_left',  False),
+        (axes[0, 1], 'right', 'lateral', map_r, 'infl_right', 'sulc_right', False),
+        (axes[1, 0], 'left',  'medial',  map_l, 'infl_left',  'sulc_left',  False),
+        (axes[1, 1], 'right', 'medial',  map_r, 'infl_right', 'sulc_right', True),
+    )
+    for ax, hemi, view, stat_map, mesh_key, bg_key, show_cbar in panels:
         plotting.plot_surf_stat_map(
             surf_mesh=fsaverage[mesh_key], stat_map=stat_map,
-            bg_map=fsaverage[bg_key], hemi=hemi, view='lateral',
+            bg_map=fsaverage[bg_key], hemi=hemi, view=view,
             cmap=cmap, vmin=vmin, vmax=vmax,
-            colorbar=(hemi == 'right'),
+            colorbar=show_cbar,
             symmetric_cbar=symmetric,
             bg_on_data=True, axes=ax, figure=fig,
         )
     if title:
-        fig.suptitle(title, fontsize=9, y=0.95)
+        fig.suptitle(title, fontsize=9, y=0.97)
     fig.savefig(out_path, dpi=dpi, bbox_inches='tight', facecolor='white')
     plt.close(fig)
     return out_path
@@ -67,11 +70,11 @@ def _render_one_subject(args_tuple):
     fsav = _fetch_fsaverage6()
     z_l = load_gifti_data(z_path_l)
     z_r = load_gifti_data(z_path_r)
-    _plot_2panel(
+    _plot_4panel(
         z_l, z_r, out_path,
         cmap='RdBu_r', vmin=-vmax, vmax=vmax,
-        title=sub_id, fsaverage=fsav, dpi=50,
-        symmetric=True,
+        title=sub_id, fsaverage=fsav,
+        figsize=(5, 4.5), dpi=50, symmetric=True,
     )
     return sub_id
 
@@ -117,21 +120,21 @@ def render_prevalence_map(prev_dir: Path, task: str, contrast: str,
     map_l = load_gifti_data(prev_dir / f'{base.replace("hemi-X","hemi-L")}_direction-overall_stat-prevalence-map.func.gii')
     map_r = load_gifti_data(prev_dir / f'{base.replace("hemi-X","hemi-R")}_direction-overall_stat-prevalence-map.func.gii')
     out_path = output_dir / f'{task}_{contrast}_prevalence_uncorrected.png'
-    _plot_2panel(
+    _plot_4panel(
         map_l, map_r, out_path,
         cmap='inferno', vmin=0.0, vmax=None,
         title=f'{task} / {contrast} — UNCORRECTED prevalence (z>1.96)',
-        fsaverage=fsav, dpi=100,
+        fsaverage=fsav, figsize=(8, 7), dpi=100,
     )
     # Directionality map (signed)
     dir_l = load_gifti_data(prev_dir / f'{base.replace("hemi-X","hemi-L")}_stat-directionality.func.gii')
     dir_r = load_gifti_data(prev_dir / f'{base.replace("hemi-X","hemi-R")}_stat-directionality.func.gii')
     dir_path = output_dir / f'{task}_{contrast}_directionality_uncorrected.png'
-    _plot_2panel(
+    _plot_4panel(
         dir_l, dir_r, dir_path,
         cmap='RdBu_r', vmin=-1.0, vmax=1.0,
         title=f'{task} / {contrast} — directionality (signed, uncorrected)',
-        fsaverage=fsav, dpi=100, symmetric=True,
+        fsaverage=fsav, figsize=(8, 7), dpi=100, symmetric=True,
     )
     return out_path
 
