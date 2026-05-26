@@ -105,23 +105,39 @@ def main(argv=None) -> int:
         anchor = f'{task}__{contrast}'.replace('-', '_').replace(':', '_')
         prev_png = fig_dir / f'{task}_{contrast}_prevalence_uncorrected.png'
         dir_png = fig_dir / f'{task}_{contrast}_directionality_uncorrected.png'
+        prev_int_l = fig_dir / f'{task}_{contrast}_prevalence_uncorrected_L.html'
+        prev_int_r = fig_dir / f'{task}_{contrast}_prevalence_uncorrected_R.html'
+        dir_int_l = fig_dir / f'{task}_{contrast}_directionality_uncorrected_L.html'
+        dir_int_r = fig_dir / f'{task}_{contrast}_directionality_uncorrected_R.html'
         subj_pngs = sorted(subj_pngs_by_cell.get((task, contrast), []))
 
-        prev_rel = prev_png.relative_to(args.dashboard_dir).as_posix()
-        dir_rel = dir_png.relative_to(args.dashboard_dir).as_posix()
+        def _rel(p):
+            return p.relative_to(args.dashboard_dir).as_posix()
 
         section_html = (
             f'<h2 id="{anchor}">{task} / {contrast} '
             f'<small>(n_subj={len(subj_pngs)})</small></h2>\n'
             f'<h3>Uncorrected prevalence (z>1.96) + directionality</h3>\n'
             f'<div class="prev-row">'
-            f'<img src="{prev_rel}">'
-            f'<img src="{dir_rel}">'
+            f'<div class="map-cell">'
+            f'<img src="{_rel(prev_png)}">'
+            f'<button class="rotate-btn" '
+            f'data-l="{_rel(prev_int_l)}" data-r="{_rel(prev_int_r)}">'
+            f'rotate</button>'
+            f'<div class="iframe-holder" hidden></div>'
+            f'</div>'
+            f'<div class="map-cell">'
+            f'<img src="{_rel(dir_png)}">'
+            f'<button class="rotate-btn" '
+            f'data-l="{_rel(dir_int_l)}" data-r="{_rel(dir_int_r)}">'
+            f'rotate</button>'
+            f'<div class="iframe-holder" hidden></div>'
+            f'</div>'
             f'</div>\n'
             f'<h3>Per-subject unthresholded z-maps</h3>\n'
             '<div class="subj-grid">'
             + '\n'.join(
-                f'<img src="{p.relative_to(args.dashboard_dir).as_posix()}">'
+                f'<img src="{_rel(p)}">'
                 for p in subj_pngs
             )
             + '</div>'
