@@ -5,6 +5,7 @@ Pure-Python utilities — wb_command orchestration lives in
 """
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -61,3 +62,33 @@ def discover_xcpd_cells(subject_root: Path) -> list[Cell]:
             continue
         cells.append(Cell(session=m.group('ses'), task=m.group('task'), dtseries=path))
     return cells
+
+
+def _templateflow_root() -> Path:
+    """Resolve the templateflow cache root, honoring TEMPLATEFLOW_HOME."""
+    root = os.environ.get('TEMPLATEFLOW_HOME')
+    if root:
+        return Path(root)
+    return Path.home() / '.cache' / 'templateflow'
+
+
+def templateflow_paths() -> dict[str, dict[str, Path]]:
+    """Return the fsLR / fsaverage sphere + pial + white paths per hemi.
+
+    Keys: 'L', 'R' → dict with keys 'fsLR_sphere' (32k registered to
+    fsaverage), 'fsaverage6_sphere' (41k), 'fsaverage6_pial', 'fsaverage6_white'.
+    """
+    root = _templateflow_root()
+    out: dict[str, dict[str, Path]] = {}
+    for hemi in ('L', 'R'):
+        out[hemi] = {
+            'fsLR_sphere': root / 'tpl-fsLR' /
+                f'tpl-fsLR_space-fsaverage_hemi-{hemi}_den-32k_sphere.surf.gii',
+            'fsaverage6_sphere': root / 'tpl-fsaverage' /
+                f'tpl-fsaverage_hemi-{hemi}_den-41k_sphere.surf.gii',
+            'fsaverage6_pial': root / 'tpl-fsaverage' /
+                f'tpl-fsaverage_hemi-{hemi}_den-41k_pial.surf.gii',
+            'fsaverage6_white': root / 'tpl-fsaverage' /
+                f'tpl-fsaverage_hemi-{hemi}_den-41k_white.surf.gii',
+        }
+    return out
