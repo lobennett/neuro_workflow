@@ -86,7 +86,11 @@ _SUBJECT_RE = re.compile(r'(sub-[a-zA-Z0-9]+)')
 
 
 def _render_one_subject(args_tuple):
-    """Top-level worker for multiprocessing."""
+    """Top-level worker for multiprocessing.
+
+    Emits the static 4-panel PNG AND two single-hemi WebGL viewers so the
+    dashboard can open each subject's z-map in the modal overlay on click.
+    """
     z_path_l, z_path_r, sub_id, out_path, vmax = args_tuple
     fsav = _fetch_fsaverage6()
     z_l = load_gifti_data(z_path_l)
@@ -97,6 +101,14 @@ def _render_one_subject(args_tuple):
         title=sub_id, fsaverage=fsav,
         figsize=(5, 4.5), dpi=50, symmetric=True,
     )
+    for z_arr, hemi in ((z_l, 'left'), (z_r, 'right')):
+        _render_interactive_viewer(
+            z_arr, hemi,
+            out_path.with_name(f'{out_path.stem}_{hemi[0].upper()}.html'),
+            cmap='RdBu_r', vmax=vmax, symmetric=True,
+            title=f'{sub_id} {hemi[0].upper()}',
+            fsaverage=fsav,
+        )
     return sub_id
 
 
@@ -163,7 +175,7 @@ def render_prevalence_map(prev_dir: Path, task: str, contrast: str,
             hemi_arr, hemi,
             output_dir / f'{task}_{contrast}_prevalence_uncorrected_{hemi[0].upper()}.html',
             cmap='inferno', vmax=prev_vmax, symmetric=False,
-            title=f'{task} / {contrast} — {hemi} prevalence (unthresholded)',
+            title=f'{hemi[0].upper()} hemi',
             fsaverage=fsav,
         )
 
@@ -182,7 +194,7 @@ def render_prevalence_map(prev_dir: Path, task: str, contrast: str,
             hemi_arr, hemi,
             output_dir / f'{task}_{contrast}_directionality_uncorrected_{hemi[0].upper()}.html',
             cmap='RdBu_r', vmax=1.0, symmetric=True,
-            title=f'{task} / {contrast} — {hemi} directionality (signed)',
+            title=f'{hemi[0].upper()} hemi',
             fsaverage=fsav,
         )
 
