@@ -46,6 +46,8 @@ _HTML_HEAD = """<!doctype html>
   .modal-bg.show { display: flex; }
   #modal-content { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   #modal-content img { max-width: 95vw; max-height: 95vh; }
+  .modal-static-img { max-width: 1000px !important; max-height: 60vh !important;
+                      background: white; padding: 4px; border-radius: 4px; }
   .modal-iframe-row { display: flex; gap: 12px; }
   .modal-surf-frame { width: 600px; height: 500px; border: 1px solid #888;
                       background: white; }
@@ -91,13 +93,19 @@ function openImgModal(src) {
   modalContent.appendChild(img);
   modal.classList.add('show');
 }
-function openIframeModal(urlL, urlR, label) {
+function openIframeModal(urlL, urlR, label, staticSrc) {
   clearModal();
   if (label) {
     const lbl = document.createElement('div');
     lbl.className = 'modal-label';
     lbl.textContent = label;
     modalContent.appendChild(lbl);
+  }
+  if (staticSrc) {
+    const img = document.createElement('img');
+    img.src = staticSrc;
+    img.className = 'modal-static-img';
+    modalContent.appendChild(img);
   }
   const row = document.createElement('div');
   row.className = 'modal-iframe-row';
@@ -115,10 +123,10 @@ function openIframeModal(urlL, urlR, label) {
 document.querySelectorAll('.map-cell > img').forEach(img => {
   img.addEventListener('click', () => openImgModal(img.src));
 });
-// Subject tiles → interactive L+R iframes in modal
+// Subject tiles → static PNG + L+R iframes in modal
 document.querySelectorAll('.subj-grid img').forEach(img => {
   img.addEventListener('click', () => {
-    openIframeModal(img.dataset.l, img.dataset.r, img.dataset.label || '');
+    openIframeModal(img.dataset.l, img.dataset.r, img.dataset.label || '', img.src);
   });
 });
 // Cohort "View in 3D" buttons → interactive L+R iframes in modal
