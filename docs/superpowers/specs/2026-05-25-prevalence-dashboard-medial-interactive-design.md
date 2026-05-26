@@ -12,7 +12,7 @@ Two additions:
 1. Medial views — all maps become 4-panel (L-lat / L-med / R-lat / R-med).
 2. Interactive rotation — cohort-level maps additionally get rotatable WebGL viewers (one per hemisphere) that load on demand, so the user can spin to any angle (inferior, posterior, etc.) without re-rendering.
 
-Per-subject z-map tiles stay static (4-panel only) because there are 2,024 of them and the diagnostic value of rotating each tile is low compared to the cost.
+Per-subject z-map tiles get static 4-panel PNGs AND a single interactive viewer per hemisphere — surfaced via the modal overlay rather than inline iframes so the 6-column grid stays compact.
 
 ## Approach Overview
 
@@ -38,14 +38,16 @@ Rejected alternatives:
 ```
 {task}_{contrast}_prevalence_uncorrected.png             4-panel static
 {task}_{contrast}_directionality_uncorrected.png         4-panel static
-{task}_{contrast}_prevalence_uncorrected_L.html          NEW — interactive L hemi
-{task}_{contrast}_prevalence_uncorrected_R.html          NEW — interactive R hemi
-{task}_{contrast}_directionality_uncorrected_L.html      NEW
-{task}_{contrast}_directionality_uncorrected_R.html      NEW
+{task}_{contrast}_prevalence_uncorrected_L.html          interactive L hemi (cohort)
+{task}_{contrast}_prevalence_uncorrected_R.html          interactive R hemi (cohort)
+{task}_{contrast}_directionality_uncorrected_L.html      interactive L hemi (cohort)
+{task}_{contrast}_directionality_uncorrected_R.html      interactive R hemi (cohort)
 sub-{XXX}_{task}_{contrast}.png                          4-panel static (per subject)
+sub-{XXX}_{task}_{contrast}_L.html                       interactive L hemi (per subject)
+sub-{XXX}_{task}_{contrast}_R.html                       interactive R hemi (per subject)
 ```
 
-Per-cell adds 4 HTML files. 44 cells → 176 new HTML files. Each `view_surf` HTML is ~300KB–1MB (embeds mesh + map + plotly JS). Estimated total addition: ~50–180MB. Total dashboard size remains well under 1GB.
+Per-cell adds 4 cohort HTMLs + 92 per-subject HTMLs = 96 HTMLs. 44 cells → 4,224 new HTML files. Each `view_surf` HTML is ~3.8MB (embeds fsaverage6 mesh + map + plotly JS bundle). Total disk addition: ~16 GB on `/scratch/users/logben`. Acceptable given current free space; dashboard tarball for laptop transfer is per-cell-selectable.
 
 ## Rendering Details
 
@@ -94,6 +96,8 @@ view.save_as_html(out_path)
 Self-contained: embeds mesh, map, and plotly WebGL JS inline. Hover reveals vertex index + value. Drag rotates. Scroll zooms. No threshold slider — `view_surf` does not expose one and adding it is out of scope.
 
 Per-hemi (not bilateral combined) viewers. Each interactive map produces one HTML per hemisphere (L + R). They rotate independently. A combined bilateral mesh would require custom plotly trimesh code; deferred unless explicitly requested.
+
+Title kept short (`"L hemi"` / `"R hemi"` for cohort viewers, `"{sub_id} L"` / `"{sub_id} R"` for subject viewers) so the title bar does not overflow the 480px inline iframe or 600px modal iframe. Cell context (task/contrast) is already in the dashboard heading above the iframes; repeating it in the title caused horizontal overflow.
 
 ### Per-cell render budget (8 workers per array task)
 
