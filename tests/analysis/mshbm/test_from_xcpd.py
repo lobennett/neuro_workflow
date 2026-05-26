@@ -77,3 +77,15 @@ def test_gifti_to_mshbm_nifti_shape_and_dtype(tmp_path):
     # Round-trip the data
     arr = img.get_fdata().reshape(V, T)
     np.testing.assert_allclose(arr, data)
+
+
+def test_templateflow_paths_returns_existing_spheres():
+    """Resolves the sphere + pial + white paths from the templateflow cache."""
+    from neuro_workflow.analysis.mshbm.from_xcpd import templateflow_paths
+
+    paths = templateflow_paths()
+    for hemi in ('L', 'R'):
+        assert paths[hemi]['fsLR_sphere'].is_file(), paths[hemi]['fsLR_sphere']
+        assert paths[hemi]['fsaverage6_sphere'].is_file(), paths[hemi]['fsaverage6_sphere']
+        assert paths[hemi]['fsaverage6_pial'].is_file(), paths[hemi]['fsaverage6_pial']
+        assert paths[hemi]['fsaverage6_white'].is_file(), paths[hemi]['fsaverage6_white']
