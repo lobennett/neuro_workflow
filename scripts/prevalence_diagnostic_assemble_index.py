@@ -36,6 +36,12 @@ _HTML_HEAD = """<!doctype html>
   .subj-grid { display: grid; grid-template-columns: repeat(6, 1fr);
                gap: 6px; margin: 8px 0; }
   .subj-grid img { width: 100%; border: 1px solid #ddd; cursor: zoom-in; }
+  .map-cell { display: flex; flex-direction: column; gap: 4px; }
+  .rotate-btn { padding: 4px 10px; cursor: pointer; font-size: 12px;
+                background: #06c; color: white; border: none;
+                border-radius: 3px; align-self: flex-start; }
+  .iframe-holder { display: flex; gap: 8px; margin-top: 8px; }
+  .surf-frame { width: 480px; height: 380px; border: 1px solid #ccc; }
   .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.85);
               display: none; align-items: center; justify-content: center;
               z-index: 1000; cursor: zoom-out; }
