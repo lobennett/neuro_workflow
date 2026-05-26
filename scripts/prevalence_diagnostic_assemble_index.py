@@ -47,7 +47,13 @@ _HTML_HEAD = """<!doctype html>
   #modal-content { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   #modal-content img { max-width: 95vw; max-height: 95vh; }
   .modal-static-img { max-width: 1000px !important; max-height: 60vh !important;
-                      background: white; padding: 4px; border-radius: 4px; }
+                      background: white; padding: 4px; border-radius: 4px;
+                      cursor: zoom-in; }
+  #modal-content.expanded .modal-static-img { max-width: 95vw !important;
+                                              max-height: 90vh !important;
+                                              cursor: zoom-out; }
+  #modal-content.expanded .modal-iframe-row { display: none; }
+  #modal-content.expanded .modal-label { display: none; }
   .modal-iframe-row { display: flex; gap: 12px; }
   .modal-surf-frame { width: 600px; height: 500px; border: 1px solid #888;
                       background: white; }
@@ -84,6 +90,7 @@ function clearModal() {
 }
 function closeModal() {
   modal.classList.remove('show');
+  modalContent.classList.remove('expanded');
   clearModal();
 }
 function openImgModal(src) {
@@ -105,6 +112,10 @@ function openIframeModal(urlL, urlR, label, staticSrc) {
     const img = document.createElement('img');
     img.src = staticSrc;
     img.className = 'modal-static-img';
+    img.addEventListener('click', e => {
+      e.stopPropagation();
+      modalContent.classList.toggle('expanded');
+    });
     modalContent.appendChild(img);
   }
   const row = document.createElement('div');
