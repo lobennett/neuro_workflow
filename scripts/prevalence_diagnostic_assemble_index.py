@@ -35,7 +35,7 @@ _HTML_HEAD = """<!doctype html>
   .prev-row img { max-width: 640px; height: auto; border: 1px solid #ccc; }
   .subj-grid { display: grid; grid-template-columns: repeat(6, 1fr);
                gap: 6px; margin: 8px 0; }
-  .subj-grid img { width: 100%; border: 1px solid #ddd; cursor: zoom-in; }
+  .subj-grid img { width: 100%; border: 1px solid #ddd; cursor: pointer; }
   .map-cell { display: flex; flex-direction: column; gap: 4px; }
   .rotate-btn { padding: 4px 10px; cursor: pointer; font-size: 12px;
                 background: #06c; color: white; border: none;
@@ -44,9 +44,19 @@ _HTML_HEAD = """<!doctype html>
   .surf-frame { width: 480px; height: 380px; border: 1px solid #ccc; }
   .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.85);
               display: none; align-items: center; justify-content: center;
-              z-index: 1000; cursor: zoom-out; }
+              z-index: 1000; }
   .modal-bg.show { display: flex; }
-  .modal-bg img { max-width: 95vw; max-height: 95vh; }
+  #modal-content { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  #modal-content img { max-width: 95vw; max-height: 95vh; }
+  .modal-iframe-row { display: flex; gap: 12px; }
+  .modal-surf-frame { width: 600px; height: 500px; border: 1px solid #888;
+                      background: white; }
+  .modal-close { position: fixed; top: 16px; right: 24px; font-size: 24px;
+                 color: white; cursor: pointer; user-select: none;
+                 padding: 4px 10px; background: rgba(0,0,0,0.5);
+                 border-radius: 4px; }
+  .modal-label { color: white; font-size: 14px;
+                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   .meta { color: #666; font-size: 13px; margin-bottom: 16px; }
   .toc { columns: 4; -webkit-columns: 4; -moz-columns: 4; gap: 12px;
          padding: 12px; background: #f4f4f4; border-radius: 6px; }
@@ -61,16 +71,68 @@ __TOC__
 </div>
 </details>
 __BODY__
-<div id="modal" class="modal-bg" onclick="this.classList.remove('show')"><img id="modal-img"></div>
+<div id="modal" class="modal-bg">
+  <span class="modal-close" id="modal-close">&times;</span>
+  <div id="modal-content"></div>
+</div>
 <script>
-// Modal zoom for static images (subject tiles + cohort PNGs)
-document.querySelectorAll('.subj-grid img, .map-cell > img').forEach(img => {
+const modal = document.getElementById('modal');
+const modalContent = document.getElementById('modal-content');
+
+function clearModal() {
+  while (modalContent.firstChild) modalContent.removeChild(modalContent.firstChild);
+}
+function closeModal() {
+  modal.classList.remove('show');
+  clearModal();
+}
+function openImgModal(src) {
+  clearModal();
+  const img = document.createElement('img');
+  img.src = src;
+  modalContent.appendChild(img);
+  modal.classList.add('show');
+}
+function openIframeModal(urlL, urlR, label) {
+  clearModal();
+  if (label) {
+    const lbl = document.createElement('div');
+    lbl.className = 'modal-label';
+    lbl.textContent = label;
+    modalContent.appendChild(lbl);
+  }
+  const row = document.createElement('div');
+  row.className = 'modal-iframe-row';
+  for (const url of [urlL, urlR]) {
+    const fr = document.createElement('iframe');
+    fr.src = url;
+    fr.className = 'modal-surf-frame';
+    row.appendChild(fr);
+  }
+  modalContent.appendChild(row);
+  modal.classList.add('show');
+}
+
+// Cohort PNGs → static image modal
+document.querySelectorAll('.map-cell > img').forEach(img => {
+  img.addEventListener('click', () => openImgModal(img.src));
+});
+// Subject tiles → interactive L+R iframes in modal
+document.querySelectorAll('.subj-grid img').forEach(img => {
   img.addEventListener('click', () => {
-    document.getElementById('modal-img').src = img.src;
-    document.getElementById('modal').classList.add('show');
+    openIframeModal(img.dataset.l, img.dataset.r, img.dataset.label || '');
   });
 });
-// Rotate toggle: lazy-spawn L+R iframes on click, tear down on second click
+// Modal close: X button, overlay click (not iframe), or Escape
+document.getElementById('modal-close').addEventListener('click', closeModal);
+modal.addEventListener('click', e => {
+  if (e.target === modal) closeModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
+});
+
+// Cohort rotate toggle: lazy-spawn L+R iframes inline, tear down on second click
 document.querySelectorAll('.rotate-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const holder = btn.nextElementSibling;
@@ -78,7 +140,7 @@ document.querySelectorAll('.rotate-btn').forEach(btn => {
     if (open) {
       while (holder.firstChild) holder.removeChild(holder.firstChild);
       holder.hidden = true;
-      btn.textContent = 'rotate';
+      btn.textContent = 'View in 3D';
     } else {
       for (const url of [btn.dataset.l, btn.dataset.r]) {
         const fr = document.createElement('iframe');
@@ -87,7 +149,7 @@ document.querySelectorAll('.rotate-btn').forEach(btn => {
         holder.appendChild(fr);
       }
       holder.hidden = false;
-      btn.textContent = 'close';
+      btn.textContent = 'Close';
     }
   });
 });
@@ -142,6 +204,17 @@ def main(argv=None) -> int:
         def _rel(p):
             return p.relative_to(args.dashboard_dir).as_posix()
 
+        def _subj_tile(png_path):
+            sub_id = png_path.stem.split('_', 1)[0]
+            int_l = png_path.with_name(f'{png_path.stem}_L.html')
+            int_r = png_path.with_name(f'{png_path.stem}_R.html')
+            label = f'{sub_id} {task} / {contrast}'
+            return (
+                f'<img src="{_rel(png_path)}" '
+                f'data-l="{_rel(int_l)}" data-r="{_rel(int_r)}" '
+                f'data-label="{label}">'
+            )
+
         section_html = (
             f'<h2 id="{anchor}">{task} / {contrast} '
             f'<small>(n_subj={len(subj_pngs)})</small></h2>\n'
@@ -151,23 +224,20 @@ def main(argv=None) -> int:
             f'<img src="{_rel(prev_png)}">'
             f'<button class="rotate-btn" '
             f'data-l="{_rel(prev_int_l)}" data-r="{_rel(prev_int_r)}">'
-            f'rotate</button>'
+            f'View in 3D</button>'
             f'<div class="iframe-holder" hidden></div>'
             f'</div>'
             f'<div class="map-cell">'
             f'<img src="{_rel(dir_png)}">'
             f'<button class="rotate-btn" '
             f'data-l="{_rel(dir_int_l)}" data-r="{_rel(dir_int_r)}">'
-            f'rotate</button>'
+            f'View in 3D</button>'
             f'<div class="iframe-holder" hidden></div>'
             f'</div>'
             f'</div>\n'
-            f'<h3>Per-subject unthresholded z-maps</h3>\n'
+            f'<h3>Per-subject unthresholded z-maps (click to view in 3D)</h3>\n'
             '<div class="subj-grid">'
-            + '\n'.join(
-                f'<img src="{_rel(p)}">'
-                for p in subj_pngs
-            )
+            + '\n'.join(_subj_tile(p) for p in subj_pngs)
             + '</div>'
         )
         sections.append(section_html)
