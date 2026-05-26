@@ -37,10 +37,37 @@ def test_discover_xcpd_cells_prefers_concatenated_over_per_run(tmp_path):
         ('ses-01', 'flanker'),
         ('ses-02', 'rest'),
     }
-    # ses-01 task-rest must be the no-run-suffix file
-    assert '_run-' not in cells_by_key[('ses-01', 'rest')].dtseries.name
+    # ses-01 task-rest must be the no-run-suffix file (single-element tuple)
+    rest = cells_by_key[('ses-01', 'rest')]
+    assert len(rest.dtseries_paths) == 1
+    assert '_run-' not in rest.dtseries_paths[0].name
     # ses-01 task-flanker must be the run-1 file (fallback)
-    assert '_run-1_' in cells_by_key[('ses-01', 'flanker')].dtseries.name
+    flank = cells_by_key[('ses-01', 'flanker')]
+    assert len(flank.dtseries_paths) == 1
+    assert '_run-1_' in flank.dtseries_paths[0].name
+
+
+def test_discover_xcpd_cells_returns_all_runs_when_no_concatenated(tmp_path):
+    """When XCP-D emits multiple _run-N files for the same (session, task)
+    but no concatenated variant, discover returns all per-run files in
+    ascending run order so the driver can wb_command -cifti-merge them."""
+    from neuro_workflow.analysis.mshbm.from_xcpd import discover_xcpd_cells
+
+    sub_root = tmp_path / 'sub-s1481'
+    (sub_root / 'ses-04' / 'func').mkdir(parents=True)
+    # Two runs of rest in ses-04, no concatenated form (the s1481 case)
+    (sub_root / 'ses-04/func/sub-s1481_ses-04_task-rest_run-2_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii').touch()
+    (sub_root / 'ses-04/func/sub-s1481_ses-04_task-rest_run-1_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii').touch()
+
+    cells = discover_xcpd_cells(sub_root)
+    assert len(cells) == 1
+    rest = cells[0]
+    assert rest.session == 'ses-04'
+    assert rest.task == 'rest'
+    assert len(rest.dtseries_paths) == 2
+    # Sorted ascending by run number
+    assert '_run-1_' in rest.dtseries_paths[0].name
+    assert '_run-2_' in rest.dtseries_paths[1].name
 
 
 def test_discover_xcpd_cells_empty_root_returns_empty_list(tmp_path):
