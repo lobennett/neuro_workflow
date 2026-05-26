@@ -135,19 +135,39 @@ def render_subject_montage(
 
 def render_prevalence_map(prev_dir: Path, task: str, contrast: str,
                           output_dir: Path, cohort: str = 'pooled46') -> Path:
-    """Render the uncorrected directional prevalence map for one cell."""
+    """Render uncorrected prevalence + directionality maps for one cell.
+
+    Emits 4-panel static PNGs (lateral + medial, both hemis) AND four
+    single-hemi WebGL viewers (prevalence L/R, directionality L/R) so the
+    assemble step can lazy-load them as rotatable iframes.
+    """
     fsav = _fetch_fsaverage6()
     base = f'{cohort}_task-{task}_hemi-X_contrast-{contrast}_rtmodel-RTDur'
+
+    # ---- Overall prevalence ----
     map_l = load_gifti_data(prev_dir / f'{base.replace("hemi-X","hemi-L")}_direction-overall_stat-prevalence-map.func.gii')
     map_r = load_gifti_data(prev_dir / f'{base.replace("hemi-X","hemi-R")}_direction-overall_stat-prevalence-map.func.gii')
-    out_path = output_dir / f'{task}_{contrast}_prevalence_uncorrected.png'
+    prev_png = output_dir / f'{task}_{contrast}_prevalence_uncorrected.png'
     _plot_4panel(
-        map_l, map_r, out_path,
+        map_l, map_r, prev_png,
         cmap='inferno', vmin=0.0, vmax=None,
         title=f'{task} / {contrast} — UNCORRECTED prevalence (z>1.96)',
         fsaverage=fsav, figsize=(8, 7), dpi=100,
     )
-    # Directionality map (signed)
+    # Cell-specific vmax for interactive viewer (so it matches the static color scale)
+    prev_concat = np.concatenate([map_l, map_r])
+    prev_concat = prev_concat[np.isfinite(prev_concat)]
+    prev_vmax = float(np.nanmax(prev_concat)) if prev_concat.size else 1.0
+    for hemi_arr, hemi in ((map_l, 'left'), (map_r, 'right')):
+        _render_interactive_viewer(
+            hemi_arr, hemi,
+            output_dir / f'{task}_{contrast}_prevalence_uncorrected_{hemi[0].upper()}.html',
+            cmap='inferno', vmax=prev_vmax, symmetric=False,
+            title=f'{task} / {contrast} — {hemi} prevalence (unthresholded)',
+            fsaverage=fsav,
+        )
+
+    # ---- Directionality (signed) ----
     dir_l = load_gifti_data(prev_dir / f'{base.replace("hemi-X","hemi-L")}_stat-directionality.func.gii')
     dir_r = load_gifti_data(prev_dir / f'{base.replace("hemi-X","hemi-R")}_stat-directionality.func.gii')
     dir_path = output_dir / f'{task}_{contrast}_directionality_uncorrected.png'
@@ -157,7 +177,16 @@ def render_prevalence_map(prev_dir: Path, task: str, contrast: str,
         title=f'{task} / {contrast} — directionality (signed, uncorrected)',
         fsaverage=fsav, figsize=(8, 7), dpi=100, symmetric=True,
     )
-    return out_path
+    for hemi_arr, hemi in ((dir_l, 'left'), (dir_r, 'right')):
+        _render_interactive_viewer(
+            hemi_arr, hemi,
+            output_dir / f'{task}_{contrast}_directionality_uncorrected_{hemi[0].upper()}.html',
+            cmap='RdBu_r', vmax=1.0, symmetric=True,
+            title=f'{task} / {contrast} — {hemi} directionality (signed)',
+            fsaverage=fsav,
+        )
+
+    return prev_png
 
 
 _HTML_HEAD = """<!doctype html>
