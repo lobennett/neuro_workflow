@@ -40,8 +40,6 @@ _HTML_HEAD = """<!doctype html>
   .rotate-btn { padding: 4px 10px; cursor: pointer; font-size: 12px;
                 background: #06c; color: white; border: none;
                 border-radius: 3px; align-self: flex-start; }
-  .iframe-holder { display: flex; gap: 8px; margin-top: 8px; }
-  .surf-frame { width: 480px; height: 380px; border: 1px solid #ccc; }
   .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.85);
               display: none; align-items: center; justify-content: center;
               z-index: 1000; }
@@ -123,6 +121,12 @@ document.querySelectorAll('.subj-grid img').forEach(img => {
     openIframeModal(img.dataset.l, img.dataset.r, img.dataset.label || '');
   });
 });
+// Cohort "View in 3D" buttons → interactive L+R iframes in modal
+document.querySelectorAll('.rotate-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    openIframeModal(btn.dataset.l, btn.dataset.r, btn.dataset.label || '');
+  });
+});
 // Modal close: X button, overlay click (not iframe), or Escape
 document.getElementById('modal-close').addEventListener('click', closeModal);
 modal.addEventListener('click', e => {
@@ -130,28 +134,6 @@ modal.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
-});
-
-// Cohort rotate toggle: lazy-spawn L+R iframes inline, tear down on second click
-document.querySelectorAll('.rotate-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const holder = btn.nextElementSibling;
-    const open = !holder.hidden;
-    if (open) {
-      while (holder.firstChild) holder.removeChild(holder.firstChild);
-      holder.hidden = true;
-      btn.textContent = 'View in 3D';
-    } else {
-      for (const url of [btn.dataset.l, btn.dataset.r]) {
-        const fr = document.createElement('iframe');
-        fr.src = url;
-        fr.className = 'surf-frame';
-        holder.appendChild(fr);
-      }
-      holder.hidden = false;
-      btn.textContent = 'Close';
-    }
-  });
 });
 </script>
 </body></html>"""
@@ -223,16 +205,16 @@ def main(argv=None) -> int:
             f'<div class="map-cell">'
             f'<img src="{_rel(prev_png)}">'
             f'<button class="rotate-btn" '
-            f'data-l="{_rel(prev_int_l)}" data-r="{_rel(prev_int_r)}">'
+            f'data-l="{_rel(prev_int_l)}" data-r="{_rel(prev_int_r)}" '
+            f'data-label="{task} / {contrast} — prevalence (unthresholded)">'
             f'View in 3D</button>'
-            f'<div class="iframe-holder" hidden></div>'
             f'</div>'
             f'<div class="map-cell">'
             f'<img src="{_rel(dir_png)}">'
             f'<button class="rotate-btn" '
-            f'data-l="{_rel(dir_int_l)}" data-r="{_rel(dir_int_r)}">'
+            f'data-l="{_rel(dir_int_l)}" data-r="{_rel(dir_int_r)}" '
+            f'data-label="{task} / {contrast} — directionality (signed)">'
             f'View in 3D</button>'
-            f'<div class="iframe-holder" hidden></div>'
             f'</div>'
             f'</div>\n'
             f'<h3>Per-subject unthresholded z-maps (click to view in 3D)</h3>\n'
