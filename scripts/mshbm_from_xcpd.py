@@ -98,11 +98,20 @@ def _process_cell(
             str(smoothed),
         ])
 
-        # Step 4: wrap as (V, 1, 1, T) NIfTI for MSHBM
+        # Step 4: save canonical GIFTI sidecar (for wb_view / portable QC).
+        # NaN→0 sanitisation happens inside gifti_to_mshbm_nifti when wrapping
+        # for MSHBM; the GIFTI keeps NaN here so downstream tools can detect
+        # resampling holes if needed.
         sub_dir = out_dir / f'sub-{subject}'
-        out_path = sub_dir / f'{short[hemi]}_{cell.session}_task-{cell.task}_xcpd_fsaverage6_sm2.nii.gz'
-        gifti_to_mshbm_nifti(smoothed, out_path)
-        logger.info('  wrote %s', out_path.relative_to(out_dir))
+        sub_dir.mkdir(parents=True, exist_ok=True)
+        stem = f'{short[hemi]}_{cell.session}_task-{cell.task}_xcpd_fsaverage6_sm2'
+        gii_out = sub_dir / f'{stem}.func.gii'
+        shutil.copyfile(smoothed, gii_out)
+
+        # Step 5: wrap as (V, 1, 1, T) NIfTI for MSHBM consumption
+        nii_out = sub_dir / f'{stem}.nii.gz'
+        gifti_to_mshbm_nifti(smoothed, nii_out)
+        logger.info('  wrote %s + .func.gii', nii_out.relative_to(out_dir))
 
 
 def main(argv=None) -> int:
