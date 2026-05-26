@@ -14,11 +14,14 @@ import nibabel as nib
 import numpy as np
 
 
+# Concatenated (combine-runs) filenames have no _run-N token.
+# Per-run filenames have _run-N before _space.
 _CELL_RE = re.compile(
     r'^sub-(?P<sub>[A-Za-z0-9]+)_'
     r'(?P<ses>ses-[A-Za-z0-9]+)_'
-    r'task-(?P<task>[A-Za-z0-9]+)_'
-    r'space-fsLR_den-91k_desc-denoised_bold\.dtseries\.nii$'
+    r'task-(?P<task>[A-Za-z0-9]+)'
+    r'(?:_run-(?P<run>\d+))?'
+    r'_space-fsLR_den-91k_desc-denoised_bold\.dtseries\.nii$'
 )
 
 
@@ -55,17 +58,35 @@ def gifti_to_mshbm_nifti(gifti_path: Path, out_path: Path) -> Path:
 
 
 def discover_xcpd_cells(subject_root: Path) -> list[Cell]:
-    """Find all `desc-denoised` CIFTIs for a subject, per-task concatenated only.
+    """Find all `desc-denoised` CIFTIs for a subject, one per (session, task).
 
-    Skips per-run variants (filenames containing `_run-N_`) — XCP-D was run
-    with --combine-runs, so the no-run-suffix file is the concatenation.
+    XCP-D --combine-runs emits a no-run-suffix concatenated file ONLY when a
+    (session, task) has >1 run. For single-run cells it leaves only the
+    `_run-N` variant. This helper prefers the concatenated file when present,
+    otherwise falls back to the unique per-run file. If a cell has multiple
+    per-run files but no concatenation (anomalous), the lowest run number wins.
     """
-    cells: list[Cell] = []
-    for path in sorted(Path(subject_root).rglob('*_desc-denoised_bold.dtseries.nii')):
+    # Group all matches by (session, task)
+    groups: dict[tuple[str, str], list[tuple[int | None, Path]]] = {}
+    for path in Path(subject_root).rglob('*_desc-denoised_bold.dtseries.nii'):
         m = _CELL_RE.match(path.name)
         if not m:
             continue
-        cells.append(Cell(session=m.group('ses'), task=m.group('task'), dtseries=path))
+        key = (m.group('ses'), m.group('task'))
+        run = int(m.group('run')) if m.group('run') else None
+        groups.setdefault(key, []).append((run, path))
+
+    cells: list[Cell] = []
+    for (session, task), entries in sorted(groups.items()):
+        # Prefer the concatenated variant (run is None)
+        concat = [p for r, p in entries if r is None]
+        if concat:
+            chosen = concat[0]
+        else:
+            # Fall back to the lowest run number
+            per_run = sorted([(r, p) for r, p in entries if r is not None])
+            chosen = per_run[0][1]
+        cells.append(Cell(session=session, task=task, dtseries=chosen))
     return cells
 
 

@@ -10,37 +10,37 @@ def test_module_imports():
 from pathlib import Path
 
 
-def test_discover_xcpd_cells_returns_per_task_concatenated(tmp_path):
-    """One Cell per (session × task) for `desc-denoised` files
-    WITHOUT a `_run-N` token (the combine-runs concatenated variant)."""
+def test_discover_xcpd_cells_prefers_concatenated_over_per_run(tmp_path):
+    """When both `_run-N` and a concatenated (no run suffix) file exist for the
+    same (session, task), discover picks the concatenated form. When only the
+    per-run file exists (single-run case), it falls back to that."""
     from neuro_workflow.analysis.mshbm.from_xcpd import discover_xcpd_cells, Cell
 
     sub_root = tmp_path / 'sub-s10'
     (sub_root / 'ses-01' / 'func').mkdir(parents=True)
     (sub_root / 'ses-02' / 'func').mkdir(parents=True)
 
-    # Cells we want — no _run-N
-    keep = [
-        'ses-01/func/sub-s10_ses-01_task-rest_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii',
-        'ses-01/func/sub-s10_ses-01_task-flanker_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii',
-        'ses-02/func/sub-s10_ses-02_task-rest_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii',
-    ]
-    # Cells we want to skip — per-run variants
-    skip = [
-        'ses-01/func/sub-s10_ses-01_task-rest_run-1_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii',
-        'ses-01/func/sub-s10_ses-01_task-flanker_run-1_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii',
-    ]
-    for rel in keep + skip:
-        (sub_root / rel).touch()
+    # ses-01 task-rest has BOTH per-run AND concatenated → pick concatenated
+    (sub_root / 'ses-01/func/sub-s10_ses-01_task-rest_run-1_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii').touch()
+    (sub_root / 'ses-01/func/sub-s10_ses-01_task-rest_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii').touch()
+    # ses-01 task-flanker has ONLY per-run (single-run subject) → fall back
+    (sub_root / 'ses-01/func/sub-s10_ses-01_task-flanker_run-1_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii').touch()
+    # ses-02 task-rest has only concatenated → use it
+    (sub_root / 'ses-02/func/sub-s10_ses-02_task-rest_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii').touch()
 
     cells = discover_xcpd_cells(sub_root)
     assert len(cells) == 3
     assert all(isinstance(c, Cell) for c in cells)
-    assert {(c.session, c.task) for c in cells} == {
+    cells_by_key = {(c.session, c.task): c for c in cells}
+    assert set(cells_by_key) == {
         ('ses-01', 'rest'),
         ('ses-01', 'flanker'),
         ('ses-02', 'rest'),
     }
+    # ses-01 task-rest must be the no-run-suffix file
+    assert '_run-' not in cells_by_key[('ses-01', 'rest')].dtseries.name
+    # ses-01 task-flanker must be the run-1 file (fallback)
+    assert '_run-1_' in cells_by_key[('ses-01', 'flanker')].dtseries.name
 
 
 def test_discover_xcpd_cells_empty_root_returns_empty_list(tmp_path):
