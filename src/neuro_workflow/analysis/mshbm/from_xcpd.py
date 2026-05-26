@@ -36,12 +36,17 @@ def gifti_to_mshbm_nifti(gifti_path: Path, out_path: Path) -> Path:
     MSHBM's CBIG MATLAB wrapper consumes per-hemi time series shaped as
     a 4-D NIfTI with the time axis last and singleton y/z. This helper
     builds that volume from a GIFTI with one DataArray per TR.
+
+    NaN values (introduced by wb_command -metric-resample at vertices
+    that landed in resampling holes) are zeroed so MSHBM gets a single
+    medial-wall sentinel (0) instead of a mixed zero/NaN convention.
     """
     gii = nib.load(str(gifti_path))
     cols = [da.data.astype(np.float32) for da in gii.darrays]
     if not cols:
         raise ValueError(f'No data arrays in {gifti_path}')
     arr = np.stack(cols, axis=-1)  # (V, T)
+    arr = np.nan_to_num(arr, nan=0.0, posinf=0.0, neginf=0.0)
     arr_4d = arr.reshape(arr.shape[0], 1, 1, arr.shape[1])
     img = nib.Nifti1Image(arr_4d, affine=np.eye(4))
     out_path.parent.mkdir(parents=True, exist_ok=True)

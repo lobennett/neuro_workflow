@@ -79,6 +79,38 @@ def test_gifti_to_mshbm_nifti_shape_and_dtype(tmp_path):
     np.testing.assert_allclose(arr, data)
 
 
+def test_gifti_to_mshbm_nifti_zeros_nan_inputs(tmp_path):
+    """NaN values in the GIFTI (from wb_command -metric-resample holes) are
+    zeroed in the output so MSHBM sees a single medial-wall sentinel."""
+    from neuro_workflow.analysis.mshbm.from_xcpd import gifti_to_mshbm_nifti
+
+    V, T = 50, 5
+    data = np.ones((V, T), dtype=np.float32)
+    # Salt some NaNs across vertices and timepoints
+    data[3, :] = np.nan
+    data[17, 2] = np.nan
+    data[42, [0, 4]] = np.nan
+    darrays = [
+        nib.gifti.GiftiDataArray(data=data[:, t].astype(np.float32),
+                                  intent='NIFTI_INTENT_NONE')
+        for t in range(T)
+    ]
+    gii_path = tmp_path / 'lh.func.gii'
+    nib.save(nib.gifti.GiftiImage(darrays=darrays), str(gii_path))
+
+    out = tmp_path / 'lh.nii.gz'
+    gifti_to_mshbm_nifti(gii_path, out)
+
+    arr = nib.load(str(out)).get_fdata().reshape(V, T)
+    assert not np.isnan(arr).any(), 'NaN should be zeroed'
+    assert (arr[3, :] == 0.0).all()
+    assert arr[17, 2] == 0.0
+    assert (arr[42, [0, 4]] == 0.0).all()
+    # Non-NaN values preserved
+    assert arr[0, 0] == 1.0
+    assert arr[17, 0] == 1.0
+
+
 def test_templateflow_paths_returns_existing_spheres():
     """Resolves the sphere + pial + white paths from the templateflow cache."""
     from neuro_workflow.analysis.mshbm.from_xcpd import templateflow_paths
