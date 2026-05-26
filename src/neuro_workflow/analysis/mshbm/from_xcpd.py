@@ -27,10 +27,17 @@ _CELL_RE = re.compile(
 
 @dataclass(frozen=True)
 class Cell:
-    """One (session, task) cell for one subject."""
+    """One (session, task) cell for one subject.
+
+    ``dtseries_paths`` is always a list. Length-1 means we found either the
+    XCP-D --combine-runs concatenated file OR a single per-run file. Length>1
+    means XCP-D emitted multiple ``_run-N`` files for this cell without a
+    concatenated variant — the driver concatenates them via
+    ``wb_command -cifti-merge`` before downstream processing.
+    """
     session: str
     task: str
-    dtseries: Path
+    dtseries_paths: tuple[Path, ...]
 
 
 def gifti_to_mshbm_nifti(gifti_path: Path, out_path: Path) -> Path:
@@ -78,15 +85,16 @@ def discover_xcpd_cells(subject_root: Path) -> list[Cell]:
 
     cells: list[Cell] = []
     for (session, task), entries in sorted(groups.items()):
-        # Prefer the concatenated variant (run is None)
+        # Prefer the concatenated variant (run is None) — covers it standalone.
         concat = [p for r, p in entries if r is None]
         if concat:
-            chosen = concat[0]
+            paths = (concat[0],)
         else:
-            # Fall back to the lowest run number
+            # No concatenation: return ALL per-run files (sorted by run number)
+            # so the driver can wb_command -cifti-merge them.
             per_run = sorted([(r, p) for r, p in entries if r is not None])
-            chosen = per_run[0][1]
-        cells.append(Cell(session=session, task=task, dtseries=chosen))
+            paths = tuple(p for _, p in per_run)
+        cells.append(Cell(session=session, task=task, dtseries_paths=paths))
     return cells
 
 

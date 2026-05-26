@@ -67,11 +67,23 @@ def _process_cell(
     cifti_label = {'L': 'CORTEX_LEFT', 'R': 'CORTEX_RIGHT'}
     short = {'L': 'lh', 'R': 'rh'}
 
+    # Step 0 (conditional): when XCP-D emitted multiple per-run CIFTIs without
+    # producing a concatenated variant, merge them along the time axis first.
+    if len(cell.dtseries_paths) == 1:
+        cifti_in = cell.dtseries_paths[0]
+    else:
+        cifti_in = work_dir / 'merged.dtseries.nii'
+        merge_cmd = ['wb_command', '-cifti-merge', str(cifti_in)]
+        for p in cell.dtseries_paths:
+            merge_cmd.extend(['-cifti', str(p)])
+        _run(merge_cmd)
+        logger.info('  merged %d runs → %s', len(cell.dtseries_paths), cifti_in.name)
+
     # Step 1: split CIFTI → two per-hemi GIFTIs (fsLR_32k)
     sep_lh = work_dir / 'sep_lh.func.gii'
     sep_rh = work_dir / 'sep_rh.func.gii'
     _run([
-        'wb_command', '-cifti-separate', str(cell.dtseries), 'COLUMN',
+        'wb_command', '-cifti-separate', str(cifti_in), 'COLUMN',
         '-metric', cifti_label['L'], str(sep_lh),
         '-metric', cifti_label['R'], str(sep_rh),
     ])
