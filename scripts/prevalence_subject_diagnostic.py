@@ -99,7 +99,7 @@ def _render_one_subject(args_tuple):
         z_l, z_r, out_path,
         cmap='RdBu_r', vmin=-vmax, vmax=vmax,
         title=sub_id, fsaverage=fsav,
-        figsize=(5, 4.5), dpi=50, symmetric=True,
+        figsize=(5, 4.5), dpi=150, symmetric=True,
     )
     for z_arr, hemi in ((z_l, 'left'), (z_r, 'right')):
         _render_interactive_viewer(
