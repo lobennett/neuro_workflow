@@ -63,10 +63,32 @@ __TOC__
 __BODY__
 <div id="modal" class="modal-bg" onclick="this.classList.remove('show')"><img id="modal-img"></div>
 <script>
-document.querySelectorAll('img').forEach(img => {
+// Modal zoom for static images (subject tiles + cohort PNGs)
+document.querySelectorAll('.subj-grid img, .map-cell > img').forEach(img => {
   img.addEventListener('click', () => {
     document.getElementById('modal-img').src = img.src;
     document.getElementById('modal').classList.add('show');
+  });
+});
+// Rotate toggle: lazy-spawn L+R iframes on click, tear down on second click
+document.querySelectorAll('.rotate-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const holder = btn.nextElementSibling;
+    const open = !holder.hidden;
+    if (open) {
+      while (holder.firstChild) holder.removeChild(holder.firstChild);
+      holder.hidden = true;
+      btn.textContent = 'rotate';
+    } else {
+      for (const url of [btn.dataset.l, btn.dataset.r]) {
+        const fr = document.createElement('iframe');
+        fr.src = url;
+        fr.className = 'surf-frame';
+        holder.appendChild(fr);
+      }
+      holder.hidden = false;
+      btn.textContent = 'close';
+    }
   });
 });
 </script>
