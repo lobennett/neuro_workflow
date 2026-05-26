@@ -61,6 +61,27 @@ def _plot_4panel(map_l, map_r, out_path, *, cmap, vmin, vmax, title, fsaverage,
     return out_path
 
 
+def _render_interactive_viewer(stat_map, hemi, out_path, *, cmap, vmax,
+                                symmetric, title, fsaverage):
+    """Single-hemisphere rotatable WebGL viewer (nilearn view_surf)."""
+    from nilearn import plotting
+    mesh_key = f'infl_{hemi}'
+    bg_key = f'sulc_{hemi}'
+    view = plotting.view_surf(
+        surf_mesh=fsaverage[mesh_key],
+        surf_map=stat_map,
+        bg_map=fsaverage[bg_key],
+        cmap=cmap,
+        symmetric_cmap=symmetric,
+        threshold=None,
+        vmax=vmax,
+        title=title,
+        black_bg=False,
+    )
+    view.save_as_html(str(out_path))
+    return out_path
+
+
 _SUBJECT_RE = re.compile(r'(sub-[a-zA-Z0-9]+)')
 
 
