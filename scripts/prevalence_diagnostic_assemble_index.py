@@ -20,6 +20,13 @@ _PREV_RE = re.compile(
 _SUBJ_RE = re.compile(
     r'^(?P<sub>sub-[A-Za-z0-9]+)_(?P<task>[A-Za-z0-9]+)_(?P<contrast>.+)\.png$'
 )
+_SUB_NUM_RE = re.compile(r'sub-s?(\d+)')
+
+
+def _subj_sort_key(p):
+    """Numeric sort by subject ID (so sub-s2 comes before sub-s10/sub-s1199)."""
+    m = _SUB_NUM_RE.search(p.name)
+    return int(m.group(1)) if m else 10**9
 
 
 _HTML_HEAD = """<!doctype html>
@@ -200,7 +207,8 @@ def main(argv=None) -> int:
         prev_int_r = fig_dir / f'{task}_{contrast}_prevalence_uncorrected_R.html'
         dir_int_l = fig_dir / f'{task}_{contrast}_directionality_uncorrected_L.html'
         dir_int_r = fig_dir / f'{task}_{contrast}_directionality_uncorrected_R.html'
-        subj_pngs = sorted(subj_pngs_by_cell.get((task, contrast), []))
+        subj_pngs = sorted(subj_pngs_by_cell.get((task, contrast), []),
+                            key=_subj_sort_key)
 
         def _rel(p):
             return p.relative_to(args.dashboard_dir).as_posix()
