@@ -149,34 +149,21 @@ def create_events_df(filename: Path, short_name: str) -> pd.DataFrame:
     return df
 
 
-def parse_bidsignore(bids_dir: Path) -> set[tuple[str, str, str]]:
-    """Parse ``.bidsignore`` into a set of ``(subject_label, session, task)``
-    tuples whose scans should be skipped."""
-    ignored: set[tuple[str, str, str]] = set()
-    bidsignore_path = bids_dir / ".bidsignore"
-    if not bidsignore_path.exists():
-        return ignored
-    for line in bidsignore_path.read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        m = re.search(r"sub-(\w+)/(ses-\d+)/func/.*task-(\w+)", line)
-        if m:
-            ignored.add((m.group(1), m.group(2), m.group(3)))
-    return ignored
+def discover_nifti_tasks(func_dir: Path) -> set[str]:
+    """Non-rest task labels that have a BOLD NIfTI in ``func_dir``.
 
-
-def discover_nifti_tasks(
-    func_dir: Path, sub_label: str, session: str, ignored: set[tuple[str, str, str]]
-) -> set[str]:
-    """Tasks with a BOLD NIfTI in ``func_dir``, excluding rest and bidsignored scans."""
+    Events are generated for every such task. Scan exclusion is intentionally
+    NOT applied here: the authoritative mechanism is the compiled-exclusions
+    system (enforced downstream at lev1), so ``.bidsignore`` is not consulted at
+    the events stage. (A prior ``.bidsignore`` filter here was a silent no-op —
+    its greedy task token, e.g. ``flanker_run``, never matched the bare task
+    ``flanker`` discovered here — so it is removed rather than resurrected.)
+    """
     tasks: set[str] = set()
     for nii in func_dir.glob("*.nii.gz"):
         m = re.search(r"task-([^_]+)", nii.name)
         if m and m.group(1) != "rest":
-            task = m.group(1)
-            if (sub_label, session, task) not in ignored:
-                tasks.add(task)
+            tasks.add(m.group(1))
     return tasks
 
 
@@ -215,8 +202,6 @@ def run_create_events(
         subjects: Optional list of subjects to process (default: all)
         sessions: Optional list of sessions to process (default: all)
     """
-    ignored = parse_bidsignore(bids_dir)
-
     for sub_dir in sorted(behavioral_dir.glob("sub-*")):
         if subjects and sub_dir.name not in subjects:
             continue
@@ -231,9 +216,7 @@ def run_create_events(
                 log.warning("No func dir for %s %s, skipping", sub_dir.name, ses_dir.name)
                 continue
 
-            sub_label = sub_dir.name.replace("sub-", "")
-
-            nifti_tasks = discover_nifti_tasks(func_dir, sub_label, ses_dir.name, ignored)
+            nifti_tasks = discover_nifti_tasks(func_dir)
             task_run_files = group_csvs_by_task(beh_dir, nifti_tasks)
 
             tasks_with_events = set()

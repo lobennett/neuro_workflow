@@ -34,29 +34,7 @@ def _make_stop_signal_csv(tmp_path):
 
 
 class TestRunCreateEventsHelpers:
-    def test_parse_bidsignore_extracts_sub_ses_task(self, tmp_path):
-        from neuro_workflow.events.create import parse_bidsignore
-        (tmp_path / ".bidsignore").write_text(
-            "# a comment\n"
-            "sub-s01/ses-01/func/sub-s01_ses-01_task-flanker_run-1_bold.nii.gz\n"
-            "\n"
-            "sub-s10/ses-03/func/sub-s10_ses-03_task-nBack_run-1_bold.nii.gz\n"
-        )
-        ignored = parse_bidsignore(tmp_path)
-        # NOTE: the regex's greedy \w+ after `task-` also captures the trailing
-        # `_run`, so the task token is e.g. "flanker_run" — a *known* mismatch
-        # with discover_nifti_tasks (which captures the bare "flanker"), meaning
-        # events-stage .bidsignore filtering is currently inert. This pins the
-        # existing behavior; the bug is tracked separately, not fixed in this
-        # behavior-preserving refactor.
-        assert ("s01", "ses-01", "flanker_run") in ignored
-        assert ("s10", "ses-03", "nBack_run") in ignored
-
-    def test_parse_bidsignore_missing_file_returns_empty(self, tmp_path):
-        from neuro_workflow.events.create import parse_bidsignore
-        assert parse_bidsignore(tmp_path) == set()
-
-    def test_discover_nifti_tasks_excludes_rest_and_ignored(self, tmp_path):
+    def test_discover_nifti_tasks_excludes_rest_only(self, tmp_path):
         from neuro_workflow.events.create import discover_nifti_tasks
         func = tmp_path / "func"
         func.mkdir()
@@ -66,8 +44,9 @@ class TestRunCreateEventsHelpers:
             "sub-s01_ses-01_task-nBack_run-1_bold.nii.gz",
         ):
             (func / name).touch()
-        tasks = discover_nifti_tasks(func, "s01", "ses-01", {("s01", "ses-01", "nBack")})
-        assert tasks == {"flanker"}  # rest excluded, nBack ignored
+        # Events are generated for ALL non-rest tasks; .bidsignore is intentionally
+        # NOT consulted at the events stage (exclusions enforced downstream).
+        assert discover_nifti_tasks(func) == {"flanker", "nBack"}
 
     def test_group_csvs_by_task_filters_and_reads_run(self, tmp_path):
         from neuro_workflow.events.create import group_csvs_by_task
