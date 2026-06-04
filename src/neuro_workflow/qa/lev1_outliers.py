@@ -338,7 +338,11 @@ def detect_lev1_outliers(
         outlier_pct_threshold: per-scan outlier voxel % flag threshold (default 10.0).
         contrast_glob: pattern (relative to each lev1_dir) for effect-size NIfTIs.
         vif_glob: pattern for per-contrast VIF CSVs.
-        exclusions: placeholder for Project B's exclusion registry. Currently a no-op.
+        exclusions: optional set of exclusion keys (as produced by
+            ``analysis.core.utils.load_exclusions`` / ``_make_exclusion_key``,
+            e.g. ``"sub-s10_ses-05_task-goNogo_run-1"``). Matching scan-contrasts
+            are dropped before cohort statistics so excluded scans don't skew the
+            per-voxel mean/SD. ``None`` keeps all discovered contrasts.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
 
