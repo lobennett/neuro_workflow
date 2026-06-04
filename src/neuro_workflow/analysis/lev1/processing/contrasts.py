@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from nilearn.glm.first_level import FirstLevelModel
 
+from neuro_workflow.analysis.lev1.processing.imaging import cast_nifti_to_float32
 from neuro_workflow.analysis.task_config.loader import get_task_contrasts
 
 logger = logging.getLogger(__name__)
@@ -145,15 +146,10 @@ def compute_run_contrasts(
                 ('effect_variance', 'variance'),
                 ('z_score', 'z_score'),
             ]:
-                img = contrast_result[stat_key]
                 # Skip surface (GIFTI) — only volumetric NIfTIs need the dtype fix.
-                if hemisphere is None:
-                    img = img.__class__(
-                        img.get_fdata().astype('float32'),
-                        img.affine,
-                        header=img.header,
-                    )
-                    img.set_data_dtype('float32')
+                img = cast_nifti_to_float32(
+                    contrast_result[stat_key], is_surface=hemisphere is not None
+                )
                 path = output_dir / f'{contrast_base}_stat-{suffix}{file_ext}'
                 img.to_filename(path)
                 saved_files[stat_key] = path
