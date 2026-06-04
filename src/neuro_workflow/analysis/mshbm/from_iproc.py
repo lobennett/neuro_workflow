@@ -33,9 +33,15 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 
-FSAVERAGE6_NVERTICES = 40962
+# Shared MSHBM naming + NIfTI-write conventions (RF-6). Re-exported here so the
+# established ``from_iproc.make_mshbm_name`` import path keeps working.
+from neuro_workflow.analysis.mshbm.io import (  # noqa: F401
+    HEMI_MAP,
+    make_mshbm_name,
+    write_mshbm_nifti,
+)
 
-HEMI_MAP = {"lh": "lh", "rh": "rh"}
+FSAVERAGE6_NVERTICES = 40962
 
 # iProc rest surface: lh.01_bld004_tedana_bpss_fsaverage6_sm0p0.nii.gz
 _IPROC_SURF_RE = re.compile(
@@ -73,29 +79,6 @@ class IprocRestScan:
     run: str
     lh_path: Path
     rh_path: Path
-
-
-def make_mshbm_name(hemi: str, session: str, run: str, task: str = "rest") -> str:
-    """Build the MSHBM-compatible filename for one hemi of one run.
-
-    The CBIG ``MSHBM_wrapper`` globs ``{lh,rh}*fsaverage6_sm*.nii.gz`` and (in
-    group-by-session mode) parses a ``_ses-NN_`` token, so the output name keeps
-    both. The ``nat_resid_bpss`` infix matches the lab's established
-    ``prepare_mshbm_inputs`` convention so iProc- and fMRIPrep-derived inputs are
-    interchangeable in the wrapper.
-
-    ``task`` defaults to ``"rest"`` for back-compatibility with rest-only callers;
-    pass the lowercased iProc cell label (e.g. ``"flanker"``) for task runs.
-
-    Input  tokens: hemi='lh', session='01', run='004', task='rest'
-    Output:        lh_ses-01_task-rest_run-004_nat_resid_bpss_fsaverage6_sm0.nii.gz
-    """
-    if hemi not in HEMI_MAP:
-        raise ValueError(f"Unexpected hemi {hemi!r}; expected 'lh' or 'rh'")
-    return (
-        f"{hemi}_ses-{session}_task-{task}_run-{run}"
-        f"_nat_resid_bpss_fsaverage6_sm0.nii.gz"
-    )
 
 
 def discover_iproc_scans(iproc_subject_root: Path) -> list[IprocScan]:
@@ -180,9 +163,5 @@ def iproc_surf_to_mshbm_nifti(in_path: Path, out_path: Path) -> Path:
     # Column-major (Fortran) flatten of the folded spatial dims == FreeSurfer's
     # vertex linear index; this inverts the (13654,1,3) fold exactly.
     flat = arr.reshape(nvox, n_t, order="F")
-    flat = np.nan_to_num(flat, nan=0.0, posinf=0.0, neginf=0.0)
-    out_4d = flat.reshape(nvox, 1, 1, n_t)
-    out_img = nib.Nifti1Image(out_4d, affine=np.eye(4))
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    nib.save(out_img, str(out_path))
-    return out_path
+    # Shared writer owns NaN/Inf-zeroing + (V,1,1,T) reshape + identity affine.
+    return write_mshbm_nifti(flat, out_path)
