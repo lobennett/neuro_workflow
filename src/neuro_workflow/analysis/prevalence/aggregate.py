@@ -71,6 +71,7 @@ class PrevalenceResult:
 
 
 _SUBJECT_RE = re.compile(r'(sub-[a-zA-Z0-9]+)')
+_SESSION_RE = re.compile(r'_ses-([0-9]+)_')
 
 
 def find_subject_zmaps(
@@ -108,6 +109,67 @@ def find_subject_zmaps(
         p for p in candidates
         if (m := _SUBJECT_RE.search(p.name)) and m.group(1) in keep
     ]
+
+
+def find_subject_instance_zmaps(
+    lev1_root: Path,
+    task: str,
+    contrast: str,
+    hemisphere: str,
+    instance_idx: int,
+    rtmodel: str = 'RTDur',
+    subjects: Optional[list[str]] = None,
+) -> list[Path]:
+    """Glob lev1 single-session z-maps for the N-th session each subject ran a task.
+
+    Used for the session-instance prevalence diagnostic: are early sessions
+    driving the effect while later ones wash out? Each subject's sessions are
+    sorted numerically by ``ses-NN`` and the ``instance_idx``-th one (1-indexed)
+    is returned. Subjects without that many sessions for ``(task, contrast)``
+    are silently dropped from the output.
+
+    Args:
+        lev1_root: ``…/derivatives/lev1_surface``. Per-subject z-maps live at
+            ``sub-X/task-T/indiv_contrasts/sub-X_ses-NN_task-T_run-N_hemi-H_
+            contrast-C_rtmodel-RTDur_stat-z_score.func.gii``.
+        task: task tag (no ``task-`` prefix).
+        contrast: contrast tag as it appears in the filename.
+        hemisphere: ``L`` or ``R``.
+        instance_idx: 1-indexed rank of the session to pick per subject
+            (1 = earliest session, 2 = second-earliest, …).
+        rtmodel: rtmodel tag (default ``RTDur``).
+        subjects: optional whitelist of ``sub-X`` ids.
+
+    Returns:
+        One path per subject who has an ``instance_idx``-th session for this
+        cell, sorted by subject id.
+    """
+    if instance_idx < 1:
+        raise ValueError(f'instance_idx must be >= 1; got {instance_idx}')
+    pattern = (
+        f'sub-*/task-{task}/indiv_contrasts/'
+        f'sub-*_ses-*_task-{task}_run-*_hemi-{hemisphere}_'
+        f'contrast-{contrast}_rtmodel-{rtmodel}_stat-z_score.func.gii'
+    )
+    keep: Optional[set[str]] = set(subjects) if subjects is not None else None
+
+    by_subject: dict[str, list[tuple[int, Path]]] = {}
+    for p in Path(lev1_root).glob(pattern):
+        m_subj = _SUBJECT_RE.search(p.name)
+        m_sess = _SESSION_RE.search(p.name)
+        if m_subj is None or m_sess is None:
+            continue
+        subj = m_subj.group(1)
+        if keep is not None and subj not in keep:
+            continue
+        by_subject.setdefault(subj, []).append((int(m_sess.group(1)), p))
+
+    out: list[Path] = []
+    for subj in sorted(by_subject):
+        sessions = sorted(by_subject[subj], key=lambda t: t[0])
+        if instance_idx <= len(sessions):
+            out.append(sessions[instance_idx - 1][1])
+    return out
 
 
 def load_gifti_data(path: Path) -> np.ndarray:
@@ -358,12 +420,20 @@ class DirectionalPrevalenceResult:
     direction, 0.5 = an even split between positive and negative.  Vertices
     with ``k_pos + k_neg == 0`` are NaN (no significant subjects either
     way).  Invalid (NaN-bearing) vertices are NaN in every output.
+
+    ``directionality`` is the signed per-vertex
+    ``(k_pos - k_neg) / (k_pos + k_neg)`` bounded in ``[-1, +1]``:
+    +1 = all significant subjects went positive, -1 = all went negative,
+    0 = even split.  Use a diverging colormap (e.g. RdBu_r) centred at 0
+    to visualise.  Pairs with ``consistency`` (which gives magnitude of
+    agreement) to fully describe the directional split.
     """
 
     overall: PrevalenceResult
     positive: PrevalenceResult
     negative: PrevalenceResult
     consistency: np.ndarray
+    directionality: np.ndarray
     n_vertices_invalid: int
 
 
@@ -424,22 +494,27 @@ def compute_directional_prevalence(
         k_neg, invalid_mask, n_subjects, alpha, level, z_thr_stored, fdr_q_stored,
     )
 
-    # Consistency: agreement among the directional subjects.  We use the
-    # positive counts (clipped at 0 to ignore the -1 invalid sentinel) so
-    # arithmetic is well-defined; vertices with no significant subjects
-    # at all and invalid vertices both end up NaN below.
+    # Consistency (magnitude of agreement, [0.5, 1]) and directionality
+    # (signed balance, [-1, +1]).  Use the positive counts clipped at 0 to
+    # avoid the -1 invalid sentinel polluting arithmetic; vertices with
+    # no significant subjects in either direction (and invalid vertices)
+    # end up NaN.
     safe_k_pos = np.where(invalid_mask, 0, k_pos).astype(np.float64)
     safe_k_neg = np.where(invalid_mask, 0, k_neg).astype(np.float64)
     total = safe_k_pos + safe_k_neg
     with np.errstate(invalid='ignore', divide='ignore'):
         consistency = np.maximum(safe_k_pos, safe_k_neg) / total
-    consistency = np.where(invalid_mask | (total == 0), np.nan, consistency)
+        directionality = (safe_k_pos - safe_k_neg) / total
+    nan_mask = invalid_mask | (total == 0)
+    consistency = np.where(nan_mask, np.nan, consistency)
+    directionality = np.where(nan_mask, np.nan, directionality)
 
     return DirectionalPrevalenceResult(
         overall=overall,
         positive=positive,
         negative=negative,
         consistency=consistency,
+        directionality=directionality,
         n_vertices_invalid=int(invalid_mask.sum()),
     )
 
