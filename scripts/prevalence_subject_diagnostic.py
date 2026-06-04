@@ -146,8 +146,10 @@ def render_subject_montage(
 
 
 def render_prevalence_map(prev_dir: Path, task: str, contrast: str,
-                          output_dir: Path, cohort: str = 'pooled46') -> Path:
-    """Render uncorrected prevalence + directionality maps for one cell.
+                          output_dir: Path, cohort: str = 'pooled46',
+                          prev_title: str = 'UNCORRECTED prevalence (z>1.96)',
+                          dir_tag: str = 'uncorrected') -> Path:
+    """Render prevalence + directionality maps for one cell.
 
     Emits 4-panel static PNGs (lateral + medial, both hemis) AND four
     single-hemi WebGL viewers (prevalence L/R, directionality L/R) so the
@@ -163,7 +165,7 @@ def render_prevalence_map(prev_dir: Path, task: str, contrast: str,
     _plot_4panel(
         map_l, map_r, prev_png,
         cmap='inferno', vmin=0.0, vmax=None,
-        title=f'{task} / {contrast} — UNCORRECTED prevalence (z>1.96)',
+        title=f'{task} / {contrast} — {prev_title}',
         fsaverage=fsav, figsize=(8, 7), dpi=100,
     )
     # Cell-specific vmax for interactive viewer (so it matches the static color scale)
@@ -186,7 +188,7 @@ def render_prevalence_map(prev_dir: Path, task: str, contrast: str,
     _plot_4panel(
         dir_l, dir_r, dir_path,
         cmap='RdBu_r', vmin=-1.0, vmax=1.0,
-        title=f'{task} / {contrast} — directionality (signed, uncorrected)',
+        title=f'{task} / {contrast} — directionality (signed, {dir_tag})',
         fsaverage=fsav, figsize=(8, 7), dpi=100, symmetric=True,
     )
     for hemi_arr, hemi in ((dir_l, 'left'), (dir_r, 'right')):

@@ -18,6 +18,7 @@ from neuro_workflow.analysis.prevalence.aggregate import (
     PrevalenceResult,
     compute_directional_prevalence,
     compute_prevalence,
+    find_subject_instance_zmaps,
     find_subject_zmaps,
     load_gifti_data,
     save_prevalence_gifti,
@@ -80,6 +81,82 @@ def test_find_subject_zmaps_filters_by_subjects_whitelist(tmp_path):
     )
     names = [p.parent.parent.parent.name for p in found]
     assert sorted(names) == ['sub-s10', 'sub-s19']
+
+
+# ---------------------------------------------------------------------------
+# find_subject_instance_zmaps — pick the N-th session per subject
+# ---------------------------------------------------------------------------
+
+
+def _write_indiv_zmap(root: Path, subj: str, ses: str, task: str,
+                       contrast: str, hemi: str = 'L') -> Path:
+    p = (root / subj / f'task-{task}' / 'indiv_contrasts' /
+         f'{subj}_ses-{ses}_task-{task}_run-1_hemi-{hemi}_'
+         f'contrast-{contrast}_rtmodel-RTDur_stat-z_score.func.gii')
+    _write_gifti(p, np.random.randn(10))
+    return p
+
+
+def test_find_subject_instance_zmaps_picks_nth_session_per_subject(tmp_path):
+    """instance_idx=2 returns each subject's second-earliest session."""
+    for subj, sessions in (
+        ('sub-s10', ('01', '03', '05')),
+        ('sub-s03', ('02', '04', '06')),
+    ):
+        for ses in sessions:
+            _write_indiv_zmap(tmp_path, subj, ses, 'flanker', 'incongruent-congruent')
+    found = find_subject_instance_zmaps(
+        tmp_path, task='flanker', contrast='incongruent-congruent',
+        hemisphere='L', instance_idx=2,
+    )
+    sessions = [p.name.split('_ses-')[1].split('_')[0] for p in found]
+    subjects_in_order = [p.name.split('_')[0] for p in found]
+    assert subjects_in_order == ['sub-s03', 'sub-s10']
+    assert sessions == ['04', '03']  # s03's 2nd is ses-04, s10's is ses-03
+
+
+def test_find_subject_instance_zmaps_skips_subjects_without_nth(tmp_path):
+    """Subjects with fewer than N sessions silently drop out of the result."""
+    _write_indiv_zmap(tmp_path, 'sub-s10', '01', 'flanker', 'incongruent-congruent')
+    _write_indiv_zmap(tmp_path, 'sub-s10', '03', 'flanker', 'incongruent-congruent')
+    _write_indiv_zmap(tmp_path, 'sub-s03', '02', 'flanker', 'incongruent-congruent')
+    # sub-s03 has only 1 session; asking for instance-2 should drop it
+    found = find_subject_instance_zmaps(
+        tmp_path, task='flanker', contrast='incongruent-congruent',
+        hemisphere='L', instance_idx=2,
+    )
+    assert len(found) == 1
+    assert 'sub-s10' in found[0].name
+
+
+def test_find_subject_instance_zmaps_sorts_sessions_numerically(tmp_path):
+    """ses-10 must come AFTER ses-09 in instance order (numeric not string sort)."""
+    for ses in ('09', '10', '01'):
+        _write_indiv_zmap(tmp_path, 'sub-s10', ses, 'flanker', 'incongruent-congruent')
+    found = find_subject_instance_zmaps(
+        tmp_path, task='flanker', contrast='incongruent-congruent',
+        hemisphere='L', instance_idx=3,
+    )
+    assert len(found) == 1
+    assert '_ses-10_' in found[0].name
+
+
+def test_find_subject_instance_zmaps_respects_whitelist(tmp_path):
+    for subj in ('sub-s10', 'sub-s03'):
+        _write_indiv_zmap(tmp_path, subj, '01', 'flanker', 'incongruent-congruent')
+    found = find_subject_instance_zmaps(
+        tmp_path, task='flanker', contrast='incongruent-congruent',
+        hemisphere='L', instance_idx=1, subjects=['sub-s10'],
+    )
+    assert [p.name.split('_')[0] for p in found] == ['sub-s10']
+
+
+def test_find_subject_instance_zmaps_rejects_zero_or_negative(tmp_path):
+    with pytest.raises(ValueError, match='instance_idx'):
+        find_subject_instance_zmaps(
+            tmp_path, task='flanker', contrast='incongruent-congruent',
+            hemisphere='L', instance_idx=0,
+        )
 
 
 def test_stack_subject_zmaps_returns_array_and_ids(tmp_path):
@@ -324,6 +401,23 @@ def test_compute_directional_prevalence_pure_positive_signal_lands_in_positive()
     assert res.negative.k_count[0] == 0
     assert res.positive.k_count[1] == 0
     assert res.negative.k_count[1] == 6
+
+
+def test_compute_directional_prevalence_directionality_signed_balance():
+    """Directionality ∈ [-1, +1]: +1 all positive, -1 all negative, 0 even split."""
+    z = np.zeros((10, 5))
+    z[:, 0] = 8.0       # all 10 positive
+    z[:, 1] = -8.0      # all 10 negative
+    z[:5, 2] = 8.0      # 5 positive, 5 below threshold
+    z[:5, 3] = 8.0      # 5 pos
+    z[5:, 3] = -8.0     # 5 neg → split
+    res = compute_directional_prevalence(z, per_subject_fdr_q=0.05, two_sided=True)
+    assert res.directionality[0] == pytest.approx(1.0)   # all pos
+    assert res.directionality[1] == pytest.approx(-1.0)  # all neg
+    assert res.directionality[2] == pytest.approx(1.0)   # all (5) pos, 0 neg
+    assert res.directionality[3] == pytest.approx(0.0)   # 5 vs 5 → 0
+    # vertex 4: no significant subjects → NaN
+    assert np.isnan(res.directionality[4])
 
 
 def test_compute_directional_prevalence_consistency_metric_bounds():
