@@ -34,20 +34,13 @@ from pathlib import Path
 
 import numpy as np
 
+from neuro_workflow.analysis.prevalence.aggregate import MAIN_CELLS as CELLS
+from neuro_workflow.analysis.prevalence.visualize import _fetch_fsaverage6
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s',
                     datefmt='%H:%M:%S')
 logger = logging.getLogger(__name__)
 
-CELLS = [
-    ('cuedTS', 'task_switch_cost'),
-    ('directedForgetting', 'neg-con'),
-    ('flanker', 'incongruent-congruent'),
-    ('goNogo', 'nogo_success-go'),
-    ('nBack', 'twoBack-oneBack'),
-    ('shapeMatching', 'main_vars'),
-    ('spatialTS', 'task_switch_cost'),
-    ('stopSignal', 'stop_success-go'),
-]
 MAX_INSTANCE = 5  # instance-6 has n=2-3 subjects; excluded as unreliable.
 
 
@@ -147,9 +140,9 @@ def plot_surface_grid(inst_root: Path, cohort: str, out_path: Path,
     import matplotlib.pyplot as plt
     from matplotlib.cm import ScalarMappable
     from matplotlib.colors import Normalize
-    from nilearn import datasets, plotting
+    from nilearn import plotting
 
-    fsav = datasets.fetch_surf_fsaverage('fsaverage6')
+    fsav = _fetch_fsaverage6()
     mesh_key = f'infl_{"left" if hemi == "L" else "right"}'
     bg_key = f'sulc_{"left" if hemi == "L" else "right"}'
     nviews = len(views)
