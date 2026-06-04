@@ -17,7 +17,12 @@ uv pip install -e ".[bidsify]"   # Flywheel BIDSify
 uv pip install -e ".[events]"    # Behavioral events pipeline
 uv pip install -e ".[qa]"        # QA commands (nilearn, matplotlib, etc.)
 uv pip install -e ".[lev1,qa]"   # First-level GLM analysis
+uv pip install -e ".[all]"       # Everything above (lev1+qa+bidsify+events)
 ```
+
+The bare `uv sync` install runs `show`/`add-dataset`/`submit` for dataset
+registration, but `submit lev1/lev2/mshbm`, the `qa` subcommands, and
+`python -m neuro_workflow.analysis.*` need the corresponding extra (or `[all]`).
 
 After installation, use `uv run neuro-run` from the project directory, or `module load uv && neuro-run` if the venv is on your PATH.
 
