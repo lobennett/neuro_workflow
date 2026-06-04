@@ -18,7 +18,7 @@ selected; other sessions have only ``func/`` and ``fmap/``.
 
 These tests cover two concerns that interact at the lev1 boundary:
 
-1. ``mshbm.run.find_anat_dir`` correctly walks per-session anat dirs and
+1. ``mshbm.discover.find_anat_dir`` correctly walks per-session anat dirs and
    returns the one that holds the chosen T1w, regardless of which session
    the BOLDs live in. (This is the canonical resolver for any code that
    needs the subject's anat outputs.)
@@ -40,7 +40,7 @@ from pathlib import Path
 import pytest
 
 from neuro_workflow.analysis.io.file_discovery import FileFinder
-from neuro_workflow.analysis.mshbm.run import (
+from neuro_workflow.analysis.mshbm.discover import (
     find_anat_dir,
     find_mni_to_t1w_transform,
     find_t1w_reference,
