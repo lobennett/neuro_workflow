@@ -20,11 +20,15 @@ from typing import Any, Dict, List
 
 import yaml
 
+from neuro_workflow.core.acquisition import (
+    N_DUMMY as DEFAULT_DUMMY_SCANS,
+    TR_SECONDS as DEFAULT_TR,
+)
+
 logger = logging.getLogger(__name__)
 
-# Default analysis parameters (can be overridden per task in YAML)
-DEFAULT_TR = 1.49
-DEFAULT_DUMMY_SCANS = 7
+# Default analysis parameters (TR/dummy-scans come from the single source of
+# truth in core.acquisition, RF-6; can be overridden per task in YAML).
 DEFAULT_MIN_RT = 0.2
 
 # Directory containing per-task YAML files

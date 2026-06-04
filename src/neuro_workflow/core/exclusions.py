@@ -84,6 +84,19 @@ def save_source_entries(
     Namespace (cmd_exclusions_import / cmd_events_qc).
     """
     from neuro_workflow.exclusions.base import make_meta
+
+    # Fail loud (GE-4): reject malformed entries before they reach disk, rather
+    # than silently persisting entries that compile/query will later mishandle.
+    invalid = [e for e in entries if not validate_entry(e)]
+    if invalid:
+        missing = [sorted(REQUIRED_FIELDS - set(e.keys())) for e in invalid]
+        raise ValueError(
+            f"{len(invalid)} invalid entr{'y' if len(invalid) == 1 else 'ies'} for "
+            f"source '{source_name}' (dataset '{dataset_name}'): missing/invalid "
+            f"required fields {REQUIRED_FIELDS} or action not in {VALID_ACTIONS}. "
+            f"First offender missing fields: {missing[0] if missing else None}"
+        )
+
     d = _sources_dir(dataset_name)
     d.mkdir(parents=True, exist_ok=True)
     payload = {

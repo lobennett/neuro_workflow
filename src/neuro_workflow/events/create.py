@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from neuro_workflow.core.acquisition import N_DUMMY, TR_SECONDS
 from neuro_workflow.events.utils import (
     get_neg_rt_correction,
     cal_time_elapsed,
@@ -56,9 +57,7 @@ def _rename_cells(df: pd.DataFrame, exp_id: str) -> pd.DataFrame:
     return df
 
 
-N_DUMMY = 7
-TR_SECONDS = 1.49
-DUMMY_OFFSET_S = N_DUMMY * TR_SECONDS  # 10.43s
+DUMMY_OFFSET_S = N_DUMMY * TR_SECONDS  # 10.43s (N_DUMMY/TR_SECONDS from core.acquisition)
 
 
 def _set_default_event_cols(df: pd.DataFrame) -> pd.DataFrame:
