@@ -74,6 +74,22 @@ _SUBJECT_RE = re.compile(r'(sub-[a-zA-Z0-9]+)')
 _SESSION_RE = re.compile(r'_ses-([0-9]+)_')
 
 
+# The eight main single-task (task, contrast) cells the prevalence pipeline is
+# run over — matching the formal ``…/derivatives/prevalence`` outputs. Single
+# source of truth shared by the run-driver and figure scripts (RF-6); contrast
+# tags are exactly as they appear in lev1 z-map filenames.
+MAIN_CELLS: list[tuple[str, str]] = [
+    ('cuedTS', 'task_switch_cost'),
+    ('directedForgetting', 'neg-con'),
+    ('flanker', 'incongruent-congruent'),
+    ('goNogo', 'nogo_success-go'),
+    ('nBack', 'twoBack-oneBack'),
+    ('shapeMatching', 'main_vars'),
+    ('spatialTS', 'task_switch_cost'),
+    ('stopSignal', 'stop_success-go'),
+]
+
+
 def find_subject_zmaps(
     lev1_root: Path,
     task: str,

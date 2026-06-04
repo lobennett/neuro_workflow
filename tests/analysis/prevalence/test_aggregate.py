@@ -14,6 +14,7 @@ import numpy as np
 import pytest
 
 from neuro_workflow.analysis.prevalence.aggregate import (
+    MAIN_CELLS,
     DirectionalPrevalenceResult,
     PrevalenceResult,
     compute_directional_prevalence,
@@ -25,6 +26,24 @@ from neuro_workflow.analysis.prevalence.aggregate import (
     stack_subject_zmaps,
     z_alpha_two_sided,
 )
+
+
+def test_main_cells_is_the_canonical_eight_task_contrast_pairs():
+    """Single source of truth for the 8 main (task, contrast) prevalence cells.
+
+    Three driver/figure scripts previously each hard-coded this list; pinning
+    it here guards the consolidated definition against drift (RF-6).
+    """
+    assert MAIN_CELLS == [
+        ('cuedTS', 'task_switch_cost'),
+        ('directedForgetting', 'neg-con'),
+        ('flanker', 'incongruent-congruent'),
+        ('goNogo', 'nogo_success-go'),
+        ('nBack', 'twoBack-oneBack'),
+        ('shapeMatching', 'main_vars'),
+        ('spatialTS', 'task_switch_cost'),
+        ('stopSignal', 'stop_success-go'),
+    ]
 
 
 def _write_gifti(path: Path, data: np.ndarray) -> Path:
