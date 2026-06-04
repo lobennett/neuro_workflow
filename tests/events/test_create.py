@@ -33,6 +33,54 @@ def _make_stop_signal_csv(tmp_path):
     return csv_path
 
 
+class TestRunCreateEventsHelpers:
+    def test_parse_bidsignore_extracts_sub_ses_task(self, tmp_path):
+        from neuro_workflow.events.create import parse_bidsignore
+        (tmp_path / ".bidsignore").write_text(
+            "# a comment\n"
+            "sub-s01/ses-01/func/sub-s01_ses-01_task-flanker_run-1_bold.nii.gz\n"
+            "\n"
+            "sub-s10/ses-03/func/sub-s10_ses-03_task-nBack_run-1_bold.nii.gz\n"
+        )
+        ignored = parse_bidsignore(tmp_path)
+        # NOTE: the regex's greedy \w+ after `task-` also captures the trailing
+        # `_run`, so the task token is e.g. "flanker_run" — a *known* mismatch
+        # with discover_nifti_tasks (which captures the bare "flanker"), meaning
+        # events-stage .bidsignore filtering is currently inert. This pins the
+        # existing behavior; the bug is tracked separately, not fixed in this
+        # behavior-preserving refactor.
+        assert ("s01", "ses-01", "flanker_run") in ignored
+        assert ("s10", "ses-03", "nBack_run") in ignored
+
+    def test_parse_bidsignore_missing_file_returns_empty(self, tmp_path):
+        from neuro_workflow.events.create import parse_bidsignore
+        assert parse_bidsignore(tmp_path) == set()
+
+    def test_discover_nifti_tasks_excludes_rest_and_ignored(self, tmp_path):
+        from neuro_workflow.events.create import discover_nifti_tasks
+        func = tmp_path / "func"
+        func.mkdir()
+        for name in (
+            "sub-s01_ses-01_task-flanker_run-1_bold.nii.gz",
+            "sub-s01_ses-01_task-rest_run-1_bold.nii.gz",
+            "sub-s01_ses-01_task-nBack_run-1_bold.nii.gz",
+        ):
+            (func / name).touch()
+        tasks = discover_nifti_tasks(func, "s01", "ses-01", {("s01", "ses-01", "nBack")})
+        assert tasks == {"flanker"}  # rest excluded, nBack ignored
+
+    def test_group_csvs_by_task_filters_and_reads_run(self, tmp_path):
+        from neuro_workflow.events.create import group_csvs_by_task
+        beh = tmp_path / "beh"
+        beh.mkdir()
+        (beh / "sub-s01_ses-01_task-flanker_run-2_beh.csv").touch()
+        (beh / "sub-s01_ses-01_task-flanker_beh.csv").touch()  # no run -> 1
+        (beh / "sub-s01_ses-01_task-rest_beh.csv").touch()  # not allowed
+        out = group_csvs_by_task(beh, {"flanker"})
+        runs = sorted((t, r) for t, r, _ in out)
+        assert runs == [("flanker", 1), ("flanker", 2)]
+
+
 class TestCreateEventsDf:
     def test_produces_bids_columns(self, tmp_path):
         from neuro_workflow.events.create import create_events_df
