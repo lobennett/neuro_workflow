@@ -20,22 +20,10 @@ import logging
 import sys
 from pathlib import Path
 
+from neuro_workflow.analysis.prevalence.aggregate import MAIN_CELLS
 from neuro_workflow.analysis.prevalence.run import main as run_prevalence_main
 
 logger = logging.getLogger(__name__)
-
-
-# (task, contrast) pairs matching the formal /derivatives/prevalence outputs.
-MAIN_CELLS = [
-    ('cuedTS',             'task_switch_cost'),
-    ('directedForgetting', 'neg-con'),
-    ('flanker',            'incongruent-congruent'),
-    ('goNogo',             'nogo_success-go'),
-    ('nBack',              'twoBack-oneBack'),
-    ('shapeMatching',      'main_vars'),
-    ('spatialTS',          'task_switch_cost'),
-    ('stopSignal',         'stop_success-go'),
-]
 
 
 def run_one_cell(

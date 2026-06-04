@@ -30,16 +30,8 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 
-CELLS = [
-    ('cuedTS', 'task_switch_cost'),
-    ('directedForgetting', 'neg-con'),
-    ('flanker', 'incongruent-congruent'),
-    ('goNogo', 'nogo_success-go'),
-    ('nBack', 'twoBack-oneBack'),
-    ('shapeMatching', 'main_vars'),
-    ('spatialTS', 'task_switch_cost'),
-    ('stopSignal', 'stop_success-go'),
-]
+from neuro_workflow.analysis.prevalence.aggregate import MAIN_CELLS as CELLS
+
 FE_OUTPUTS = {
     'validation': '/scratch/users/logben/validation_bids/derivatives/prevalence/parametric/outputs',
     'discovery': '/scratch/users/logben/discovery_bids/derivatives/prevalence/parametric/outputs',
