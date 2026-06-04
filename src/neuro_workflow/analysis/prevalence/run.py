@@ -36,6 +36,7 @@ import numpy as np
 from neuro_workflow.analysis.prevalence.aggregate import (
     compute_directional_prevalence,
     compute_prevalence,
+    find_subject_instance_zmaps,
     find_subject_zmaps,
     save_prevalence_gifti,
     stack_subject_zmaps,
@@ -103,6 +104,12 @@ def _parse_args(argv=None) -> argparse.Namespace:
                         'consistency.  Filenames gain a direction-{overall,pos,neg} '
                         'tag; a stat-consistency GIFTI is written alongside.  '
                         'Manifest gains pos / neg subsections.')
+    p.add_argument('--instance', type=int, default=None,
+                   help='If set, build the cohort from each subject\'s N-th '
+                        'session (1-indexed; 1 = earliest) lev1 single-session '
+                        'z-map instead of their fixed-effects map. Used for '
+                        'the session-instance washout diagnostic. Output '
+                        'filenames gain an _instance-N tag.')
     p.add_argument('--hemispheres', nargs='+', default=['L', 'R'],
                    help='Which hemispheres to process (default: L R)')
     p.add_argument('--verbose', action='store_true', default=False,
@@ -174,13 +181,22 @@ def main(argv=None) -> int:
 
     for hemi in args.hemispheres:
         logger.info('Hemisphere %s', hemi)
-        paths = find_subject_zmaps(
-            lev1_root=args.lev1_root, task=args.task, contrast=args.contrast,
-            hemisphere=hemi, space=args.space, subjects=subjects,
-        )
+        if args.instance is not None:
+            paths = find_subject_instance_zmaps(
+                lev1_root=args.lev1_root, task=args.task, contrast=args.contrast,
+                hemisphere=hemi, instance_idx=args.instance,
+                subjects=subjects,
+            )
+        else:
+            paths = find_subject_zmaps(
+                lev1_root=args.lev1_root, task=args.task, contrast=args.contrast,
+                hemisphere=hemi, space=args.space, subjects=subjects,
+            )
         if not paths:
-            logger.warning('No subject z-maps for hemi=%s task=%s contrast=%s. '
-                           'Skipping.', hemi, args.task, args.contrast)
+            logger.warning(
+                'No subject z-maps for hemi=%s task=%s contrast=%s instance=%s. '
+                'Skipping.', hemi, args.task, args.contrast, args.instance,
+            )
             continue
         logger.info('Found %d subject z-maps', len(paths))
         zmaps, subj_ids = stack_subject_zmaps(paths)
@@ -200,8 +216,9 @@ def main(argv=None) -> int:
         else:
             z_thr_arg = args.z_threshold
 
+        instance_tag = f'_instance-{args.instance}' if args.instance is not None else ''
         base = (
-            f'{args.cohort}_task-{args.task}_hemi-{hemi}'
+            f'{args.cohort}_task-{args.task}{instance_tag}_hemi-{hemi}'
             f'_contrast-{args.contrast}_rtmodel-RTDur'
         )
 
@@ -238,6 +255,11 @@ def main(argv=None) -> int:
                 args.output_dir / f'{base}_stat-consistency.func.gii',
             )
             files['consistency'] = consistency_path
+            directionality_path = _write_single_gifti(
+                dres.directionality.astype(np.float32),
+                args.output_dir / f'{base}_stat-directionality.func.gii',
+            )
+            files['directionality'] = directionality_path
         else:
             result = compute_prevalence(
                 zmaps,
@@ -279,7 +301,10 @@ def main(argv=None) -> int:
     # Drop a manifest so downstream consumers (e.g. parcel-level summaries
     # against MSHBM dlabels) can find the maps + know exactly which
     # subjects contributed.
-    manifest_path = args.output_dir / f'{args.cohort}_task-{args.task}_contrast-{args.contrast}_manifest.json'
+    instance_tag = f'_instance-{args.instance}' if args.instance is not None else ''
+    manifest_path = args.output_dir / (
+        f'{args.cohort}_task-{args.task}{instance_tag}_contrast-{args.contrast}_manifest.json'
+    )
     manifest_path.write_text(json.dumps(summary_per_hemi, indent=2))
     logger.info('Manifest written: %s', manifest_path)
 
