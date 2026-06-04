@@ -31,8 +31,6 @@ import neuro_workflow.pipelines.xcpd  # noqa: F401
 
 # Import QA modules to trigger auto-registration
 import neuro_workflow.qa.global_signal  # noqa: F401
-import neuro_workflow.qa.outlier_report  # noqa: F401
-import neuro_workflow.qa.reliability  # noqa: F401
 import neuro_workflow.qa.fieldmap_check  # noqa: F401
 
 # Import exclusion generators to trigger auto-registration

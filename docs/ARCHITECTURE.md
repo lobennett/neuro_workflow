@@ -92,9 +92,9 @@ src/neuro_workflow/
 │   ├── breaks.py                # Scanner break detection
 │   ├── fieldmap_check.py        # Fieldmap quality checks
 │   ├── global_signal.py         # Global signal extraction and analysis
-│   ├── neg_events.py            # Negative event analysis
-│   ├── outlier_report.py        # Outlier detection reporting
-│   └── reliability.py           # Test-retest reliability analysis
+│   ├── lev1_outliers.py         # Cohort lev1 VIF + outlier detection (feeds exclusions)
+│   ├── reliability_movies.py    # Reliability movies via the bold-reliability-movies CLI
+│   └── neg_events.py            # Negative event analysis
 │
 └── templates/                    # SLURM job submission templates
     ├── bidsify.sbatch
