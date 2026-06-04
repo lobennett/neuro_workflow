@@ -94,7 +94,9 @@ def test_process_subject_rest_only_skips_task_residual_discovery(
     invoked. Mock the rest-discovery + ensure_fsaverage6 paths to no-op so
     process_subject runs cleanly.
     """
-    from neuro_workflow.analysis.mshbm import run as mshbm_run
+    # process_subject + the helpers it calls now live in the `process` module;
+    # patch them there so process_subject's name lookups see the stubs.
+    from neuro_workflow.analysis.mshbm import process as mshbm_proc
 
     # FreeSurfer subjects dir must exist for process_subject to proceed
     fmriprep_dir = tmp_path / "fmriprep"
@@ -103,30 +105,30 @@ def test_process_subject_rest_only_skips_task_residual_discovery(
 
     task_residual_calls: list[str] = []
     monkeypatch.setattr(
-        mshbm_run, "discover_task_residuals_volume",
+        mshbm_proc, "discover_task_residuals_volume",
         lambda *a, **k: task_residual_calls.append("vol") or [],
     )
     monkeypatch.setattr(
-        mshbm_run, "discover_task_residuals_surface",
+        mshbm_proc, "discover_task_residuals_surface",
         lambda *a, **k: task_residual_calls.append("surf") or [],
     )
     monkeypatch.setattr(
-        mshbm_run, "process_volume_residuals",
+        mshbm_proc, "process_volume_residuals",
         lambda *a, **k: task_residual_calls.append("proc_vol") or 0,
     )
     monkeypatch.setattr(
-        mshbm_run, "process_surface_residuals",
+        mshbm_proc, "process_surface_residuals",
         lambda *a, **k: task_residual_calls.append("proc_surf") or 0,
     )
 
     # Stub rest paths to no-op so the function returns cleanly.
-    monkeypatch.setattr(mshbm_run, "ensure_fsaverage6", lambda *a, **k: None)
-    monkeypatch.setattr(mshbm_run, "resolve_fs_subject", lambda d, s: s)
-    monkeypatch.setattr(mshbm_run, "discover_rest_bold_fsaverage6", lambda *a, **k: [])
-    monkeypatch.setattr(mshbm_run, "discover_rest_bold_surface", lambda *a, **k: [])
-    monkeypatch.setattr(mshbm_run, "discover_rest_bold_volume", lambda *a, **k: [])
+    monkeypatch.setattr(mshbm_proc, "ensure_fsaverage6", lambda *a, **k: None)
+    monkeypatch.setattr(mshbm_proc, "resolve_fs_subject", lambda d, s: s)
+    monkeypatch.setattr(mshbm_proc, "discover_rest_bold_fsaverage6", lambda *a, **k: [])
+    monkeypatch.setattr(mshbm_proc, "discover_rest_bold_surface", lambda *a, **k: [])
+    monkeypatch.setattr(mshbm_proc, "discover_rest_bold_volume", lambda *a, **k: [])
 
-    errors = mshbm_run.process_subject(
+    errors = mshbm_proc.process_subject(
         subject="sub-s03",
         glm_dir=None,
         fmriprep_dir=fmriprep_dir,
@@ -144,7 +146,7 @@ def test_process_subject_rest_only_skips_task_residual_discovery(
 
 
 def test_resolve_fs_subject_handles_session_suffixed_dirs(tmp_path):
-    from neuro_workflow.analysis.mshbm.run import resolve_fs_subject
+    from neuro_workflow.analysis.mshbm.transforms import resolve_fs_subject
     subjects_dir = tmp_path
     # fmriprep longitudinal naming: actual dir is sub-s03_ses-13
     fs_dir = subjects_dir / "sub-s03_ses-13"
@@ -157,7 +159,7 @@ def test_resolve_fs_subject_handles_session_suffixed_dirs(tmp_path):
 
 
 def test_resolve_fs_subject_handles_bare_subject_dir(tmp_path):
-    from neuro_workflow.analysis.mshbm.run import resolve_fs_subject
+    from neuro_workflow.analysis.mshbm.transforms import resolve_fs_subject
     subjects_dir = tmp_path
     # cross-session: actual dir is sub-s03
     fs_dir = subjects_dir / "sub-s03"
@@ -169,14 +171,14 @@ def test_resolve_fs_subject_handles_bare_subject_dir(tmp_path):
 
 
 def test_resolve_fs_subject_raises_when_missing(tmp_path):
-    from neuro_workflow.analysis.mshbm.run import resolve_fs_subject
+    from neuro_workflow.analysis.mshbm.transforms import resolve_fs_subject
     with __import__("pytest").raises(FileNotFoundError):
         resolve_fs_subject(tmp_path, "sub-s03")
 
 
 def test_resolve_fs_subject_accepts_bare_sphere_reg(tmp_path):
     """FreeSurfer 7/8 emits bare `lh.sphere.reg` (no .gii) — must be recognized."""
-    from neuro_workflow.analysis.mshbm.run import resolve_fs_subject
+    from neuro_workflow.analysis.mshbm.transforms import resolve_fs_subject
     subjects_dir = tmp_path
     fs_dir = subjects_dir / "sub-s76_ses-01"
     (fs_dir / "surf").mkdir(parents=True)
