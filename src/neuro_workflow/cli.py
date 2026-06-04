@@ -2,7 +2,12 @@ import argparse
 import sys
 from pathlib import Path
 
-from neuro_workflow.core.config import save_dataset, get_dataset, load_datasets
+from neuro_workflow.core.config import (
+    DatasetNotFoundError,
+    save_dataset,
+    get_dataset,
+    load_datasets,
+)
 from neuro_workflow.core.image import ensure_image
 from neuro_workflow.core.slurm import render_template, submit_sbatch
 from neuro_workflow.core.exclusions import (
@@ -364,4 +369,8 @@ def main():
     ev_trim.set_defaults(func=cmd_events_trim)
 
     args, remaining = parser.parse_known_args()
-    args.func(args, remaining)
+    try:
+        args.func(args, remaining)
+    except DatasetNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
