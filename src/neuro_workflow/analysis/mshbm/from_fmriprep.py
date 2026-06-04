@@ -15,13 +15,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from neuro_workflow.analysis.mshbm.io import HEMI_MAP, make_mshbm_name  # noqa: F401
 from neuro_workflow.analysis.mshbm.preproc import (
     bandpass_filter,
     build_regressor_matrix_du2025,
     regress_confounds,
 )
-
-HEMI_MAP = {"lh": "lh", "rh": "rh"}
 _BOLD_RE = re.compile(
     r"^sub-(?P<sub>[A-Za-z0-9]+)_ses-(?P<ses>[A-Za-z0-9]+)_"
     r"task-(?P<task>[A-Za-z0-9]+)(?:_run-(?P<run>[A-Za-z0-9]+))?"
@@ -40,14 +39,6 @@ class FmriprepScan:
     rh_path: Path
     confounds_tsv: Path
     tr: float
-
-
-def make_mshbm_name(hemi: str, session: str, run: str, task: str) -> str:
-    """CBIG-style MSHBM input filename for one hemisphere/cell."""
-    if hemi not in HEMI_MAP:
-        raise ValueError(f"bad hemi {hemi!r}")
-    return (f"{hemi}_ses-{session}_task-{task}_run-{run}"
-            f"_nat_resid_bpss_fsaverage6_sm0.nii.gz")
 
 
 def discover_fmriprep_scans(fmriprep_dir: Path, subject: str) -> list[FmriprepScan]:
