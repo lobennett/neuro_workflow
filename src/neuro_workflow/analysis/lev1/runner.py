@@ -164,31 +164,15 @@ def process_surface_run(
         surface_glm = SurfaceGLM(t_r=tr)
         surface_glm.fit(surface_data, design_matrix)
 
-        contrast_results = {}
-        for contrast_name, contrast_formula in contrasts.items():
-            try:
-                result = surface_glm.compute_contrast(contrast_formula, output_type='all')
-                contrast_base = (
-                    f'{base_filename}_hemi-{hemisphere}'
-                    f'_contrast-{contrast_name}_rtmodel-RTDur'
-                )
-                effect_path = dirs['indiv_contrasts'] / f'{contrast_base}_stat-effect-size.func.gii'
-                result['effect_size'].to_filename(effect_path)
-
-                var_path = dirs['indiv_contrasts'] / f'{contrast_base}_stat-variance.func.gii'
-                result['effect_variance'].to_filename(var_path)
-
-                z_path = dirs['indiv_contrasts'] / f'{contrast_base}_stat-z_score.func.gii'
-                result['z_score'].to_filename(z_path)
-
-                contrast_results[contrast_name] = {
-                    'effect_size': effect_path,
-                    'effect_variance': var_path,
-                    'z_score': z_path,
-                }
-            except Exception as e:
-                logger.error('Failed to compute contrast %s (hemi-%s): %s', contrast_name, hemisphere, e)
-
+        # Compute + save contrasts via the shared saver (RF-6). compute_run_contrasts
+        # already supports surface output through its ``hemisphere`` arg — byte-identical
+        # naming (_hemi-H_contrast-..._rtmodel-RTDur_stat-...func.gii), the same three
+        # stat maps, and the same return structure as the volumetric path. The float32
+        # recast is a no-op for GIFTI (cast_nifti_to_float32(is_surface=True)).
+        contrast_results = compute_run_contrasts(
+            surface_glm, args.task_name, dirs['indiv_contrasts'],
+            base_filename, contrasts=contrasts, hemisphere=hemisphere,
+        )
         logger.info('Saved %d contrasts for hemisphere %s', len(contrast_results), hemisphere)
 
         # Generate QC plots (skipped under --skip-qc-plots; matplotlib renders
