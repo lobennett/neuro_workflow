@@ -480,14 +480,19 @@ def process_surface_run(
     return all_hemisphere_results
 
 
-def process_single_run(session, run, run_files, args, config, sample_type, dirs, task_params, exclusions, combined_mask_path):
+def _run_base_filename(subj_id, session, task_name, run):
+    """BIDS-style per-run base filename shared by run keys + output filenames."""
+    return f'{subj_id}_{session}_task-{task_name}_{run}'
+
+
+def process_single_run(session, run, run_files, args, sample_type, dirs, task_params, exclusions):
     """Process a single run (volumetric or surface).
 
     Returns:
         True if successful, False if failed.
     """
     tr = task_params['tr']
-    run_key = f'{args.subj_id}_{session}_task-{args.task_name}_{run}'
+    run_key = _run_base_filename(args.subj_id, session, args.task_name, run)
 
     if run_key in exclusions:
         logger.info('Skipping excluded run: %s/%s', session, run)
@@ -495,7 +500,7 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
 
     # Skip if all output files already exist
     if args.skip_existing:
-        base_filename = f'{args.subj_id}_{session}_task-{args.task_name}_{run}'
+        base_filename = _run_base_filename(args.subj_id, session, args.task_name, run)
         if is_surface_space(args.space) and args.residuals:
             lh_res = dirs['task_residuals'] / f'{base_filename}_hemi-L_task-regressed-residuals.func.gii'
             rh_res = dirs['task_residuals'] / f'{base_filename}_hemi-R_task-regressed-residuals.func.gii'
@@ -574,7 +579,7 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
     if regressor_3cols:
         simplified_events_file = (
             dirs['simplified_events']
-            / f'{args.subj_id}_{session}_task-{args.task_name}_{run}_desc-simplifiedEvents.csv'
+            / f'{_run_base_filename(args.subj_id, session, args.task_name, run)}_desc-simplifiedEvents.csv'
         )
         save_simplified_events(regressor_3cols, simplified_events_file)
 
@@ -582,7 +587,7 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
         logger.error('Skipping GLM fitting due to QA failure')
         return False
 
-    base_filename = f'{args.subj_id}_{session}_task-{args.task_name}_{run}'
+    base_filename = _run_base_filename(args.subj_id, session, args.task_name, run)
 
     # Load FC confounds once if requested — used by both surface and
     # volumetric residual paths so `--fc-confounds` has identical semantics
@@ -619,8 +624,7 @@ def process_single_run(session, run, run_files, args, config, sample_type, dirs,
 
 
 def compute_fixed_effects_all(
-    args, files, dirs, exclusions, exclusions_by_type, expected_sessions,
-    combined_mask_path, failed_runs, run_count,
+    args, dirs, exclusions, combined_mask_path, failed_runs, run_count,
 ):
     """Compute fixed effects across runs, supporting partial-run analysis.
 
@@ -671,7 +675,10 @@ def main():
     setup_logging(verbose=args.verbose)
 
     # Setup
-    config, sample_type, expected_sessions, exclusions, exclusions_by_type, dirs = (
+    # setup_analysis still returns expected_sessions/exclusions_by_type; they are
+    # not consumed downstream (the active exclusion set is `exclusions`), so bind
+    # them to throwaways here rather than thread dead args onward.
+    config, sample_type, _expected_sessions, exclusions, _exclusions_by_type, dirs = (
         setup_analysis(args)
     )
 
@@ -693,8 +700,8 @@ def main():
             run_count += 1
             try:
                 success = process_single_run(
-                    session, run, files[session][run], args, config,
-                    sample_type, dirs, task_params, exclusions, combined_mask_path,
+                    session, run, files[session][run], args,
+                    sample_type, dirs, task_params, exclusions,
                 )
                 if not success:
                     failed_runs.append(f'{session}/{run}')
@@ -704,8 +711,7 @@ def main():
 
     # Fixed effects (compute even with partial failures)
     compute_fixed_effects_all(
-        args, files, dirs, exclusions, exclusions_by_type, expected_sessions,
-        combined_mask_path, failed_runs, run_count,
+        args, dirs, exclusions, combined_mask_path, failed_runs, run_count,
     )
 
     # Summary
