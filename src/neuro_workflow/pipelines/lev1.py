@@ -4,35 +4,14 @@ import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from neuro_workflow.analysis.task_config.loader import (
+    get_all_tasks,
+    get_base_tasks,
+    get_dual_tasks,
+)
 from neuro_workflow.core.exclusions import _compiled_path
 from neuro_workflow.core.slurm import load_subjects
 from neuro_workflow.pipelines.base import LocalAnalysisPipeline, register
-
-BASE_TASKS = [
-    "cuedTS",
-    "directedForgetting",
-    "flanker",
-    "goNogo",
-    "nBack",
-    "shapeMatching",
-    "spatialTS",
-    "stopSignal",
-]
-
-DUAL_TASKS = [
-    "directedForgettingWCuedTS",
-    "directedForgettingWFlanker",
-    "stopSignalWDirectedForgetting",
-    "stopSignalWFlanker",
-    "spatialTSWCuedTS",
-    "flankerWShapeMatching",
-    "cuedTSWFlanker",
-    "spatialTSWShapeMatching",
-    "nBackWShapeMatching",
-    "nBackWSpatialTS",
-]
-
-ALL_TASKS = BASE_TASKS + DUAL_TASKS
 
 
 class Lev1Pipeline(LocalAnalysisPipeline):
@@ -65,11 +44,11 @@ class Lev1Pipeline(LocalAnalysisPipeline):
         # Resolve tasks
         tasks_flag = getattr(args, "tasks_flag", None)
         if tasks_flag == "all":
-            tasks = ALL_TASKS
+            tasks = get_all_tasks()
         elif tasks_flag == "base":
-            tasks = BASE_TASKS
+            tasks = get_base_tasks()
         elif tasks_flag == "dual":
-            tasks = DUAL_TASKS
+            tasks = get_dual_tasks()
         else:
             tasks = args.tasks
 
