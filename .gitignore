@@ -33,3 +33,6 @@ scratch/
 # ad hoc for SLURM array jobs and dataset registrations in
 # ~/.neuro_workflow/datasets.json; they shouldn't be in version control.
 /subjects_*.txt
+
+# Copyrighted reference PDFs — not redistributed
+docs/*.pdf
