@@ -14,6 +14,7 @@ YAML regressor format:
 """
 
 import logging
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List
@@ -41,6 +42,45 @@ _REQUIRED_REGRESSOR_FIELDS = {'amplitude', 'duration', 'subset'}
 
 class TaskNotConfiguredError(ValueError):
     """Raised when a task's YAML exists but has `regressors: null` (placeholder)."""
+
+
+class ContrastFormulaError(ValueError):
+    """Raised when a contrast formula references an undeclared regressor name.
+
+    Caught by ``except ValueError`` callers for backward compatibility.
+    """
+
+
+# Regex to extract identifier tokens from a contrast formula string.
+# Matches bare Python identifiers (letters/underscores, then alphanumerics).
+_IDENT_RE = re.compile(r'\b([A-Za-z_][A-Za-z0-9_]*)\b')
+
+
+def _validate_contrasts(
+    task_name: str,
+    regressors: Dict[str, Any],
+    contrasts: Dict[str, str],
+) -> None:
+    """Validate that every contrast formula only references declared regressor names.
+
+    Args:
+        task_name: Name of the task (for error messages).
+        regressors: Mapping of declared regressor names to their config dicts.
+        contrasts: Mapping of contrast names to formula strings.
+
+    Raises:
+        ContrastFormulaError: If any formula token is not a declared regressor name.
+    """
+    declared = set(regressors.keys())
+    for cname, formula in contrasts.items():
+        tokens = set(_IDENT_RE.findall(formula))
+        unknown = tokens - declared
+        if unknown:
+            raise ContrastFormulaError(
+                f"task '{task_name}' contrast '{cname}': "
+                f"unknown regressor(s) {sorted(unknown)} "
+                f"(declared: {sorted(declared)})"
+            )
 
 
 def _load_yaml(task_name: str) -> Dict[str, Any]:
@@ -92,6 +132,13 @@ def _load_yaml(task_name: str) -> Dict[str, Any]:
                 f"Regressor '{reg_name}' in task '{task_name}' is missing "
                 f'required fields: {missing_reg}'
             )
+
+    # Validate contrast formulas reference only declared regressor names.
+    # Skip tasks whose contrasts dict is empty or None (e.g. stopSignalWDirectedForgetting).
+    regressors = config.get('regressors') or {}
+    contrasts = config.get('contrasts') or {}
+    if regressors and contrasts:
+        _validate_contrasts(task_name, regressors, contrasts)
 
     return config
 
