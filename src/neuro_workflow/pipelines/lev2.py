@@ -6,8 +6,8 @@ import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from neuro_workflow.analysis.task_config.loader import get_base_tasks, get_dual_tasks
 from neuro_workflow.pipelines.base import LocalAnalysisPipeline, register
-from neuro_workflow.pipelines.lev1 import BASE_TASKS, DUAL_TASKS, ALL_TASKS
 
 
 def _discover_contrasts_from_lev1_dirs(lev1_dirs: list[str], task_filter: list[str] | None = None) -> list[str]:
@@ -64,9 +64,9 @@ class Lev2Pipeline(LocalAnalysisPipeline):
         if contrasts_flag == "all":
             contrasts = _discover_contrasts_from_lev1_dirs(args.lev1_dirs)
         elif contrasts_flag == "base":
-            contrasts = _discover_contrasts_from_lev1_dirs(args.lev1_dirs, task_filter=BASE_TASKS)
+            contrasts = _discover_contrasts_from_lev1_dirs(args.lev1_dirs, task_filter=get_base_tasks())
         elif contrasts_flag == "dual":
-            contrasts = _discover_contrasts_from_lev1_dirs(args.lev1_dirs, task_filter=DUAL_TASKS)
+            contrasts = _discover_contrasts_from_lev1_dirs(args.lev1_dirs, task_filter=get_dual_tasks())
         else:
             contrasts = args.contrasts
 
