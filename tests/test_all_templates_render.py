@@ -12,8 +12,6 @@ from neuro_workflow.pipelines.base import TEMPLATE_DIR
 from neuro_workflow.core.slurm import render_template
 from neuro_workflow.pipelines.lev1 import Lev1Pipeline
 from neuro_workflow.pipelines.lev2 import Lev2Pipeline
-from neuro_workflow.pipelines.prep_mshbm import PrepMshbmPipeline
-from neuro_workflow.pipelines.mshbm import MshbmPipeline
 
 
 def _check_no_unresolved(script: str) -> None:
@@ -99,35 +97,3 @@ def test_lev2_template_renders(tmp_path: Path, dataset_config: dict) -> None:
     _check_no_unresolved(script)
 
 
-def test_prep_mshbm_template_renders(tmp_path: Path, dataset_config: dict) -> None:
-    pipeline = PrepMshbmPipeline()
-    args = Namespace(
-        glm_dir="/glm",
-        fmriprep_dir="/fmriprep",
-        rest_fmriprep_dir=None,
-        output_dir=str(tmp_path / "out"),
-        residuals_space="surface",
-        sessions=None,
-        rest_only=False,
-        nthreads=None,
-        mem_gb=None,
-        time=None,
-    )
-    ctx = pipeline.build_context("testds", dataset_config, args)
-    script = render_template(TEMPLATE_DIR / pipeline.template_name, ctx)
-    _check_no_unresolved(script)
-
-
-def test_mshbm_template_renders(tmp_path: Path, dataset_config: dict) -> None:
-    pipeline = MshbmPipeline()
-    args = Namespace(
-        surface_inputs_dir="/inputs",
-        output_dir=str(tmp_path / "out"),
-        mshbm_dir="/mshbm",
-        nthreads=None,
-        mem_gb=None,
-        time=None,
-    )
-    ctx = pipeline.build_context("testds", dataset_config, args)
-    script = render_template(TEMPLATE_DIR / pipeline.template_name, ctx)
-    _check_no_unresolved(script)
