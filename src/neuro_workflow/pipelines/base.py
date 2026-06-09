@@ -104,3 +104,69 @@ class ContainerPipeline:
             "mail_line": build_mail_line(dataset_config),
             "image_path": image_path,
         }
+
+
+class LocalAnalysisPipeline:
+    """Base for the local (non-container) analysis pipelines.
+
+    Provides the scaffolding shared by ``lev1`` and ``lev2``: resource
+    resolution against ``default_resources``, the
+    ``<results_dir>/logs`` layout (created on disk, with a per-pipeline
+    list-file written into it), the repo-root path, and the common subset
+    of returned context keys (``dataset_name``, ``nthreads``, ``mem_gb``,
+    ``time``, ``partition``, ``log_dir``, ``mail_line``, ``results_dir``,
+    ``neuro_workflow_dir``).
+
+    Subclasses declare ``name``, ``docker_uri`` (``None`` here),
+    ``template_name`` and ``default_resources`` and implement
+    ``add_cli_args`` and ``build_context``, composing these helpers and
+    adding their own keys (lev1: tasks/fmriprep-dir/exclusions/space/...,
+    lev2: lev1-dirs/contrasts/mask-threshold/...).
+    """
+
+    name: str
+    docker_uri: str | None
+    template_name: str
+    default_resources: dict
+
+    def _resolve(self, args: Namespace) -> dict:
+        """Resolve resources against this pipeline's ``default_resources``."""
+        return resolve_resources(args, self.default_resources)
+
+    def _make_log_dir(self, results_dir: Path) -> Path:
+        """``<results_dir>/logs``, created on disk (``parents=True``)."""
+        log_dir = results_dir / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        return log_dir
+
+    def _write_list_file(self, log_dir: Path, filename: str, lines: list[str]) -> Path:
+        """Write ``<log_dir>/<filename>`` with one entry per line (trailing newline)."""
+        list_file = log_dir / filename
+        list_file.write_text("\n".join(lines) + "\n")
+        return list_file
+
+    @staticmethod
+    def _neuro_workflow_dir() -> str:
+        """Absolute path to the repo root (``base.py`` is at ``pipelines/``)."""
+        return str(Path(__file__).resolve().parents[3])
+
+    def _base_context(
+        self,
+        dataset_name: str,
+        dataset_config: dict,
+        resources: dict,
+        log_dir: Path,
+        results_dir: Path,
+    ) -> dict:
+        """The context keys present in every local-analysis pipeline's output."""
+        return {
+            "dataset_name": dataset_name,
+            "nthreads": resources["nthreads"],
+            "mem_gb": resources["mem_gb"],
+            "time": resources["time"],
+            "partition": dataset_config["partition"],
+            "log_dir": str(log_dir),
+            "mail_line": build_mail_line(dataset_config),
+            "results_dir": str(results_dir),
+            "neuro_workflow_dir": self._neuro_workflow_dir(),
+        }
