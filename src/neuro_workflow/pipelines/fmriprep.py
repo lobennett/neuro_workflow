@@ -1,13 +1,12 @@
 import os
-import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from neuro_workflow.core.slurm import count_subjects
-from neuro_workflow.pipelines.base import register, build_mail_line, resolve_resources
+from neuro_workflow.pipelines.base import ContainerPipeline, register
 
 
-class FmriprepPipeline:
+class FmriprepPipeline(ContainerPipeline):
     name = "fmriprep"
     docker_uri = "docker://nipreps/fmriprep"
     template_name = "fmriprep.sbatch"
@@ -39,18 +38,15 @@ class FmriprepPipeline:
         parser.add_argument("--array-throttle", type=int, default=8, help="Max concurrent array tasks (default: 8)")
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
-        if not getattr(args, "version", None):
-            print("Error: --version is required for fmriprep pipeline", file=sys.stderr)
-            sys.exit(1)
-        resources = resolve_resources(args, self.default_resources)
+        self._require_version(args)
+        resources = self._resolve(args)
         nthreads = resources["nthreads"]
         mem_per_cpu_gb = resources["mem_per_cpu_gb"]
-        time = resources["time"]
 
         n_subjects = count_subjects(dataset_config["subjects_file"])
         mem_mb = int(nthreads * mem_per_cpu_gb * 1000 * 0.9)
 
-        image_path = str(Path(dataset_config["image_dir"]) / f"fmriprep_{args.version}.sif")
+        image_path = self._image_path(dataset_config, args.version)
         fs_license = str(Path(args.fs_license).expanduser())
 
         scratch = os.environ.get("SCRATCH", "/tmp")
@@ -75,9 +71,7 @@ class FmriprepPipeline:
             bids_dir_for_bind = dataset_config["bids_dir"]
             output_bind_line = ""
             output_container = "/data/derivatives"
-            log_dir = f"{dataset_config['bids_dir']}/derivatives/fmriprep_{args.version}/logs"
-
-        mail_line = build_mail_line(dataset_config)
+            log_dir = self._log_dir(dataset_config, args.version)
 
         if args.bids_filter_file:
             filter_path = Path(args.bids_filter_file)
@@ -88,17 +82,16 @@ class FmriprepPipeline:
             bids_filter_arg = ""
 
         return {
-            "dataset_name": dataset_name,
-            "time": time,
+            **self._base_context(
+                dataset_name,
+                dataset_config,
+                resources,
+                log_dir=log_dir,
+                image_path=image_path,
+            ),
             "n_subjects": n_subjects,
             "array_throttle": getattr(args, "array_throttle", 8),
-            "nthreads": nthreads,
-            "mem_per_cpu_gb": mem_per_cpu_gb,
-            "partition": dataset_config["partition"],
-            "log_dir": log_dir,
-            "mail_line": mail_line,
             "subjects_file": dataset_config["subjects_file"],
-            "image_path": image_path,
             "bids_dir": bids_dir_for_bind,
             "templateflow_dir": dataset_config["templateflow_dir"],
             "work_dir": work_dir,
