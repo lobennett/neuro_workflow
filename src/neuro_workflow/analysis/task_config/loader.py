@@ -21,6 +21,9 @@ from typing import Any, Dict, List
 
 import yaml
 
+# Path to the task battery YAML (base + dual task lists)
+_BATTERY_YAML = Path(__file__).parent / 'battery.yaml'
+
 from neuro_workflow.core.acquisition import (
     N_DUMMY as DEFAULT_DUMMY_SCANS,
     TR_SECONDS as DEFAULT_TR,
@@ -203,6 +206,33 @@ def _encode_numeric_or_column(value) -> str:
             value = int(value)
         return f'constant_{value}_column'
     return str(value)
+
+
+@lru_cache(maxsize=1)
+def _load_battery() -> Dict[str, List[str]]:
+    """Load battery.yaml and return {'base': [...], 'dual': [...]}.
+
+    Cached so the YAML is read at most once per process.
+    """
+    with open(_BATTERY_YAML, encoding='utf-8') as fh:
+        data = yaml.safe_load(fh)
+    return data
+
+
+def get_base_tasks() -> List[str]:
+    """Return the ordered list of 8 base (single-task) paradigm names."""
+    return list(_load_battery()['base'])
+
+
+def get_dual_tasks() -> List[str]:
+    """Return the ordered list of 10 dual-task paradigm names."""
+    return list(_load_battery()['dual'])
+
+
+def get_all_tasks() -> List[str]:
+    """Return base + dual tasks in canonical order (18 tasks total)."""
+    batt = _load_battery()
+    return list(batt['base']) + list(batt['dual'])
 
 
 def list_available_tasks() -> List[str]:

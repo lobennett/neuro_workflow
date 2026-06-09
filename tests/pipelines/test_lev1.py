@@ -1,7 +1,8 @@
 from argparse import Namespace
 from pathlib import Path
 
-from neuro_workflow.pipelines.lev1 import Lev1Pipeline, BASE_TASKS, DUAL_TASKS, ALL_TASKS
+from neuro_workflow.pipelines.lev1 import Lev1Pipeline
+from neuro_workflow.analysis.task_config.loader import get_base_tasks, get_dual_tasks, get_all_tasks
 from neuro_workflow.pipelines.base import get_pipeline, TEMPLATE_DIR
 from neuro_workflow.core.slurm import render_template
 
@@ -30,9 +31,9 @@ def test_lev1_template_exists():
 
 
 def test_lev1_task_constants():
-    assert len(BASE_TASKS) == 8
-    assert len(DUAL_TASKS) == 10
-    assert ALL_TASKS == BASE_TASKS + DUAL_TASKS
+    assert len(get_base_tasks()) == 8
+    assert len(get_dual_tasks()) == 10
+    assert get_all_tasks() == get_base_tasks() + get_dual_tasks()
 
 
 def test_lev1_build_context_base_tasks(tmp_path):
