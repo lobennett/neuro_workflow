@@ -1,7 +1,7 @@
-import sys
 from argparse import Namespace
 from pathlib import Path
-from unittest.mock import patch
+
+import pytest
 
 from neuro_workflow.pipelines.happy import HappyPipeline
 
@@ -75,11 +75,8 @@ def test_build_context_version_required(tmp_path):
     p = HappyPipeline()
     config = make_config(tmp_path)
     args = make_args(version=None)
-    with patch.object(sys, "exit", side_effect=SystemExit):
-        try:
-            p.build_context("discovery", config, args)
-        except SystemExit:
-            pass
+    with pytest.raises(SystemExit):
+        p.build_context("discovery", config, args)
 
 
 def test_build_context_no_scans_found(tmp_path):
@@ -96,11 +93,8 @@ def test_build_context_no_scans_found(tmp_path):
         "mail_user": None,
     }
     args = make_args()
-    with patch.object(sys, "exit", side_effect=SystemExit):
-        try:
-            p.build_context("discovery", config, args)
-        except SystemExit:
-            pass
+    with pytest.raises(SystemExit):
+        p.build_context("discovery", config, args)
 
 
 def test_template_renders(tmp_path):
