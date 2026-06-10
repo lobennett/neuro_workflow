@@ -74,18 +74,22 @@ def _cached_thresholds() -> dict[str, Any]:
 
 
 def behavioral_qc() -> dict[str, Any]:
-    """Behavioral-QC threshold section."""
-    return _cached_thresholds()["behavioral_qc"]
+    """Behavioral-QC threshold section.
+
+    Returns a fresh shallow copy each call: the sections are flat scalar maps,
+    so a caller mutating the result cannot poison the process-wide lru_cache.
+    """
+    return dict(_cached_thresholds()["behavioral_qc"])
 
 
 def motion() -> dict[str, Any]:
-    """Motion-exclusion threshold section."""
-    return _cached_thresholds()["motion"]
+    """Motion-exclusion threshold section (fresh copy; see :func:`behavioral_qc`)."""
+    return dict(_cached_thresholds()["motion"])
 
 
 def lev1_outlier() -> dict[str, Any]:
-    """Lev1-outlier (VIF) threshold section."""
-    return _cached_thresholds()["lev1_outlier"]
+    """Lev1-outlier (VIF) threshold section (fresh copy; see :func:`behavioral_qc`)."""
+    return dict(_cached_thresholds()["lev1_outlier"])
 
 
 @lru_cache(maxsize=1)
@@ -95,8 +99,15 @@ def config_version() -> str:
     Hashes the raw bytes of ``thresholds.yaml`` and ``battery.yaml`` (in a fixed
     order) so that any edit to a study-level config produces a new version
     string. Consumed by the provenance work (PR4).
+
+    If a config file is absent, returns the literal ``"unknown"`` rather than
+    propagating an opaque ``FileNotFoundError`` -- provenance recording must not
+    crash the pipeline just because a config file is missing.
     """
     h = hashlib.sha256()
     for p in (THRESHOLDS_PATH, _BATTERY_PATH):
-        h.update(p.read_bytes())
+        try:
+            h.update(p.read_bytes())
+        except OSError:
+            return "unknown"
     return h.hexdigest()[:12]
