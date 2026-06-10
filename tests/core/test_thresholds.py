@@ -147,3 +147,50 @@ def test_config_version_stable_and_short():
     assert v1 == v2  # stable across calls
     assert 0 < len(v1) <= 16  # short hash
     assert all(c in "0123456789abcdef" for c in v1)
+
+
+def test_config_version_returns_unknown_when_file_missing(tmp_path, monkeypatch):
+    """A missing config file must yield the literal 'unknown', not an opaque
+    FileNotFoundError that would crash provenance recording."""
+    from neuro_workflow.core import thresholds as t
+
+    monkeypatch.setattr(t, "THRESHOLDS_PATH", tmp_path / "nope.yaml")
+    # Bypass the module-level lru_cache so the patched path is actually read.
+    assert t.config_version.__wrapped__() == "unknown"
+
+
+# ---------------------------------------------------------------------------
+# Cache-isolation: section getters must return fresh copies
+# ---------------------------------------------------------------------------
+def test_section_getters_return_copies_not_cached_refs():
+    """behavioral_qc()/motion()/lev1_outlier() must hand back a fresh dict each
+    call: mutating a returned dict must NOT poison the process-wide lru_cache
+    (which would corrupt every later caller, including qc_globals)."""
+    from neuro_workflow.core import thresholds as t
+
+    for getter in (t.behavioral_qc, t.motion, t.lev1_outlier):
+        first = getter()
+        first["__poison__"] = 999  # mutate the returned dict
+        first[next(iter(first))] = -12345  # also clobber a real key
+        second = getter()
+        assert "__poison__" not in second, f"{getter.__name__} leaked a cached ref"
+        assert second != first
+
+
+def test_raw_yaml_config_returns_deepcopy():
+    """get_raw_yaml_config must return a deep copy: mutating a nested value must
+    not bleed into a later call (the underlying parse is lru_cache'd)."""
+    from neuro_workflow.analysis.task_config.loader import get_raw_yaml_config
+
+    cfg = get_raw_yaml_config("flanker")
+    cfg["__poison__"] = 999
+    # Mutate a nested container if present, to prove deep (not shallow) copy.
+    for v in cfg.values():
+        if isinstance(v, dict):
+            v["__nested_poison__"] = 1
+            break
+    again = get_raw_yaml_config("flanker")
+    assert "__poison__" not in again
+    assert not any(
+        isinstance(v, dict) and "__nested_poison__" in v for v in again.values()
+    )
