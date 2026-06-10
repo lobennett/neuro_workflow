@@ -1,6 +1,6 @@
-import sys
 from argparse import Namespace
-from unittest.mock import patch
+
+import pytest
 
 from neuro_workflow.pipelines.fsqc import FsqcPipeline
 
@@ -59,22 +59,16 @@ def test_build_context_version_required(tmp_path):
     p = FsqcPipeline()
     config = make_config(tmp_path)
     args = make_args(version=None)
-    with patch.object(sys, "exit", side_effect=SystemExit):
-        try:
-            p.build_context("validation", config, args)
-        except SystemExit:
-            pass
+    with pytest.raises(SystemExit):
+        p.build_context("validation", config, args)
 
 
 def test_build_context_freesurfer_dir_required(tmp_path):
     p = FsqcPipeline()
     config = make_config(tmp_path)
     args = make_args(freesurfer_dir=None)
-    with patch.object(sys, "exit", side_effect=SystemExit):
-        try:
-            p.build_context("validation", config, args)
-        except SystemExit:
-            pass
+    with pytest.raises(SystemExit):
+        p.build_context("validation", config, args)
 
 
 def test_template_renders(tmp_path):

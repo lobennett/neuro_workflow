@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from neuro_workflow.analysis.config import Config
+from neuro_workflow.analysis.lev1.subject_config import Config
 
 
 class TestConfig:

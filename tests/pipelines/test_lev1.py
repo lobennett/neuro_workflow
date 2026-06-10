@@ -1,10 +1,53 @@
 from argparse import Namespace
 from pathlib import Path
 
+import pytest
+
 from neuro_workflow.pipelines.lev1 import Lev1Pipeline
 from neuro_workflow.analysis.task_config.loader import get_base_tasks, get_dual_tasks, get_all_tasks
 from neuro_workflow.pipelines.base import get_pipeline, TEMPLATE_DIR
 from neuro_workflow.core.slurm import render_template
+
+
+def test_lev1_build_context_no_exclusions_file_and_no_compiled_exits(tmp_path, monkeypatch):
+    """With --exclusions-file unset AND no compiled exclusions for the dataset,
+    build_context must sys.exit(1) (the 'run exclusions compile first' guard),
+    not silently proceed with no exclusions."""
+    # Redirect the exclusions store so _compiled_path points at an empty tmp dir
+    # (guarantees no compiled file exists for this dataset; never touches the
+    # real ~/.config store).
+    monkeypatch.setattr(
+        "neuro_workflow.core.exclusions.EXCLUSIONS_DIR", tmp_path / "exclusions"
+    )
+    subs = tmp_path / "subs.txt"
+    subs.write_text("s03\n")
+
+    p = Lev1Pipeline()
+    dataset_config = {
+        "bids_dir": str(tmp_path / "bids"),
+        "subjects_file": str(subs),
+        "partition": "russpold",
+        "mail_user": None,
+    }
+    args = Namespace(
+        tasks=["flanker"],
+        tasks_flag=None,
+        fmriprep_dir="/oak/data/derivatives/fmriprep",
+        results_dir=str(tmp_path / "results"),
+        exclusions_file=None,  # the branch under test
+        space="MNI",
+        threshold=1.0,
+        smoothing_fwhm=None,
+        residuals=False,
+        fc_confounds=False,
+        skip_existing=False,
+        nthreads=None,
+        mem_gb=None,
+        time=None,
+    )
+
+    with pytest.raises(SystemExit):
+        p.build_context("brand_new_dataset_no_compiled", dataset_config, args)
 
 
 def test_lev1_pipeline_is_registered():

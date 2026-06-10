@@ -120,6 +120,22 @@ Below, each stage shows the submit command, where the template renders the work,
 outputs + logs land. Cohorts: `discovery` (5 subjects: s03, s10, s19, s29, s43) and
 `validation` (41 subjects). BIDS roots: `/scratch/users/logben/{discovery,validation}_bids`.
 
+> **MOVED OUT OF THIS REPO — XCP-D, prep-mshbm, mshbm, prevalence (§2.3, §2.6, §2.7, §2.9).**
+> The MSHBM parcellation, prevalence, parcellation-reliability, and XCP-D denoising
+> pipelines were extracted into a separate repository, `network_analysis`
+> (`github.com/lobennett/network_analysis`; source at
+> `/scratch/users/logben/network_analysis`) — see `docs/ARCHITECTURE.md`. They are **no
+> longer registered `neuro-run` pipelines here**: there are no `xcpd`/`prep-mshbm`/`mshbm`
+> pipeline classes or `.sbatch` templates in this repo, and `scripts/prevalence_*.py` /
+> `scripts/mshbm_*.py` / `scripts/xcpd_preflight.py` have been removed. The sections below
+> are retained as a historical record of how those stages were launched; their commands,
+> default resources, and output/log paths must be re-verified against the `network_analysis`
+> repo (this is the source of the un-resolvable `[VERIFY]` markers in those sections). The
+> `discovery_xcpd` / `*_mshbm` entries still shown by `neuro-run show --list` are stale
+> dataset registrations in `~/.neuro_workflow/datasets.json`, not live pipelines. Stages
+> that remain in this repo — bidsify, fmriprep, lev1, lev2, qa_report, the iProc scatter —
+> are current.
+
 ### 2.1 bidsify (Flywheel → BIDS) — `templates/bidsify.sbatch`
 
 Single job (no array). `requires_dataset = False`: takes `--output-dir` directly, not a
@@ -137,12 +153,17 @@ uv run neuro-run submit bidsify validation \
 ```
 
 - Container: `/home/groups/russpold/singularity_images/neuro_workflow.sif` (the
-  `{container}` placeholder). **[VERIFY]** exact path/flags in `pipelines/bidsify.py`.
-- Inner command: `apptainer run "$CONTAINER" bidsify <sample> --output-dir ... <extra_args>`.
+  `{container}` placeholder; `_DEFAULT_CONTAINER` in `pipelines/bidsify.py`).
+- Inner command: `apptainer run "$CONTAINER" bidsify <sample> --output-dir ... <extra_args>`
+  (verbatim from `templates/bidsify.sbatch`).
 - **Outputs:** the BIDS tree under `--output-dir`. **Logs:** `{log_dir}/%x-%j.out|.err`
-  (the `bidsify_<sample>` job name; log dir set by the pipeline context). **[VERIFY]**
-- FW credential: `FW_API_KEY` lives in `.env` (gitignored). **[VERIFY]** how it reaches the
-  container env.
+  with job name `bidsify_<sample>` (`#SBATCH -J bidsify_{sample}`); the log dir is
+  `<output_dir>/sourcedata/logs` (`build_context` in `pipelines/bidsify.py`).
+- FW credential: `FW_API_KEY` lives in `.env` (gitignored). Verified: the bidsify
+  template runs `apptainer run` **without** `--cleanenv` (unlike `fmriprep.sbatch`), so
+  the host shell environment — including `FW_API_KEY` once `.env` is sourced — is
+  inherited by the container. No `FW_API_KEY` reference exists anywhere in `src/`; the
+  Flywheel SDK reads it from the inherited environment at runtime.
 
 After bidsify, the post-BIDS steps run **outside** SLURM as direct CLI calls:
 `uv run python scripts/trim_bold.py <bids_dir>` (trim 7 dummy volumes; idempotent), then
@@ -178,7 +199,8 @@ uv run neuro-run submit fmriprep discovery \
 
 Array job, one per subject, throttled. Requires `--version` and `--fmriprep-version`
 (it reads the fmriprep derivatives as `/data:ro`). Default partition for xcpd is typically
-**bigmem** via the dataset config; defaults are heavier (16 cpus, 24G/cpu **[VERIFY]**).
+**bigmem** via the dataset config; defaults are heavier (16 cpus, 24G/cpu **[VERIFY — in
+`network_analysis`; xcpd was extracted from this repo]**).
 
 ```bash
 uv run neuro-run submit xcpd discovery \
@@ -191,8 +213,8 @@ uv run neuro-run submit xcpd discovery \
 - Hard-coded run flags in the template: `--mode abcd --fd-thresh 0.3 --combine-runs
   --warp-surfaces-native2std --linc-qc --min-time 150 --min-coverage 0.5` + notch motion
   filter; `{xcpd_args}` are appended.
-- **Outputs:** `--output-dir` (bound as `/out`), per-subject `sub-<id>/`. **[VERIFY]** the
-  default output path in `pipelines/xcpd.py`.
+- **Outputs:** `--output-dir` (bound as `/out`), per-subject `sub-<id>/`. **[VERIFY — in
+  `network_analysis`]** the default output path (`pipelines/xcpd.py` no longer exists here).
 - **Logs:** `{log_dir}/%x-%A-%a.out|.err`.
 - Benign exit-1 workaround for the XCP-D 26.0.2 execsummary matplotlib bug: if the log
   contains "Reports generated successfully", exit-1 is treated as exit-0.
@@ -228,7 +250,10 @@ uv run neuro-run submit lev1 discovery \
 - **Exclusions are required.** If `--exclusions-file` is omitted it uses the compiled
   exclusions for the dataset; if none exist the build aborts telling you to run
   `neuro-run exclusions compile <dataset>` first. Subject labels here are typically bare
-  (`s03`) per the subjects file. **[VERIFY]** `sub-` prefixing convention against the file.
+  (`s03`) per the subjects file. The label is passed verbatim from the subjects file
+  (`--subj-id "$SUBJ_ID"` in `templates/lev1.sbatch`) and normalized inside the analysis:
+  `normalize_subject_id` (`analysis/core/utils.py`) prepends `sub-` only if absent, so
+  both bare `s03` and `sub-s03` are accepted.
 - **Outputs:** `--results-dir` (default `<bids_dir>/derivatives/lev1`).
   **Logs:** `<results_dir>/logs/%x-%A-%a.out|.err`.
 
@@ -283,8 +308,9 @@ uv run neuro-run submit prep-mshbm discovery \
 - `#SBATCH --array=1-<n_subjects>` (one per subject; not throttled). Subject per line via
   `sed -n "${SLURM_ARRAY_TASK_ID}p" <subject_list_file>`.
 - `module load biology freesurfer/8.1.0` + `biology ants/2.4.0` + `uv`. Defaults: 1 cpu,
-  64G, `24:00:00` **[VERIFY]**.
-- **Outputs:** `--output-dir`. **Logs:** `{log_dir}/%x-%A-%a.out|.err`. **[VERIFY]** log dir.
+  64G, `24:00:00` **[VERIFY — in `network_analysis`; prep-mshbm was extracted]**.
+- **Outputs:** `--output-dir`. **Logs:** `{log_dir}/%x-%A-%a.out|.err`. **[VERIFY — in
+  `network_analysis`]** log dir.
 
 ### 2.7 mshbm (MATLAB network mapping) — `templates/mshbm.sbatch`
 
@@ -300,11 +326,13 @@ uv run neuro-run submit mshbm discovery \
 
 - Context writes a 2-column, header-less CSV (`sub-XXX,<surface_dir>/`) consumed by MATLAB.
 - `module load matlab`; runs `bash <mshbm_dir>/MSHBM/run_MSHBM.sh <sub_list> <output_dir> <mshbm_dir>`.
-- Defaults: 1 cpu, 64G, `24:00:00` **[VERIFY]**.
+- Defaults: 1 cpu, 64G, `24:00:00` **[VERIFY — in `network_analysis`; mshbm was extracted]**.
 - **Outputs:** `--output-dir`. **Logs:** `<output_dir>/logs/%x-%j.out|.err`.
 
 PNM is a git submodule at `external/PrecisionNetworkMapping`. **[VERIFY]** that `lib/` is
-populated; the original `~/network_glm` clone has been used for `CBIG_CODE_DIR`.
+populated (the submodule is uninitialized in the refactor worktree, so `lib/` cannot be
+confirmed populated from here; check `git submodule update --init` against a full checkout);
+the original `~/network_glm` clone has been used for `CBIG_CODE_DIR`.
 
 ### 2.8 qa_report (cohort QA HTML + reliability movies) — `scripts/run_qa_report.sbatch`
 
@@ -332,22 +360,18 @@ sbatch /home/users/logben/neuro_workflow/scripts/run_qa_report.sbatch \
 Related: cohort lev1 QC via `sbatch scripts/run_lev1_outliers.sbatch --lev1-dir ...`
 (russpold, 1h, 16G, 2 cpus → `scripts/lev1_outliers.py`, logs to `logs/lev1_outliers-%j.*`).
 
-### 2.9 prevalence (maps + dashboards)
+### 2.9 prevalence (maps + dashboards) — MOVED to `network_analysis`
 
-Not SLURM pipelines — direct `uv run python` invocations of the untracked
-`scripts/prevalence_*.py` family (they import `neuro_workflow.analysis.prevalence.*`). They
-render PNG panels + DataTables `index.html` and per-instance trend TSV/figures.
+Prevalence analysis was extracted to the `network_analysis` repo (see the banner at the top
+of §2 and `docs/ARCHITECTURE.md`). The `scripts/prevalence_*.py` family and the
+`neuro_workflow.analysis.prevalence.*` package no longer exist in this repo. Historically
+these were direct `uv run python` invocations (not SLURM pipelines) that rendered PNG panels
++ DataTables `index.html` and per-instance trend TSV/figures, e.g.
+`prevalence_by_instance_run.py` and `prevalence_dashboard.py`.
 
-```bash
-# Per-instance prevalence over the 8 main task/contrast cells
-uv run python /home/users/logben/neuro_workflow/scripts/prevalence_by_instance_run.py ...
-# Browseable dashboard of directional prevalence cells
-uv run python /home/users/logben/neuro_workflow/scripts/prevalence_dashboard.py ...
-```
-
-**[VERIFY]** exact CLI flags and output dirs per script (e.g. the existing diagnostic
-dashboard at `/scratch/users/logben/prevalence_diagnostic_all44`). These are research glue,
-documented only in their module docstrings.
+**[VERIFY — in `network_analysis`]** exact CLI flags and output dirs per script (e.g. the
+existing diagnostic dashboard at `/scratch/users/logben/prevalence_diagnostic_all44`). These
+are research glue, documented only in their module docstrings in that repo.
 
 ---
 
@@ -410,9 +434,10 @@ uv run python scripts/iproc_scatter.py submit-rest  --stage filter_and_project -
   but skip it via iProc's existing-output check.
 - Each job: `sbatch --partition russpold --time 18:00:00 --cpus-per-task 8` with a memory
   tier by volume count, wrapping `apptainer exec ... iProc.py -s <stage> --executor local`.
-- **NOTE / portability bug:** `iproc_scatter.py` queries `squeue -u logben` with a hardcoded
-  username (vs the sibling tedana driver's `getpass.getuser()`). On any other account its
-  idempotent re-submit / afterok logic would silently misfire. **[VERIFY]** before reuse.
+- **Portability (verified current code):** both `iproc_scatter.py` (lines 305, 317) and the
+  sibling tedana driver query `squeue` with `getpass.getuser()`, not a hardcoded username —
+  the idempotent re-submit / afterok logic is account-portable. (An earlier hardcoded-`logben`
+  form has since been fixed; older notes flagging it are stale.)
 - **Outputs:** the canonical iProc tree. **Logs:**
   `scatter_combine_s10/logs/<label>/slurm_comb_%j.log`.
 
@@ -492,7 +517,7 @@ uv run python scripts/iproc_parallel_run.py --sub s10 \
 
 | Stage | Submit | Outputs | Logs |
 |---|---|---|---|
-| bidsify | `neuro-run submit bidsify` (container, 1 job) | `--output-dir` BIDS tree | `{log_dir}/bidsify_<sample>-%j.*` **[VERIFY]** |
+| bidsify | `neuro-run submit bidsify` (container, 1 job) | `--output-dir` BIDS tree | `<output-dir>/sourcedata/logs/bidsify_<sample>-%j.*` |
 | fmriprep | `neuro-run submit fmriprep` (array%throttle) | `<bids>/derivatives/fmriprep_<ver>/` | `<...>/fmriprep_<ver>/logs/%x-%A-%a.*` |
 | xcpd | `neuro-run submit xcpd` (array%throttle) | `--output-dir` | `{log_dir}/%x-%A-%a.*` |
 | lev1 | `neuro-run submit lev1` (array subj×task) | `--results-dir` (def `<bids>/derivatives/lev1`) | `<results>/logs/%x-%A-%a.*` |
@@ -502,7 +527,7 @@ uv run python scripts/iproc_parallel_run.py --sub s10 \
 | qa_report | `sbatch scripts/run_qa_report.sbatch` | `<fmriprep>/qa_html/` | repo `logs/qa_report-%j.*` |
 | iproc combine/filter | `iproc_scatter.py submit-rest` | canonical iProc tree | `scatter_combine_s10/logs/<label>/slurm_comb_%j.log` |
 | iproc tedana | `iproc_tedana_scatter.py submit` (drip, 10-min) | canonical `.../tedana/...` | `scatter_combine_s10/logs/<label>/slurm_teda_<space>_%j.*` |
-| prevalence | `uv run python scripts/prevalence_*.py` | per-script **[VERIFY]** | n/a (foreground) |
+| prevalence | moved to `network_analysis` repo | per-script **[VERIFY — in `network_analysis`]** | n/a (foreground) |
 
 ---
 
@@ -526,6 +551,5 @@ uv run python scripts/iproc_parallel_run.py --sub s10 \
 - **Do NOT delete or move**: `scripts/iproc_tedana_scatter.py` (live controller),
   `pyproject.toml` / `src/neuro_workflow/` (package importability), the `.venv`, or
   `scripts/__init__.py`.
-- **Username portability**: `iproc_tedana_scatter.py` correctly uses `getpass.getuser()`;
-  `iproc_scatter.py` hardcodes `logben` in its `squeue` calls. **[VERIFY]** before running
-  the combine/filter scatter under a different account.
+- **Username portability**: both `iproc_tedana_scatter.py` and `iproc_scatter.py` (lines
+  305, 317) use `getpass.getuser()` in their `squeue` calls — verified account-portable.

@@ -367,3 +367,83 @@ class TestNormalizeSubjectId:
         """Test handling input that is only 'sub-'."""
         result = normalize_subject_id('sub-')
         assert result == 'sub-'
+
+
+class TestExclusionKeyMatchesRunnerForAllGenerators:
+    """Regression: every generator's compiled entries must produce a key that
+    matches the key the lev1 runner constructs for that scan.
+
+    The lev1 runner builds its per-run key via ``_run_base_filename`` as
+    ``f'{subj_id}_{session}_task-{task_name}_{run}'`` (task is BARE in the runner;
+    the literal ``task-`` prefix is in the format string). For a compiled exclusion
+    entry to actually skip that run, ``create_exclusion_key(entry)`` must equal
+    that string. This pins the schema invariant that ALL generators store the
+    ``task`` field PREFIXED (``task-goNogo``) and ``run`` as ``run-N`` so behavioral
+    and motion exclusions are honored identically by lev1.
+    """
+
+    def test_motion_and_behavioral_entries_both_match_runner_key(self, temp_dir):
+        from neuro_workflow.analysis.lev1.runner import _run_base_filename
+
+        # The scan the runner is iterating over.
+        subj_id, session, task_name, run = 'sub-s10', 'ses-01', 'goNogo', 'run-1'
+        runner_key = _run_base_filename(subj_id, session, task_name, run)
+
+        # Motion-style compiled entry (prefixed task, as motion.py emits).
+        motion_entry = {
+            'subject': 'sub-s10', 'session': 'ses-01',
+            'task': 'task-goNogo', 'run': 'run-1',
+            'source': 'motion', 'action': 'exclude', 'reason': 'fd',
+        }
+        # Behavioral-style compiled entry — must ALSO be prefixed to match.
+        behavioral_entry = {
+            'subject': 'sub-s10', 'session': 'ses-01',
+            'task': 'task-goNogo', 'run': 'run-1',
+            'source': 'behavioral-qc', 'action': 'exclude', 'reason': 'omission',
+        }
+
+        compiled = temp_dir / 'compiled_exclusions.json'
+        with open(compiled, 'w') as f:
+            json.dump([motion_entry, behavioral_entry], f)
+
+        # This is exactly the code path lev1 uses (prepare.py -> load_exclusions).
+        exclusions = load_exclusions(compiled)
+
+        # Both generators' entries must land on the runner's key.
+        assert create_exclusion_key(motion_entry) == runner_key
+        assert create_exclusion_key(behavioral_entry) == runner_key
+        assert runner_key in exclusions, (
+            f'{runner_key!r} not in {sorted(exclusions)!r}: lev1 would NOT skip this scan'
+        )
+
+    def test_behavioral_generator_emits_prefixed_task_and_run(self, temp_dir):
+        """The behavioral QC stage must emit prefixed task/run on exclusion
+        entries (so they match the runner key). The trim entries keep bare task
+        because events.trim re-prefixes; we only pin the exclusion entries here.
+        """
+        pytest.importorskip('pandas')
+        import pandas as pd
+        from neuro_workflow.events.qc import run_qc
+
+        # Build a sourcedata CSV for a generic task that trips the omission-rate
+        # threshold (all test trials are omissions -> omission_rate=1.0) so an
+        # exclusion entry is produced via check_other_exclusion.
+        beh_dir = temp_dir / 'sourcedata' / 'sub-s10' / 'ses-01' / 'beh'
+        beh_dir.mkdir(parents=True)
+        n = 40
+        df = pd.DataFrame({
+            'trial_id': ['test_trial'] * n,
+            'rt': [-1] * n,                   # all omissions -> omission_rate = 1.0
+            'key_press': [-1] * n,
+            'correct_response': [1] * n,
+        })
+        df.to_csv(beh_dir / 'sub-s10_ses-01_task-flanker_run-1_desc-raw.csv', index=False)
+
+        exclusion_entries, _trim_entries = run_qc(
+            behavioral_dir=temp_dir / 'sourcedata', bids_dir=temp_dir,
+        )
+
+        assert exclusion_entries, 'expected at least one behavioral exclusion entry'
+        for entry in exclusion_entries:
+            assert entry['task'].startswith('task-'), entry
+            assert entry['run'].startswith('run-'), entry
