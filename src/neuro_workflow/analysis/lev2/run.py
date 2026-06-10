@@ -11,6 +11,7 @@ from pathlib import Path
 from nilearn.masking import intersect_masks
 from nilearn.image import math_img
 from typing import List
+import json
 import sys
 import argparse
 import subprocess
@@ -94,6 +95,93 @@ def discover_input_files(level1_dirs: List[Path], contrast_name: str) -> List[st
         )
 
     return sorted(all_files)
+
+
+def _input_manifest_path(input_file: str | Path) -> Path:
+    """Map a lev1 fixed-effects input file to its PR4b run-manifest.
+
+    The lev2 glob selects files at
+    ``<results>/<subj>/task-<task>/fixed_effects/<file>`` and PR4b
+    (:func:`neuro_workflow.analysis.lev1.run._write_lev1_provenance`) writes the
+    per-subject×task ``run-manifest.json`` at the per-subject×task ``base`` dir
+    (``dirs['base'] == <results>/<subj>/task-<task>/``), i.e. ONE level above
+    the ``fixed_effects/`` dir. So the manifest is the input file's
+    grandparent-dir ``run-manifest.json``.
+    """
+    return Path(input_file).parent.parent / 'run-manifest.json'
+
+
+def _read_input_provenance(input_files: List[str]) -> dict:
+    """Summarize the provenance chain of lev2's selected lev1 inputs.
+
+    For each input fixed-effects file, locate and read its PR4b lev1
+    ``run-manifest.json`` (see :func:`_input_manifest_path`) and collect the
+    distinct ``code_sha`` / ``config_version`` / ``exclusions_source`` SHA
+    values across all inputs. This is the provenance-chain closure: lev2 can
+    no longer be blind to which exclusion set / lev1 code version / config
+    produced its inputs.
+
+    Best-effort and non-fatal: a missing or unreadable manifest contributes the
+    sentinel ``"unknown"`` (it does NOT raise — pre-PR4b/legacy lev1 outputs
+    have no manifest). A manifest present but with no ``exclusions_source``
+    block contributes ``"none"`` (distinct from ``"unknown"``).
+
+    Selection is UNCHANGED — this function never filters inputs; it only reads
+    the manifests of whatever ``discover_input_files`` already selected.
+
+    Args:
+        input_files: the lev1 fixed-effects files lev2 selected as inputs.
+
+    Returns:
+        A JSON-safe dict with:
+        - ``n_inputs``: number of input files.
+        - ``n_manifests_found``: how many inputs had a readable manifest.
+        - ``code_sha`` / ``config_version`` / ``exclusions_source``: sorted
+          lists of the DISTINCT values seen (``"unknown"`` / ``"none"``
+          sentinels included).
+        - ``consistent``: True iff each of those distinct sets has <= 1 entry
+          (i.e. all inputs share one exclusion set, code version, and config).
+    """
+    code_shas: set[str] = set()
+    config_versions: set[str] = set()
+    excl_shas: set[str] = set()
+    n_manifests_found = 0
+
+    for input_file in input_files:
+        manifest_path = _input_manifest_path(input_file)
+        try:
+            manifest = json.loads(manifest_path.read_text())
+        except (OSError, ValueError):
+            # Missing / unreadable / malformed manifest: legacy or pre-PR4b
+            # outputs. Record the gap rather than crashing.
+            code_shas.add('unknown')
+            config_versions.add('unknown')
+            excl_shas.add('unknown')
+            continue
+
+        n_manifests_found += 1
+        code_shas.add(manifest.get('code_sha') or 'unknown')
+        config_versions.add(manifest.get('config_version') or 'unknown')
+
+        excl_block = manifest.get('exclusions_source')
+        if not excl_block:
+            excl_shas.add('none')
+        else:
+            excl_shas.add(excl_block.get('sha256') or 'none')
+
+    distinct = {
+        'code_sha': sorted(code_shas),
+        'config_version': sorted(config_versions),
+        'exclusions_source': sorted(excl_shas),
+    }
+    consistent = all(len(v) <= 1 for v in distinct.values())
+
+    return {
+        'n_inputs': len(input_files),
+        'n_manifests_found': n_manifests_found,
+        'consistent': consistent,
+        **distinct,
+    }
 
 
 def run_level2_analysis(
@@ -194,13 +282,44 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _warn_if_inconsistent_inputs(input_provenance: dict) -> None:
+    """Print a loud stderr WARNING when the input provenance chain is mixed.
+
+    Group-level (lev2) results are only interpretable if every contributing
+    lev1 fixed-effects map came from the SAME exclusion set, lev1 code version,
+    and study config. When that is not the case, mixing them silently is a
+    scientific hazard — so we warn loudly (but do NOT fail or change selection;
+    the operator decides). The full distinct-value summary is also persisted in
+    the lev2 manifest under ``input_provenance`` for the audit trail.
+    """
+    if input_provenance.get('consistent', True):
+        return
+
+    print(
+        'WARNING: lev2 inputs are provenance-INCONSISTENT — group results may '
+        'mix incompatible lev1 outputs. Distinct values across inputs:\n'
+        f'  code_sha:          {input_provenance["code_sha"]}\n'
+        f'  config_version:    {input_provenance["config_version"]}\n'
+        f'  exclusions_source: {input_provenance["exclusions_source"]}\n'
+        f'  ({input_provenance["n_manifests_found"]}/{input_provenance["n_inputs"]} '
+        'inputs had a readable lev1 run-manifest; "unknown" = missing manifest, '
+        '"none" = no exclusions recorded). Re-run the offending lev1 subjects '
+        'against a single exclusion set / code version before trusting lev2.',
+        file=sys.stderr,
+    )
+
+
 def _write_lev2_provenance(output_dir, args, level1_dirs, input_files):
     """Write additive provenance for a lev2 contrast run.
 
     - ``dataset_description.json`` at ``output_dir``, naming the lev1 source
       dirs in ``SourceDatasets``.
     - ``run-manifest.json`` at ``output_dir``, stage='lev2', recording the
-      discovered lev1 fixed-effects input files.
+      discovered lev1 fixed-effects input files AND (PR4c) an
+      ``input_provenance`` summary closing the provenance chain: the distinct
+      lev1 ``code_sha`` / ``config_version`` / ``exclusions_source`` SHAs across
+      those inputs. A loud stderr WARNING fires if that summary is inconsistent
+      (mixed exclusion sets / code versions / configs). Selection is unchanged.
 
     Called AFTER the contrast's scientific outputs; errors are allowed to
     surface (fail loud). ``allow_dirty`` is threaded from the CLI flag.
@@ -211,13 +330,26 @@ def _write_lev2_provenance(output_dir, args, level1_dirs, input_files):
         name='lev2',
         source_datasets=[{'URL': str(d)} for d in level1_dirs],
     )
-    provenance.write_run_manifest(
+
+    # Provenance-chain closure (PR4c): read each input's lev1 run-manifest and
+    # summarize the distinct upstream SHAs. Warn loudly on inconsistency.
+    input_provenance = _read_input_provenance(input_files)
+    _warn_if_inconsistent_inputs(input_provenance)
+
+    manifest_path = provenance.write_run_manifest(
         output_dir,
         stage='lev2',
         args=args,
         inputs=[Path(f) for f in input_files],
         allow_dirty=allow_dirty,
     )
+
+    # Additively fold the input-provenance summary into the written manifest.
+    # write_run_manifest's schema is fixed and shared across stages, so we
+    # merge the lev2-specific block in here rather than widen the primitive.
+    manifest = json.loads(manifest_path.read_text())
+    manifest['input_provenance'] = input_provenance
+    manifest_path.write_text(json.dumps(manifest, indent=2))
 
 
 def main() -> None:
