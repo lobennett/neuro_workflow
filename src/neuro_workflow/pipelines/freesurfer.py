@@ -1,6 +1,7 @@
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from neuro_workflow.core.slurm import count_subjects
 from neuro_workflow.pipelines.base import ContainerPipeline, register
 
 
@@ -27,7 +28,11 @@ class FreesurferPipeline(ContainerPipeline):
         resources = self._resolve(args)
 
         fs_subjects_file = getattr(args, "subjects_file", None) or dataset_config["subjects_file"]
-        n_subjects = sum(1 for line in open(fs_subjects_file) if line.strip())
+        # Each non-blank CSV row is one subject (no header). The sbatch template
+        # indexes rows via `sed -n "${SLURM_ARRAY_TASK_ID}p"` over array 1..n_subjects,
+        # so this count must equal the number of data rows -- count_subjects (shared
+        # with fmriprep/qsiprep) does exactly that, with a `with` block (no fd leak).
+        n_subjects = count_subjects(fs_subjects_file)
 
         fs_license = str(Path(args.fs_license).expanduser())
 
