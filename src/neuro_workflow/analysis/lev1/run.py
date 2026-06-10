@@ -10,6 +10,7 @@ This module is the CLI only; the work is split across sibling modules:
 import argparse
 import logging
 import sys
+from pathlib import Path
 
 from neuro_workflow.analysis.lev1.prepare import (
     discover_and_validate_files,
@@ -21,8 +22,23 @@ from neuro_workflow.analysis.lev1.runner import (
     process_single_run,
 )
 from neuro_workflow.analysis.task_config.loader import get_task_parameters
+from neuro_workflow.core import provenance
 
 logger = logging.getLogger(__name__)
+
+# fMRIPrep/BIDS file-type keys (in the discovered `files` dict) that represent
+# ACTUAL study inputs consumed by the GLM, and should be hashed into the
+# run-manifest. Masks are derived intermediates (re-created per run), so they
+# are intentionally excluded.
+_INPUT_FILE_KEYS = (
+    'events',
+    'confounds',
+    'mni_data',
+    't1w_data',
+    'left_surface',
+    'right_surface',
+    'cifti_bold',
+)
 
 
 def _positive_int(value: str) -> int:
@@ -146,6 +162,15 @@ def get_parser() -> argparse.ArgumentParser:
         'files are still saved and can be re-plotted offline.',
     )
     parser.add_argument(
+        '--allow-dirty',
+        action='store_true',
+        default=False,
+        help='Permit recording provenance against an uncommitted (dirty) git '
+        'working tree without warning. Without this flag a dirty tree warns '
+        'loudly to stderr but the run still proceeds; the manifest records '
+        'code_dirty truthfully either way.',
+    )
+    parser.add_argument(
         '--verbose',
         action='store_true',
         default=False,
@@ -154,12 +179,77 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _collect_run_inputs(files):
+    """Flatten the discovered ``files`` dict into the list of ACTUAL inputs.
+
+    ``files`` is ``{session: {run: {file_type: Path}}}`` (see
+    :class:`~neuro_workflow.analysis.io.file_discovery.FileFinder`). We hash the
+    study inputs the GLM actually consumes — events, confounds, and the BOLD
+    timeseries for whichever space ran (``mni_data`` / ``t1w_data`` /
+    ``left_surface`` + ``right_surface`` / ``cifti_bold``). Brain masks are
+    derived intermediates (re-created per run) and are intentionally omitted.
+
+    Returns a de-duplicated, deterministically sorted list of Paths.
+    """
+    collected: set = set()
+    for runs in files.values():
+        for run_files in runs.values():
+            for key in _INPUT_FILE_KEYS:
+                path = run_files.get(key)
+                if path is not None:
+                    collected.add(Path(path))
+    return sorted(collected, key=str)
+
+
+def _write_lev1_provenance(results_dir, args, dirs, input_files):
+    """Write additive provenance for one subject×task lev1 invocation.
+
+    - ``dataset_description.json`` at the shared ``results_dir`` (idempotent:
+      many subject×task invocations share one results_dir; rewriting an
+      identical file is fine and BIDS-valid).
+    - ``run-manifest.json`` at the per-subject×task output subdir
+      (``dirs['base']``), recording stage='lev1', the actual inputs consumed,
+      and the compiled-exclusions source.
+
+    Called AFTER scientific outputs are written so a manifest error never costs
+    science; the error is allowed to surface (fail loud) rather than be
+    swallowed. ``allow_dirty`` is threaded from the CLI flag.
+    """
+    allow_dirty = getattr(args, 'allow_dirty', False)
+    provenance.write_dataset_description(
+        results_dir,
+        name='lev1',
+        source_datasets=[
+            {'URL': str(args.bids_dir)},
+            {'URL': str(args.fmriprep_dir)},
+        ],
+    )
+    provenance.write_run_manifest(
+        dirs['base'],
+        stage='lev1',
+        args=args,
+        inputs=input_files,
+        exclusions_source=args.exclusions_file,
+        allow_dirty=allow_dirty,
+    )
+
+
 def main():
     """Run level 1 analysis with command line arguments."""
     parser = get_parser()
     args = parser.parse_args()
 
     setup_logging(verbose=args.verbose)
+
+    # Provenance is ADDITIVE: warn loudly (but do not fail) when stamping a
+    # dirty tree, unless --allow-dirty. The manifest records code_dirty truly.
+    if provenance.git_is_dirty() and not args.allow_dirty:
+        print(
+            'WARNING: git working tree is dirty; lev1 provenance will record '
+            'code_dirty=true. Commit/stash for a reproducible stamp, or pass '
+            '--allow-dirty to silence this warning.',
+            file=sys.stderr,
+        )
 
     # Setup
     # setup_analysis still returns expected_sessions/exclusions_by_type; they are
@@ -199,6 +289,12 @@ def main():
     # Fixed effects (compute even with partial failures)
     compute_fixed_effects_all(
         args, dirs, exclusions, combined_mask_path, failed_runs, run_count,
+    )
+
+    # Provenance (ADDITIVE) — written AFTER all scientific outputs so a manifest
+    # error never loses science. Errors are allowed to surface (fail loud).
+    _write_lev1_provenance(
+        Path(args.results_dir), args, dirs, _collect_run_inputs(files),
     )
 
     # Summary
