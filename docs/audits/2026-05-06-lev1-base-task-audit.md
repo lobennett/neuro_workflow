@@ -1,7 +1,7 @@
 # Lev1 base-task audit — 2026-05-06
 
-**Spec:** `docs/superpowers/specs/2026-05-06-lev1-audit-design.md`
-**Plan:** `docs/superpowers/plans/2026-05-06-lev1-audit.md`
+**Spec:** `docs/archive/superpowers/specs/2026-05-06-lev1-audit-design.md`
+**Plan:** `docs/archive/superpowers/plans/2026-05-06-lev1-audit.md`
 **Branch:** `lev1-audit-2026-05-06`
 
 ## What was checked
