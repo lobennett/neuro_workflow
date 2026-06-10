@@ -34,7 +34,14 @@ uv run python scripts/trim_bold.py /scratch/users/logben/discovery_bids
 - **`scripts/trim_bold.py`** -- Trim 7 dummy volumes from BOLD NIfTIs. Idempotent (checks sidecar for `NumberOfVolumesDiscardedByUser`). Atomic writes (temp file + rename). Skips corrupt files.
 - **`scripts/reconcile_sessions.py`** -- Read-only: match BIDS functional scans to raw behavioral CSVs. Produces TSV manifest with cross-session context and SCAN-NOTES annotations.
 - **`scripts/migrate_behavioral.py`** -- Consumes reviewed manifest, copies behavioral CSVs to BIDS sourcedata with BIDS naming. Supports `dest_run` for multi-run cases.
+- **`scripts/migrate_archive.py`** -- Copy out-of-scanner behavioral + survey data to sourcedata.
 - **`scripts/check_tr.sh`** -- Compare each scan's TR count against the expected (mode) for its task. Flags deviations.
+- **`scripts/fmriprep_preflight.py`** -- Pre-flight checks before submitting fMRIPrep jobs (BIDS validity, subject list, output dir).
+- **`scripts/lev1_outliers.py`** (+`run_lev1_outliers.sbatch`) -- Generate lev1 outlier exclusion report across cohort; flags VIF and motion outliers.
+- **`scripts/qa_report.py`** (+`run_qa_report.sbatch`) -- Build cohort HTML QA dashboard from fMRIPrep derivatives; feeds `qa_decisions` exclusion generator.
+- **`scripts/audit_subject_flywheel_vs_bids.py`** -- Per-subject audit: compare Flywheel manifest vs. BIDS output.
+- **`scripts/audit_events_vs_task_configs.py`** -- Validate events TSVs against task YAML configs; reports mismatches.
+- **`scripts/iproc_scatter.py`**, **`scripts/iproc_tedana_scatter.py`**, **`scripts/iproc_parallel_run.py`**, **`scripts/iproc_ingest_fmriprep_fs.sh`** -- iProc precision-pipeline SLURM controller scripts (per-subject multi-echo preproc; do not modify).
 
 ### Config
 - `config/pipeline_config.json` - Subject lists, session overrides, Flywheel aliases

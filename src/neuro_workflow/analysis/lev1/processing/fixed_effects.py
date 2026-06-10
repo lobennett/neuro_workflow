@@ -7,7 +7,6 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
 from nilearn.glm.contrasts import compute_fixed_effects
-from nilearn.image import load_img
 
 from neuro_workflow.analysis.lev1.processing.imaging import cast_nifti_to_float32
 from neuro_workflow.analysis.lev1.processing.surface_data import (

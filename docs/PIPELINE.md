@@ -187,7 +187,7 @@ Produces a Jeanette-style cohort QC PDF + `lev1_flagged.tsv` flagging high-VIF /
 - **prevalence** (`scripts/prevalence_*.py`, `analysis/prevalence/*`): cohort prevalence maps, Bayesian posterior, permutation tests, and the diagnostic dashboard. Run directly (not via `neuro-run`).
 
 ### B9. QA reporting (cross-cutting)
-`scripts/qa_report.py` (+ `run_qa_report.sbatch`, ffmpeg/cairo for `brm` reliability movies) builds the cohort HTML dashboard from fMRIPrep derivatives, including the `decisions.tsv` surface that feeds the `qa_decisions` generator (closing the loop back to B4). Surface-quality triage: `scripts/triage_surface_quality.py` → `scripts/diagnose_high_hole_subjects.py` → `scripts/synthstrip_recon_all.sbatch` → `scripts/render_surface_fix_status.py`.
+`scripts/qa_report.py` (+ `run_qa_report.sbatch`, ffmpeg/cairo for `brm` reliability movies) builds the cohort HTML dashboard from fMRIPrep derivatives, including the `decisions.tsv` surface that feeds the `qa_decisions` generator (closing the loop back to B4). Surface-quality triage scripts (`triage_surface_quality.py`, `diagnose_high_hole_subjects.py`, `render_surface_fix_status.py`) were campaign-specific and have been removed; outputs are archived in `docs/audits/`.
 
 **Section-B exclusion summary — the five gates:**
 

@@ -7,7 +7,7 @@ from typing import List, Optional, Union
 import nibabel as nib
 import numpy as np
 from nilearn.glm.first_level import FirstLevelModel
-from nilearn.image import clean_img, load_img
+from nilearn.image import clean_img
 from nilearn.signal import clean as clean_signal
 
 logger = logging.getLogger(__name__)
