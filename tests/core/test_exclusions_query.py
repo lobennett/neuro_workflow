@@ -1,6 +1,6 @@
 """Unit tests for query_exclusions — written RED-first before implementation."""
 import pytest
-from neuro_workflow.core.exclusions import query_exclusions
+from neuro_workflow.core.exclusions import query_exclusions, _normalise_bids_field
 
 # ---------------------------------------------------------------------------
 # Fixture data
@@ -124,3 +124,86 @@ def test_query_result_sorted_by_session_task_run():
     result = query_exclusions(COMPILED, "sub-s10")
     sessions = [e["session"] for e in result]
     assert sessions == sorted(sessions)
+
+
+# ---------------------------------------------------------------------------
+# RED tests: entries stored with BARE task/session (as written by events/qc.py)
+# These exercise the real production data format where task regex group yields
+# "goNogo" (bare) rather than "task-goNogo" (prefixed).
+# ---------------------------------------------------------------------------
+
+# Entries that mirror what events/qc.py actually writes: subject/session
+# are stored prefixed, but task is stored BARE (from the regex capture group).
+COMPILED_BARE = [
+    {
+        "subject": "sub-s10",
+        "session": "ses-05",
+        "task": "goNogo",        # BARE — no "task-" prefix, as written by qc.py
+        "run": "1",
+        "action": "exclude",
+        "source": "behavioral-qc",
+        "reason": "x",
+    },
+    {
+        "subject": "sub-s10",
+        "session": "ses-07",
+        "task": "rest",           # BARE
+        "run": "1",
+        "action": "exclude",
+        "source": "motion",
+        "reason": "High FD",
+    },
+]
+
+
+def test_bare_task_entry_bare_task_query():
+    """Bare task in entry + bare task in query → 1 match (the original bug case)."""
+    result = query_exclusions(COMPILED_BARE, "sub-s10", task="goNogo")
+    assert len(result) == 1, (
+        f"Expected 1 match for bare-task query against bare-task entry, got {len(result)}"
+    )
+
+
+def test_bare_task_entry_prefixed_task_query():
+    """'task-goNogo' query should also match a bare 'goNogo' stored entry."""
+    result = query_exclusions(COMPILED_BARE, "sub-s10", task="task-goNogo")
+    assert len(result) == 1, (
+        f"Expected 1 match for prefixed-task query against bare-task entry, got {len(result)}"
+    )
+
+
+def test_bare_task_entry_bare_session_query():
+    """Bare session in query ('07') matches prefixed 'ses-07' in entry."""
+    result = query_exclusions(COMPILED_BARE, "sub-s10", session="07")
+    assert len(result) == 1
+    assert result[0]["task"] == "rest"
+
+
+def test_bare_task_entry_subject_only():
+    """Query by subject only returns all entries regardless of task storage format."""
+    result = query_exclusions(COMPILED_BARE, "sub-s10")
+    assert len(result) == 2
+
+
+# ---------------------------------------------------------------------------
+# Tests for _normalise_bids_field new contract: STRIP prefix (not add)
+# ---------------------------------------------------------------------------
+
+def test_normalise_strips_prefix_when_present():
+    """Prefixed value → bare (strip prefix)."""
+    assert _normalise_bids_field("sub-s10", "sub-") == "s10"
+
+
+def test_normalise_passthrough_when_already_bare():
+    """Bare value → unchanged (no prefix to strip)."""
+    assert _normalise_bids_field("s10", "sub-") == "s10"
+
+
+def test_normalise_strips_task_prefix():
+    """task-goNogo → goNogo."""
+    assert _normalise_bids_field("task-goNogo", "task-") == "goNogo"
+
+
+def test_normalise_bare_task_passthrough():
+    """goNogo → goNogo."""
+    assert _normalise_bids_field("goNogo", "task-") == "goNogo"

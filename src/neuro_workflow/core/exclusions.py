@@ -234,17 +234,25 @@ def get_trim_info(subject: str, session: str, task: str, run: str, compiled: lis
 
 
 def _normalise_bids_field(value: str, prefix: str) -> str:
-    """Return value with the given BIDS prefix stripped (idempotent, lowercased prefix).
+    """Return value with the given BIDS prefix stripped to bare form (idempotent).
+
+    Canonicalises to the BARE form by stripping the prefix when present. This
+    allows prefix-insensitive comparison by normalising both the query argument
+    and the stored entry field to the same bare representation.
 
     Examples
     --------
-    >>> _normalise_bids_field("sub-s10", "sub-")  # already normalised
-    'sub-s10'
-    >>> _normalise_bids_field("s10", "sub-")       # bare → add prefix
-    'sub-s10'
+    >>> _normalise_bids_field("sub-s10", "sub-")  # strip prefix → bare
+    's10'
+    >>> _normalise_bids_field("s10", "sub-")       # already bare → unchanged
+    's10'
+    >>> _normalise_bids_field("task-goNogo", "task-")  # strip prefix
+    'goNogo'
+    >>> _normalise_bids_field("goNogo", "task-")       # already bare
+    'goNogo'
     """
-    if not value.startswith(prefix):
-        return f"{prefix}{value}"
+    if value.startswith(prefix):
+        return value[len(prefix):]
     return value
 
 
@@ -258,7 +266,9 @@ def query_exclusions(
 
     Matching is prefix-insensitive: ``"s10"`` and ``"sub-s10"`` are treated
     as identical, likewise ``"05"`` / ``"ses-05"`` and ``"goNogo"`` /
-    ``"task-goNogo"``.
+    ``"task-goNogo"``. Both the query argument and the stored entry field are
+    normalised to bare form before comparison, so it works regardless of
+    whether entries were written with or without the BIDS prefix.
 
     Results are sorted by (session, task, run) for readable output.
     """
@@ -274,11 +284,11 @@ def query_exclusions(
 
     matches = []
     for e in compiled:
-        if e["subject"] != subject_norm:
+        if _normalise_bids_field(e["subject"], "sub-") != subject_norm:
             continue
-        if session_norm is not None and e["session"] != session_norm:
+        if session_norm is not None and _normalise_bids_field(e["session"], "ses-") != session_norm:
             continue
-        if task_norm is not None and e["task"] != task_norm:
+        if task_norm is not None and _normalise_bids_field(e["task"], "task-") != task_norm:
             continue
         matches.append(e)
 
