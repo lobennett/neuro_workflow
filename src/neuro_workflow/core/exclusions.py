@@ -84,6 +84,19 @@ def save_source_entries(
     Namespace (cmd_exclusions_import / cmd_events_qc).
     """
     from neuro_workflow.exclusions.base import make_meta
+
+    # Fail loud (GE-4): reject malformed entries before they reach disk, rather
+    # than silently persisting entries that compile/query will later mishandle.
+    invalid = [e for e in entries if not validate_entry(e)]
+    if invalid:
+        missing = [sorted(REQUIRED_FIELDS - set(e.keys())) for e in invalid]
+        raise ValueError(
+            f"{len(invalid)} invalid entr{'y' if len(invalid) == 1 else 'ies'} for "
+            f"source '{source_name}' (dataset '{dataset_name}'): missing/invalid "
+            f"required fields {REQUIRED_FIELDS} or action not in {VALID_ACTIONS}. "
+            f"First offender missing fields: {missing[0] if missing else None}"
+        )
+
     d = _sources_dir(dataset_name)
     d.mkdir(parents=True, exist_ok=True)
     payload = {
@@ -218,3 +231,66 @@ def get_trim_info(subject: str, session: str, task: str, run: str, compiled: lis
         if _scan_key(e) == key and e["action"] == "trim":
             return e.get("metrics", {})
     return None
+
+
+def _normalise_bids_field(value: str, prefix: str) -> str:
+    """Return value with the given BIDS prefix stripped to bare form (idempotent).
+
+    Canonicalises to the BARE form by stripping the prefix when present. This
+    allows prefix-insensitive comparison by normalising both the query argument
+    and the stored entry field to the same bare representation.
+
+    Examples
+    --------
+    >>> _normalise_bids_field("sub-s10", "sub-")  # strip prefix → bare
+    's10'
+    >>> _normalise_bids_field("s10", "sub-")       # already bare → unchanged
+    's10'
+    >>> _normalise_bids_field("task-goNogo", "task-")  # strip prefix
+    'goNogo'
+    >>> _normalise_bids_field("goNogo", "task-")       # already bare
+    'goNogo'
+    """
+    if value.startswith(prefix):
+        return value[len(prefix):]
+    return value
+
+
+def query_exclusions(
+    compiled: list[dict],
+    subject: str,
+    session: Optional[str] = None,
+    task: Optional[str] = None,
+) -> list[dict]:
+    """Return all compiled entries that match subject (and optionally session/task).
+
+    Matching is prefix-insensitive: ``"s10"`` and ``"sub-s10"`` are treated
+    as identical, likewise ``"05"`` / ``"ses-05"`` and ``"goNogo"`` /
+    ``"task-goNogo"``. Both the query argument and the stored entry field are
+    normalised to bare form before comparison, so it works regardless of
+    whether entries were written with or without the BIDS prefix.
+
+    Results are sorted by (session, task, run) for readable output.
+    """
+    subject_norm = _normalise_bids_field(subject, "sub-")
+
+    session_norm: Optional[str] = None
+    if session is not None:
+        session_norm = _normalise_bids_field(session, "ses-")
+
+    task_norm: Optional[str] = None
+    if task is not None:
+        task_norm = _normalise_bids_field(task, "task-")
+
+    matches = []
+    for e in compiled:
+        if _normalise_bids_field(e["subject"], "sub-") != subject_norm:
+            continue
+        if session_norm is not None and _normalise_bids_field(e["session"], "ses-") != session_norm:
+            continue
+        if task_norm is not None and _normalise_bids_field(e["task"], "task-") != task_norm:
+            continue
+        matches.append(e)
+
+    matches.sort(key=lambda e: (e.get("session", ""), e.get("task", ""), e.get("run", "")))
+    return matches

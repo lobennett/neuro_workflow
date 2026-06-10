@@ -17,7 +17,12 @@ uv pip install -e ".[bidsify]"   # Flywheel BIDSify
 uv pip install -e ".[events]"    # Behavioral events pipeline
 uv pip install -e ".[qa]"        # QA commands (nilearn, matplotlib, etc.)
 uv pip install -e ".[lev1,qa]"   # First-level GLM analysis
+uv pip install -e ".[all]"       # Everything above (lev1+qa+bidsify+events)
 ```
+
+The bare `uv sync` install runs `show`/`add-dataset`/`submit` for dataset
+registration, but `submit lev1/lev2/mshbm`, the `qa` subcommands, and
+`python -m neuro_workflow.analysis.*` need the corresponding extra (or `[all]`).
 
 After installation, use `uv run neuro-run` from the project directory, or `module load uv && neuro-run` if the venv is on your PATH.
 
@@ -248,21 +253,17 @@ neuro-run qa <command> <dataset> [flags]
 | `breaks` | Analyze behavioral data for performance feedback breaks |
 | `global-signal` | Plot global signal from echo-2 BOLD data |
 | `fieldmap-check` | Verify fieldmap/BOLD correspondence |
-| `outlier-report` | VIF + outlier analysis with figures and summary CSVs |
-| `reliability` | Create MP4 movies showing fMRI reliability across sessions |
+
+Cohort lev1 VIF/outlier reporting and reliability movies are produced by the
+QA report (`scripts/qa_report.py`, using `neuro_workflow.qa.lev1_outliers` and
+`neuro_workflow.qa.reliability_movies`), not by standalone `neuro-run qa`
+subcommands.
 
 ### Examples
 
 ```bash
 neuro-run qa neg-events discovery
 neuro-run qa global-signal discovery --output-dir /tmp/gs_figs
-neuro-run qa outlier-report discovery \
-  --lev1-dirs /oak/.../lev1_discovery \
-  --exclusions-file /oak/.../exclusions.json \
-  --output-dir /tmp/outlier_report
-neuro-run qa reliability discovery \
-  --fmriprep-version 24.1.0rc2 \
-  --output-dir /tmp/reliability_movies
 ```
 
 ---

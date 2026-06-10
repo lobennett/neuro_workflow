@@ -4,38 +4,17 @@ import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from neuro_workflow.analysis.task_config.loader import (
+    get_all_tasks,
+    get_base_tasks,
+    get_dual_tasks,
+)
 from neuro_workflow.core.exclusions import _compiled_path
 from neuro_workflow.core.slurm import load_subjects
-from neuro_workflow.pipelines.base import register, build_mail_line, resolve_resources
-
-BASE_TASKS = [
-    "cuedTS",
-    "directedForgetting",
-    "flanker",
-    "goNogo",
-    "nBack",
-    "shapeMatching",
-    "spatialTS",
-    "stopSignal",
-]
-
-DUAL_TASKS = [
-    "directedForgettingWCuedTS",
-    "directedForgettingWFlanker",
-    "stopSignalWDirectedForgetting",
-    "stopSignalWFlanker",
-    "spatialTSWCuedTS",
-    "flankerWShapeMatching",
-    "cuedTSWFlanker",
-    "spatialTSWShapeMatching",
-    "nBackWShapeMatching",
-    "nBackWSpatialTS",
-]
-
-ALL_TASKS = BASE_TASKS + DUAL_TASKS
+from neuro_workflow.pipelines.base import LocalAnalysisPipeline, register
 
 
-class Lev1Pipeline:
+class Lev1Pipeline(LocalAnalysisPipeline):
     name = "lev1"
     docker_uri = None
     template_name = "lev1.sbatch"
@@ -65,11 +44,11 @@ class Lev1Pipeline:
         # Resolve tasks
         tasks_flag = getattr(args, "tasks_flag", None)
         if tasks_flag == "all":
-            tasks = ALL_TASKS
+            tasks = get_all_tasks()
         elif tasks_flag == "base":
-            tasks = BASE_TASKS
+            tasks = get_base_tasks()
         elif tasks_flag == "dual":
-            tasks = DUAL_TASKS
+            tasks = get_dual_tasks()
         else:
             tasks = args.tasks
 
@@ -96,13 +75,13 @@ class Lev1Pipeline:
                 sys.exit(1)
             exclusions_file = str(compiled)
             print(f"Using compiled exclusions: {exclusions_file}")
-        log_dir = results_dir / "logs"
-        log_dir.mkdir(parents=True, exist_ok=True)
-        job_list_file = log_dir / "job_list.txt"
+        log_dir = self._make_log_dir(results_dir)
         pairs = [(subj, task) for subj in subjects for task in tasks]
-        job_list_file.write_text("\n".join(f"{subj} {task}" for subj, task in pairs) + "\n")
+        job_list_file = self._write_list_file(
+            log_dir, "job_list.txt", [f"{subj} {task}" for subj, task in pairs]
+        )
 
-        resources = resolve_resources(args, self.default_resources)
+        resources = self._resolve(args)
 
         # Build extra flags
         extra_flags = []
@@ -117,26 +96,16 @@ class Lev1Pipeline:
         if getattr(args, "skip_qc_plots", False):
             extra_flags.append("--skip-qc-plots")
 
-        mail_line = build_mail_line(dataset_config)
-
         return {
-            "dataset_name": dataset_name,
+            **self._base_context(dataset_name, dataset_config, resources, log_dir, results_dir),
             "n_jobs": len(pairs),
-            "nthreads": resources["nthreads"],
-            "mem_gb": resources["mem_gb"],
-            "time": resources["time"],
-            "partition": dataset_config["partition"],
-            "log_dir": str(log_dir),
-            "mail_line": mail_line,
             "job_list_file": str(job_list_file),
             "bids_dir": dataset_config["bids_dir"],
             "fmriprep_dir": args.fmriprep_dir,
-            "results_dir": str(results_dir),
             "exclusions_file": exclusions_file,
             "space": args.space,
             "threshold": args.threshold,
             "extra_flags": " ".join(extra_flags),
-            "neuro_workflow_dir": str(Path(__file__).resolve().parents[3]),
         }
 
 

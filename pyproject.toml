@@ -38,6 +38,13 @@ events = [
 datalad = [
     "datalad<1.0",
 ]
+# Aggregate of the analysis/CLI extras (everything except the heavy datalad
+# optional). Install with `uv sync --extra all` / `pip install neuro-workflow[all]`
+# so `submit lev1/lev2/mshbm`, the `qa` commands, and `python -m
+# neuro_workflow.analysis.*` all import (RE-2).
+all = [
+    "neuro-workflow[lev1,qa,bidsify,events]",
+]
 
 [build-system]
 requires = ["hatchling"]

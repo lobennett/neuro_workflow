@@ -30,14 +30,22 @@ def save_dataset(name, dataset_config):
         json.dump(datasets, f, indent=2)
 
 
+class DatasetNotFoundError(Exception):
+    """Raised when a requested dataset is not registered in datasets.json.
+
+    Raised by the library layer (get_dataset); the CLI boundary (cli.main)
+    converts it to a stderr message + exit 1, keeping core importable/testable
+    without coupling to process exit (RF-4).
+    """
+
+
 def get_dataset(name):
     datasets = load_datasets()
     if name not in datasets:
-        print(
-            f"Error: dataset '{name}' not found. Run 'neuro-run show --list' to see registered datasets.",
-            file=sys.stderr,
+        raise DatasetNotFoundError(
+            f"dataset '{name}' not found. "
+            f"Run 'neuro-run show --list' to see registered datasets."
         )
-        sys.exit(1)
     merged = dict(DEFAULTS)
     merged.update(datasets[name])
     return merged
