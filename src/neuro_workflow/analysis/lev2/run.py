@@ -16,6 +16,8 @@ import argparse
 import subprocess
 import glob
 
+from neuro_workflow.core import provenance
+
 
 def compute_mask(input_files, threshold=1.0, connected=True):
     """
@@ -180,7 +182,42 @@ def get_parser() -> argparse.ArgumentParser:
         default=5000,
         help='Number of permutations for FSL randomise',
     )
+    parser.add_argument(
+        '--allow-dirty',
+        action='store_true',
+        default=False,
+        help='Permit recording provenance against an uncommitted (dirty) git '
+        'working tree without warning. Without this flag a dirty tree warns '
+        'loudly to stderr but the run still proceeds; the manifest records '
+        'code_dirty truthfully either way.',
+    )
     return parser
+
+
+def _write_lev2_provenance(output_dir, args, level1_dirs, input_files):
+    """Write additive provenance for a lev2 contrast run.
+
+    - ``dataset_description.json`` at ``output_dir``, naming the lev1 source
+      dirs in ``SourceDatasets``.
+    - ``run-manifest.json`` at ``output_dir``, stage='lev2', recording the
+      discovered lev1 fixed-effects input files.
+
+    Called AFTER the contrast's scientific outputs; errors are allowed to
+    surface (fail loud). ``allow_dirty`` is threaded from the CLI flag.
+    """
+    allow_dirty = getattr(args, 'allow_dirty', False)
+    provenance.write_dataset_description(
+        output_dir,
+        name='lev2',
+        source_datasets=[{'URL': str(d)} for d in level1_dirs],
+    )
+    provenance.write_run_manifest(
+        output_dir,
+        stage='lev2',
+        args=args,
+        inputs=[Path(f) for f in input_files],
+        allow_dirty=allow_dirty,
+    )
 
 
 def main() -> None:
@@ -198,6 +235,16 @@ def main() -> None:
     print(f'Permutations: {args.num_permutations}')
     print('=' * 60)
     print()
+
+    # Provenance is ADDITIVE: warn loudly (but do not fail) when stamping a
+    # dirty tree, unless --allow-dirty. The manifest records code_dirty truly.
+    if provenance.git_is_dirty() and not args.allow_dirty:
+        print(
+            'WARNING: git working tree is dirty; lev2 provenance will record '
+            'code_dirty=true. Commit/stash for a reproducible stamp, or pass '
+            '--allow-dirty to silence this warning.',
+            file=sys.stderr,
+        )
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -224,6 +271,10 @@ def main() -> None:
         args.mask_threshold,
         args.num_permutations,
     )
+
+    # Provenance (ADDITIVE) — written AFTER the contrast's scientific outputs so
+    # a manifest error never loses science. Errors are allowed to surface.
+    _write_lev2_provenance(output_dir, args, level1_dirs, input_files)
 
     print(f'\nLevel 2 GLM analysis completed for {args.contrast}')
     return 0
