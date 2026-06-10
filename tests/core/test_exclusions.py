@@ -212,6 +212,59 @@ def test_is_excluded(tmp_path, monkeypatch):
     assert is_excluded("sub-s01", "ses-02", "task-rest", "run-1", compiled) is False
 
 
+def test_is_excluded_true_for_trim_action(tmp_path, monkeypatch):
+    """is_excluded must return True for action='trim' too, not just 'exclude'
+    (a trim entry still means the scan is dropped from lev1)."""
+    monkeypatch.setattr("neuro_workflow.core.exclusions.EXCLUSIONS_DIR", tmp_path)
+
+    entries = [
+        {
+            "subject": "sub-s03",
+            "session": "ses-11",
+            "task": "task-stop",
+            "run": "run-1",
+            "source": "neg-events",
+            "action": "trim",
+            "reason": "Non-monotonic",
+            "metrics": {"onset_trim_index": 161, "total_rows": 726, "rows_to_keep": 565},
+        }
+    ]
+    save_source_entries("test", "neg_events", entries)
+    save_overrides("test", [])
+    compiled = compile_exclusions("test")
+
+    assert is_excluded("sub-s03", "ses-11", "task-stop", "run-1", compiled) is True
+    # A non-matching scan is still not excluded.
+    assert is_excluded("sub-s03", "ses-11", "task-stop", "run-2", compiled) is False
+
+
+def test_compile_copies_to_bids_derivatives(tmp_path, monkeypatch):
+    """compile_exclusions(dataset, bids_dir=...) must also write
+    compiled_exclusions.json into <bids_dir>/derivatives/exclusions/."""
+    monkeypatch.setattr("neuro_workflow.core.exclusions.EXCLUSIONS_DIR", tmp_path / "src")
+
+    entries = [
+        {
+            "subject": "sub-s01",
+            "session": "ses-01",
+            "task": "task-rest",
+            "run": "run-1",
+            "source": "motion",
+            "action": "exclude",
+            "reason": "High FD",
+        }
+    ]
+    save_source_entries("test", "motion", entries)
+    save_overrides("test", [])
+
+    bids_dir = tmp_path / "bids"
+    compiled = compile_exclusions("test", bids_dir=str(bids_dir))
+
+    deriv_copy = bids_dir / "derivatives" / "exclusions" / "compiled_exclusions.json"
+    assert deriv_copy.is_file()
+    assert json.loads(deriv_copy.read_text()) == compiled
+
+
 def test_get_trim_info(tmp_path, monkeypatch):
     monkeypatch.setattr("neuro_workflow.core.exclusions.EXCLUSIONS_DIR", tmp_path)
 
