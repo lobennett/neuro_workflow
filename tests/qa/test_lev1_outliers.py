@@ -25,6 +25,26 @@ def test_parse_contrast_path():
     assert sc.contrast == "stop_success-go"
 
 
+def test_exclusion_key_matches_compiled_registry_format():
+    """Contract: the key derived from a contrast filename (used to filter scans
+    in detect_lev1_outliers) must byte-match the key load_exclusions emits from a
+    compiled-exclusions entry. If these ever diverge, --exclusions-file silently
+    drops nothing — the exact failure mode that made the events .bidsignore filter
+    inert. This pins both sides to one format.
+    """
+    from neuro_workflow.qa.lev1_outliers import _make_exclusion_key
+    from neuro_workflow.analysis.core.utils import create_exclusion_key
+
+    path = Path(
+        "/lev1/sub-s10/task-goNogo/indiv_contrasts/"
+        "sub-s10_ses-05_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz"
+    )
+    # compiled-exclusions entry shape: task/run carry their BIDS prefixes.
+    entry = {"subject": "sub-s10", "session": "ses-05",
+             "task": "task-goNogo", "run": "run-1"}
+    assert _make_exclusion_key(parse_contrast_path(path)) == create_exclusion_key(entry)
+
+
 def test_discover_contrast_files(tmp_path: Path):
     # Build a tiny fixture
     f1 = (tmp_path / "sub-s03/task-goNogo/indiv_contrasts" /

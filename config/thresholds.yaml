@@ -1,0 +1,65 @@
+# Canonical, study-level analysis thresholds (config-as-code).
+#
+# Single source of truth for the QC / motion / lev1-outlier cutoffs that used to
+# live as hardcoded literals in the Python source. Loaded at import by
+# neuro_workflow.core.thresholds; the public constant names in
+# events/qc_globals.py and the argparse defaults in the motion / lev1_outlier
+# exclusion generators are bound from these values, so behavior is unchanged.
+#
+# This is STUDY-LEVEL, not per-dataset. Every value below is byte-identical to
+# the pre-refactor literal it replaced. Changing a value here changes the study
+# threshold everywhere it is consumed.
+
+# --- Behavioral QC (in-scanner task performance) ---
+# Source: events/qc_globals.py constants, consumed by events/qc.py.
+behavioral_qc:
+  # Stop signal task
+  stop_success_acc_low_threshold: 0.25
+  stop_success_acc_high_threshold: 0.75
+  go_rt_threshold_fmri: 1000
+  go_rt_threshold_fmri_dual_task: 1050
+
+  # Go/nogo fMRI exclusion thresholds (both conditions must be met)
+  gonogo_go_acc_threshold_1: 0.75
+  gonogo_nogo_acc_threshold_1: 0.2
+  gonogo_go_acc_threshold_2: 0.5
+  gonogo_nogo_acc_threshold_2: 0.5
+
+  # N-back fMRI exclusion thresholds (both conditions must be met)
+  nback_1back_match_acc_combined_threshold_1: 0.2
+  nback_1back_mismatch_acc_combined_threshold_1: 0.75
+  nback_1back_match_acc_combined_threshold_2: 0.5
+  nback_1back_mismatch_acc_combined_threshold_2: 0.5
+  nback_2back_match_acc_combined_threshold_1: 0.2
+  nback_2back_mismatch_acc_combined_threshold_1: 0.75
+  nback_2back_match_acc_combined_threshold_2: 0.5
+  nback_2back_mismatch_acc_combined_threshold_2: 0.5
+
+  # All other tasks
+  acc_threshold: 0.55
+  omission_rate_threshold: 0.25
+
+  # Trimming detection
+  last_n_test_trials: 10
+  summary_rows: 4
+
+# --- Motion exclusion (fmriprep confounds) ---
+# Source: exclusions/motion.py argparse defaults.
+# fd_threshold:             FD mean threshold for resting-state scans.
+# proportion_fd_threshold:  proportion of frames with FD > 0.5 for task scans.
+# proportion_dvars_threshold: proportion of frames with std_dvars > 1.5.
+motion:
+  fd_threshold: 0.2
+  proportion_fd_threshold: 0.2
+  proportion_dvars_threshold: 0.2
+
+# --- Lev1 outlier exclusion (cohort QC lev1_outliers.csv) ---
+# Source: exclusions/lev1_outlier.py Thresholds dataclass + argparse defaults.
+#   combined:        vif >= combined_vif AND outlier_pct >= combined_outlier_pct
+#   strict_vif:      vif >= strict_vif
+#   strict_outliers: outlier_pct >= strict_outlier_pct
+lev1_outlier:
+  combined_vif: 10.0
+  combined_outlier_pct: 10.0
+  strict_vif: 15.0
+  strict_outlier_pct: 15.0

@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from neuro_workflow.core.exclusions import (
     EXCLUSIONS_DIR,
     validate_entry,
@@ -13,6 +15,17 @@ from neuro_workflow.core.exclusions import (
     is_excluded,
     get_trim_info,
 )
+
+
+@pytest.fixture(autouse=True)
+def _isolate_lockfile_dir(tmp_path, monkeypatch):
+    """Redirect the committed-lockfile dir into tmp_path so compile_exclusions
+    tests never write `<dataset>_lock.json` into the version-controlled
+    data/exclusions/ tree (the source dir is already isolated per-test via the
+    EXCLUSIONS_DIR monkeypatch)."""
+    monkeypatch.setattr(
+        "neuro_workflow.core.exclusions.LOCKFILE_DIR", tmp_path / "lock"
+    )
 
 
 def test_validate_entry_valid():
@@ -63,6 +76,15 @@ def test_save_and_load_source_entries(tmp_path, monkeypatch):
     loaded = load_source_entries("discovery", "motion")
     assert len(loaded) == 1
     assert loaded[0]["subject"] == "sub-s01"
+
+
+def test_save_source_entries_rejects_invalid_entry(tmp_path, monkeypatch):
+    monkeypatch.setattr("neuro_workflow.core.exclusions.EXCLUSIONS_DIR", tmp_path)
+    bad_entries = [
+        {"subject": "sub-s01", "session": "ses-01"}  # missing task/run/action/reason
+    ]
+    with pytest.raises(ValueError):
+        save_source_entries("discovery", "motion", bad_entries)
 
 
 def test_save_and_load_overrides(tmp_path, monkeypatch):

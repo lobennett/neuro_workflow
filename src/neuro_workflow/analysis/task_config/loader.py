@@ -14,17 +14,25 @@ YAML regressor format:
 """
 
 import logging
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List
 
 import yaml
 
+# Path to the task battery YAML (base + dual task lists)
+_BATTERY_YAML = Path(__file__).parent / 'battery.yaml'
+
+from neuro_workflow.core.acquisition import (
+    N_DUMMY as DEFAULT_DUMMY_SCANS,
+    TR_SECONDS as DEFAULT_TR,
+)
+
 logger = logging.getLogger(__name__)
 
-# Default analysis parameters (can be overridden per task in YAML)
-DEFAULT_TR = 1.49
-DEFAULT_DUMMY_SCANS = 7
+# Default analysis parameters (TR/dummy-scans come from the single source of
+# truth in core.acquisition, RF-6; can be overridden per task in YAML).
 DEFAULT_MIN_RT = 0.2
 
 # Directory containing per-task YAML files
@@ -37,6 +45,45 @@ _REQUIRED_REGRESSOR_FIELDS = {'amplitude', 'duration', 'subset'}
 
 class TaskNotConfiguredError(ValueError):
     """Raised when a task's YAML exists but has `regressors: null` (placeholder)."""
+
+
+class ContrastFormulaError(ValueError):
+    """Raised when a contrast formula references an undeclared regressor name.
+
+    Caught by ``except ValueError`` callers for backward compatibility.
+    """
+
+
+# Regex to extract identifier tokens from a contrast formula string.
+# Matches bare Python identifiers (letters/underscores, then alphanumerics).
+_IDENT_RE = re.compile(r'\b([A-Za-z_][A-Za-z0-9_]*)\b')
+
+
+def _validate_contrasts(
+    task_name: str,
+    regressors: Dict[str, Any],
+    contrasts: Dict[str, str],
+) -> None:
+    """Validate that every contrast formula only references declared regressor names.
+
+    Args:
+        task_name: Name of the task (for error messages).
+        regressors: Mapping of declared regressor names to their config dicts.
+        contrasts: Mapping of contrast names to formula strings.
+
+    Raises:
+        ContrastFormulaError: If any formula token is not a declared regressor name.
+    """
+    declared = set(regressors.keys())
+    for cname, formula in contrasts.items():
+        tokens = set(_IDENT_RE.findall(formula))
+        unknown = tokens - declared
+        if unknown:
+            raise ContrastFormulaError(
+                f"task '{task_name}' contrast '{cname}': "
+                f"unknown regressor(s) {sorted(unknown)} "
+                f"(declared: {sorted(declared)})"
+            )
 
 
 def _load_yaml(task_name: str) -> Dict[str, Any]:
@@ -88,6 +135,13 @@ def _load_yaml(task_name: str) -> Dict[str, Any]:
                 f"Regressor '{reg_name}' in task '{task_name}' is missing "
                 f'required fields: {missing_reg}'
             )
+
+    # Validate contrast formulas reference only declared regressor names.
+    # Skip tasks whose contrasts dict is empty or None (e.g. stopSignalWDirectedForgetting).
+    regressors = config.get('regressors') or {}
+    contrasts = config.get('contrasts') or {}
+    if regressors and contrasts:
+        _validate_contrasts(task_name, regressors, contrasts)
 
     return config
 
@@ -152,6 +206,33 @@ def _encode_numeric_or_column(value) -> str:
             value = int(value)
         return f'constant_{value}_column'
     return str(value)
+
+
+@lru_cache(maxsize=1)
+def _load_battery() -> Dict[str, List[str]]:
+    """Load battery.yaml and return {'base': [...], 'dual': [...]}.
+
+    Cached so the YAML is read at most once per process.
+    """
+    with open(_BATTERY_YAML, encoding='utf-8') as fh:
+        data = yaml.safe_load(fh)
+    return data
+
+
+def get_base_tasks() -> List[str]:
+    """Return the ordered list of 8 base (single-task) paradigm names."""
+    return list(_load_battery()['base'])
+
+
+def get_dual_tasks() -> List[str]:
+    """Return the ordered list of 10 dual-task paradigm names."""
+    return list(_load_battery()['dual'])
+
+
+def get_all_tasks() -> List[str]:
+    """Return base + dual tasks in canonical order (18 tasks total)."""
+    batt = _load_battery()
+    return list(batt['base']) + list(batt['dual'])
 
 
 def list_available_tasks() -> List[str]:
