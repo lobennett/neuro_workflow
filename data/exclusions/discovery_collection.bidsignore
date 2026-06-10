@@ -1,0 +1,59 @@
+# Human-curated data-collection / anatomical exclusions (discovery).
+#
+# This file is the ONE place manual editing is expected. It holds the
+# exclusions that do NOT come from a QC generator: incomplete/legacy
+# acquisitions, anatomical-quality calls, irreconcilable-BOLD (no behavioral
+# data), prematurely-ended <50%-TR scans, non-monotonic-onset breaks, and
+# stale-anat wildcards. Lines are copied VERBATIM from the operational
+# discovery .bidsignore. `neuro-run exclusions render-bidsignore` prepends
+# this block to the generated QC scan-lines.
+#
+# 3D BOLD scans (dim4=1) — incomplete acquisitions
+sub-s43/ses-08/func/sub-s43_ses-08_task-directedForgetting_run-1_echo-*_bold.*
+
+# Legacy acquisition — not used for analysis
+sub-*/ses-*/anat/*acq-MPRAGEPromo_run-1_T1w.*
+
+# Anatomical quality exclusions (per collaborator review)
+# s19 ses-03 T1w SagMPRAGE: slight ringing; ses-05 is best quality
+sub-s19/ses-03/anat/sub-s19_ses-03_acq-SagMPRAGE_run-1_T1w.*
+# s19 ses-01 T2w CubePromo: slight ringing; ses-03 is better
+sub-s19/ses-01/anat/sub-s19_ses-01_acq-CubePromo_run-1_T2w.*
+# s29 ses-04 T2w CubePromo: FOV/alignment slightly off; ses-01 is good quality
+sub-s29/ses-04/anat/sub-s29_ses-04_acq-CubePromo_run-1_T2w.*
+
+# Irreconcilable BOLD — no behavioral data exists
+# s03 ses-01 nBack: missing behavioral
+sub-s03/ses-01/func/sub-s03_ses-01_task-nBack_run-*_echo-*_bold.*
+# s19 ses-02 goNogo: missing behavioral per scan notes
+sub-s19/ses-02/func/sub-s19_ses-02_task-goNogo_run-*_echo-*_bold.*
+# s19 ses-11 directedForgettingWFlanker: missing behavioral per scan notes
+sub-s19/ses-11/func/sub-s19_ses-11_task-directedForgettingWFlanker_run-*_echo-*_bold.*
+# s29 ses-01 cuedTS: protocol mismatch (spatialTS was behavioral task, cuedTS was scanned)
+sub-s29/ses-01/func/sub-s29_ses-01_task-cuedTS_run-*_echo-*_bold.*
+# s29 ses-02 goNogo: missing behavioral per scan notes
+sub-s29/ses-02/func/sub-s29_ses-02_task-goNogo_run-*_echo-*_bold.*
+# s43 ses-02 goNogo: missing behavioral per scan notes
+sub-s43/ses-02/func/sub-s43_ses-02_task-goNogo_run-*_echo-*_bold.*
+
+# Prematurely ended scans — insufficient TRs for GLM
+# s10 ses-01 goNogo run-1: 31 of 382 TRs (8%) — run-2 has full data
+sub-s10/ses-01/func/sub-s10_ses-01_task-goNogo_run-1_echo-*_bold.*
+# s29 ses-03 spatialTS: 15 of 328 TRs (5%)
+sub-s29/ses-03/func/sub-s29_ses-03_task-spatialTS_run-*_echo-*_bold.*
+# s29 ses-12 directedForgettingWFlanker: 54 of 598 TRs (9%)
+sub-s29/ses-12/func/sub-s29_ses-12_task-directedForgettingWFlanker_run-*_echo-*_bold.*
+# s43 ses-11 stopSignalWFlanker: 96 of 366 TRs (26%)
+sub-s43/ses-11/func/sub-s43_ses-11_task-stopSignalWFlanker_run-*_echo-*_bold.*
+# s29 ses-11 stopSignalWFlanker: 179 of 366 TRs (49%)
+sub-s29/ses-11/func/sub-s29_ses-11_task-stopSignalWFlanker_run-*_echo-*_bold.*
+
+# Non-monotonically increasing onsets — break before 50% of scan
+# s03 ses-11 stopSignalWDirectedForgetting: onset break at 221s (21% of 1064s)
+sub-s03/ses-11/func/sub-s03_ses-11_task-stopSignalWDirectedForgetting_run-*_echo-*_bold.*
+# s10 ses-01 cuedTS: onset break at 72s (15% of 489s)
+sub-s10/ses-01/func/sub-s10_ses-01_task-cuedTS_run-*_echo-*_bold.*
+
+# Stale T1ws for sub-s03 — kept on disk but hidden from fmriprep.
+# The rescue T1w in ses-13 (acquired 2022-05-24) is the canonical anat.
+sub-s03/ses-05/anat/*SagMPRAGE*
