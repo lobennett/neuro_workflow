@@ -231,3 +231,56 @@ def get_trim_info(subject: str, session: str, task: str, run: str, compiled: lis
         if _scan_key(e) == key and e["action"] == "trim":
             return e.get("metrics", {})
     return None
+
+
+def _normalise_bids_field(value: str, prefix: str) -> str:
+    """Return value with the given BIDS prefix stripped (idempotent, lowercased prefix).
+
+    Examples
+    --------
+    >>> _normalise_bids_field("sub-s10", "sub-")  # already normalised
+    'sub-s10'
+    >>> _normalise_bids_field("s10", "sub-")       # bare → add prefix
+    'sub-s10'
+    """
+    if not value.startswith(prefix):
+        return f"{prefix}{value}"
+    return value
+
+
+def query_exclusions(
+    compiled: list[dict],
+    subject: str,
+    session: Optional[str] = None,
+    task: Optional[str] = None,
+) -> list[dict]:
+    """Return all compiled entries that match subject (and optionally session/task).
+
+    Matching is prefix-insensitive: ``"s10"`` and ``"sub-s10"`` are treated
+    as identical, likewise ``"05"`` / ``"ses-05"`` and ``"goNogo"`` /
+    ``"task-goNogo"``.
+
+    Results are sorted by (session, task, run) for readable output.
+    """
+    subject_norm = _normalise_bids_field(subject, "sub-")
+
+    session_norm: Optional[str] = None
+    if session is not None:
+        session_norm = _normalise_bids_field(session, "ses-")
+
+    task_norm: Optional[str] = None
+    if task is not None:
+        task_norm = _normalise_bids_field(task, "task-")
+
+    matches = []
+    for e in compiled:
+        if e["subject"] != subject_norm:
+            continue
+        if session_norm is not None and e["session"] != session_norm:
+            continue
+        if task_norm is not None and e["task"] != task_norm:
+            continue
+        matches.append(e)
+
+    matches.sort(key=lambda e: (e.get("session", ""), e.get("task", ""), e.get("run", "")))
+    return matches

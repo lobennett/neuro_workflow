@@ -6,6 +6,7 @@ from neuro_workflow.core.exclusions import (
     save_source_entries,
     compile_exclusions,
     load_compiled_exclusions,
+    query_exclusions,
 )
 from neuro_workflow.exclusions.base import get_generator, list_generators
 
@@ -87,6 +88,55 @@ def cmd_exclusions_import(args, remaining):
     print(f"Imported {len(entries)} entries as source '{args.source_name}'")
 
 
+def cmd_exclusions_query(args, remaining):
+    from neuro_workflow.core.exclusions import _compiled_path
+
+    # Detect absent compiled file early so we can print a helpful hint.
+    compiled_path = _compiled_path(args.dataset)
+    if not compiled_path.exists():
+        subject_display = args.subject if args.subject.startswith("sub-") else f"sub-{args.subject}"
+        print(
+            f"No compiled exclusions found for '{args.dataset}'. "
+            f"Run 'neuro-run exclusions compile {args.dataset}' first."
+        )
+        return
+
+    compiled = load_compiled_exclusions(args.dataset)
+    matches = query_exclusions(
+        compiled,
+        args.subject,
+        session=args.session,
+        task=args.task,
+    )
+
+    # Build a human-readable subject label for messages.
+    subject_display = args.subject if args.subject.startswith("sub-") else f"sub-{args.subject}"
+    qualifier = subject_display
+    if args.session:
+        sess = args.session if args.session.startswith("ses-") else f"ses-{args.session}"
+        qualifier += f"/{sess}"
+    if args.task:
+        task = args.task if args.task.startswith("task-") else f"task-{args.task}"
+        qualifier += f"/{task}"
+
+    if not matches:
+        print(
+            f"No exclusions recorded for {qualifier} in '{args.dataset}'."
+        )
+        return
+
+    print(f"Exclusions for {qualifier} in '{args.dataset}' ({len(matches)} entr{'y' if len(matches) == 1 else 'ies'}):")
+    for e in matches:
+        subj = e["subject"]
+        sess = e["session"]
+        task = e["task"]
+        run = e["run"]
+        action = e["action"]
+        source = e["source"]
+        reason = e["reason"]
+        print(f"  {subj} {sess} {task} {run}  [{source}] {action} — {reason}")
+
+
 def add_exclusions_parser(subparsers):
     import neuro_workflow.cli as cli
 
@@ -117,3 +167,11 @@ def add_exclusions_parser(subparsers):
     imp_p.add_argument("dataset", help="Dataset name")
     imp_p.add_argument("--input-file", required=True, help="Path to JSON file to import")
     imp_p.set_defaults(func=cli.cmd_exclusions_import)
+
+    # exclusions query
+    query_p = excl_sub.add_parser("query", help="Query why a scan is excluded/trimmed")
+    query_p.add_argument("dataset", help="Dataset name")
+    query_p.add_argument("--subject", required=True, help="Subject ID (e.g. s10 or sub-s10)")
+    query_p.add_argument("--session", default=None, help="Session (e.g. 05 or ses-05)")
+    query_p.add_argument("--task", default=None, help="Task (e.g. goNogo or task-goNogo)")
+    query_p.set_defaults(func=cli.cmd_exclusions_query)
