@@ -36,3 +36,7 @@ scratch/
 
 # Copyrighted reference PDFs — not redistributed
 docs/*.pdf
+
+# Generated audit figures and auto-generated markdown reports (untracked)
+docs/audits/figures/
+docs/EVENTS-TASK-CONFIG-AUDIT.md
