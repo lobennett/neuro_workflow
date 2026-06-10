@@ -1,12 +1,17 @@
 """Handlers for the ``exclusions`` subcommand group."""
 
 import sys
+from pathlib import Path
 
 from neuro_workflow.core.exclusions import (
     save_source_entries,
     compile_exclusions,
     load_compiled_exclusions,
     query_exclusions,
+)
+from neuro_workflow.core.exclusions_render import (
+    render_md,
+    render_bidsignore,
 )
 from neuro_workflow.exclusions.base import get_generator, list_generators
 
@@ -137,6 +142,38 @@ def cmd_exclusions_query(args, remaining):
         print(f"  {subj} {sess} {task} {run}  [{source}] {action} — {reason}")
 
 
+def cmd_exclusions_render_md(args, remaining):
+    """Render a Markdown EXCLUSIONS document from the compiled exclusions.
+
+    Prints to stdout when --output is not given; writes to the given path
+    when --output PATH is specified.  NEVER writes to the real docs/EXCLUSIONS.md
+    unless the user explicitly passes that path.
+    """
+    compiled = load_compiled_exclusions(args.dataset)
+    output = render_md(compiled)
+    if args.output:
+        Path(args.output).write_text(output)
+        print(f"Wrote {args.output}")
+    else:
+        sys.stdout.write(output)
+
+
+def cmd_exclusions_render_bidsignore(args, remaining):
+    """Render a .bidsignore file from the compiled exclusions.
+
+    Prints to stdout when --output is not given; writes to the given path
+    when --output PATH is specified.  NEVER writes to the real BIDS
+    .bidsignore on scratch unless the user explicitly passes that path.
+    """
+    compiled = load_compiled_exclusions(args.dataset)
+    output = render_bidsignore(compiled)
+    if args.output:
+        Path(args.output).write_text(output)
+        print(f"Wrote {args.output}")
+    else:
+        sys.stdout.write(output)
+
+
 def add_exclusions_parser(subparsers):
     import neuro_workflow.cli as cli
 
@@ -175,3 +212,31 @@ def add_exclusions_parser(subparsers):
     query_p.add_argument("--session", default=None, help="Session (e.g. 05 or ses-05)")
     query_p.add_argument("--task", default=None, help="Task (e.g. goNogo or task-goNogo)")
     query_p.set_defaults(func=cli.cmd_exclusions_query)
+
+    # exclusions render-md
+    rmd_p = excl_sub.add_parser(
+        "render-md",
+        help="Render EXCLUSIONS.md from compiled exclusions (stdout or --output file)",
+    )
+    rmd_p.add_argument("dataset", help="Dataset name")
+    rmd_p.add_argument(
+        "--output",
+        default=None,
+        metavar="PATH",
+        help="Write output to PATH instead of stdout",
+    )
+    rmd_p.set_defaults(func=cli.cmd_exclusions_render_md)
+
+    # exclusions render-bidsignore
+    rbig_p = excl_sub.add_parser(
+        "render-bidsignore",
+        help="Render .bidsignore from compiled exclusions (stdout or --output file)",
+    )
+    rbig_p.add_argument("dataset", help="Dataset name")
+    rbig_p.add_argument(
+        "--output",
+        default=None,
+        metavar="PATH",
+        help="Write output to PATH instead of stdout",
+    )
+    rbig_p.set_defaults(func=cli.cmd_exclusions_render_bidsignore)
