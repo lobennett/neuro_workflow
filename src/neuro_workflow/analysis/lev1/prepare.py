@@ -1,8 +1,8 @@
 """Setup / discovery phase for the lev1 GLM pipeline.
 
 Establishes the analysis context the per-run :mod:`.runner` consumes: the
-:class:`~neuro_workflow.analysis.config.Config`, exclusion sets, output
-directories (``setup_analysis``); the discovered BIDS/fMRIPrep file map
+:class:`~neuro_workflow.analysis.lev1.subject_config.Config`, exclusion sets,
+output directories (``setup_analysis``); the discovered BIDS/fMRIPrep file map
 (``discover_and_validate_files``); and the combined brain mask for volumetric
 space (``setup_masks``).
 """
@@ -10,7 +10,7 @@ space (``setup_masks``).
 import logging
 from pathlib import Path
 
-from neuro_workflow.analysis.config import Config
+from neuro_workflow.analysis.lev1.subject_config import Config
 from neuro_workflow.analysis.core.task_utils import detect_sample_type, get_expected_sessions
 from neuro_workflow.analysis.core.utils import (
     check_behavioral_trim_threshold,
