@@ -54,6 +54,7 @@ from neuro_workflow.cli.exclusions import (  # noqa: F401
     cmd_exclusions_compile,
     cmd_exclusions_show,
     cmd_exclusions_import,
+    cmd_exclusions_query,
     add_exclusions_parser,
 )
 from neuro_workflow.cli.bidsify import cmd_bidsify, add_bidsify_parser  # noqa: F401
