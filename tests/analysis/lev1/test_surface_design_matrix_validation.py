@@ -142,7 +142,7 @@ def test_surface_run_raises_on_nan_design_matrix(tmp_path, monkeypatch):
     validation gate.  Before this fix the function would have fallen
     through into ``SurfaceGLM.fit`` with a NaN design matrix.
     """
-    from neuro_workflow.analysis.lev1 import run as run_module
+    from neuro_workflow.analysis.lev1 import runner as run_module
 
     # Stub surface loading to return a deterministic ndarray
     n_tp = 100

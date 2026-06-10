@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from neuro_workflow.core.acquisition import N_DUMMY, TR_SECONDS
 from neuro_workflow.events.utils import (
     get_neg_rt_correction,
     cal_time_elapsed,
@@ -56,9 +57,7 @@ def _rename_cells(df: pd.DataFrame, exp_id: str) -> pd.DataFrame:
     return df
 
 
-N_DUMMY = 7
-TR_SECONDS = 1.49
-DUMMY_OFFSET_S = N_DUMMY * TR_SECONDS  # 10.43s
+DUMMY_OFFSET_S = N_DUMMY * TR_SECONDS  # 10.43s (N_DUMMY/TR_SECONDS from core.acquisition)
 
 
 def _set_default_event_cols(df: pd.DataFrame) -> pd.DataFrame:
@@ -150,6 +149,45 @@ def create_events_df(filename: Path, short_name: str) -> pd.DataFrame:
     return df
 
 
+def discover_nifti_tasks(func_dir: Path) -> set[str]:
+    """Non-rest task labels that have a BOLD NIfTI in ``func_dir``.
+
+    Events are generated for every such task. Scan exclusion is intentionally
+    NOT applied here: the authoritative mechanism is the compiled-exclusions
+    system (enforced downstream at lev1), so ``.bidsignore`` is not consulted at
+    the events stage. (A prior ``.bidsignore`` filter here was a silent no-op —
+    its greedy task token, e.g. ``flanker_run``, never matched the bare task
+    ``flanker`` discovered here — so it is removed rather than resurrected.)
+    """
+    tasks: set[str] = set()
+    for nii in func_dir.glob("*.nii.gz"):
+        m = re.search(r"task-([^_]+)", nii.name)
+        if m and m.group(1) != "rest":
+            tasks.add(m.group(1))
+    return tasks
+
+
+def group_csvs_by_task(
+    beh_dir: Path, allowed_tasks: set[str]
+) -> list[tuple[str, int, Path]]:
+    """Group behavioral CSVs by ``(task, run)``, keeping only ``allowed_tasks``.
+
+    Run number is read from a ``run-<n>`` token in the filename, defaulting to 1.
+    """
+    out: list[tuple[str, int, Path]] = []
+    for csv_file in sorted(beh_dir.glob("*.csv")):
+        m = re.search(r"task-([^_]+)", csv_file.name)
+        if not m:
+            continue
+        task_name = m.group(1)
+        if task_name not in allowed_tasks:
+            continue
+        run_m = re.search(r"run-(\d+)", csv_file.name)
+        run_num = int(run_m.group(1)) if run_m else 1
+        out.append((task_name, run_num, csv_file))
+    return out
+
+
 def run_create_events(
     behavioral_dir: Path,
     bids_dir: Path,
@@ -164,18 +202,6 @@ def run_create_events(
         subjects: Optional list of subjects to process (default: all)
         sessions: Optional list of sessions to process (default: all)
     """
-    # Parse .bidsignore to skip excluded scans
-    ignored = set()
-    bidsignore_path = bids_dir / ".bidsignore"
-    if bidsignore_path.exists():
-        for line in bidsignore_path.read_text().splitlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            m = re.search(r"sub-(\w+)/(ses-\d+)/func/.*task-(\w+)", line)
-            if m:
-                ignored.add((m.group(1), m.group(2), m.group(3)))
-
     for sub_dir in sorted(behavioral_dir.glob("sub-*")):
         if subjects and sub_dir.name not in subjects:
             continue
@@ -190,31 +216,8 @@ def run_create_events(
                 log.warning("No func dir for %s %s, skipping", sub_dir.name, ses_dir.name)
                 continue
 
-            sub_label = sub_dir.name.replace("sub-", "")
-
-            # Get tasks that have NIfTIs, excluding bidsignored and rest
-            nifti_tasks = set()
-            for nii in func_dir.glob("*.nii.gz"):
-                m = re.search(r"task-([^_]+)", nii.name)
-                if m and m.group(1) != "rest":
-                    task = m.group(1)
-                    if (sub_label, ses_dir.name, task) not in ignored:
-                        nifti_tasks.add(task)
-
-            # Group CSVs by task, extracting run number from filename
-            csv_files = sorted(beh_dir.glob("*.csv"))
-            task_run_files: list[tuple[str, int, Path]] = []
-            for csv_file in csv_files:
-                m = re.search(r"task-([^_]+)", csv_file.name)
-                if not m:
-                    continue
-                task_name = m.group(1)
-                if task_name not in nifti_tasks:
-                    continue
-                # Extract run number if present, default to 1
-                run_m = re.search(r"run-(\d+)", csv_file.name)
-                run_num = int(run_m.group(1)) if run_m else 1
-                task_run_files.append((task_name, run_num, csv_file))
+            nifti_tasks = discover_nifti_tasks(func_dir)
+            task_run_files = group_csvs_by_task(beh_dir, nifti_tasks)
 
             tasks_with_events = set()
 

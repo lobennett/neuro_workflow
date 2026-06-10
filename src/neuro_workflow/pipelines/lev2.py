@@ -6,8 +6,8 @@ import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from neuro_workflow.pipelines.base import register, build_mail_line, resolve_resources
-from neuro_workflow.pipelines.lev1 import BASE_TASKS, DUAL_TASKS, ALL_TASKS
+from neuro_workflow.analysis.task_config.loader import get_base_tasks, get_dual_tasks
+from neuro_workflow.pipelines.base import LocalAnalysisPipeline, register
 
 
 def _discover_contrasts_from_lev1_dirs(lev1_dirs: list[str], task_filter: list[str] | None = None) -> list[str]:
@@ -39,7 +39,7 @@ def _discover_contrasts_from_lev1_dirs(lev1_dirs: list[str], task_filter: list[s
     return sorted(contrasts)
 
 
-class Lev2Pipeline:
+class Lev2Pipeline(LocalAnalysisPipeline):
     name = "lev2"
     docker_uri = None
     template_name = "lev2.sbatch"
@@ -64,9 +64,9 @@ class Lev2Pipeline:
         if contrasts_flag == "all":
             contrasts = _discover_contrasts_from_lev1_dirs(args.lev1_dirs)
         elif contrasts_flag == "base":
-            contrasts = _discover_contrasts_from_lev1_dirs(args.lev1_dirs, task_filter=BASE_TASKS)
+            contrasts = _discover_contrasts_from_lev1_dirs(args.lev1_dirs, task_filter=get_base_tasks())
         elif contrasts_flag == "dual":
-            contrasts = _discover_contrasts_from_lev1_dirs(args.lev1_dirs, task_filter=DUAL_TASKS)
+            contrasts = _discover_contrasts_from_lev1_dirs(args.lev1_dirs, task_filter=get_dual_tasks())
         else:
             contrasts = args.contrasts
 
@@ -75,30 +75,18 @@ class Lev2Pipeline:
             sys.exit(1)
 
         results_dir = Path(args.results_dir)
-        log_dir = results_dir / "logs"
-        log_dir.mkdir(parents=True, exist_ok=True)
-        contrast_list_file = log_dir / "contrast_list.txt"
-        contrast_list_file.write_text("\n".join(contrasts) + "\n")
+        log_dir = self._make_log_dir(results_dir)
+        contrast_list_file = self._write_list_file(log_dir, "contrast_list.txt", contrasts)
 
-        resources = resolve_resources(args, self.default_resources)
-
-        mail_line = build_mail_line(dataset_config)
+        resources = self._resolve(args)
 
         return {
-            "dataset_name": dataset_name,
+            **self._base_context(dataset_name, dataset_config, resources, log_dir, results_dir),
             "n_contrasts": len(contrasts),
-            "nthreads": resources["nthreads"],
-            "mem_gb": resources["mem_gb"],
-            "time": resources["time"],
-            "partition": dataset_config["partition"],
-            "log_dir": str(log_dir),
-            "mail_line": mail_line,
             "contrast_list_file": str(contrast_list_file),
             "lev1_dirs": " ".join(args.lev1_dirs),
-            "results_dir": str(results_dir),
             "mask_threshold": args.mask_threshold,
             "num_permutations": args.num_permutations,
-            "neuro_workflow_dir": str(Path(__file__).resolve().parents[3]),
         }
 
 

@@ -12,6 +12,7 @@ except ImportError:
     pd = None  # type: ignore[assignment]
     np = None  # type: ignore[assignment]
 
+from neuro_workflow.core.thresholds import motion as _motion_thresholds
 from neuro_workflow.exclusions.base import register_generator
 
 
@@ -56,14 +57,17 @@ class MotionGenerator:
     description = "Generate motion exclusions from fmriprep confound files"
 
     def add_cli_args(self, parser: ArgumentParser) -> None:
+        t = _motion_thresholds()
         parser.add_argument("--fmriprep-version", required=False, default="24.1.0rc2",
                             help="fMRIPrep version for derivatives path")
-        parser.add_argument("--fd-threshold", type=float, default=0.2,
-                            help="FD mean threshold for resting-state (default: 0.2)")
-        parser.add_argument("--proportion-fd-threshold", type=float, default=0.2,
-                            help="Proportion FD > 0.5 threshold for task scans (default: 0.2)")
-        parser.add_argument("--proportion-dvars-threshold", type=float, default=0.2,
-                            help="Proportion DVARS > 1.5 threshold (default: 0.2)")
+        parser.add_argument("--fd-threshold", type=float, default=t["fd_threshold"],
+                            help=f"FD mean threshold for resting-state (default: {t['fd_threshold']})")
+        parser.add_argument("--proportion-fd-threshold", type=float,
+                            default=t["proportion_fd_threshold"],
+                            help=f"Proportion FD > 0.5 threshold for task scans (default: {t['proportion_fd_threshold']})")
+        parser.add_argument("--proportion-dvars-threshold", type=float,
+                            default=t["proportion_dvars_threshold"],
+                            help=f"Proportion DVARS > 1.5 threshold (default: {t['proportion_dvars_threshold']})")
 
     def generate(self, dataset_name: str, dataset_config: dict, args: Namespace) -> list[dict]:
         if pd is None:

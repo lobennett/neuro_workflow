@@ -2,7 +2,7 @@ import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from neuro_workflow.pipelines.base import register, build_mail_line, resolve_resources
+from neuro_workflow.pipelines.base import ContainerPipeline, register
 
 
 def _discover_scans(bids_dir: str, version: str) -> list[dict]:
@@ -36,7 +36,7 @@ def _discover_scans(bids_dir: str, version: str) -> list[dict]:
     return scans
 
 
-class HappyPipeline:
+class HappyPipeline(ContainerPipeline):
     name = "happy"
     docker_uri = "docker://fredericklab/rapidtide"
     template_name = "happy.sbatch"
@@ -54,14 +54,11 @@ class HappyPipeline:
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 00:10:00)")
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
-        if not getattr(args, "version", None):
-            print("Error: --version is required for happy pipeline", file=sys.stderr)
-            sys.exit(1)
-
-        resources = resolve_resources(args, self.default_resources)
-        nthreads = resources["nthreads"]
-        mem_per_cpu_gb = resources["mem_per_cpu_gb"]
-        time = resources["time"]
+        # NOTE: happy does NOT use the base _image_path / _log_dir helpers: its
+        # image is the unsuffixed "rapidtide_<v>" dir (prefix != self.name, no
+        # .sif) and its log_dir hangs off the discovered derivatives dir.
+        self._require_version(args)
+        resources = self._resolve(args)
 
         bids_dir = dataset_config["bids_dir"]
         scans = _discover_scans(bids_dir, args.version)
@@ -78,21 +75,17 @@ class HappyPipeline:
                 f.write(f"{s['bold']} {s['bold_json']} {s['phys_tsv']} {s['phys_json']} {s['output']}\n")
 
         image_path = str(Path(dataset_config["image_dir"]) / f"rapidtide_{args.version}")
-        log_dir = str(deriv_dir / "logs")
-
-        mail_line = build_mail_line(dataset_config)
 
         return {
-            "dataset_name": dataset_name,
-            "time": time,
+            **self._base_context(
+                dataset_name,
+                dataset_config,
+                resources,
+                log_dir=str(deriv_dir / "logs"),
+                image_path=image_path,
+            ),
             "n_scans": len(scans),
-            "nthreads": nthreads,
-            "mem_per_cpu_gb": mem_per_cpu_gb,
-            "partition": dataset_config["partition"],
-            "log_dir": log_dir,
-            "mail_line": mail_line,
             "scan_list_file": str(scan_list_file),
-            "image_path": image_path,
             "happy_args": args.happy_args,
         }
 
