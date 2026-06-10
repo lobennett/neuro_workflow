@@ -1,3 +1,12 @@
+"""Subject-level analysis configuration for the lev1 GLM pipeline.
+
+Defines :class:`Config`, the resolved bids/fmriprep/output paths plus the
+subject/task identity that :mod:`.prepare` builds and the per-run
+:mod:`.runner` consumes. Lives under ``analysis/lev1/`` rather than a
+top-level ``analysis/config`` to avoid a name collision with the unrelated
+:mod:`neuro_workflow.core.config`.
+"""
+
 import logging
 from dataclasses import dataclass
 from pathlib import Path

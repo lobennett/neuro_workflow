@@ -384,4 +384,4 @@ The subject is dropped from every contrast's lev2 group analysis where their fix
 - `docs/WORKFLOW.md` — the full pipeline (BIDSify → fmriprep → lev1 → lev2)
 - `docs/EXCLUSIONS.md` — per-`.bidsignore`-entry rationale
 - `docs/SCAN-NOTES.md` — raw data collection notes
-- `docs/superpowers/specs/` — design specs for each exclusion feature (Project B + C)
+- `docs/archive/superpowers/specs/` — design specs for each exclusion feature (Project B + C)
