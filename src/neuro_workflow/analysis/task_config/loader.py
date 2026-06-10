@@ -13,6 +13,7 @@ YAML regressor format:
     subset: "trial_type == 'go'"  -> pandas query string
 """
 
+import copy
 import logging
 import re
 from functools import lru_cache
@@ -327,9 +328,11 @@ def get_raw_yaml_config(task_name: str) -> Dict[str, Any]:
         task_name: Name of the task.
 
     Returns:
-        The full parsed YAML dictionary.
+        A deep copy of the full parsed YAML dictionary. The underlying parse is
+        ``lru_cache``d and the YAML is nested (regressors/contrasts/parameters),
+        so a deepcopy is returned to prevent a caller mutating the cached dict.
     """
-    return _get_task_config(task_name)
+    return copy.deepcopy(_get_task_config(task_name))
 
 
 # Backward-compatible constants (used by events.py, confounds.py, etc.)

@@ -1,6 +1,6 @@
 """Missing events.tsv handling: skip-with-warning, never crash.
 
-Spec (`docs/superpowers/specs/2026-05-06-lev1-audit-design.md`):
+Spec (`docs/archive/superpowers/specs/2026-05-06-lev1-audit-design.md`):
 "scan with events.tsv missing -> caller (run.py) skips with a logger warning;
 downstream gets nothing for that scan; no crash."
 

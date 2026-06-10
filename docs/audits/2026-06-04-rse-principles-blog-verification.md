@@ -1,7 +1,7 @@
 # RSE-PRINCIPLES.md — blog-verification audit (2026-06-04)
 
-Audit trail for the refinement of `docs/RSE-PRINCIPLES.md` against the live
-source blog, [russpoldrack.substack.com](https://russpoldrack.substack.com).
+Audit trail for the refinement of `docs/archive/RSE-PRINCIPLES.md` (archived 2026-06-10)
+against the live source blog, [russpoldrack.substack.com](https://russpoldrack.substack.com).
 
 ## Goal
 
