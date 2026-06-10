@@ -12,6 +12,13 @@ All functions are pure (no I/O).  The CLI writes only when --output is given.
 from __future__ import annotations
 
 from collections import defaultdict
+from pathlib import Path
+
+# Project-relative path for committed human-curated collection .bidsignore
+# blocks. Resolved from the package's parent directories (same convention as
+# core.exclusions._REPO_ROOT).
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_COLLECTION_DIR = _REPO_ROOT / "data" / "exclusions"
 
 # ---------------------------------------------------------------------------
 # Stamps
@@ -160,6 +167,60 @@ def render_bidsignore(entries: list[dict]) -> str:
     lines.extend(globs_sorted)
 
     return "\n".join(lines) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# Collection block (committed, human-curated) + concatenation
+# ---------------------------------------------------------------------------
+
+def collection_path(dataset_name: str) -> Path:
+    """Path to the committed human-curated collection .bidsignore for a dataset.
+
+    e.g. data/exclusions/discovery_collection.bidsignore.  The file holds the
+    data-collection / anatomical / wildcard exclusions that do NOT come from a
+    QC generator and so cannot be reconstructed from the compiled entries.
+    """
+    return _COLLECTION_DIR / f"{dataset_name}_collection.bidsignore"
+
+
+def render_bidsignore_with_collection(
+    dataset_name: str, entries: list[dict],
+) -> str:
+    """Render the full .bidsignore = committed collection block + generated QC.
+
+    The committed human-curated collection block (read VERBATIM from
+    data/exclusions/<dataset>_collection.bidsignore) comes FIRST and carries
+    its own header.  The generated QC scan-lines (from render_bidsignore over
+    the compiled entries) follow, under their own DO-NOT-EDIT stamp.
+
+    Parameters
+    ----------
+    dataset_name:
+        Dataset whose collection block to prepend (e.g. "discovery").
+    entries:
+        Compiled exclusion entries (the QC-generated portion).
+
+    Raises
+    ------
+    FileNotFoundError
+        If the committed collection file is missing — never silently emit a
+        partial .bidsignore that drops the collection exclusions.
+    """
+    coll_path = collection_path(dataset_name)
+    if not coll_path.is_file():
+        raise FileNotFoundError(
+            f"Committed collection .bidsignore not found for dataset "
+            f"'{dataset_name}': {coll_path}. This file holds the human-curated "
+            f"data-collection/anatomical exclusions and must be committed."
+        )
+    collection_block = coll_path.read_text()
+    generated = render_bidsignore(entries)
+
+    # Collection block carries its own header; separate the two blocks with a
+    # blank line so the boundary is visually clear.
+    if not collection_block.endswith("\n"):
+        collection_block += "\n"
+    return collection_block + "\n" + generated
 
 
 # ---------------------------------------------------------------------------

@@ -12,6 +12,7 @@ from neuro_workflow.core.exclusions import (
 from neuro_workflow.core.exclusions_render import (
     render_md,
     render_bidsignore,
+    render_bidsignore_with_collection,
 )
 from neuro_workflow.exclusions.base import get_generator, list_generators
 
@@ -159,14 +160,17 @@ def cmd_exclusions_render_md(args, remaining):
 
 
 def cmd_exclusions_render_bidsignore(args, remaining):
-    """Render a .bidsignore file from the compiled exclusions.
+    """Render a .bidsignore file = committed collection block + generated QC.
 
-    Prints to stdout when --output is not given; writes to the given path
-    when --output PATH is specified.  NEVER writes to the real BIDS
-    .bidsignore on scratch unless the user explicitly passes that path.
+    The rendered file is the human-curated collection block (read from
+    data/exclusions/<dataset>_collection.bidsignore) FOLLOWED BY the generated
+    QC scan-lines from the compiled exclusions.  Prints to stdout when --output
+    is not given; writes to the given path when --output PATH is specified.
+    NEVER writes to the real BIDS .bidsignore on scratch unless the user
+    explicitly passes that path.
     """
     compiled = load_compiled_exclusions(args.dataset)
-    output = render_bidsignore(compiled)
+    output = render_bidsignore_with_collection(args.dataset, compiled)
     if args.output:
         Path(args.output).write_text(output)
         print(f"Wrote {args.output}")
