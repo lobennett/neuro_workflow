@@ -1,7 +1,7 @@
 """Handler for the ``bidsify`` subcommand."""
 
 
-def cmd_bidsify(args):
+def cmd_bidsify(args, remaining):
     import logging
     logging.basicConfig(
         level=logging.INFO,
@@ -32,4 +32,4 @@ def add_bidsify_parser(subparsers):
     bidsify_p.add_argument("--flywheel-project", default=None, help="Flywheel project label")
     bidsify_p.add_argument("--overwrite", action="store_true", help="Overwrite existing output")
     bidsify_p.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
-    bidsify_p.set_defaults(func=lambda args, remaining: cli.cmd_bidsify(args))
+    bidsify_p.set_defaults(func=cli.cmd_bidsify)
