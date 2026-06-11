@@ -27,7 +27,22 @@ class FreesurferPipeline(ContainerPipeline):
         self._require_version(args)
         resources = self._resolve(args)
 
-        fs_subjects_file = getattr(args, "subjects_file", None) or dataset_config["subjects_file"]
+        # FreeSurfer's subjects file is a CSV carrying per-subject anat metadata
+        # (subject_id,ses_t1,run_t1,ses_t2,run_t2) that the canonical sample list
+        # cannot supply, so recon-all needs an explicit CSV. The canonical
+        # resolver does NOT apply here. Prefer --subjects-file; else fall back to
+        # the registered subjects_file. Fail loud (instead of an opaque
+        # FileNotFoundError) if neither is a real file -- the registered
+        # subjects_*.txt was removed in PR1a.
+        fs_subjects_file = getattr(args, "subjects_file", None) or dataset_config.get("subjects_file")
+        if not fs_subjects_file or not Path(fs_subjects_file).is_file():
+            raise ValueError(
+                "freesurfer requires a subjects CSV (subject_id,ses_t1,run_t1,"
+                "ses_t2,run_t2). Pass --subjects-file pointing at an existing "
+                f"CSV. Got: {fs_subjects_file!r} (not an existing file). The "
+                "canonical pipeline_config.json sample list cannot supply the "
+                "anat session/run columns recon-all needs."
+            )
         # Each non-blank CSV row is one subject (no header). The sbatch template
         # indexes rows via `sed -n "${SLURM_ARRAY_TASK_ID}p"` over array 1..n_subjects,
         # so this count must equal the number of data rows -- count_subjects (shared

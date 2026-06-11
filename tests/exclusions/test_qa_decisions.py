@@ -138,13 +138,15 @@ def test_subject_level_exclude_expands_via_bids_glob(tmp_path, capsys):
 
 
 def test_subject_level_with_no_bids_files_emits_zero(tmp_path, capsys):
-    """Subject-level row for a sub with no BOLD scans in BIDS -> 0 entries, no error."""
+    """Subject-level row for an in-roster sub with no BOLD scans in BIDS -> 0
+    entries, no error. Uses a real discovery subject (s10) so it passes the
+    canonical roster filter and reaches the (empty) BIDS glob."""
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
     bids_dir = tmp_path / "bids"
     bids_dir.mkdir()
     tsv = tmp_path / "decisions.tsv"
     _write_tsv(tsv, [
-        {"subject": "sub-s99", "session": "-", "task": "-", "run": "-",
+        {"subject": "sub-s10", "session": "-", "task": "-", "run": "-",
          "action": "exclude", "reason": "missing data"},
     ])
 
@@ -157,7 +159,9 @@ def test_subject_level_with_no_bids_files_emits_zero(tmp_path, capsys):
 
 
 def test_subject_filter_drops_non_member_scan_level(tmp_path):
-    """Scan-level rows whose subject isn't in subjects_file are dropped."""
+    """Scan-level rows whose subject isn't in the dataset's canonical roster
+    (pipeline_config.json `samples`) are dropped. s1035 is a validation subject,
+    so it must not appear in a discovery compile — the cross-sample bug."""
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
     tsv = tmp_path / "decisions.tsv"
     _write_tsv(tsv, [
@@ -166,27 +170,25 @@ def test_subject_filter_drops_non_member_scan_level(tmp_path):
         {"subject": "sub-s1035", "session": "ses-02", "task": "task-flanker",
          "run": "run-1", "action": "exclude", "reason": "out of dataset"},
     ])
-    subjects_path = tmp_path / "subjects_discovery.txt"
-    subjects_path.write_text("s03\ns10\n")
 
-    config = {"subjects_file": str(subjects_path)}
-    entries = QADecisionsGenerator().generate("discovery", config, _make_args(tsv))
+    entries = QADecisionsGenerator().generate("discovery", {}, _make_args(tsv))
 
     assert len(entries) == 1
     assert entries[0]["subject"] == "sub-s03"
 
 
 def test_subject_filter_drops_subject_level_before_glob(tmp_path):
-    """Subject-level row for non-member subject is dropped before BIDS glob fires.
+    """Subject-level row for a non-member subject is dropped before BIDS glob fires.
 
-    Even with a populated BIDS dir for the non-member subject, no entries are
-    emitted; the only entries come from the in-roster subject.
+    Even with a populated BIDS dir for the non-member (validation) subject, no
+    entries are emitted; the only entries come from the in-roster subject. The
+    roster comes from pipeline_config.json `samples`, NOT a subjects_file.
     """
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
     bids_dir = _make_fake_bids(tmp_path, "sub-s03", [
         ("ses-01", "flanker", "1"),
     ])
-    # Out-of-dataset subject also has BIDS files — these should be ignored.
+    # Out-of-dataset (validation) subject also has BIDS files — must be ignored.
     _make_fake_bids(tmp_path, "sub-s1035", [
         ("ses-01", "flanker", "1"),
         ("ses-02", "cuedTS", "1"),
@@ -198,15 +200,26 @@ def test_subject_filter_drops_subject_level_before_glob(tmp_path):
         {"subject": "sub-s1035", "session": "-", "task": "-", "run": "-",
          "action": "exclude", "reason": "out of dataset"},
     ])
-    subjects_path = tmp_path / "subjects_discovery.txt"
-    subjects_path.write_text("s03\ns10\n")
 
-    config = {"bids_dir": str(bids_dir), "subjects_file": str(subjects_path)}
+    config = {"bids_dir": str(bids_dir)}
     entries = QADecisionsGenerator().generate("discovery", config, _make_args(tsv))
 
     assert len(entries) == 1
     assert entries[0]["subject"] == "sub-s03"
     assert entries[0]["task"] == "task-flanker"
+
+
+def test_unknown_dataset_fails_loud(tmp_path):
+    """An unknown dataset name fails loud (no silent no-filter / None path)."""
+    import pytest
+    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+    tsv = tmp_path / "decisions.tsv"
+    _write_tsv(tsv, [
+        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
+         "run": "run-1", "action": "exclude", "reason": "noisy"},
+    ])
+    with pytest.raises(ValueError, match="not_a_sample"):
+        QADecisionsGenerator().generate("not_a_sample", {}, _make_args(tsv))
 
 
 def test_missing_tsv_raises_file_not_found_error(tmp_path):
