@@ -1,10 +1,10 @@
 {
   "dataset": "validation",
-  "compiled_at": "2026-05-17T22:15:57Z",
-  "compiled_at_code_sha": "3563c75+dirty",
+  "compiled_at": "2026-06-11T23:10:51Z",
+  "compiled_at_code_sha": "7448df9+dirty",
   "compiled_path": "/home/users/logben/.neuro_workflow/exclusions/validation/compiled_exclusions.json",
-  "n_total_entries": 20,
-  "n_overrides": 0,
+  "n_total_entries": 24,
+  "n_overrides": 6,
   "sources": [
     {
       "generator": "behavioral",
