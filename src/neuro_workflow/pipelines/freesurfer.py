@@ -1,11 +1,11 @@
-import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from neuro_workflow.pipelines.base import register, build_mail_line, resolve_resources
+from neuro_workflow.core.slurm import count_subjects
+from neuro_workflow.pipelines.base import ContainerPipeline, register
 
 
-class FreesurferPipeline:
+class FreesurferPipeline(ContainerPipeline):
     name = "freesurfer"
     docker_uri = ""  # local SIF, no pull
     template_name = "freesurfer.sbatch"
@@ -24,34 +24,42 @@ class FreesurferPipeline:
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 4-00:00:00)")
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
-        if not getattr(args, "version", None):
-            print("Error: --version is required for freesurfer pipeline", file=sys.stderr)
-            sys.exit(1)
+        self._require_version(args)
+        resources = self._resolve(args)
 
-        resources = resolve_resources(args, self.default_resources)
-        nthreads = resources["nthreads"]
-        mem_per_cpu_gb = resources["mem_per_cpu_gb"]
-        time = resources["time"]
+        # FreeSurfer's subjects file is a CSV carrying per-subject anat metadata
+        # (subject_id,ses_t1,run_t1,ses_t2,run_t2) that the canonical sample list
+        # cannot supply, so recon-all needs an explicit CSV. The canonical
+        # resolver does NOT apply here. Prefer --subjects-file; else fall back to
+        # the registered subjects_file. Fail loud (instead of an opaque
+        # FileNotFoundError) if neither is a real file -- the registered
+        # subjects_*.txt was removed in PR1a.
+        fs_subjects_file = getattr(args, "subjects_file", None) or dataset_config.get("subjects_file")
+        if not fs_subjects_file or not Path(fs_subjects_file).is_file():
+            raise ValueError(
+                "freesurfer requires a subjects CSV (subject_id,ses_t1,run_t1,"
+                "ses_t2,run_t2). Pass --subjects-file pointing at an existing "
+                f"CSV. Got: {fs_subjects_file!r} (not an existing file). The "
+                "canonical pipeline_config.json sample list cannot supply the "
+                "anat session/run columns recon-all needs."
+            )
+        # Each non-blank CSV row is one subject (no header). The sbatch template
+        # indexes rows via `sed -n "${SLURM_ARRAY_TASK_ID}p"` over array 1..n_subjects,
+        # so this count must equal the number of data rows -- count_subjects (shared
+        # with fmriprep/qsiprep) does exactly that, with a `with` block (no fd leak).
+        n_subjects = count_subjects(fs_subjects_file)
 
-        fs_subjects_file = getattr(args, "subjects_file", None) or dataset_config["subjects_file"]
-        n_subjects = sum(1 for line in open(fs_subjects_file) if line.strip())
-
-        image_path = str(Path(dataset_config["image_dir"]) / f"freesurfer_{args.version}.sif")
         fs_license = str(Path(args.fs_license).expanduser())
-        log_dir = f"{dataset_config['bids_dir']}/derivatives/freesurfer_{args.version}/logs"
-
-        mail_line = build_mail_line(dataset_config)
 
         return {
-            "dataset_name": dataset_name,
-            "time": time,
+            **self._base_context(
+                dataset_name,
+                dataset_config,
+                resources,
+                log_dir=self._log_dir(dataset_config, args.version),
+                image_path=self._image_path(dataset_config, args.version),
+            ),
             "n_subjects": n_subjects,
-            "nthreads": nthreads,
-            "mem_per_cpu_gb": mem_per_cpu_gb,
-            "partition": dataset_config["partition"],
-            "log_dir": log_dir,
-            "mail_line": mail_line,
-            "image_path": image_path,
             "bids_dir": dataset_config["bids_dir"],
             "fs_license": fs_license,
             "fs_subjects_file": fs_subjects_file,

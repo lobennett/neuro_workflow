@@ -1,13 +1,16 @@
 import os
-import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from neuro_workflow.core.slurm import count_subjects
-from neuro_workflow.pipelines.base import register, build_mail_line, resolve_resources
+from neuro_workflow.pipelines.base import (
+    ContainerPipeline,
+    register,
+    resolve_pipeline_subjects,
+    write_subjects_file,
+)
 
 
-class QsiprepPipeline:
+class QsiprepPipeline(ContainerPipeline):
     name = "qsiprep"
     docker_uri = "docker://pennlinc/qsiprep"
     template_name = "qsiprep.sbatch"
@@ -27,38 +30,30 @@ class QsiprepPipeline:
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 24:00:00)")
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
-        if not getattr(args, "version", None):
-            print("Error: --version is required for qsiprep pipeline", file=sys.stderr)
-            sys.exit(1)
+        self._require_version(args)
+        resources = self._resolve(args)
 
-        resources = resolve_resources(args, self.default_resources)
-        nthreads = resources["nthreads"]
-        mem_per_cpu_gb = resources["mem_per_cpu_gb"]
-        time = resources["time"]
-
-        n_subjects = count_subjects(dataset_config["subjects_file"])
-        mem_mb = int(nthreads * mem_per_cpu_gb * 1000 * 0.9)
-
-        image_path = str(Path(dataset_config["image_dir"]) / f"qsiprep_{args.version}.sif")
+        subjects = resolve_pipeline_subjects(dataset_name, dataset_config)
+        n_subjects = len(subjects)
+        mem_mb = int(resources["nthreads"] * resources["mem_per_cpu_gb"] * 1000 * 0.9)
         fs_license = str(Path(args.fs_license).expanduser())
 
         scratch = os.environ.get("SCRATCH", "/tmp")
         work_dir = f"{scratch}/work/qsiprep_{dataset_name}_{args.version}"
-        log_dir = f"{dataset_config['bids_dir']}/derivatives/qsiprep_{args.version}/logs"
-
-        mail_line = build_mail_line(dataset_config)
+        subjects_file = str(
+            write_subjects_file(subjects, work_dir, "subjects.txt")
+        )
 
         return {
-            "dataset_name": dataset_name,
-            "time": time,
+            **self._base_context(
+                dataset_name,
+                dataset_config,
+                resources,
+                log_dir=self._log_dir(dataset_config, args.version),
+                image_path=self._image_path(dataset_config, args.version),
+            ),
             "n_subjects": n_subjects,
-            "nthreads": nthreads,
-            "mem_per_cpu_gb": mem_per_cpu_gb,
-            "partition": dataset_config["partition"],
-            "log_dir": log_dir,
-            "mail_line": mail_line,
-            "subjects_file": dataset_config["subjects_file"],
-            "image_path": image_path,
+            "subjects_file": subjects_file,
             "bids_dir": dataset_config["bids_dir"],
             "work_dir": work_dir,
             "fs_license": fs_license,

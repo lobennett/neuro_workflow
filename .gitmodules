@@ -1,0 +1,3 @@
+[submodule "external/PrecisionNetworkMapping"]
+	path = external/PrecisionNetworkMapping
+	url = https://github.com/lobennett/PrecisionNetworkMapping.git

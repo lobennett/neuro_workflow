@@ -1,6 +1,6 @@
-import sys
 from argparse import Namespace
-from unittest.mock import patch
+
+import pytest
 
 from neuro_workflow.pipelines.fsqc import FsqcPipeline
 
@@ -45,36 +45,42 @@ def test_default_resources():
 
 
 def test_build_context_basic(tmp_path):
+    """Ad-hoc (non-canonical) dataset name falls back to the registered
+    subjects_file. Subject list comes from that file (s01, s02)."""
     p = FsqcPipeline()
     config = make_config(tmp_path)
     args = make_args()
-    ctx = p.build_context("validation", config, args)
-    assert ctx["dataset_name"] == "validation"
+    ctx = p.build_context("adhoc_ds", config, args)
+    assert ctx["dataset_name"] == "adhoc_ds"
     assert ctx["freesurfer_dir"] == "/data/derivatives/freesurfer"
     assert ctx["image_path"] == "/images/fsqc_2.1.4.sif"
     assert "sub-s01 sub-s02" == ctx["subjects_list"]
+
+
+def test_build_context_resolves_canonical_sample(tmp_path):
+    """A canonical sample name (discovery) resolves its 5 subjects from
+    pipeline_config.json `samples`, ignoring any registered subjects_file."""
+    p = FsqcPipeline()
+    config = make_config(tmp_path)  # registered file has only s01,s02
+    args = make_args()
+    ctx = p.build_context("discovery", config, args)
+    assert ctx["subjects_list"] == "sub-s03 sub-s10 sub-s19 sub-s29 sub-s43"
 
 
 def test_build_context_version_required(tmp_path):
     p = FsqcPipeline()
     config = make_config(tmp_path)
     args = make_args(version=None)
-    with patch.object(sys, "exit", side_effect=SystemExit):
-        try:
-            p.build_context("validation", config, args)
-        except SystemExit:
-            pass
+    with pytest.raises(SystemExit):
+        p.build_context("validation", config, args)
 
 
 def test_build_context_freesurfer_dir_required(tmp_path):
     p = FsqcPipeline()
     config = make_config(tmp_path)
     args = make_args(freesurfer_dir=None)
-    with patch.object(sys, "exit", side_effect=SystemExit):
-        try:
-            p.build_context("validation", config, args)
-        except SystemExit:
-            pass
+    with pytest.raises(SystemExit):
+        p.build_context("validation", config, args)
 
 
 def test_template_renders(tmp_path):
@@ -84,7 +90,7 @@ def test_template_renders(tmp_path):
     p = FsqcPipeline()
     config = make_config(tmp_path)
     args = make_args()
-    ctx = p.build_context("validation", config, args)
+    ctx = p.build_context("adhoc_ds", config, args)
     script = render_template(TEMPLATE_DIR / p.template_name, ctx)
     assert "xvfb-run" in script
     assert "fsqc" in script

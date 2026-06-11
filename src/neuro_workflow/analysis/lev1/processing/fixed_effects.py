@@ -7,8 +7,8 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
 from nilearn.glm.contrasts import compute_fixed_effects
-from nilearn.image import load_img
 
+from neuro_workflow.analysis.lev1.processing.imaging import cast_nifti_to_float32
 from neuro_workflow.analysis.lev1.processing.surface_data import (
     compute_surface_fixed_effects,
     SurfaceResult,
@@ -318,33 +318,22 @@ class FixedEffectsAnalyzer:
 
         # Save fixed effects maps. Cast volumetric outputs to float32 to avoid
         # the uint8 auto-scaling on to_filename() that nibabel applies when the
-        # input BOLD's header marks integer storage. Without this, variance maps
-        # get quantized to ~256 levels across cal_min..cal_max and most values
-        # truncate to 0. Surface (GIFTI) outputs are unaffected.
-        def _cast_volumetric_to_float32(img):
-            if self.hemisphere is not None:
-                return img  # surface (GIFTI) — leave alone
-            new_img = img.__class__(
-                img.get_fdata().astype('float32'),
-                img.affine,
-                header=img.header,
-            )
-            new_img.set_data_dtype('float32')
-            return new_img
+        # input BOLD's header marks integer storage (see imaging.cast_nifti_to_float32).
+        is_surface = self.hemisphere is not None
 
         if results['fixed_effect'] is not None:
             effect_path = output_dir / f'{base_filename}{file_ext}'
-            _cast_volumetric_to_float32(results['fixed_effect']).to_filename(effect_path)
+            cast_nifti_to_float32(results['fixed_effect'], is_surface=is_surface).to_filename(effect_path)
             saved_files['fixed_effect'] = effect_path
 
         if results['fixed_variance'] is not None:
             variance_path = output_dir / f'{base_filename}-variance{file_ext}'
-            _cast_volumetric_to_float32(results['fixed_variance']).to_filename(variance_path)
+            cast_nifti_to_float32(results['fixed_variance'], is_surface=is_surface).to_filename(variance_path)
             saved_files['fixed_variance'] = variance_path
 
         if results['fixed_stat'] is not None:
             stat_path = output_dir / f'{base_filename}-z_score{file_ext}'
-            _cast_volumetric_to_float32(results['fixed_stat']).to_filename(stat_path)
+            cast_nifti_to_float32(results['fixed_stat'], is_surface=is_surface).to_filename(stat_path)
             saved_files['fixed_stat'] = stat_path
 
         return saved_files

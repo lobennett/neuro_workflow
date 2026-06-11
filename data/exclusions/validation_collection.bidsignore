@@ -1,0 +1,47 @@
+# Human-curated data-collection / anatomical exclusions (validation).
+#
+# This file is the ONE place manual editing is expected. It holds the
+# exclusions that do NOT come from a QC generator: incomplete/legacy
+# acquisitions, anatomical-quality calls, irreconcilable-BOLD (no behavioral
+# data), and prematurely-ended <50%-TR scans. Lines are copied VERBATIM from
+# the operational validation .bidsignore. `neuro-run exclusions
+# render-bidsignore` prepends this block to the generated QC scan-lines.
+#
+# 3D BOLD scans (dim4=1) — incomplete acquisitions
+sub-s480/ses-03/func/sub-s480_ses-03_task-goNogo_run-1_echo-*_bold.*
+# s480 ses-03 nBack run-1: 3 of 505 TRs (1%) — scan terminated immediately
+sub-s480/ses-03/func/sub-s480_ses-03_task-nBack_run-1_echo-*_bold.*
+
+# Anatomical quality exclusions (per collaborator review)
+# s1127 ses-01 T1w SagMPRAGE: heavy ringing, use not recommended; ses-09 is clean
+sub-s1127/ses-01/anat/sub-s1127_ses-01_acq-SagMPRAGE_run-1_T1w.*
+# s1258 ses-01 T1w SagMPRAGE: mild ringing; ses-06 is better
+sub-s1258/ses-01/anat/sub-s1258_ses-01_acq-SagMPRAGE_run-1_T1w.*
+# s1270 ses-06 T1w SagMPRAGE: ringing; ses-01 is very slightly better
+sub-s1270/ses-06/anat/sub-s1270_ses-06_acq-SagMPRAGE_run-1_T1w.*
+# s216 ses-01 T1w SagMPRAGE: heavy ringing; ses-11 is slightly better
+sub-s216/ses-01/anat/sub-s216_ses-01_acq-SagMPRAGE_run-1_T1w.*
+
+# Irreconcilable BOLD — no behavioral data exists
+# s300 ses-08 flanker: behavioral lost in server crash, makeup in ses-09
+sub-s300/ses-08/func/sub-s300_ses-08_task-flanker_run-*_echo-*_bold.*
+# s1292 ses-04 nBack: scanner failure, no behavioral data
+sub-s1292/ses-04/func/sub-s1292_ses-04_task-nBack_run-*_echo-*_bold.*
+# s1175 ses-11 cuedTSWFlanker: missing behavioral per scan notes
+sub-s1175/ses-11/func/sub-s1175_ses-11_task-cuedTSWFlanker_run-*_echo-*_bold.*
+
+# Prematurely ended scans — insufficient TRs for GLM
+# s394 ses-04 cuedTS: 2 of 329 TRs (1%)
+sub-s394/ses-04/func/sub-s394_ses-04_task-cuedTS_run-*_echo-*_bold.*
+# s373 ses-02 spatialTS: 12 of 328 TRs (4%)
+sub-s373/ses-02/func/sub-s373_ses-02_task-spatialTS_run-*_echo-*_bold.*
+# s599 ses-02 rest: 31 of 156 TRs (20%)
+sub-s599/ses-02/func/sub-s599_ses-02_task-rest_run-*_echo-*_bold.*
+# s216 ses-05 directedForgetting: 94 of 405 TRs (23%)
+sub-s216/ses-05/func/sub-s216_ses-05_task-directedForgetting_run-*_echo-*_bold.*
+# s956 ses-04 cuedTS: 155 of 329 TRs (47%)
+sub-s956/ses-04/func/sub-s956_ses-04_task-cuedTS_run-*_echo-*_bold.*
+# s1058 ses-02 directedForgetting: 196 of 405 TRs (48%)
+sub-s1058/ses-02/func/sub-s1058_ses-02_task-directedForgetting_run-*_echo-*_bold.*
+# s247 ses-11 stopSignalWDirectedForgetting: 345 of 715 TRs (48%)
+sub-s247/ses-11/func/sub-s247_ses-11_task-stopSignalWDirectedForgetting_run-*_echo-*_bold.*

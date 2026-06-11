@@ -1,6 +1,6 @@
-import sys
 from argparse import Namespace
-from unittest.mock import patch
+
+import pytest
 
 from neuro_workflow.pipelines.freesurfer import FreesurferPipeline
 
@@ -62,11 +62,30 @@ def test_build_context_version_required(tmp_path):
     p = FreesurferPipeline()
     config = make_config(tmp_path)
     args = make_args(tmp_path, version=None)
-    with patch.object(sys, "exit", side_effect=SystemExit):
-        try:
-            p.build_context("discovery", config, args)
-        except SystemExit:
-            pass
+    with pytest.raises(SystemExit):
+        p.build_context("discovery", config, args)
+
+
+def test_n_subjects_equals_data_rows_and_ignores_trailing_blank(tmp_path):
+    """The subjects CSV has NO header: every non-blank row is one subject, and
+    the sbatch template selects row N for SLURM_ARRAY_TASK_ID=N over array
+    1..n_subjects. n_subjects must therefore equal the number of data rows, and
+    a trailing blank line must NOT inflate the count (else the array would index
+    past the last `sed` line). Pins count<->indexing agreement (no off-by-one).
+    """
+    csv = tmp_path / "subs_fs_3rows.csv"  # distinct from make_csv's default file
+    # 3 data rows + a trailing newline producing a blank final element.
+    csv.write_text("s03,ses-01,1,ses-01,1\ns04,ses-02,1,,\ns05,ses-01,1,,\n")
+    config = make_config(tmp_path)
+    args = make_args(tmp_path, subjects_file=str(csv))
+    ctx = FreesurferPipeline().build_context("discovery", config, args)
+    assert ctx["n_subjects"] == 3
+
+    # The template's last addressable row is `sed -n "<n_subjects>p"`; it must be
+    # a real data row, never a blank line, so the array never reads nothing.
+    rows = [ln for ln in csv.read_text().splitlines() if ln.strip()]
+    assert len(rows) == ctx["n_subjects"]
+    assert rows[ctx["n_subjects"] - 1].startswith("s05")
 
 
 def test_template_renders(tmp_path):
