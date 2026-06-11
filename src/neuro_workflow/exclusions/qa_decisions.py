@@ -99,7 +99,10 @@ class QADecisionsGenerator:
             )
 
         decisions = load_decisions(args.decisions_tsv)
-        sample = load_dataset_subjects(dataset_config)
+        # Canonical roster from pipeline_config.json `samples` (fail-loud on an
+        # unknown dataset). Cross-sample rows (e.g. validation subjects in a
+        # discovery compile) are dropped here — the bug this fix closes.
+        sample = load_dataset_subjects(dataset_name)
 
         entries: list[dict] = []
         n_scan = n_expanded = n_subj_rows = n_review = n_pass = 0
@@ -113,13 +116,13 @@ class QADecisionsGenerator:
                 continue
             # decision.action == "exclude"
             if isinstance(key, ScanKey):
-                if sample is not None and _norm_sub(key.subject) not in sample:
+                if _norm_sub(key.subject) not in sample:
                     continue
                 entries.append(_entry_from_scan_key(key, decision.reason))
                 n_scan += 1
             else:
                 # subject-level: key is a bare subject string.
-                if sample is not None and _norm_sub(key) not in sample:
+                if _norm_sub(key) not in sample:
                     continue
                 n_subj_rows += 1
                 bids_dir = Path(dataset_config["bids_dir"])

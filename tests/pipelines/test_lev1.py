@@ -1,9 +1,53 @@
 from argparse import Namespace
 from pathlib import Path
 
-from neuro_workflow.pipelines.lev1 import Lev1Pipeline, BASE_TASKS, DUAL_TASKS, ALL_TASKS
+import pytest
+
+from neuro_workflow.pipelines.lev1 import Lev1Pipeline
+from neuro_workflow.analysis.task_config.loader import get_base_tasks, get_dual_tasks, get_all_tasks
 from neuro_workflow.pipelines.base import get_pipeline, TEMPLATE_DIR
 from neuro_workflow.core.slurm import render_template
+
+
+def test_lev1_build_context_no_exclusions_file_and_no_compiled_exits(tmp_path, monkeypatch):
+    """With --exclusions-file unset AND no compiled exclusions for the dataset,
+    build_context must sys.exit(1) (the 'run exclusions compile first' guard),
+    not silently proceed with no exclusions."""
+    # Redirect the exclusions store so _compiled_path points at an empty tmp dir
+    # (guarantees no compiled file exists for this dataset; never touches the
+    # real ~/.config store).
+    monkeypatch.setattr(
+        "neuro_workflow.core.exclusions.EXCLUSIONS_DIR", tmp_path / "exclusions"
+    )
+    subs = tmp_path / "subs.txt"
+    subs.write_text("s03\n")
+
+    p = Lev1Pipeline()
+    dataset_config = {
+        "bids_dir": str(tmp_path / "bids"),
+        "subjects_file": str(subs),
+        "partition": "russpold",
+        "mail_user": None,
+    }
+    args = Namespace(
+        tasks=["flanker"],
+        tasks_flag=None,
+        fmriprep_dir="/oak/data/derivatives/fmriprep",
+        results_dir=str(tmp_path / "results"),
+        exclusions_file=None,  # the branch under test
+        space="MNI",
+        threshold=1.0,
+        smoothing_fwhm=None,
+        residuals=False,
+        fc_confounds=False,
+        skip_existing=False,
+        nthreads=None,
+        mem_gb=None,
+        time=None,
+    )
+
+    with pytest.raises(SystemExit):
+        p.build_context("brand_new_dataset_no_compiled", dataset_config, args)
 
 
 def test_lev1_pipeline_is_registered():
@@ -30,9 +74,9 @@ def test_lev1_template_exists():
 
 
 def test_lev1_task_constants():
-    assert len(BASE_TASKS) == 8
-    assert len(DUAL_TASKS) == 10
-    assert ALL_TASKS == BASE_TASKS + DUAL_TASKS
+    assert len(get_base_tasks()) == 8
+    assert len(get_dual_tasks()) == 10
+    assert get_all_tasks() == get_base_tasks() + get_dual_tasks()
 
 
 def test_lev1_build_context_base_tasks(tmp_path):
@@ -200,6 +244,47 @@ def test_lev1_build_context_default_results_dir(tmp_path):
 
     expected = str(Path(bids_dir) / "derivatives" / "lev1")
     assert ctx["results_dir"] == expected
+
+
+def test_lev1_build_context_resolves_canonical_discovery_subjects(tmp_path):
+    """V2 unblock: lev1 build_context resolves discovery's 5 canonical subjects
+    from pipeline_config.json `samples`, WITHOUT any subjects_*.txt file. The
+    job_list pairs each of the 5 subjects with each requested task."""
+    exclusions = tmp_path / "exclusions.json"
+    exclusions.write_text("[]")
+
+    p = Lev1Pipeline()
+    dataset_config = {
+        "bids_dir": str(tmp_path / "bids"),
+        # Bogus/missing registered file: must be ignored for a known sample.
+        "subjects_file": "subjects_discovery.txt",
+        "partition": "russpold",
+        "mail_user": None,
+    }
+    args = Namespace(
+        tasks=["flanker"],
+        tasks_flag=None,
+        fmriprep_dir="/oak/data/derivatives/fmriprep",
+        results_dir=str(tmp_path / "results"),
+        exclusions_file=str(exclusions),
+        space="surface",
+        threshold=1.0,
+        smoothing_fwhm=None,
+        residuals=False,
+        fc_confounds=False,
+        skip_existing=False,
+        nthreads=None,
+        mem_gb=None,
+        time=None,
+    )
+
+    ctx = p.build_context("discovery", dataset_config, args)
+
+    # 5 discovery subjects x 1 task = 5 jobs
+    assert ctx["n_jobs"] == 5
+    job_list = Path(ctx["job_list_file"])
+    subs_in_jobs = [line.split()[0] for line in job_list.read_text().split()[::2]]
+    assert subs_in_jobs == ["s03", "s10", "s19", "s29", "s43"]
 
 
 def test_lev1_render_full_template(tmp_path):

@@ -118,7 +118,7 @@ def test_surface_smoothing_uses_fsaverage6_when_bold_is_fsaverage6(tmp_path, mon
     import numpy as np
     import pandas as pd
 
-    from neuro_workflow.analysis.lev1 import run as run_module
+    from neuro_workflow.analysis.lev1 import runner as run_module
 
     # Lay down a SUBJECTS_DIR with both a subject-specific recon and the
     # group template, mimicking what fmriprep deposits.
@@ -209,7 +209,7 @@ def test_analysis_run_skips_plot_loop_when_flag_set(tmp_path, monkeypatch):
     Contrast files must still be written — the flag must only gate the
     matplotlib render loop.
     """
-    from neuro_workflow.analysis.lev1 import run as run_module
+    from neuro_workflow.analysis.lev1 import runner as run_module
 
     # Stubs: surface data, SurfaceGLM, plot function
     n_tp = 100
@@ -294,7 +294,7 @@ def test_analysis_run_skips_plot_loop_when_flag_set(tmp_path, monkeypatch):
 
 def test_analysis_run_keeps_plot_loop_when_flag_unset(tmp_path, monkeypatch):
     """When ``args.skip_qc_plots=False`` (default), plots are generated."""
-    from neuro_workflow.analysis.lev1 import run as run_module
+    from neuro_workflow.analysis.lev1 import runner as run_module
 
     n_tp = 100
     monkeypatch.setattr(

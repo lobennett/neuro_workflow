@@ -16,28 +16,41 @@ uv run python scripts/trim_bold.py /scratch/users/logben/discovery_bids
 ## Project Structure
 
 ### Key Directories
-- `src/neuro_workflow/` - Main package (bidsify pipeline, events, CLI)
+- `src/neuro_workflow/` - Main package (bidsify pipeline, events, CLI, analysis, QA)
 - `scripts/` - Standalone post-bidsify scripts
 - `tests/` - Test suite
-- `docs/` - Documentation (4 authoritative files)
-- `config/` - Configuration and reviewed manifests
+- `docs/` - Documentation (6 authoritative files)
+- `config/` - Configuration, thresholds, and reviewed manifests
 
 ### Authoritative Documentation
-1. **`docs/WORKFLOW.md`** - Reproducible pipeline: Flywheel to final BIDS (Steps 1-9)
+1. **`docs/WORKFLOW.md`** - Reproducible pipeline: Flywheel to lev2 (Steps 1-14)
 2. **`docs/EXCLUSIONS.md`** - Every .bidsignore entry with reason and cross-references
 3. **`docs/SCAN-NOTES.md`** - Raw data collection notes per subject
 4. **`docs/ARCHITECTURE.md`** - Package structure and module reference
+5. **`docs/PROVENANCE.md`** - Run-manifest schema, dataset_description, clean-tree policy
+6. **`docs/CONFIG.md`** - thresholds.yaml and battery.yaml schema and usage
 
 ### Scripts
 - **`scripts/trim_bold.py`** -- Trim 7 dummy volumes from BOLD NIfTIs. Idempotent (checks sidecar for `NumberOfVolumesDiscardedByUser`). Atomic writes (temp file + rename). Skips corrupt files.
 - **`scripts/reconcile_sessions.py`** -- Read-only: match BIDS functional scans to raw behavioral CSVs. Produces TSV manifest with cross-session context and SCAN-NOTES annotations.
 - **`scripts/migrate_behavioral.py`** -- Consumes reviewed manifest, copies behavioral CSVs to BIDS sourcedata with BIDS naming. Supports `dest_run` for multi-run cases.
+- **`scripts/migrate_archive.py`** -- Copy out-of-scanner behavioral + survey data to sourcedata.
 - **`scripts/check_tr.sh`** -- Compare each scan's TR count against the expected (mode) for its task. Flags deviations.
+- **`scripts/fmriprep_preflight.py`** -- Pre-flight checks before submitting fMRIPrep jobs (BIDS validity, subject list, output dir).
+- **`scripts/lev1_outliers.py`** (+`run_lev1_outliers.sbatch`) -- Generate lev1 outlier exclusion report across cohort; flags VIF and motion outliers.
+- **`scripts/qa_report.py`** (+`run_qa_report.sbatch`) -- Build cohort HTML QA dashboard from fMRIPrep derivatives; feeds `qa_decisions` exclusion generator.
+- **`scripts/audit_subject_flywheel_vs_bids.py`** -- Per-subject audit: compare Flywheel manifest vs. BIDS output.
+- **`scripts/audit_events_vs_task_configs.py`** -- Validate events TSVs against task YAML configs; reports mismatches.
+- **`scripts/iproc_scatter.py`**, **`scripts/iproc_tedana_scatter.py`**, **`scripts/iproc_parallel_run.py`**, **`scripts/iproc_ingest_fmriprep_fs.sh`** -- iProc precision-pipeline SLURM controller scripts (per-subject multi-echo preproc; do not modify).
 
 ### Config
 - `config/pipeline_config.json` - Subject lists, session overrides, Flywheel aliases
+- `config/thresholds.yaml` - Study-level QC/motion/VIF thresholds (loaded by `core/thresholds.py`)
 - `config/manifests/reconciliation_discovery.tsv` - Reviewed behavioral-BOLD manifest (discovery)
 - `config/manifests/reconciliation_validation.tsv` - Reviewed behavioral-BOLD manifest (validation)
+
+### Forked-out repos
+MSHBM, prevalence analysis, parcellation reliability, and XCP-D are NOT in this repo. They live in the separate `network_analysis` repository (`github.com/lobennett/network_analysis`).
 
 ## Pipeline Overview
 
@@ -59,6 +72,7 @@ uv run python scripts/reconcile_sessions.py \
 
 # 4. Review manifest (resolve pending rows)
 # 5. Update .bidsignore (document in docs/EXCLUSIONS.md)
+#    Generate: uv run neuro-run exclusions render-bidsignore discovery --output <bids_dir>/.bidsignore
 
 # 6. Migrate behavioral data
 uv run python scripts/migrate_behavioral.py \
@@ -68,8 +82,24 @@ uv run python scripts/migrate_behavioral.py \
   --sample discovery --strict
 
 # 7. Validate
-# 8. Generate event files (src/neuro_workflow/events/)
-# 9. fMRIPrep with --dummy-scans 0
+# 8. Generate event files
+uv run neuro-run events create discovery
+uv run neuro-run events qc discovery
+
+# 9. Compile exclusions (behavioral QC)
+uv run neuro-run exclusions generate behavioral discovery
+uv run neuro-run exclusions compile discovery
+
+# 10. fMRIPrep (--dummy-scans 0 already set in template)
+uv run neuro-run submit fmriprep discovery
+
+# 11. Motion exclusions (after fMRIPrep)
+uv run neuro-run exclusions generate motion discovery
+uv run neuro-run exclusions compile discovery
+
+# 12. First-level GLM
+uv run neuro-run submit lev1 discovery
+# Each run emits run-manifest.json + dataset_description.json (see docs/PROVENANCE.md)
 ```
 
 ### Re-running a single subject
@@ -104,9 +134,9 @@ These are handled in the reconciliation manifests by remapping `dest_session`.
 
 ## Testing
 ```bash
-uv run pytest tests/ -v                        # Full suite (excluding tests/analysis/)
-uv run pytest tests/scripts/ -v                 # Scripts tests only
-uv run pytest tests/ --ignore=tests/analysis -v # Skip optional-dep tests
+uv run pytest tests/ --ignore=tests/analysis -q   # Core suite (~570 tests)
+uv run pytest tests/scripts/ -v                    # Scripts tests only
+uv run pytest tests/ -v                            # Full suite (includes analysis/lev1)
 ```
 
 ## SLURM/Container
@@ -143,4 +173,4 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 ```
 
 ## Last Updated
-2026-04-11
+2026-06-09

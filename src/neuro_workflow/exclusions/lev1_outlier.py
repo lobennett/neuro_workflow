@@ -18,16 +18,19 @@ from argparse import ArgumentParser, Namespace
 from dataclasses import dataclass
 from pathlib import Path
 
+from neuro_workflow.core.thresholds import lev1_outlier as _lev1_thresholds
 from neuro_workflow.exclusions.base import load_dataset_subjects, register_generator
+
+_LEV1 = _lev1_thresholds()
 
 
 @dataclass(frozen=True)
 class Thresholds:
-    """Auto-exclude thresholds. Defaults match spec defaults."""
-    combined_vif: float = 10.0
-    combined_outlier_pct: float = 10.0
-    strict_vif: float = 15.0
-    strict_outlier_pct: float = 15.0
+    """Auto-exclude thresholds. Defaults sourced from config/thresholds.yaml."""
+    combined_vif: float = _LEV1["combined_vif"]
+    combined_outlier_pct: float = _LEV1["combined_outlier_pct"]
+    strict_vif: float = _LEV1["strict_vif"]
+    strict_outlier_pct: float = _LEV1["strict_outlier_pct"]
 
 
 def _to_float_or_zero(value: str | None) -> float:
@@ -138,10 +141,10 @@ class Lev1OutlierGenerator:
             "--lev1-outliers-csv", type=Path,
             help="Path to cohort QC's lev1_outliers.csv (required when source=lev1_outlier).",
         )
-        parser.add_argument("--combined-vif", type=float, default=10.0)
-        parser.add_argument("--combined-outlier-pct", type=float, default=10.0)
-        parser.add_argument("--strict-vif", type=float, default=15.0)
-        parser.add_argument("--strict-outlier-pct", type=float, default=15.0)
+        parser.add_argument("--combined-vif", type=float, default=_LEV1["combined_vif"])
+        parser.add_argument("--combined-outlier-pct", type=float, default=_LEV1["combined_outlier_pct"])
+        parser.add_argument("--strict-vif", type=float, default=_LEV1["strict_vif"])
+        parser.add_argument("--strict-outlier-pct", type=float, default=_LEV1["strict_outlier_pct"])
 
     def generate(
         self,
@@ -160,16 +163,17 @@ class Lev1OutlierGenerator:
                 "lev1_outlier generator requires --lev1-outliers-csv"
             )
         rows = _read_outliers_csv(args.lev1_outliers_csv)
-        sample = load_dataset_subjects(dataset_config)
-        if sample is not None:
-            before = len(rows)
-            rows = [r for r in rows if r["subject"] in sample]
-            dropped = before - len(rows)
-            if dropped:
-                print(
-                    f"lev1_outlier: dropped {dropped}/{before} rows whose subject "
-                    f"is not in dataset '{dataset_name}' ({len(sample)} subjects)."
-                )
+        # Canonical roster from pipeline_config.json `samples` (fail-loud on an
+        # unknown dataset). Drops cross-sample rows from a pooled QC CSV.
+        sample = load_dataset_subjects(dataset_name)
+        before = len(rows)
+        rows = [r for r in rows if r["subject"] in sample]
+        dropped = before - len(rows)
+        if dropped:
+            print(
+                f"lev1_outlier: dropped {dropped}/{before} rows whose subject "
+                f"is not in dataset '{dataset_name}' ({len(sample)} subjects)."
+            )
         return _aggregate_to_scan_entries(rows, thresholds)
 
 

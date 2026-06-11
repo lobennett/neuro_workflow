@@ -1,9 +1,9 @@
 {
   "dataset": "discovery",
-  "compiled_at": "2026-05-17T22:15:55Z",
-  "compiled_at_code_sha": "3563c75+dirty",
+  "compiled_at": "2026-06-11T18:11:27Z",
+  "compiled_at_code_sha": "522c77a+dirty",
   "compiled_path": "/home/users/logben/.neuro_workflow/exclusions/discovery/compiled_exclusions.json",
-  "n_total_entries": 13,
+  "n_total_entries": 3,
   "n_overrides": 0,
   "sources": [
     {
@@ -54,8 +54,8 @@
     },
     {
       "generator": "qa_decisions",
-      "ran_at": "2026-05-17T22:15:50Z",
-      "code_sha": "3563c75+dirty",
+      "ran_at": "2026-06-11T18:11:14Z",
+      "code_sha": "522c77a+dirty",
       "args": {
         "command": "exclusions",
         "excl_command": "generate",
@@ -71,9 +71,9 @@
         "combined_outlier_pct": 10.0,
         "strict_vif": 15.0,
         "strict_outlier_pct": 15.0,
-        "decisions_tsv": "/home/users/logben/neuro_workflow/config/manifests/qc_decisions.tsv"
+        "decisions_tsv": "config/manifests/qc_decisions.tsv"
       },
-      "n_entries": 13
+      "n_entries": 3
     }
   ]
 }
