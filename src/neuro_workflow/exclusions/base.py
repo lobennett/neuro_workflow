@@ -34,28 +34,25 @@ def list_generators() -> dict[str, ExclusionGenerator]:
     return dict(_REGISTRY)
 
 
-def load_dataset_subjects(dataset_config: dict) -> set[str] | None:
-    """Return the dataset's subject IDs (with `sub-` prefix) from `subjects_file`,
-    or None if the config has no resolvable subjects file. Bare IDs in the file
-    (e.g. `s10`) are normalised to `sub-s10` to match BIDS-prefixed entity IDs.
+def load_dataset_subjects(dataset_name: str) -> set[str]:
+    """Return the dataset's subject IDs (with `sub-` prefix) for filtering.
+
+    The canonical source is ``config/pipeline_config.json`` -> ``samples``
+    (via :func:`neuro_workflow.core.config.resolve_dataset_subjects`), NOT the
+    removed root ``subjects_*.txt`` files. Bare IDs (e.g. ``s10``) are
+    normalised to ``sub-s10`` to match BIDS-prefixed entity IDs.
+
+    Fail-loud: an unknown ``dataset_name`` raises ``ValueError`` (propagated
+    from ``resolve_dataset_subjects``). There is NO silent ``None`` return — a
+    generator that can't resolve a dataset's roster must surface that rather
+    than silently applying no subject filter (the bug this fix closes).
     """
-    raw = dataset_config.get("subjects_file")
-    if not raw:
-        return None
-    path = Path(raw)
-    if not path.is_absolute():
-        # subjects_file is stored relative to the cwd at registration time.
-        # Try cwd first; the user runs CLI from the repo root.
-        path = Path.cwd() / raw
-    if not path.is_file():
-        return None
-    subjects: set[str] = set()
-    for line in path.read_text().splitlines():
-        sid = line.strip()
-        if not sid or sid.startswith("#"):
-            continue
-        subjects.add(sid if sid.startswith("sub-") else f"sub-{sid}")
-    return subjects or None
+    from neuro_workflow.core.config import resolve_dataset_subjects
+
+    return {
+        sid if sid.startswith("sub-") else f"sub-{sid}"
+        for sid in resolve_dataset_subjects(dataset_name)
+    }
 
 
 def _jsonify(value):

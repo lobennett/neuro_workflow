@@ -10,8 +10,11 @@ from neuro_workflow.analysis.task_config.loader import (
     get_dual_tasks,
 )
 from neuro_workflow.core.exclusions import _compiled_path
-from neuro_workflow.core.slurm import load_subjects
-from neuro_workflow.pipelines.base import LocalAnalysisPipeline, register
+from neuro_workflow.pipelines.base import (
+    LocalAnalysisPipeline,
+    register,
+    resolve_pipeline_subjects,
+)
 
 
 class Lev1Pipeline(LocalAnalysisPipeline):
@@ -52,8 +55,10 @@ class Lev1Pipeline(LocalAnalysisPipeline):
         else:
             tasks = args.tasks
 
-        # Load subjects
-        subjects = load_subjects(dataset_config["subjects_file"])
+        # Canonical subject resolution (pipeline_config.json `samples`),
+        # fail-loud. The (subject, task) pairs are baked into job_list.txt
+        # below, so no separate subjects file is needed for the array.
+        subjects = resolve_pipeline_subjects(dataset_name, dataset_config)
 
         # Resolve results dir (default: {bids_dir}/derivatives/lev1)
         if args.results_dir:

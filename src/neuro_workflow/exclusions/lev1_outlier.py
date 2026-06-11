@@ -163,16 +163,17 @@ class Lev1OutlierGenerator:
                 "lev1_outlier generator requires --lev1-outliers-csv"
             )
         rows = _read_outliers_csv(args.lev1_outliers_csv)
-        sample = load_dataset_subjects(dataset_config)
-        if sample is not None:
-            before = len(rows)
-            rows = [r for r in rows if r["subject"] in sample]
-            dropped = before - len(rows)
-            if dropped:
-                print(
-                    f"lev1_outlier: dropped {dropped}/{before} rows whose subject "
-                    f"is not in dataset '{dataset_name}' ({len(sample)} subjects)."
-                )
+        # Canonical roster from pipeline_config.json `samples` (fail-loud on an
+        # unknown dataset). Drops cross-sample rows from a pooled QC CSV.
+        sample = load_dataset_subjects(dataset_name)
+        before = len(rows)
+        rows = [r for r in rows if r["subject"] in sample]
+        dropped = before - len(rows)
+        if dropped:
+            print(
+                f"lev1_outlier: dropped {dropped}/{before} rows whose subject "
+                f"is not in dataset '{dataset_name}' ({len(sample)} subjects)."
+            )
         return _aggregate_to_scan_entries(rows, thresholds)
 
 

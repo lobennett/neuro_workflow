@@ -5,6 +5,14 @@ from pathlib import Path
 CONFIG_DIR = Path.home() / ".neuro_workflow"
 CONFIG_FILE = CONFIG_DIR / "datasets.json"
 
+# Canonical, committed source of truth for which subjects belong to each
+# sample. Replaces the removed root subjects_*.txt files (PR1a). Lives at the
+# repo root: config.py is at src/neuro_workflow/core/config.py, so the repo
+# root is parents[3].
+PIPELINE_CONFIG_FILE = (
+    Path(__file__).resolve().parents[3] / "config" / "pipeline_config.json"
+)
+
 DEFAULTS = {
     "partition": "russpold",
     "image_dir": "/home/groups/russpold/singularity_images",
@@ -49,3 +57,40 @@ def get_dataset(name):
     merged = dict(DEFAULTS)
     merged.update(datasets[name])
     return merged
+
+
+def _load_samples() -> dict:
+    """Load the `samples` block from config/pipeline_config.json (canonical)."""
+    with open(PIPELINE_CONFIG_FILE) as f:
+        return json.load(f).get("samples", {})
+
+
+def resolve_dataset_subjects(dataset_name: str) -> list[str]:
+    """Return the canonical subject IDs for ``dataset_name`` (bare, e.g. ``s10``).
+
+    The authoritative source is ``config/pipeline_config.json`` -> ``samples``
+    (committed, version-controlled). This replaces the removed root
+    ``subjects_*.txt`` files. A sample may be either a list of IDs (discovery,
+    validation) or a dict of ``{id: reason}`` (excluded); both yield the IDs in
+    declaration order.
+
+    Fail-loud: an unknown ``dataset_name`` raises ``ValueError`` listing the
+    known samples. There is NO silent ``None``/empty return — a caller that
+    can't resolve subjects must surface that, not silently skip filtering.
+    """
+    samples = _load_samples()
+    if dataset_name not in samples:
+        known = ", ".join(sorted(samples)) or "(none)"
+        raise ValueError(
+            f"unknown sample '{dataset_name}': not a key under `samples` in "
+            f"{PIPELINE_CONFIG_FILE}. Known samples: {known}."
+        )
+    sample = samples[dataset_name]
+    if isinstance(sample, dict):
+        return list(sample.keys())
+    return list(sample)
+
+
+def is_known_sample(dataset_name: str) -> bool:
+    """True if ``dataset_name`` is a canonical sample in pipeline_config.json."""
+    return dataset_name in _load_samples()
