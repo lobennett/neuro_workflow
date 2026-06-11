@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from neuro_workflow.core.exclusions import (
     EXCLUSIONS_DIR,
     validate_entry,
@@ -13,6 +15,17 @@ from neuro_workflow.core.exclusions import (
     is_excluded,
     get_trim_info,
 )
+
+
+@pytest.fixture(autouse=True)
+def _isolate_lockfile_dir(tmp_path, monkeypatch):
+    """Redirect the committed-lockfile dir into tmp_path so compile_exclusions
+    tests never write `<dataset>_lock.json` into the version-controlled
+    data/exclusions/ tree (the source dir is already isolated per-test via the
+    EXCLUSIONS_DIR monkeypatch)."""
+    monkeypatch.setattr(
+        "neuro_workflow.core.exclusions.LOCKFILE_DIR", tmp_path / "lock"
+    )
 
 
 def test_validate_entry_valid():
@@ -63,6 +76,15 @@ def test_save_and_load_source_entries(tmp_path, monkeypatch):
     loaded = load_source_entries("discovery", "motion")
     assert len(loaded) == 1
     assert loaded[0]["subject"] == "sub-s01"
+
+
+def test_save_source_entries_rejects_invalid_entry(tmp_path, monkeypatch):
+    monkeypatch.setattr("neuro_workflow.core.exclusions.EXCLUSIONS_DIR", tmp_path)
+    bad_entries = [
+        {"subject": "sub-s01", "session": "ses-01"}  # missing task/run/action/reason
+    ]
+    with pytest.raises(ValueError):
+        save_source_entries("discovery", "motion", bad_entries)
 
 
 def test_save_and_load_overrides(tmp_path, monkeypatch):
@@ -188,6 +210,59 @@ def test_is_excluded(tmp_path, monkeypatch):
 
     assert is_excluded("sub-s01", "ses-01", "task-rest", "run-1", compiled) is True
     assert is_excluded("sub-s01", "ses-02", "task-rest", "run-1", compiled) is False
+
+
+def test_is_excluded_true_for_trim_action(tmp_path, monkeypatch):
+    """is_excluded must return True for action='trim' too, not just 'exclude'
+    (a trim entry still means the scan is dropped from lev1)."""
+    monkeypatch.setattr("neuro_workflow.core.exclusions.EXCLUSIONS_DIR", tmp_path)
+
+    entries = [
+        {
+            "subject": "sub-s03",
+            "session": "ses-11",
+            "task": "task-stop",
+            "run": "run-1",
+            "source": "neg-events",
+            "action": "trim",
+            "reason": "Non-monotonic",
+            "metrics": {"onset_trim_index": 161, "total_rows": 726, "rows_to_keep": 565},
+        }
+    ]
+    save_source_entries("test", "neg_events", entries)
+    save_overrides("test", [])
+    compiled = compile_exclusions("test")
+
+    assert is_excluded("sub-s03", "ses-11", "task-stop", "run-1", compiled) is True
+    # A non-matching scan is still not excluded.
+    assert is_excluded("sub-s03", "ses-11", "task-stop", "run-2", compiled) is False
+
+
+def test_compile_copies_to_bids_derivatives(tmp_path, monkeypatch):
+    """compile_exclusions(dataset, bids_dir=...) must also write
+    compiled_exclusions.json into <bids_dir>/derivatives/exclusions/."""
+    monkeypatch.setattr("neuro_workflow.core.exclusions.EXCLUSIONS_DIR", tmp_path / "src")
+
+    entries = [
+        {
+            "subject": "sub-s01",
+            "session": "ses-01",
+            "task": "task-rest",
+            "run": "run-1",
+            "source": "motion",
+            "action": "exclude",
+            "reason": "High FD",
+        }
+    ]
+    save_source_entries("test", "motion", entries)
+    save_overrides("test", [])
+
+    bids_dir = tmp_path / "bids"
+    compiled = compile_exclusions("test", bids_dir=str(bids_dir))
+
+    deriv_copy = bids_dir / "derivatives" / "exclusions" / "compiled_exclusions.json"
+    assert deriv_copy.is_file()
+    assert json.loads(deriv_copy.read_text()) == compiled
 
 
 def test_get_trim_info(tmp_path, monkeypatch):

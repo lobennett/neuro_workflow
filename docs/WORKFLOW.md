@@ -1,8 +1,8 @@
-# Pipeline: Flywheel to BIDS
+# Pipeline: Flywheel to BIDS and Analysis
 
-**Last updated:** 2026-04-11
+**Last updated:** 2026-06-09
 
-Exact commands to reproduce the BIDS datasets from Flywheel. Each step depends on the previous one.
+Exact commands to reproduce the BIDS datasets and run the analysis pipeline from Flywheel. Each stage depends on the previous one.
 
 ---
 
@@ -12,10 +12,12 @@ Exact commands to reproduce the BIDS datasets from Flywheel. Each step depends o
 module load uv          # Required for all uv run commands
 ```
 
-- Flywheel API credentials configured
+- Flywheel API credentials configured (`~/.config/flywheel/user.json` or `FW_API_KEY`)
 - Write access to `/scratch/users/logben/`
 - Write access to `/oak/stanford/groups/russpold/data/network_grant/sourcedata/`
 - Container image: `/home/groups/russpold/singularity_images/neuro_workflow.sif`
+
+---
 
 ## Step 1: Pull from Flywheel (bidsify)
 
@@ -31,7 +33,7 @@ uv run neuro-run submit bidsify validation \
   --output-dir /scratch/users/logben/validation_bids --overwrite
 ```
 
-To re-run a single subject without overwriting metadata:
+To re-run a single subject without overwriting full-run metadata:
 ```bash
 uv run neuro-run submit bidsify validation \
   --output-dir /scratch/users/logben/validation_bids \
@@ -41,6 +43,8 @@ uv run neuro-run submit bidsify validation \
 
 **Config:** `config/pipeline_config.json` (subject lists, session overrides, aliases)
 **Output:** NIfTI/JSON/physio in BIDS layout + `sourcedata/reconciliation.json`
+
+---
 
 ## Step 2: Trim 7 dummy BOLD volumes
 
@@ -58,6 +62,8 @@ sbatch --partition=russpold --mem=16G --time=08:00:00 \
 ```
 
 **After trimming:** Use `--dummy-scans 0` in fMRIPrep.
+
+---
 
 ## Step 3: Reconcile behavioral data
 
@@ -79,6 +85,8 @@ uv run python scripts/reconcile_sessions.py \
 
 **Output:** TSV with columns: subject, session, task, status, action, dest_session, dest_run, raw_path, bold_path, same_task_other_sessions, notes
 
+---
+
 ## Step 4: Review manifest
 
 Open the TSV manifests. Every row with `action=pending` must be resolved:
@@ -92,6 +100,8 @@ Open the TSV manifests. Every row with `action=pending` must be resolved:
 Cross-reference `docs/SCAN-NOTES.md` and `docs/EXCLUSIONS.md` for context.
 
 For subjects with split/skipped BIDS sessions (s321, s1445, s1326, s1391, s1258), apply +1 session offset from the split point onward.
+
+---
 
 ## Step 5: Update .bidsignore
 
@@ -109,6 +119,21 @@ bash scripts/check_tr.sh /scratch/users/logben/discovery_bids /scratch/users/log
 ```
 
 Document all exclusions in `docs/EXCLUSIONS.md`.
+
+To regenerate `.bidsignore` from the compiled exclusions source:
+```bash
+uv run neuro-run exclusions render-bidsignore discovery --output /scratch/users/logben/discovery_bids/.bidsignore
+uv run neuro-run exclusions render-bidsignore validation --output /scratch/users/logben/validation_bids/.bidsignore
+```
+
+To regenerate the Markdown exclusions table:
+```bash
+uv run neuro-run exclusions render-md discovery --output docs/EXCLUSIONS.md
+```
+
+Note: ingestion of the static collection-exclusion tables into the compiled single source is in progress (see PR5c).
+
+---
 
 ## Step 6: Migrate behavioral data
 
@@ -130,6 +155,8 @@ uv run python scripts/migrate_behavioral.py \
 
 **Output:** `sourcedata/in_scanner_behavior/sub-{subject}/ses-{session}/beh/` + `migration_report.json`
 
+---
+
 ## Step 7: Validate
 
 ```bash
@@ -142,19 +169,101 @@ singularity run -B /scratch/users/logben \
 # Use reconciliation TSVs: zero pending rows, all copy/skip/irreconcilable
 ```
 
+---
+
 ## Step 8: Generate event files
 
 ```bash
-# (TBD — uses src/neuro_workflow/events/)
-# Onsets adjusted by 7 * 1.49s = 10.43s for trimmed dummy volumes
-# Negative onset rows filtered out
+uv run neuro-run events create discovery
+uv run neuro-run events qc discovery
 ```
 
-## Step 9: Preprocessing (fMRIPrep)
+Onsets are adjusted by 7 × 1.49 s = 10.43 s for the trimmed dummy volumes. Negative-onset rows are filtered out.
+
+---
+
+## Step 9: Compile exclusions
+
+Generates and compiles all exclusion sources (behavioral QC, motion) into the dataset-level JSON that lev1 consumes.
 
 ```bash
-uv run neuro-run submit fmriprep discovery --dummy-scans 0
+# Generate behavioral exclusions from events QC
+uv run neuro-run exclusions generate behavioral discovery
+uv run neuro-run exclusions generate behavioral validation
+
+# Compile all sources into the compiled JSON
+uv run neuro-run exclusions compile discovery
+uv run neuro-run exclusions compile validation
+
+# Inspect the compiled result
+uv run neuro-run exclusions show discovery
+
+# Query a specific scan
+uv run neuro-run exclusions query discovery --subject s10 --session 03 --task goNogo
 ```
+
+---
+
+## Step 10: Preprocessing (fMRIPrep)
+
+```bash
+uv run neuro-run submit fmriprep discovery
+uv run neuro-run submit fmriprep validation
+```
+
+Use `--dummy-scans 0` in the fmriprep sbatch template (volumes were already trimmed in Step 2).
+
+---
+
+## Step 11: Post-processing (FreeSurfer, QSIPrep, Happy, fsqc)
+
+```bash
+uv run neuro-run submit freesurfer discovery
+uv run neuro-run submit qsiprep discovery
+uv run neuro-run submit happy discovery
+uv run neuro-run submit fsqc discovery
+```
+
+---
+
+## Step 12: Motion exclusions
+
+After fMRIPrep is complete, generate motion-based exclusions from confounds TSVs:
+
+```bash
+uv run neuro-run exclusions generate motion discovery
+uv run neuro-run exclusions compile discovery
+```
+
+Motion thresholds are set in `config/thresholds.yaml` (`motion.fd_threshold`, `motion.proportion_fd_threshold`, `motion.proportion_dvars_threshold`). See `docs/CONFIG.md`.
+
+---
+
+## Step 13: First-level GLM (lev1)
+
+```bash
+uv run neuro-run submit lev1 discovery
+uv run neuro-run submit lev1 validation
+```
+
+Each subject run emits:
+- `<output_dir>/run-manifest.json` — full provenance record (code SHA, tool versions, config version, input file hashes)
+- `<output_dir>/dataset_description.json` — BIDS derivative metadata
+
+To permit running against an uncommitted working tree (prints a warning; `code_dirty=true` in manifest):
+```bash
+uv run neuro-run submit lev1 discovery --allow-dirty
+```
+
+---
+
+## Step 14: Second-level group stats (lev2)
+
+```bash
+uv run neuro-run submit lev2 discovery
+```
+
+Lev2 reads the `run-manifest.json` from each lev1 subject directory and records an `input_provenance` block in its own manifest, so the full provenance chain is traceable. See `docs/PROVENANCE.md`.
 
 ---
 
@@ -163,13 +272,18 @@ uv run neuro-run submit fmriprep discovery --dummy-scans 0
 | File | Purpose |
 |------|---------|
 | `config/pipeline_config.json` | Subject lists, session overrides, Flywheel aliases |
+| `config/thresholds.yaml` | Study-level QC/motion/VIF thresholds (config-as-code) |
 | `config/manifests/reconciliation_*.tsv` | Reviewed behavioral-BOLD matching manifests |
 | `docs/EXCLUSIONS.md` | Why every scan is in .bidsignore |
 | `docs/SCAN-NOTES.md` | Raw data collection notes per subject |
+| `docs/CONFIG.md` | Schema and usage for thresholds.yaml and battery.yaml |
+| `docs/PROVENANCE.md` | Run-manifest schema and clean-tree policy |
 | `scripts/trim_bold.py` | Trim 7 dummy BOLD volumes (idempotent) |
 | `scripts/reconcile_sessions.py` | Match BIDS scans to raw behavioral CSVs |
 | `scripts/migrate_behavioral.py` | Copy behavioral to BIDS sourcedata per manifest |
 | `scripts/check_tr.sh` | Check for scans with unexpected TR counts |
+
+---
 
 ## Samples
 

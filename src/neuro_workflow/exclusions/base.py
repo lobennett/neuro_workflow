@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-import subprocess
 from argparse import ArgumentParser, Namespace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol, runtime_checkable
+
+# Canonical git-SHA helper lives in core.provenance (PR4a, DRY). Re-exported
+# here as `_git_sha` so existing importers and the committed exclusions
+# lockfiles stay byte-identical.
+from neuro_workflow.core.provenance import git_sha as _git_sha
 
 _REGISTRY: dict[str, ExclusionGenerator] = {}
 
@@ -30,63 +34,25 @@ def list_generators() -> dict[str, ExclusionGenerator]:
     return dict(_REGISTRY)
 
 
-def load_dataset_subjects(dataset_config: dict) -> set[str] | None:
-    """Return the dataset's subject IDs (with `sub-` prefix) from `subjects_file`,
-    or None if the config has no resolvable subjects file. Bare IDs in the file
-    (e.g. `s10`) are normalised to `sub-s10` to match BIDS-prefixed entity IDs.
+def load_dataset_subjects(dataset_name: str) -> set[str]:
+    """Return the dataset's subject IDs (with `sub-` prefix) for filtering.
+
+    The canonical source is ``config/pipeline_config.json`` -> ``samples``
+    (via :func:`neuro_workflow.core.config.resolve_dataset_subjects`), NOT the
+    removed root ``subjects_*.txt`` files. Bare IDs (e.g. ``s10``) are
+    normalised to ``sub-s10`` to match BIDS-prefixed entity IDs.
+
+    Fail-loud: an unknown ``dataset_name`` raises ``ValueError`` (propagated
+    from ``resolve_dataset_subjects``). There is NO silent ``None`` return — a
+    generator that can't resolve a dataset's roster must surface that rather
+    than silently applying no subject filter (the bug this fix closes).
     """
-    raw = dataset_config.get("subjects_file")
-    if not raw:
-        return None
-    path = Path(raw)
-    if not path.is_absolute():
-        # subjects_file is stored relative to the cwd at registration time.
-        # Try cwd first; the user runs CLI from the repo root.
-        path = Path.cwd() / raw
-    if not path.is_file():
-        return None
-    subjects: set[str] = set()
-    for line in path.read_text().splitlines():
-        sid = line.strip()
-        if not sid or sid.startswith("#"):
-            continue
-        subjects.add(sid if sid.startswith("sub-") else f"sub-{sid}")
-    return subjects or None
+    from neuro_workflow.core.config import resolve_dataset_subjects
 
-
-# Repo root resolved from this file's location: src/neuro_workflow/exclusions/base.py
-# -> parents[0]=exclusions, parents[1]=neuro_workflow, parents[2]=src, parents[3]=repo root.
-_REPO_ROOT = Path(__file__).resolve().parents[3]
-
-
-def _git_sha() -> str | None:
-    """Return the current git HEAD short SHA, with '+dirty' suffix if the working
-    tree has uncommitted changes. Returns None if git is unavailable or this is
-    not a git repo.
-
-    Subprocess runs with cwd=_REPO_ROOT so SLURM jobs invoked from scratch dirs
-    still resolve the correct repo (otherwise git fails when CWD is outside any
-    repo, and code_sha drops to null in production lockfiles).
-    """
-    try:
-        sha = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, check=True,
-            cwd=_REPO_ROOT,
-        ).stdout.strip()
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return None
-    if not sha:
-        return None
-    try:
-        dirty = bool(subprocess.run(
-            ["git", "status", "--porcelain"],
-            capture_output=True, text=True, check=True,
-            cwd=_REPO_ROOT,
-        ).stdout.strip())
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return sha
-    return f"{sha}+dirty" if dirty else sha
+    return {
+        sid if sid.startswith("sub-") else f"sub-{sid}"
+        for sid in resolve_dataset_subjects(dataset_name)
+    }
 
 
 def _jsonify(value):

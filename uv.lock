@@ -1313,6 +1313,19 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+all = [
+    { name = "bold-reliability-movies" },
+    { name = "flywheel-sdk" },
+    { name = "img2pdf" },
+    { name = "matplotlib" },
+    { name = "nibabel" },
+    { name = "nilearn" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "randomise-prep" },
+    { name = "seaborn" },
+    { name = "statsmodels" },
+]
 bidsify = [
     { name = "flywheel-sdk" },
 ]
@@ -1352,6 +1365,7 @@ requires-dist = [
     { name = "img2pdf", marker = "extra == 'qa'", specifier = ">=0.5" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "matplotlib", marker = "extra == 'qa'", specifier = ">=3.0" },
+    { name = "neuro-workflow", extras = ["lev1", "qa", "bidsify", "events"], marker = "extra == 'all'" },
     { name = "nibabel", marker = "extra == 'events'", specifier = ">=5.0" },
     { name = "nibabel", marker = "extra == 'qa'", specifier = ">=5.0" },
     { name = "nilearn", marker = "extra == 'qa'", specifier = ">=0.12" },
@@ -1365,7 +1379,7 @@ requires-dist = [
     { name = "statsmodels", marker = "extra == 'lev1'", specifier = ">=0.14" },
     { name = "tabulate", specifier = ">=0.10.0" },
 ]
-provides-extras = ["lev1", "qa", "bidsify", "events", "datalad"]
+provides-extras = ["lev1", "qa", "bidsify", "events", "datalad", "all"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=8.4.2" }]

@@ -4,7 +4,6 @@ import logging
 import re
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from neuro_workflow.events.qc_globals import (
@@ -284,7 +283,7 @@ def run_qc(
                         exclusion_entries.append({
                             "subject": sub_dir.name,
                             "session": ses_dir.name,
-                            "task": task_name,
+                            "task": f"task-{task_name}",
                             "run": run_label,
                             "action": "exclude",
                             "source": "behavioral-qc",
@@ -305,7 +304,7 @@ def run_qc(
                     exclusion_entries.append({
                         "subject": sub_dir.name,
                         "session": ses_dir.name,
-                        "task": task_name,
+                        "task": f"task-{task_name}",
                         "run": "run-1",
                         "action": "exclude",
                         "source": "behavioral-qc",
