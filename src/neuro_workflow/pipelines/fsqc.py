@@ -1,8 +1,11 @@
 import sys
 from argparse import ArgumentParser, Namespace
 
-from neuro_workflow.core.slurm import load_subjects
-from neuro_workflow.pipelines.base import ContainerPipeline, register
+from neuro_workflow.pipelines.base import (
+    ContainerPipeline,
+    register,
+    resolve_pipeline_subjects,
+)
 
 
 class FsqcPipeline(ContainerPipeline):
@@ -31,7 +34,7 @@ class FsqcPipeline(ContainerPipeline):
 
         resources = self._resolve(args)
 
-        subjects = load_subjects(dataset_config["subjects_file"])
+        subjects = resolve_pipeline_subjects(dataset_name, dataset_config)
         subjects_list = " ".join(
             f"sub-{s}" if not s.startswith("sub-") else s for s in subjects
         )

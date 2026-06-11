@@ -246,6 +246,47 @@ def test_lev1_build_context_default_results_dir(tmp_path):
     assert ctx["results_dir"] == expected
 
 
+def test_lev1_build_context_resolves_canonical_discovery_subjects(tmp_path):
+    """V2 unblock: lev1 build_context resolves discovery's 5 canonical subjects
+    from pipeline_config.json `samples`, WITHOUT any subjects_*.txt file. The
+    job_list pairs each of the 5 subjects with each requested task."""
+    exclusions = tmp_path / "exclusions.json"
+    exclusions.write_text("[]")
+
+    p = Lev1Pipeline()
+    dataset_config = {
+        "bids_dir": str(tmp_path / "bids"),
+        # Bogus/missing registered file: must be ignored for a known sample.
+        "subjects_file": "subjects_discovery.txt",
+        "partition": "russpold",
+        "mail_user": None,
+    }
+    args = Namespace(
+        tasks=["flanker"],
+        tasks_flag=None,
+        fmriprep_dir="/oak/data/derivatives/fmriprep",
+        results_dir=str(tmp_path / "results"),
+        exclusions_file=str(exclusions),
+        space="surface",
+        threshold=1.0,
+        smoothing_fwhm=None,
+        residuals=False,
+        fc_confounds=False,
+        skip_existing=False,
+        nthreads=None,
+        mem_gb=None,
+        time=None,
+    )
+
+    ctx = p.build_context("discovery", dataset_config, args)
+
+    # 5 discovery subjects x 1 task = 5 jobs
+    assert ctx["n_jobs"] == 5
+    job_list = Path(ctx["job_list_file"])
+    subs_in_jobs = [line.split()[0] for line in job_list.read_text().split()[::2]]
+    assert subs_in_jobs == ["s03", "s10", "s19", "s29", "s43"]
+
+
 def test_lev1_render_full_template(tmp_path):
     """Integration test: build context + render template produces valid script."""
     subs = tmp_path / "subs.txt"

@@ -441,6 +441,72 @@ def test_fmriprep_bids_dir_override_and_output_dir_are_mutually_exclusive():
         ])
 
 
+def test_fmriprep_resolves_canonical_sample_and_writes_subjects_file(tmp_path, monkeypatch):
+    """A canonical sample (discovery) resolves its 5 subjects from
+    pipeline_config.json `samples` -- NOT from a registered subjects_file --
+    and writes a real subjects file into the run's work dir for the sbatch."""
+    monkeypatch.setenv("SCRATCH", str(tmp_path / "scratch"))
+
+    p = FmriprepPipeline()
+    dataset_config = {
+        "bids_dir": "/oak/data/bids",
+        # Deliberately a bogus/nonexistent subjects_file: canonical resolution
+        # must ignore it for a known sample (this is the gap being fixed).
+        "subjects_file": "subjects_discovery.txt",
+        "partition": "russpold",
+        "image_dir": "/images",
+        "templateflow_dir": "/tf",
+        "mail_user": None,
+    }
+    args = Namespace(
+        version="25.2.4",
+        output_spaces="MNI152NLin2009cAsym:res-2",
+        fmriprep_args="",
+        fs_license="~/license.txt",
+        bids_filter_file=None,
+        nthreads=None,
+        mem_per_cpu_gb=None,
+        time=None,
+        output_dir=None,
+        bids_dir_override=None,
+    )
+
+    ctx = p.build_context("discovery", dataset_config, args)
+
+    # 5 discovery subjects -> array 1-5
+    assert ctx["n_subjects"] == 5
+    # The rendered subjects_file is the generated one in the work dir, not the
+    # registered relative path.
+    assert ctx["subjects_file"] != "subjects_discovery.txt"
+    assert ctx["subjects_file"].endswith("subjects.txt")
+    written = Path(ctx["subjects_file"])
+    assert written.is_file()
+    assert written.read_text().split() == ["s03", "s10", "s19", "s29", "s43"]
+
+
+def test_fmriprep_unknown_dataset_without_subjects_file_fails_loud(tmp_path, monkeypatch):
+    """An unknown sample with no resolvable subjects_file fails loud (no silent
+    empty SLURM array)."""
+    import pytest
+    monkeypatch.setenv("SCRATCH", str(tmp_path / "scratch"))
+    p = FmriprepPipeline()
+    dataset_config = {
+        "bids_dir": "/oak/data/bids",
+        "subjects_file": "/nonexistent/subjects_bogus.txt",
+        "partition": "russpold",
+        "image_dir": "/images",
+        "templateflow_dir": "/tf",
+        "mail_user": None,
+    }
+    args = Namespace(
+        version="25.2.4", output_spaces="", fmriprep_args="",
+        fs_license="~/license.txt", bids_filter_file=None, nthreads=None,
+        mem_per_cpu_gb=None, time=None, output_dir=None, bids_dir_override=None,
+    )
+    with pytest.raises(ValueError, match="cannot resolve subjects"):
+        p.build_context("not_a_sample", dataset_config, args)
+
+
 def test_fmriprep_template_includes_exit_1_workaround(tmp_path):
     """The rendered sbatch must detect fmriprep#3634 benign exit-1 and treat as success."""
     subs = tmp_path / "subs.txt"
