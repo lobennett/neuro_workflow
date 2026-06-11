@@ -2,8 +2,12 @@ import os
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from neuro_workflow.core.slurm import count_subjects
-from neuro_workflow.pipelines.base import ContainerPipeline, register
+from neuro_workflow.pipelines.base import (
+    ContainerPipeline,
+    register,
+    resolve_pipeline_subjects,
+    write_subjects_file,
+)
 
 
 class QsiprepPipeline(ContainerPipeline):
@@ -29,12 +33,16 @@ class QsiprepPipeline(ContainerPipeline):
         self._require_version(args)
         resources = self._resolve(args)
 
-        n_subjects = count_subjects(dataset_config["subjects_file"])
+        subjects = resolve_pipeline_subjects(dataset_name, dataset_config)
+        n_subjects = len(subjects)
         mem_mb = int(resources["nthreads"] * resources["mem_per_cpu_gb"] * 1000 * 0.9)
         fs_license = str(Path(args.fs_license).expanduser())
 
         scratch = os.environ.get("SCRATCH", "/tmp")
         work_dir = f"{scratch}/work/qsiprep_{dataset_name}_{args.version}"
+        subjects_file = str(
+            write_subjects_file(subjects, work_dir, "subjects.txt")
+        )
 
         return {
             **self._base_context(
@@ -45,7 +53,7 @@ class QsiprepPipeline(ContainerPipeline):
                 image_path=self._image_path(dataset_config, args.version),
             ),
             "n_subjects": n_subjects,
-            "subjects_file": dataset_config["subjects_file"],
+            "subjects_file": subjects_file,
             "bids_dir": dataset_config["bids_dir"],
             "work_dir": work_dir,
             "fs_license": fs_license,
