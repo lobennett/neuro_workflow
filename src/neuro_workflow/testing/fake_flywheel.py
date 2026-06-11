@@ -384,6 +384,20 @@ class FlywheelAcqSpec:
         n_trs: Timepoints in each synthesized BOLD NIfTI.
         with_physio: If True (func only), attach a gephysio analysis to the
             session for this acquisition so the physio branch is exercised.
+        outcome: For a func acquisition, the intended end-to-end exclusion
+            outcome the full-chain driver
+            (:func:`neuro_workflow.testing.simulate.simulate_full_pipeline`)
+            plants for the BIDS scan this acquisition becomes — one of
+            ``"keep"`` / ``"exclude:behavioral"`` / ``"exclude:motion"`` /
+            ``"exclude:collection"`` (the
+            :data:`neuro_workflow.testing.cohort.VALID_OUTCOMES` vocabulary).
+            Ignored by ``make_fake_flywheel`` itself (it only affects the
+            downstream behavioral CSV / confounds / collection-glob the driver
+            writes) and for non-func modalities.
+        plant_contrast: For a ``keep`` func acquisition, whether the driver
+            plants the known incongruent-congruent contrast into this scan's
+            fMRIPrep BOLD (the lev1 recovery scan). Exactly one acquisition in a
+            full-chain spec should set this.
     """
 
     label: str
@@ -391,6 +405,8 @@ class FlywheelAcqSpec:
     echoes: int = 3
     n_trs: int = 10
     with_physio: bool = False
+    outcome: str = "keep"
+    plant_contrast: bool = False
 
 
 @dataclass
