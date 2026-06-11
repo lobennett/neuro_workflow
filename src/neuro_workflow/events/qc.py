@@ -305,7 +305,7 @@ def run_qc(
                         "subject": sub_dir.name,
                         "session": ses_dir.name,
                         "task": f"task-{task_name}",
-                        "run": "run-1",
+                        "run": run_label,
                         "action": "exclude",
                         "source": "behavioral-qc",
                         "reason": excl["reason"],
