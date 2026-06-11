@@ -34,6 +34,62 @@ def list_pipelines() -> dict[str, Pipeline]:
     return dict(_REGISTRY)
 
 
+def resolve_pipeline_subjects(dataset_name: str, dataset_config: dict) -> list[str]:
+    """Resolve a pipeline's subject list (bare IDs, e.g. ``s10``), fail-loud.
+
+    Precedence:
+
+    1. If ``dataset_name`` is a canonical sample in ``pipeline_config.json``
+       (``discovery`` / ``validation`` / ``excluded``), return its committed
+       roster. This is the source of truth and works WITHOUT the removed
+       ``subjects_*.txt`` files.
+    2. Otherwise (an ad-hoc operational dataset like ``discovery_smoke``),
+       fall back to the registered ``subjects_file`` if it exists.
+
+    Fail-loud: if neither resolves, raise ``ValueError``. There is NO silent
+    empty/None path — a pipeline that can't enumerate subjects must surface it
+    rather than render an empty SLURM array.
+    """
+    from neuro_workflow.core.config import is_known_sample, resolve_dataset_subjects
+
+    if is_known_sample(dataset_name):
+        return resolve_dataset_subjects(dataset_name)
+
+    raw = dataset_config.get("subjects_file")
+    if raw:
+        path = Path(raw)
+        if not path.is_absolute():
+            path = Path.cwd() / raw
+        if path.is_file():
+            return [
+                line.strip()
+                for line in path.read_text().splitlines()
+                if line.strip() and not line.strip().startswith("#")
+            ]
+        missing = f" (registered subjects_file does not exist: {path})"
+    else:
+        missing = " (no subjects_file registered)"
+
+    raise ValueError(
+        f"cannot resolve subjects for dataset '{dataset_name}': it is not a "
+        f"canonical sample in pipeline_config.json and{missing}."
+    )
+
+
+def write_subjects_file(subjects: list[str], dest_dir, filename: str = "subjects.txt"):
+    """Write ``subjects`` (one bare ID per line) into ``dest_dir`` and return the path.
+
+    Pipelines call this at build time so the rendered sbatch references a real
+    file path, replacing the dependency on the now-removed registered
+    ``subjects_*.txt``. ``dest_dir`` is created if needed.
+    """
+    dest = Path(dest_dir)
+    dest.mkdir(parents=True, exist_ok=True)
+    out = dest / filename
+    out.write_text("\n".join(subjects) + "\n")
+    return out
+
+
 def build_mail_line(dataset_config: dict) -> str:
     """Build SBATCH mail directives from dataset config."""
     if dataset_config.get("mail_user"):

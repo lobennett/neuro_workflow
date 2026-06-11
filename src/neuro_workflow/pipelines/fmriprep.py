@@ -2,8 +2,12 @@ import os
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from neuro_workflow.core.slurm import count_subjects
-from neuro_workflow.pipelines.base import ContainerPipeline, register
+from neuro_workflow.pipelines.base import (
+    ContainerPipeline,
+    register,
+    resolve_pipeline_subjects,
+    write_subjects_file,
+)
 
 
 class FmriprepPipeline(ContainerPipeline):
@@ -43,7 +47,12 @@ class FmriprepPipeline(ContainerPipeline):
         nthreads = resources["nthreads"]
         mem_per_cpu_gb = resources["mem_per_cpu_gb"]
 
-        n_subjects = count_subjects(dataset_config["subjects_file"])
+        # Canonical subject resolution (pipeline_config.json `samples`),
+        # fail-loud. Write the list to a real file in the run's work dir so the
+        # rendered sbatch references an existing path (the registered
+        # subjects_*.txt was removed in PR1a).
+        subjects = resolve_pipeline_subjects(dataset_name, dataset_config)
+        n_subjects = len(subjects)
         mem_mb = int(nthreads * mem_per_cpu_gb * 1000 * 0.9)
 
         image_path = self._image_path(dataset_config, args.version)
@@ -51,6 +60,9 @@ class FmriprepPipeline(ContainerPipeline):
 
         scratch = os.environ.get("SCRATCH", "/tmp")
         work_dir = f"{scratch}/work/fmriprep_{dataset_name}_{args.version}"
+        subjects_file = str(
+            write_subjects_file(subjects, work_dir, "subjects.txt")
+        )
 
         bids_dir_override = getattr(args, "bids_dir_override", None)
         output_dir = getattr(args, "output_dir", None)
@@ -91,7 +103,7 @@ class FmriprepPipeline(ContainerPipeline):
             ),
             "n_subjects": n_subjects,
             "array_throttle": getattr(args, "array_throttle", 8),
-            "subjects_file": dataset_config["subjects_file"],
+            "subjects_file": subjects_file,
             "bids_dir": bids_dir_for_bind,
             "templateflow_dir": dataset_config["templateflow_dir"],
             "work_dir": work_dir,
