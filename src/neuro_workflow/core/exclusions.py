@@ -37,7 +37,9 @@ def _sources_dir(dataset_name: str) -> Path:
 
 
 def _overrides_path(dataset_name: str) -> Path:
-    return EXCLUSIONS_DIR / dataset_name / "overrides.json"
+    # Overrides are hand-curated and committed alongside the lockfile (version-controlled),
+    # not machine-local like the generator sources / compiled output.
+    return LOCKFILE_DIR / f"{dataset_name}_overrides.json"
 
 
 def _compiled_path(dataset_name: str) -> Path:
@@ -162,8 +164,14 @@ def compile_exclusions(dataset_name: str, bids_dir: Optional[str] = None) -> lis
     if force_includes:
         all_entries = [e for e in all_entries if _scan_key(e) not in force_includes]
 
-    # Add force-excluded scans
+    # Add force-excluded scans (idempotent: skip any scan a source already
+    # excludes so an overlapping manual force-exclude does not create a duplicate
+    # compiled entry / duplicate .bidsignore line. A scan cannot be "more
+    # excluded"; the source's entry already gates it).
+    existing_keys = {_scan_key(e) for e in all_entries}
     for fe in force_excludes:
+        if _scan_key(fe) in existing_keys:
+            continue
         all_entries.append({
             "subject": fe["subject"],
             "session": fe["session"],
@@ -174,6 +182,7 @@ def compile_exclusions(dataset_name: str, bids_dir: Optional[str] = None) -> lis
             "reason": fe.get("reason", "Manual force-exclude"),
             "metrics": fe.get("metrics", {}),
         })
+        existing_keys.add(_scan_key(fe))
 
     # Save compiled
     compiled_path = _compiled_path(dataset_name)

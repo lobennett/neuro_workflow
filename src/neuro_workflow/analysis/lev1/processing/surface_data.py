@@ -13,7 +13,7 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 from nilearn.glm.first_level import run_glm
-from nilearn.glm.contrasts import compute_contrast, expression_to_contrast_vector
+from nilearn.glm.contrasts import Contrast, compute_contrast, expression_to_contrast_vector
 
 from neuro_workflow.analysis.task_config.loader import DUMMY_SCANS
 
@@ -466,9 +466,22 @@ def compute_surface_fixed_effects(
             # Variance of mean = sum(var) / n_valid^2
             fixed_variance = np.nansum(variances, axis=0) / (n_valid ** 2)
 
-    # Compute z-score (NaN propagates through invalid vertices naturally)
+    # Convert the fixed-effects estimate to a df-corrected z-score, matching the
+    # volumetric path (nilearn.compute_fixed_effects). That path builds a
+    # t-statistic Contrast with dof = sum(per-run dofs) and calls .z_score();
+    # with dofs unspecified nilearn assumes 100 per run, which is exactly what
+    # the volume call uses — so we mirror it here (dof = 100 * n_runs). The
+    # previous surface stat was the known-variance Wald z (effect/sqrt(variance),
+    # i.e. df=inf), which was anti-conservative and inconsistent with volume.
+    # NaN in effect/variance propagates to NaN z naturally.
     with np.errstate(divide='ignore', invalid='ignore'):
-        fixed_stat = fixed_effect / np.sqrt(fixed_variance)
+        fixed_stat = Contrast(
+            effect=fixed_effect,
+            variance=fixed_variance,
+            dim=1,
+            dof=100 * n_runs,
+            stat_type='t',
+        ).z_score()
 
     # Explicitly set invalid vertices to NaN (not 0) so downstream
     # group-level inference doesn't treat them as real zeros.

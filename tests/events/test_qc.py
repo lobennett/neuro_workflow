@@ -128,3 +128,37 @@ class TestCheckOtherExclusion:
         result = check_other_exclusion(metrics)
         assert result is not None
         assert "omission" in result["reason"]
+
+
+class TestRunQcRunLabel:
+    """B1 regression: a behavioral-QC failure on run-2 must key to run-2,
+    not the previously-hardcoded run-1 (which never matched the lev1 run key)."""
+
+    def test_determine_exclusion_entry_uses_parsed_run_label(self, tmp_path):
+        from neuro_workflow.events.qc import run_qc
+
+        beh = tmp_path / "sourcedata" / "sub-s99" / "ses-02" / "beh"
+        beh.mkdir(parents=True)
+        # Generic task (flanker), run-2: 5/12 omissions (0.42 > 0.25 threshold),
+        # interleaved so it is NOT an end-of-run tail cutoff -> only the
+        # determine_exclusion (omission) branch fires.
+        rt = [500, -1, 480, -1, 520, -1, 510, -1, 505, -1, 495, 530]
+        df = pd.DataFrame({
+            "trial_id": ["test_trial"] * 12,
+            "rt": rt,
+            "key_press": [1] * 12,
+            "correct_response": [1] * 12,
+        })
+        df.to_csv(beh / "sub-s99_ses-02_task-flanker_run-2_events.csv", index=False)
+
+        exclusion_entries, _trim = run_qc(
+            behavioral_dir=tmp_path / "sourcedata",
+            bids_dir=tmp_path,
+        )
+        excl = [e for e in exclusion_entries if e["task"] == "task-flanker"]
+        assert len(excl) == 1, exclusion_entries
+        # The bug stored "run-1" here; the parsed label is "run-2".
+        assert excl[0]["run"] == "run-2", excl[0]
+        assert excl[0]["subject"] == "sub-s99"
+        assert excl[0]["session"] == "ses-02"
+        assert "omission" in excl[0]["reason"]

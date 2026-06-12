@@ -28,6 +28,8 @@ For per-`.bidsignore`-entry rationale, see `docs/EXCLUSIONS.md`. For the broader
               │  - behavioral (reads sourcedata events)       │         │
               │  - lev1_outlier (reads cohort QC CSV)         │         │
               │  - qa_decisions (reads decisions TSV)         │         │
+              │  - collection (reads committed                │         │
+              │      {ds}_collection.bidsignore)              │         │
               └───────────────────────────────────────────────┘         │
                           │                                             │
                           v                                             │
@@ -127,6 +129,14 @@ Original spec retained below for archival/reference only:
     - Subject-level rows (`session/task/run = "-"`) → expanded to per-scan entries via `<bids>/sub-X/ses-*/func/*_bold.nii.gz` glob.
 - **Dataset filter**: same as `lev1_outlier` — applies before the BIDS glob to skip filesystem reads for non-member subjects.
 - **Sample**: `neuro-run exclusions generate qa_decisions discovery --decisions-tsv /path/to/qa_decisions_discovery.tsv`
+
+### `collection`
+
+- **Reads:** the committed human-curated `data/exclusions/<ds>_collection.bidsignore` (incomplete acquisitions, <50%-TR scans, irreconcilable-BOLD, onset-break breaks — the exclusions that do NOT come from a QC metric).
+- **Required arg**: none (the committed collection file is the input).
+- **Logic**: each functional-BOLD glob line is expanded against the BIDS dir into concrete per-scan entries (`run-*` → every real run; multi-echo files deduped to one entry/scan). Anatomical / wildcard-subject lines (`anat/`, `*_T1w.*`, `sub-*/...`) are skipped — they drive fMRIPrep anatomical selection, not the lev1 BOLD-scan gate.
+- **Why it exists**: the collection `.bidsignore` was previously *only* the fMRIPrep layer (prepended at `render-bidsignore` time); it was NOT in the compiled exclusions lev1 reads, so a scan whose fMRIPrep derivatives predate its collection exclusion could slip through the lev1 gate. Ingesting it as a source makes `compiled = collection ∪ QC ∪ overrides` the single lev1 gate. `render-bidsignore` still prepends the verbatim human block and now drops `source=collection` compiled entries from the generated section so collection globs are not duplicated.
+- **Sample**: `neuro-run exclusions generate collection discovery`
 
 ### `_desc-belowMinRuns` (not a generator — a filename tag)
 

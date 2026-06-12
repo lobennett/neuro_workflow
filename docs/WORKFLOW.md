@@ -260,10 +260,20 @@ uv run neuro-run submit lev1 discovery --allow-dirty
 ## Step 14: Second-level group stats (lev2)
 
 ```bash
-uv run neuro-run submit lev2 discovery
+# Volumetric (default): FSL randomise (TFCE) on the NIfTI fixed-effects maps.
+uv run neuro-run submit lev2 discovery --space volume
+
+# Surface: self-contained sign-flip permutation on the GIFTI fixed-effects
+# maps (one-sample group t, whole-cortex max-statistic FWE; no FSL/PALM).
+uv run neuro-run submit lev2 discovery --space surface
 ```
 
-Lev2 reads the `run-manifest.json` from each lev1 subject directory and records an `input_provenance` block in its own manifest, so the full provenance chain is traceable. See `docs/PROVENANCE.md`.
+`--space` (default `volume`) selects the fixed-effects file type and the group-stats engine:
+
+- **volume** — globs `*_stat-fixed-effects.nii.gz`, computes a group mask (`--mask-threshold`, default 0.9, keeping every voxel meeting coverage — `connected=False`), runs FSL randomise (`--num-permutations`). Loads `biology fsl`.
+- **surface** — globs the L-hemisphere `*_hemi-L_*_stat-fixed-effects.func.gii` to enumerate contrasts, then per contrast runs `analysis/lev2/surface.py`: a vertex-wise one-sample t with sign-flip permutation (`--num-permutations`, `--seed`) and a max-statistic null over **both hemispheres combined** for FWE-corrected p-values. Writes per-hemisphere `_stat-group-t.func.gii` + `_stat-fwe-p.func.gii`. Loads only `uv` (numpy-only, no FSL).
+
+Both write provenance into the **per-contrast** output dir (`{results_dir}/{contrast}/`), reading each lev1 subject's `run-manifest.json` and recording an `input_provenance` block, so the full provenance chain is traceable and the SLURM array does not clobber a shared manifest. A failed group analysis returns non-zero and does NOT stamp a success manifest. See `docs/PROVENANCE.md`.
 
 ---
 

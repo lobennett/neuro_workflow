@@ -68,7 +68,8 @@ bold-reliability-movies = { git = "https://github.com/lobennett/bold-reliability
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
-skip = '.git,.gitignore,.gitattributes,*.lock,validator-outputs,*.min.js,*.min.css'
+skip = '.git,.gitignore,.gitattributes,*.lock,validator-outputs,*.min.js,*.min.css,*/archive/*'
 check-hidden = true
 # ignore-regex = ''
-# ignore-words-list = ''
+# FWE = Family-Wise Error (standard neuroimaging stats acronym; not a typo of "few").
+ignore-words-list = 'fwe'
