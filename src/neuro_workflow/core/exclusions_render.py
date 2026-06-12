@@ -214,7 +214,12 @@ def render_bidsignore_with_collection(
             f"data-collection/anatomical exclusions and must be committed."
         )
     collection_block = coll_path.read_text()
-    generated = render_bidsignore(entries)
+    # Drop source="collection" entries from the generated QC section: they are
+    # already present verbatim in the prepended human-curated block above (J1
+    # folds the collection layer into the compiled set, so compiled entries now
+    # include them). Rendering them again would duplicate every collection glob.
+    qc_entries = [e for e in entries if e.get("source") != "collection"]
+    generated = render_bidsignore(qc_entries)
 
     # Collection block carries its own header; separate the two blocks with a
     # blank line so the boundary is visually clear.
