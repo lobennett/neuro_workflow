@@ -321,7 +321,7 @@ uv run neuro-run submit prep-mshbm discovery \
 uv run neuro-run submit mshbm discovery \
   --surface-inputs-dir /scratch/users/logben/mshbm_surface_prep \
   --output-dir /scratch/users/logben/mshbm_maps \
-  --mshbm-dir /home/users/logben/neuro_workflow/external/PrecisionNetworkMapping
+  --mshbm-dir /scratch/users/logben/network_analysis/external/PrecisionNetworkMapping  # PNM checkout (see network_analysis)
 ```
 
 - Context writes a 2-column, header-less CSV (`sub-XXX,<surface_dir>/`) consumed by MATLAB.
@@ -329,10 +329,11 @@ uv run neuro-run submit mshbm discovery \
 - Defaults: 1 cpu, 64G, `24:00:00` **[VERIFY — in `network_analysis`; mshbm was extracted]**.
 - **Outputs:** `--output-dir`. **Logs:** `<output_dir>/logs/%x-%j.out|.err`.
 
-PNM is a git submodule at `external/PrecisionNetworkMapping`. **[VERIFY]** that `lib/` is
-populated (the submodule is uninitialized in the refactor worktree, so `lib/` cannot be
-confirmed populated from here; check `git submodule update --init` against a full checkout);
-the original `~/network_glm` clone has been used for `CBIG_CODE_DIR`.
+PrecisionNetworkMapping (PNM) now lives with the extracted `network_analysis` repo
+(`github.com/lobennett/PrecisionNetworkMapping`, fork `lobennett/`). It is **no longer a
+submodule of this repo** — the `external/PrecisionNetworkMapping` submodule was removed once
+mshbm/prep-mshbm were extracted. Point `--mshbm-dir` at the PNM checkout used by
+`network_analysis`; the original `~/network_glm` clone has been used for `CBIG_CODE_DIR`.
 
 ### 2.8 qa_report (cohort QA HTML + reliability movies) — `scripts/run_qa_report.sbatch`
 
