@@ -108,6 +108,30 @@ def test_run_level2_analysis_returns_false_on_no_inputs(tmp_path):
     assert lev2_run.run_level2_analysis("c", [], tmp_path) is False
 
 
+def test_run_level2_analysis_forwards_seed_to_randomise(tmp_path, monkeypatch):
+    """The seed is passed to setup_randomise_tfce when its signature accepts it
+    (here a **kwargs stub), pinning randomise's permutation RNG."""
+    monkeypatch.setattr(
+        lev2_run, "compute_mask",
+        lambda files, threshold=1.0: types.SimpleNamespace(to_filename=lambda p: Path(p).write_bytes(b"")),
+    )
+    captured = {}
+    fake_mod = types.ModuleType("randomise_prep")
+
+    def _setup(**kwargs):
+        captured.update(kwargs)
+        return "/tmp/fake_randomise.sh"
+
+    fake_mod.setup_randomise_tfce = _setup
+    monkeypatch.setitem(sys.modules, "randomise_prep", fake_mod)
+    monkeypatch.setattr(lev2_run.subprocess, "run",
+                        lambda cmd, **k: subprocess.CompletedProcess(cmd, 0, "ok", ""))
+
+    ok = lev2_run.run_level2_analysis("c", ["/fe1.nii.gz"], tmp_path, seed=4242)
+    assert ok is True
+    assert captured.get("seed") == 4242
+
+
 def test_mask_threshold_defaults_match_cli(monkeypatch):
     """B8: compute_mask / run_level2_analysis default mask_threshold must equal
     the lev2 CLI default (0.9), so a direct caller that omits it does not

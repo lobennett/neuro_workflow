@@ -120,6 +120,26 @@ def tool_versions(packages: list[str]) -> dict[str, str]:
     return out
 
 
+def fsl_version() -> str:
+    """Best-effort FSL version string, or ``"unknown"``.
+
+    FSL is not a Python package, so it is absent from :func:`tool_versions`.
+    The volumetric lev2 path shells out to FSL ``randomise``; recording the FSL
+    version closes the external-tool gap in the run manifest. Reads
+    ``$FSLDIR/etc/fslversion`` (the canonical FSL version file); never raises.
+    """
+    import os
+
+    fsldir = os.environ.get("FSLDIR")
+    if not fsldir:
+        return "unknown"
+    vfile = Path(fsldir) / "etc" / "fslversion"
+    try:
+        return vfile.read_text().strip().split(":")[0] or "unknown"
+    except OSError:
+        return "unknown"
+
+
 def _sha256_file(path: Path) -> str:
     """Stream a file through sha256 (chunked, so large NIfTIs don't blow RAM)."""
     h = hashlib.sha256()

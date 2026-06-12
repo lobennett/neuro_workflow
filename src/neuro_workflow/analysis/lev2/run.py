@@ -196,12 +196,18 @@ def run_level2_analysis(
     output_dir: Path,
     mask_threshold: float = 0.9,
     num_permutations: int = 5000,
+    seed: int = 0,
 ) -> bool:
     """Run level 2 analysis for a specific contrast.
 
     Returns True on success, False if there were no inputs or randomise failed
     (so the caller can propagate the failure instead of silently exiting 0 and
     stamping a success provenance manifest).
+
+    ``seed`` pins FSL randomise's permutation RNG for reproducibility. It is
+    forwarded only if the installed ``setup_randomise_tfce`` accepts a ``seed``
+    parameter (older randomise-prep versions do not), so this never breaks on an
+    API that predates seed support.
     """
     print(f'Running Level 2 analysis for: {contrast_name}')
     print(f'Found {len(input_files)} input files')
@@ -227,13 +233,28 @@ def run_level2_analysis(
     # if missing. Failure here surfaces a clear ModuleNotFoundError.
     from randomise_prep import setup_randomise_tfce
 
-    script_path = setup_randomise_tfce(
+    randomise_kwargs = dict(
         input_files=input_files,
         group_mask=str(group_mask_path),
         output_directory=str(contrast_output_dir),
         analysis_type='onesample_2sided',
         num_perm=num_permutations,
     )
+    # Forward the seed only if the installed setup_randomise_tfce supports it
+    # (explicit `seed` param, or **kwargs). Safe no-op on versions that don't.
+    import inspect
+    _sig = inspect.signature(setup_randomise_tfce)
+    if 'seed' in _sig.parameters or any(
+        p.kind == p.VAR_KEYWORD for p in _sig.parameters.values()
+    ):
+        randomise_kwargs['seed'] = seed
+    else:
+        print(
+            'WARNING: installed randomise-prep has no seed parameter; FSL '
+            'randomise permutation RNG is not pinned for this run.',
+            file=sys.stderr,
+        )
+    script_path = setup_randomise_tfce(**randomise_kwargs)
 
     print('Running FSL randomise...')
     try:
@@ -377,6 +398,11 @@ def _write_lev2_provenance(output_dir, args, level1_dirs, input_files):
     # merge the lev2-specific block in here rather than widen the primitive.
     manifest = json.loads(manifest_path.read_text())
     manifest['input_provenance'] = input_provenance
+    # External (non-pip) tool versions. nilearn/numpy/scipy are already in the
+    # manifest's tool_versions; FSL (the volume randomise engine) is not a Python
+    # package, so record it explicitly. "unknown" when FSL is absent (e.g. the
+    # surface path, which uses numpy only).
+    manifest['external_tool_versions'] = {'fsl': provenance.fsl_version()}
     manifest_path.write_text(json.dumps(manifest, indent=2))
 
 
@@ -443,6 +469,7 @@ def main() -> None:
             output_dir,
             args.mask_threshold,
             args.num_permutations,
+            seed=args.seed,
         )
     if not ok:
         # The analysis failed (e.g. randomise errored). Do NOT stamp a success
