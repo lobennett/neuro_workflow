@@ -1,4 +1,13 @@
-"""Motion exclusion generator: reads fmriprep confound TSVs and applies thresholds."""
+"""Motion exclusion generator: reads fmriprep confound TSVs and applies thresholds.
+
+Scoping note: this generator is dataset-scoped *by construction* — it reads only
+``{bids_dir}/derivatives/fmriprep_*`` for the dataset being compiled, so its
+output cannot contain out-of-roster subjects. It therefore does NOT apply the
+``load_dataset_subjects`` roster filter that ``qa_decisions`` / ``lev1_outlier``
+use; those read *pooled* inputs (a shared decisions TSV / cohort QC CSV) that can
+contain cross-sample rows and so need the explicit filter. Same for
+``behavioral`` (reads the dataset's own ``sourcedata``).
+"""
 from __future__ import annotations
 
 import re
@@ -80,8 +89,15 @@ class MotionGenerator:
 
         confound_files = sorted(deriv.glob("sub-*/ses-*/func/*_desc-confounds_timeseries.tsv"))
         if not confound_files:
-            print(f"No confound files found in {deriv}")
-            return []
+            # Fail loud, never silently return [] (which compile would record as
+            # `motion: 0` — a silent under-exclusion). An empty glob almost
+            # always means --fmriprep-version doesn't match the derivatives dir,
+            # or fMRIPrep has not run for this dataset.
+            raise FileNotFoundError(
+                f"motion generator: no confounds TSVs under {deriv}. Check that "
+                f"--fmriprep-version (got '{version}') matches the derivatives "
+                f"directory and that fMRIPrep has run for dataset '{dataset_name}'."
+            )
 
         fd_thresh = args.fd_threshold
         prop_fd_thresh = args.proportion_fd_threshold

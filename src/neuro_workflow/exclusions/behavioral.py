@@ -1,4 +1,11 @@
-"""Behavioral exclusion generator — runs behavioral QC and produces exclusion entries."""
+"""Behavioral exclusion generator — runs behavioral QC and produces exclusion entries.
+
+Scoping note: dataset-scoped by construction — reads only the dataset's own
+``{bids_dir}/sourcedata`` behavioral CSVs, so its output cannot contain
+out-of-roster subjects. Hence no ``load_dataset_subjects`` roster filter (that is
+for pooled-input generators like ``qa_decisions`` / ``lev1_outlier``). See the
+scoping note in ``exclusions/motion.py``.
+"""
 from __future__ import annotations
 
 from argparse import ArgumentParser, Namespace
