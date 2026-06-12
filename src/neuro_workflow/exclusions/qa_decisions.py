@@ -41,6 +41,11 @@ _BOLD_RE = re.compile(
     r"_(?P<session>ses-[A-Za-z0-9]+)"
     r"_task-(?P<task>[A-Za-z0-9]+)"
     r"_run-(?P<run>[A-Za-z0-9]+)"
+    # Tolerate any intervening BIDS entities (notably `_echo-N` on this
+    # multi-echo dataset, also `_acq-`, `_dir-`, `_part-`, ...) before `_bold`.
+    # Without this the regex matched no real BOLD file and subject-level
+    # exclusions silently expanded to nothing.
+    r"(?:_[A-Za-z0-9]+-[A-Za-z0-9]+)*"
     r"_bold\.nii\.gz$"
 )
 
@@ -49,18 +54,29 @@ def _expand_subject_to_entries(
     subject: str, reason: str, bids_dir: Path,
 ) -> list[dict]:
     """Glob the dataset BIDS dir for `subject`'s BOLD files and emit one
-    exclusion entry per matched file."""
+    exclusion entry per scan. Multi-echo acquisitions yield one BOLD file per
+    echo; we collapse them to a single (subject, session, task, run) entry."""
     sub = subject if subject.startswith("sub-") else f"sub-{subject}"
+    seen: set[tuple[str, str, str, str]] = set()
     out: list[dict] = []
     for bold in (bids_dir / sub).glob("ses-*/func/*_bold.nii.gz"):
         m = _BOLD_RE.match(bold.name)
         if not m:
             continue
+        key = (
+            m.group("subject"),
+            m.group("session"),
+            f"task-{m.group('task')}",
+            f"run-{m.group('run')}",
+        )
+        if key in seen:  # dedupe across echoes
+            continue
+        seen.add(key)
         out.append({
-            "subject": m.group("subject"),
-            "session": m.group("session"),
-            "task": f"task-{m.group('task')}",
-            "run": f"run-{m.group('run')}",
+            "subject": key[0],
+            "session": key[1],
+            "task": key[2],
+            "run": key[3],
             "source": "qa_decisions",
             "action": "exclude",
             "reason": f"qa_decisions: {reason} (subject-level)",

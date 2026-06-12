@@ -92,14 +92,17 @@ def _make_fake_bids(tmp_path, subject: str, scans: list[tuple[str, str, str]]) -
     """Build a minimal BIDS-like dir with empty BOLD files for the given scans.
 
     Each scan tuple is (session, task, run), e.g. ('ses-02', 'cuedTS', '1').
+    Writes the dataset's real *multi-echo* layout (3 echoes per scan), so the
+    subject-level glob/regex is exercised against production-shaped filenames.
     Returns the BIDS dir root.
     """
     bids = tmp_path / "bids"
     for session, task, run in scans:
         func = bids / subject / session / "func"
         func.mkdir(parents=True, exist_ok=True)
-        fname = f"{subject}_{session}_task-{task}_run-{run}_bold.nii.gz"
-        (func / fname).write_bytes(b"")
+        for echo in (1, 2, 3):
+            fname = f"{subject}_{session}_task-{task}_run-{run}_echo-{echo}_bold.nii.gz"
+            (func / fname).write_bytes(b"")
     return bids
 
 
@@ -121,7 +124,10 @@ def test_subject_level_exclude_expands_via_bids_glob(tmp_path, capsys):
     entries = QADecisionsGenerator().generate("discovery", config, _make_args(tsv))
     captured = capsys.readouterr()
 
+    # 3 scans x 3 echoes = 9 BOLD files, deduped to one entry per scan.
     assert len(entries) == 3
+    keys = [(e["session"], e["task"], e["run"]) for e in entries]
+    assert len(keys) == len(set(keys)), entries  # no per-echo duplicates
     assert {e["subject"] for e in entries} == {"sub-s03"}
     for e in entries:
         assert "(subject-level)" in e["reason"]
