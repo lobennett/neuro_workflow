@@ -13,6 +13,19 @@ from nilearn.signal import clean as clean_signal
 logger = logging.getLogger(__name__)
 
 
+def surface_residual_filename(base_filename: str, hemisphere: str, surface_space: str) -> str:
+    """Canonical filename for a per-run surface task-residual GIFTI.
+
+    Single source of truth shared by the writer (:func:`process_surface_residuals`)
+    and the ``--skip-existing`` check in :mod:`..runner`, so the two cannot drift
+    apart (which previously defeated --skip-existing for surface residuals).
+    """
+    return (
+        f'{base_filename}_hemi-{hemisphere}_space-{surface_space}'
+        f'_task-regressed-residuals.func.gii'
+    )
+
+
 class ResidualsProcessor:
     """Processor for GLM residuals with filtering capabilities."""
 
@@ -346,9 +359,8 @@ def process_surface_residuals(
         ]
         gii_img = nib.GiftiImage(darrays=darrays)
 
-        out_path = (
-            output_dir
-            / f'{base_filename}_hemi-{hemisphere}_space-{surface_space}_task-regressed-residuals.func.gii'
+        out_path = output_dir / surface_residual_filename(
+            base_filename, hemisphere, surface_space
         )
         nib.save(gii_img, out_path)
         result['saved_path'] = out_path
