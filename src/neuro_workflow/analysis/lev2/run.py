@@ -282,7 +282,21 @@ def get_parser() -> argparse.ArgumentParser:
         '--num-permutations',
         type=int,
         default=5000,
-        help='Number of permutations for FSL randomise',
+        help='Number of permutations (FSL randomise for volume; sign-flip for surface)',
+    )
+    parser.add_argument(
+        '--space',
+        choices=['volume', 'surface'],
+        default='volume',
+        help='volume: FSL randomise on NIfTI fixed-effects (default). '
+        'surface: self-contained sign-flip permutation group test on the '
+        'GIFTI surface fixed-effects (both hemispheres, whole-cortex FWE).',
+    )
+    parser.add_argument(
+        '--seed',
+        type=int,
+        default=0,
+        help='RNG seed for the surface sign-flip permutation (reproducible).',
     )
     parser.add_argument(
         '--allow-dirty',
@@ -401,22 +415,35 @@ def main() -> None:
             print(f'ERROR: Level 1 directory not found: {level1_dir}')
             return 1
 
-    # Discover input files for the specific contrast
-    print(f'Discovering input files for contrast: {args.contrast}')
-    input_files = discover_input_files(level1_dirs, args.contrast)
-
-    if not input_files:
-        print(f'ERROR: No input files found for contrast {args.contrast}')
-        return 1
-
-    # Run analysis for the specific contrast
-    ok = run_level2_analysis(
-        args.contrast,
-        input_files,
-        output_dir,
-        args.mask_threshold,
-        args.num_permutations,
-    )
+    # Discover input files for the specific contrast. Surface and volume use
+    # different fixed-effects file types (.func.gii vs .nii.gz) and engines.
+    print(f'Discovering input files for contrast: {args.contrast} (space={args.space})')
+    if args.space == 'surface':
+        from neuro_workflow.analysis.lev2.surface import (
+            discover_surface_inputs,
+            run_surface_level2_analysis,
+        )
+        surf = discover_surface_inputs(level1_dirs, args.contrast)
+        input_files = surf['L'] + surf['R']
+        if not input_files:
+            print(f'ERROR: No surface input files found for contrast {args.contrast}')
+            return 1
+        ok = run_surface_level2_analysis(
+            args.contrast, level1_dirs, output_dir,
+            n_perm=args.num_permutations, seed=args.seed,
+        )
+    else:
+        input_files = discover_input_files(level1_dirs, args.contrast)
+        if not input_files:
+            print(f'ERROR: No input files found for contrast {args.contrast}')
+            return 1
+        ok = run_level2_analysis(
+            args.contrast,
+            input_files,
+            output_dir,
+            args.mask_threshold,
+            args.num_permutations,
+        )
     if not ok:
         # The analysis failed (e.g. randomise errored). Do NOT stamp a success
         # provenance manifest; propagate a non-zero exit so the SLURM array
