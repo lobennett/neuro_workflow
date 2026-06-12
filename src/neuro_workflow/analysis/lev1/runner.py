@@ -33,7 +33,11 @@ from neuro_workflow.analysis.lev1.processing.glm import (
     validate_glm_inputs,
 )
 from neuro_workflow.analysis.lev1.processing.quality_control import run_quality_control
-from neuro_workflow.analysis.lev1.processing.residuals import process_run_residuals, process_surface_residuals
+from neuro_workflow.analysis.lev1.processing.residuals import (
+    process_run_residuals,
+    process_surface_residuals,
+    surface_residual_filename,
+)
 from neuro_workflow.analysis.lev1.processing.surface_data import (
     SurfaceGLM,
     find_freesurfer_subjects_dir,
@@ -236,8 +240,9 @@ def process_single_run(session, run, run_files, args, sample_type, dirs, task_pa
     if args.skip_existing:
         base_filename = _run_base_filename(args.subj_id, session, args.task_name, run)
         if is_surface_space(args.space) and args.residuals:
-            lh_res = dirs['task_residuals'] / f'{base_filename}_hemi-L_task-regressed-residuals.func.gii'
-            rh_res = dirs['task_residuals'] / f'{base_filename}_hemi-R_task-regressed-residuals.func.gii'
+            surface_space = resolve_surface_space(args.space)
+            lh_res = dirs['task_residuals'] / surface_residual_filename(base_filename, 'L', surface_space)
+            rh_res = dirs['task_residuals'] / surface_residual_filename(base_filename, 'R', surface_space)
             if lh_res.exists() and rh_res.exists():
                 logger.info('Skipping %s (outputs already exist)', run_key)
                 return True
