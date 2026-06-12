@@ -63,3 +63,20 @@ lev1_outlier:
   combined_outlier_pct: 10.0
   strict_vif: 15.0
   strict_outlier_pct: 15.0
+
+# --- Lev1 confound selection ---
+# Consumed by analysis/lev1/processing/confounds.py.
+confounds:
+  # Cap the number of fMRIPrep DCT cosine (high-pass) regressors for specific
+  # (sample, task) combinations whose runs are short enough that the FULL cosine
+  # set spans most of the run and induces rank deficiency / collinearity with the
+  # task design. `max_cosine_index: N` keeps cosine00..cosine0N (N <= 9) and drops
+  # the rest. Omit a sample/task for no cap (the default everywhere else).
+  #
+  # discovery/nBack: short discovery nBack runs — the full cosine basis was
+  # collinear with the task regressors, so the high-pass is capped to cosine00-04.
+  # (This was previously a hardcoded special case in confounds.py; lifted here so
+  # the analytic choice is visible + auditable. Byte-identical behavior.)
+  cosine_max_index:
+    discovery:
+      nBack: 4

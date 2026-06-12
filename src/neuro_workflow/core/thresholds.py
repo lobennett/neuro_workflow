@@ -92,6 +92,19 @@ def lev1_outlier() -> dict[str, Any]:
     return dict(_cached_thresholds()["lev1_outlier"])
 
 
+def confounds_cosine_caps() -> dict[str, dict[str, int]]:
+    """Per-(sample, task) caps on the number of DCT cosine high-pass regressors.
+
+    Shape ``{sample_type: {task_name: max_cosine_index}}``; empty when the
+    optional ``confounds.cosine_max_index`` block is absent. A cap ``N`` keeps
+    ``cosine00..cosine0N`` and drops the rest — used where a run is short enough
+    that the full fMRIPrep cosine set induces rank deficiency / collinearity with
+    the task design (see
+    :func:`neuro_workflow.analysis.lev1.processing.confounds._get_base_confound_pattern`).
+    """
+    return dict(_cached_thresholds().get("confounds", {}).get("cosine_max_index", {}))
+
+
 @lru_cache(maxsize=1)
 def config_version() -> str:
     """Return a short, stable hash of the canonical config files.

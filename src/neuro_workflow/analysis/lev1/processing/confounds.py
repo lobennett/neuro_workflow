@@ -39,13 +39,18 @@ def _get_base_confound_pattern(task_name: str, sample_type: str) -> str:
         'rot_[xyz]_power2$|rot_[xyz]_derivative1_power2$|motion_outlier\\d+'
     )
 
-    # Special case for discovery nBack - limit cosine regressors
-    if sample_type == 'discovery' and task_name == 'nBack':
-        pattern = base_pattern.replace('cosine', 'cosine0[0-4]')
-    else:
-        pattern = base_pattern
+    # Cap DCT cosine high-pass regressors for (sample, task) combinations whose
+    # runs are short enough that the full cosine set induces rank deficiency /
+    # collinearity with the task design. Config-driven via thresholds.yaml
+    # `confounds.cosine_max_index` (previously a hardcoded discovery/nBack special
+    # case; lifted to config so the analytic choice is auditable). Behavior is
+    # unchanged: discovery/nBack -> cosine0[0-4], everything else -> full set.
+    from neuro_workflow.core.thresholds import confounds_cosine_caps
 
-    return pattern
+    max_idx = confounds_cosine_caps().get(sample_type, {}).get(task_name)
+    if max_idx is not None:
+        return base_pattern.replace('cosine', f'cosine0[0-{int(max_idx)}]')
+    return base_pattern
 
 
 def load_and_process_confounds(
