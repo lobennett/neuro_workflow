@@ -96,6 +96,24 @@ def test_generate_uses_std_dvars_not_raw_dvars(tmp_path):
     )
 
 
+def test_generate_raises_on_missing_or_empty_derivatives(tmp_path):
+    """A wrong --fmriprep-version (or fMRIPrep not run) leaves the derivatives
+    glob empty. The generator must fail loud rather than silently return [] and
+    let compile record `motion: 0` — that would silently under-exclude."""
+    import pytest
+
+    (tmp_path / "bids").mkdir()
+    g = MotionGenerator()
+    args = Namespace(
+        fmriprep_version="99.9.9",  # no such derivatives dir
+        fd_threshold=0.2,
+        proportion_fd_threshold=0.2,
+        proportion_dvars_threshold=0.2,
+    )
+    with pytest.raises(FileNotFoundError):
+        g.generate("discovery", {"bids_dir": str(tmp_path / "bids")}, args)
+
+
 def test_generate_all_actions_are_exclude(tmp_path):
     bids_dir = _make_deriv_tree(tmp_path)
     g = MotionGenerator()
