@@ -13,7 +13,6 @@ from pathlib import Path
 from neuro_workflow.analysis.lev1.subject_config import Config
 from neuro_workflow.analysis.core.task_utils import detect_sample_type, get_expected_sessions
 from neuro_workflow.analysis.core.utils import (
-    check_behavioral_trim_threshold,
     load_exclusions,
     load_exclusions_by_type,
     normalize_subject_id,
@@ -47,18 +46,11 @@ def setup_analysis(args):
 
     logger.info('Level 1 GLM: %s / %s / %s / %s', args.subj_id, args.task_name, args.space, sample_type)
 
-    # Load exclusions
-    trim_exclusions = check_behavioral_trim_threshold(
-        args.exclusions_file, threshold=0.5
-    )
+    # Load exclusions (compiled exclusions are all action='exclude'; the legacy
+    # behavioral-salvage "trim" path was dead and has been removed).
     exclusions_by_type = load_exclusions_by_type(args.exclusions_file)
-    if 'behavioral_exclusions' not in exclusions_by_type:
-        exclusions_by_type['behavioral_exclusions'] = set()
-    exclusions_by_type['behavioral_exclusions'].update(trim_exclusions)
-
     exclusions = load_exclusions(args.exclusions_file)
-    exclusions.update(trim_exclusions)
-    logger.info('Loaded %d exclusions (%d trim-based)', len(exclusions), len(trim_exclusions))
+    logger.info('Loaded %d exclusions', len(exclusions))
 
     # Create subject-specific directories
     dirs = config.create_subject_dirs(clean_existing=True)
