@@ -122,3 +122,11 @@ def test_mask_threshold_defaults_match_cli(monkeypatch):
     sig = inspect.signature
     assert sig(lev2_run.compute_mask).parameters["threshold"].default == cli_default
     assert sig(lev2_run.run_level2_analysis).parameters["mask_threshold"].default == cli_default
+
+
+def test_compute_mask_connected_defaults_false():
+    """J4: the group mask must keep every voxel meeting the coverage threshold
+    (connected=False), not just the largest connected component."""
+    import inspect
+
+    assert inspect.signature(lev2_run.compute_mask).parameters["connected"].default is False

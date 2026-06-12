@@ -152,8 +152,13 @@ class ResidualsProcessor:
                 # Single run
                 filename = f'{base_filename}_{suffix}.nii.gz'
             else:
-                # Multiple runs
-                filename = f'{base_filename}_run-{i + 1:02d}_{suffix}.nii.gz'
+                # Multiple residual images from one processor. Use the unpadded
+                # run-N convention used everywhere else in the codebase (BIDS
+                # files, exclusion keys, .bidsignore globs are all run-1, not
+                # run-01). NB: the per-run lev1 flow saves a single residual, so
+                # this branch is not exercised in production; keeping it
+                # convention-consistent avoids a future run-01/run-1 mismatch.
+                filename = f'{base_filename}_run-{i + 1}_{suffix}.nii.gz'
 
             filepath = output_dir / filename
             residual_img.to_filename(filepath)

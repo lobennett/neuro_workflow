@@ -20,7 +20,7 @@ import glob
 from neuro_workflow.core import provenance
 
 
-def compute_mask(input_files, threshold=0.9, connected=True):
+def compute_mask(input_files, threshold=0.9, connected=False):
     """
     Computes a group mask by intersecting individual subject masks.
 
@@ -38,8 +38,13 @@ def compute_mask(input_files, threshold=0.9, connected=True):
         >=90% of subject masks), matching the lev2 CLI default. 1.0 would be
         a strict intersection (voxel must be in all masks).
     connected : bool, optional
-        If True, only the largest connected component of the final
-        mask is returned. Default is True.
+        If True, only the largest connected component of the final mask is
+        kept. Default False: keep every voxel that meets the coverage
+        threshold. For a group statistical mask there is no reason to require
+        a single contiguous component, and ``connected=True`` would silently
+        drop legitimate gray-matter voxels in smaller disconnected clusters
+        (it is appropriate for single-subject brain extraction, not group
+        coverage masks).
 
     Returns
     -------
