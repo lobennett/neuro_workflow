@@ -106,3 +106,19 @@ def test_run_level2_analysis_returns_true_on_success(tmp_path, monkeypatch):
 
 def test_run_level2_analysis_returns_false_on_no_inputs(tmp_path):
     assert lev2_run.run_level2_analysis("c", [], tmp_path) is False
+
+
+def test_mask_threshold_defaults_match_cli(monkeypatch):
+    """B8: compute_mask / run_level2_analysis default mask_threshold must equal
+    the lev2 CLI default (0.9), so a direct caller that omits it does not
+    silently get a strict (1.0) all-subjects intersection."""
+    import inspect
+
+    cli_default = lev2_run.get_parser().parse_args(
+        ["--contrast", "c", "--level1-dirs", "/a"]
+    ).mask_threshold
+    assert cli_default == 0.9
+
+    sig = inspect.signature
+    assert sig(lev2_run.compute_mask).parameters["threshold"].default == cli_default
+    assert sig(lev2_run.run_level2_analysis).parameters["mask_threshold"].default == cli_default

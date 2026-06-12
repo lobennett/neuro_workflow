@@ -20,7 +20,7 @@ import glob
 from neuro_workflow.core import provenance
 
 
-def compute_mask(input_files, threshold=1.0, connected=True):
+def compute_mask(input_files, threshold=0.9, connected=True):
     """
     Computes a group mask by intersecting individual subject masks.
 
@@ -34,8 +34,9 @@ def compute_mask(input_files, threshold=1.0, connected=True):
         List of paths to first-level effect size files.
     threshold : float, optional
         The proportion of masks in which a voxel must be active to be
-        included in the final mask. 1.0 (default) means a strict
-        intersection (voxel must be in all masks).
+        included in the final mask. Default 0.9 (voxel must be present in
+        >=90% of subject masks), matching the lev2 CLI default. 1.0 would be
+        a strict intersection (voxel must be in all masks).
     connected : bool, optional
         If True, only the largest connected component of the final
         mask is returned. Default is True.
@@ -188,7 +189,7 @@ def run_level2_analysis(
     contrast_name: str,
     input_files: List[str],
     output_dir: Path,
-    mask_threshold: float = 1.0,
+    mask_threshold: float = 0.9,
     num_permutations: int = 5000,
 ) -> bool:
     """Run level 2 analysis for a specific contrast.
