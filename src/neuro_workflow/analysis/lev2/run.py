@@ -190,14 +190,19 @@ def run_level2_analysis(
     output_dir: Path,
     mask_threshold: float = 1.0,
     num_permutations: int = 5000,
-) -> None:
-    """Run level 2 analysis for a specific contrast."""
+) -> bool:
+    """Run level 2 analysis for a specific contrast.
+
+    Returns True on success, False if there were no inputs or randomise failed
+    (so the caller can propagate the failure instead of silently exiting 0 and
+    stamping a success provenance manifest).
+    """
     print(f'Running Level 2 analysis for: {contrast_name}')
     print(f'Found {len(input_files)} input files')
 
     if not input_files:
         print(f'Error: No input files found for contrast {contrast_name}')
-        return
+        return False
 
     contrast_output_dir = output_dir / contrast_name
     contrast_output_dir.mkdir(parents=True, exist_ok=True)
@@ -235,6 +240,9 @@ def run_level2_analysis(
         print(f'✗ FSL randomise failed: {e}')
         print(f'Stdout: {e.stdout}')
         print(f'Stderr: {e.stderr}')
+        return False
+
+    return True
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -396,17 +404,28 @@ def main() -> None:
         return 1
 
     # Run analysis for the specific contrast
-    run_level2_analysis(
+    ok = run_level2_analysis(
         args.contrast,
         input_files,
         output_dir,
         args.mask_threshold,
         args.num_permutations,
     )
+    if not ok:
+        # The analysis failed (e.g. randomise errored). Do NOT stamp a success
+        # provenance manifest; propagate a non-zero exit so the SLURM array
+        # surfaces the failure instead of reporting success.
+        print(f'ERROR: Level 2 analysis failed for {args.contrast}', file=sys.stderr)
+        return 1
 
     # Provenance (ADDITIVE) — written AFTER the contrast's scientific outputs so
     # a manifest error never loses science. Errors are allowed to surface.
-    _write_lev2_provenance(output_dir, args, level1_dirs, input_files)
+    # Written INTO the per-contrast output dir (matching where
+    # run_level2_analysis put its scientific outputs), so that the SLURM array
+    # — one contrast per task, all sharing --output-dir — does not race/clobber
+    # a single manifest at the results-dir root.
+    contrast_output_dir = output_dir / args.contrast
+    _write_lev2_provenance(contrast_output_dir, args, level1_dirs, input_files)
 
     print(f'\nLevel 2 GLM analysis completed for {args.contrast}')
     return 0
