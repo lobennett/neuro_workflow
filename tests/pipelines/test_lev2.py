@@ -175,3 +175,31 @@ def test_lev2_render_full_template(tmp_path):
     assert "--num-permutations 5000" in script
     assert "--level1-dirs /path/to/lev1a /path/to/lev1b" in script
     assert "--mail-user" not in script
+    # Volume mode loads FSL and runs in volume space.
+    assert "module load biology fsl" in script
+    assert "--space volume" in script
+
+
+def test_lev2_render_surface_template(tmp_path):
+    """Surface mode: no FSL module, --space surface + --seed in the invocation."""
+    p = Lev2Pipeline()
+    args = Namespace(
+        lev1_dirs=["/path/to/lev1a"],
+        results_dir=str(tmp_path / "lev2_surface"),
+        contrasts=["task-flanker_contrast-test"],
+        contrasts_flag=None,
+        space="surface",
+        mask_threshold=0.9,
+        num_permutations=5000,
+        seed=0,
+        nthreads=None,
+        mem_gb=None,
+        time=None,
+    )
+    ctx = p.build_context("test_ds", {"bids_dir": "/oak/d", "partition": "russpold", "mail_user": None}, args)
+    script = render_template(TEMPLATE_DIR / p.template_name, ctx)
+
+    assert "--space surface" in script
+    assert "--seed 0" in script
+    assert "module load biology fsl" not in script  # surface uses numpy, not FSL
+    assert "module load uv" in script

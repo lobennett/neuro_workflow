@@ -13,6 +13,19 @@ from nilearn.signal import clean as clean_signal
 logger = logging.getLogger(__name__)
 
 
+def surface_residual_filename(base_filename: str, hemisphere: str, surface_space: str) -> str:
+    """Canonical filename for a per-run surface task-residual GIFTI.
+
+    Single source of truth shared by the writer (:func:`process_surface_residuals`)
+    and the ``--skip-existing`` check in :mod:`..runner`, so the two cannot drift
+    apart (which previously defeated --skip-existing for surface residuals).
+    """
+    return (
+        f'{base_filename}_hemi-{hemisphere}_space-{surface_space}'
+        f'_task-regressed-residuals.func.gii'
+    )
+
+
 class ResidualsProcessor:
     """Processor for GLM residuals with filtering capabilities."""
 
@@ -139,8 +152,13 @@ class ResidualsProcessor:
                 # Single run
                 filename = f'{base_filename}_{suffix}.nii.gz'
             else:
-                # Multiple runs
-                filename = f'{base_filename}_run-{i + 1:02d}_{suffix}.nii.gz'
+                # Multiple residual images from one processor. Use the unpadded
+                # run-N convention used everywhere else in the codebase (BIDS
+                # files, exclusion keys, .bidsignore globs are all run-1, not
+                # run-01). NB: the per-run lev1 flow saves a single residual, so
+                # this branch is not exercised in production; keeping it
+                # convention-consistent avoids a future run-01/run-1 mismatch.
+                filename = f'{base_filename}_run-{i + 1}_{suffix}.nii.gz'
 
             filepath = output_dir / filename
             residual_img.to_filename(filepath)
@@ -346,9 +364,8 @@ def process_surface_residuals(
         ]
         gii_img = nib.GiftiImage(darrays=darrays)
 
-        out_path = (
-            output_dir
-            / f'{base_filename}_hemi-{hemisphere}_space-{surface_space}_task-regressed-residuals.func.gii'
+        out_path = output_dir / surface_residual_filename(
+            base_filename, hemisphere, surface_space
         )
         nib.save(gii_img, out_path)
         result['saved_path'] = out_path

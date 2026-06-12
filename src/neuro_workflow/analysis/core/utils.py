@@ -172,68 +172,6 @@ def load_exclusions(
     return all_exclusions
 
 
-def check_behavioral_trim_threshold(exclusions_file: Union[str, Path], threshold: float = 0.5) -> Set[str]:
-    """Check behavioral exclusions for excessive data trimming and return exclusions.
-
-    Accepts both the legacy keyed-dict format and the neuro_workflow flat-list format.
-    In the flat-list format, entries with action='trim' and a source matching 'behavioral'
-    or 'neg-events' are checked.
-
-    Args:
-        exclusions_file: Path to exclusions JSON file
-        threshold: Proportion threshold above which to exclude (default: 0.5 for 50%)
-
-    Returns:
-        Set of exclusion keys for scans with >threshold proportion of data trimmed
-    """
-    exclusions_file = Path(exclusions_file)
-
-    if not exclusions_file.exists():
-        logger.warning('Exclusions file not found: %s', exclusions_file)
-        return set()
-
-    try:
-        with open(exclusions_file, 'r') as f:
-            exclusions_data = json.load(f)
-    except (json.JSONDecodeError, IOError) as e:
-        logger.warning('Failed to load exclusions from %s: %s', exclusions_file, e)
-        return set()
-
-    # Determine which list of entries to check depending on format
-    if _is_flat_list_format(exclusions_data):
-        behavioral_sources = {'behavioral', 'neg-events', 'behavioral_exclusions'}
-        candidates = [
-            e for e in exclusions_data
-            if e.get('action') == 'trim' and e.get('source', '') in behavioral_sources
-        ]
-    else:
-        candidates = exclusions_data.get('behavioral_exclusions', [])
-
-    trim_exclusions = set()
-    for exclusion in candidates:
-        metrics = exclusion.get('metrics', {})
-        if 'total_rows' in metrics and 'rows_to_keep' in metrics:
-            total_rows = metrics['total_rows']
-            rows_to_keep = metrics['rows_to_keep']
-            if total_rows > 0:
-                proportion_kept = rows_to_keep / total_rows
-                if proportion_kept < (1 - threshold):
-                    try:
-                        key = create_exclusion_key(exclusion)
-                        trim_exclusions.add(key)
-                        logger.info(
-                            'Excluding %s: %d/%d rows kept (%.2f%%)',
-                            key, rows_to_keep, total_rows, proportion_kept * 100,
-                        )
-                    except KeyError as e:
-                        logger.warning('Skipping invalid exclusion with trim metrics: %s', e)
-
-    if trim_exclusions:
-        logger.info('Found %d scans with >%.0f%% data trimmed', len(trim_exclusions), threshold * 100)
-
-    return trim_exclusions
-
-
 def normalize_subject_id(subject: str) -> str:
     """Normalize subject ID by adding 'sub-' prefix if not already present.
 

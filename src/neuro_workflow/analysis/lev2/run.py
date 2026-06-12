@@ -20,7 +20,7 @@ import glob
 from neuro_workflow.core import provenance
 
 
-def compute_mask(input_files, threshold=1.0, connected=True):
+def compute_mask(input_files, threshold=0.9, connected=False):
     """
     Computes a group mask by intersecting individual subject masks.
 
@@ -34,11 +34,17 @@ def compute_mask(input_files, threshold=1.0, connected=True):
         List of paths to first-level effect size files.
     threshold : float, optional
         The proportion of masks in which a voxel must be active to be
-        included in the final mask. 1.0 (default) means a strict
-        intersection (voxel must be in all masks).
+        included in the final mask. Default 0.9 (voxel must be present in
+        >=90% of subject masks), matching the lev2 CLI default. 1.0 would be
+        a strict intersection (voxel must be in all masks).
     connected : bool, optional
-        If True, only the largest connected component of the final
-        mask is returned. Default is True.
+        If True, only the largest connected component of the final mask is
+        kept. Default False: keep every voxel that meets the coverage
+        threshold. For a group statistical mask there is no reason to require
+        a single contiguous component, and ``connected=True`` would silently
+        drop legitimate gray-matter voxels in smaller disconnected clusters
+        (it is appropriate for single-subject brain extraction, not group
+        coverage masks).
 
     Returns
     -------
@@ -188,16 +194,21 @@ def run_level2_analysis(
     contrast_name: str,
     input_files: List[str],
     output_dir: Path,
-    mask_threshold: float = 1.0,
+    mask_threshold: float = 0.9,
     num_permutations: int = 5000,
-) -> None:
-    """Run level 2 analysis for a specific contrast."""
+) -> bool:
+    """Run level 2 analysis for a specific contrast.
+
+    Returns True on success, False if there were no inputs or randomise failed
+    (so the caller can propagate the failure instead of silently exiting 0 and
+    stamping a success provenance manifest).
+    """
     print(f'Running Level 2 analysis for: {contrast_name}')
     print(f'Found {len(input_files)} input files')
 
     if not input_files:
         print(f'Error: No input files found for contrast {contrast_name}')
-        return
+        return False
 
     contrast_output_dir = output_dir / contrast_name
     contrast_output_dir.mkdir(parents=True, exist_ok=True)
@@ -235,6 +246,9 @@ def run_level2_analysis(
         print(f'✗ FSL randomise failed: {e}')
         print(f'Stdout: {e.stdout}')
         print(f'Stderr: {e.stderr}')
+        return False
+
+    return True
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -268,7 +282,21 @@ def get_parser() -> argparse.ArgumentParser:
         '--num-permutations',
         type=int,
         default=5000,
-        help='Number of permutations for FSL randomise',
+        help='Number of permutations (FSL randomise for volume; sign-flip for surface)',
+    )
+    parser.add_argument(
+        '--space',
+        choices=['volume', 'surface'],
+        default='volume',
+        help='volume: FSL randomise on NIfTI fixed-effects (default). '
+        'surface: self-contained sign-flip permutation group test on the '
+        'GIFTI surface fixed-effects (both hemispheres, whole-cortex FWE).',
+    )
+    parser.add_argument(
+        '--seed',
+        type=int,
+        default=0,
+        help='RNG seed for the surface sign-flip permutation (reproducible).',
     )
     parser.add_argument(
         '--allow-dirty',
@@ -387,26 +415,50 @@ def main() -> None:
             print(f'ERROR: Level 1 directory not found: {level1_dir}')
             return 1
 
-    # Discover input files for the specific contrast
-    print(f'Discovering input files for contrast: {args.contrast}')
-    input_files = discover_input_files(level1_dirs, args.contrast)
-
-    if not input_files:
-        print(f'ERROR: No input files found for contrast {args.contrast}')
+    # Discover input files for the specific contrast. Surface and volume use
+    # different fixed-effects file types (.func.gii vs .nii.gz) and engines.
+    print(f'Discovering input files for contrast: {args.contrast} (space={args.space})')
+    if args.space == 'surface':
+        from neuro_workflow.analysis.lev2.surface import (
+            discover_surface_inputs,
+            run_surface_level2_analysis,
+        )
+        surf = discover_surface_inputs(level1_dirs, args.contrast)
+        input_files = surf['L'] + surf['R']
+        if not input_files:
+            print(f'ERROR: No surface input files found for contrast {args.contrast}')
+            return 1
+        ok = run_surface_level2_analysis(
+            args.contrast, level1_dirs, output_dir,
+            n_perm=args.num_permutations, seed=args.seed,
+        )
+    else:
+        input_files = discover_input_files(level1_dirs, args.contrast)
+        if not input_files:
+            print(f'ERROR: No input files found for contrast {args.contrast}')
+            return 1
+        ok = run_level2_analysis(
+            args.contrast,
+            input_files,
+            output_dir,
+            args.mask_threshold,
+            args.num_permutations,
+        )
+    if not ok:
+        # The analysis failed (e.g. randomise errored). Do NOT stamp a success
+        # provenance manifest; propagate a non-zero exit so the SLURM array
+        # surfaces the failure instead of reporting success.
+        print(f'ERROR: Level 2 analysis failed for {args.contrast}', file=sys.stderr)
         return 1
-
-    # Run analysis for the specific contrast
-    run_level2_analysis(
-        args.contrast,
-        input_files,
-        output_dir,
-        args.mask_threshold,
-        args.num_permutations,
-    )
 
     # Provenance (ADDITIVE) — written AFTER the contrast's scientific outputs so
     # a manifest error never loses science. Errors are allowed to surface.
-    _write_lev2_provenance(output_dir, args, level1_dirs, input_files)
+    # Written INTO the per-contrast output dir (matching where
+    # run_level2_analysis put its scientific outputs), so that the SLURM array
+    # — one contrast per task, all sharing --output-dir — does not race/clobber
+    # a single manifest at the results-dir root.
+    contrast_output_dir = output_dir / args.contrast
+    _write_lev2_provenance(contrast_output_dir, args, level1_dirs, input_files)
 
     print(f'\nLevel 2 GLM analysis completed for {args.contrast}')
     return 0

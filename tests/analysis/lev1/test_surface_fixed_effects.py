@@ -119,3 +119,40 @@ class TestComputeSurfaceFixedEffects:
         np.testing.assert_allclose(fe.data[1], 6.0)
         assert np.isfinite(fs.data[1])
         assert fs.data[1] != 0.0
+
+    def test_fixed_stat_is_df_corrected_z_matching_volume(self, tmp_path):
+        """B7: the surface fixed-effects stat must be the df-corrected z-score
+        (nilearn convention, dof=100/run), identical to the volume path's
+        compute_fixed_effects z — not the old known-variance Wald z=eff/sqrt(var).
+        """
+        import nibabel as nib_nifti
+        from nilearn.glm.contrasts import compute_fixed_effects
+
+        rng = np.random.RandomState(0)
+        n_runs, n_vox = 3, 8
+        effects = [rng.randn(n_vox).astype(np.float32) for _ in range(n_runs)]
+        variances = [(rng.rand(n_vox) + 0.5).astype(np.float32) for _ in range(n_runs)]
+
+        eff_files, var_files = [], []
+        for i, (e, v) in enumerate(zip(effects, variances)):
+            ep = tmp_path / f'eff_{i}.func.gii'
+            vp = tmp_path / f'var_{i}.func.gii'
+            _write_gifti(ep, e)
+            _write_gifti(vp, v)
+            eff_files.append(ep)
+            var_files.append(vp)
+
+        fe, fv, fs = compute_surface_fixed_effects(eff_files, var_files)
+
+        # Volume reference: nilearn on tiny Niftis built from the same numbers.
+        affine = np.eye(4)
+        eff_imgs = [nib_nifti.Nifti1Image(e.reshape(n_vox, 1, 1).astype(np.float64), affine) for e in effects]
+        var_imgs = [nib_nifti.Nifti1Image(v.reshape(n_vox, 1, 1).astype(np.float64), affine) for v in variances]
+        mask = nib_nifti.Nifti1Image(np.ones((n_vox, 1, 1), dtype=np.int8), affine)
+        z_vol = compute_fixed_effects(eff_imgs, var_imgs, mask=mask)[3].get_fdata().ravel()
+
+        np.testing.assert_allclose(np.asarray(fs.data), z_vol, rtol=1e-5, atol=1e-5)
+
+        # And it must differ from the old Wald z (df=inf), confirming df correction.
+        wald = np.asarray(fe.data) / np.sqrt(np.asarray(fv.data))
+        assert not np.allclose(np.asarray(fs.data), wald, atol=1e-6)
