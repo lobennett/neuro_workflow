@@ -59,12 +59,10 @@ _COHORT_PATHS: dict[str, dict] = {
         "lev1_fe_dir":        Path("/scratch/users/logben/lev1_discovery"),
         # Flywheel snapshot — must be captured first with scripts/capture_fw_inventory.py
         "snapshot":           _REPO_ROOT / "data" / "repro" / "fw_inventory_discovery.json",
-        # TODO: replace with the regenerated real .bidsignore after the
-        # prerequisite validation-cohort lockfile recompile is done.  Until
-        # then we read the committed discovery_collection.bidsignore as the
-        # reference for the collection block (the render with QC lines will
-        # come from the hermetic compile run here).
-        "committed_bidsignore": _REPO_ROOT / "data" / "exclusions" / "discovery_collection.bidsignore",
+        # Reference is the full rendered .bidsignore (collection + QC lines) at
+        # the real BIDS root.  If not yet available (git-annex content absent or
+        # file missing), the prereq guard in main() will catch it and exit 2.
+        "committed_bidsignore": Path("/scratch/users/logben/discovery_bids/.bidsignore"),
     },
     "validation": {
         "bids":               Path("/scratch/users/logben/validation_bids"),
@@ -79,6 +77,7 @@ _COHORT_PATHS: dict[str, dict] = {
         "decisions_tsv":      _REPO_ROOT / "config" / "manifests" / "qc_decisions.tsv",
         "lev1_fe_dir":        Path("/scratch/users/logben/lev1_validation"),
         "snapshot":           _REPO_ROOT / "data" / "repro" / "fw_inventory_validation.json",
+        # Reference is the full rendered .bidsignore at the real BIDS root.
         "committed_bidsignore": Path("/scratch/users/logben/validation_bids/.bidsignore"),
     },
 }
@@ -237,6 +236,16 @@ def _run_all_generators(
     coll_entries = CollectionGenerator().generate(cohort, dataset_config, coll_args)
     save_source_entries(cohort, "collection", coll_entries)
 
+    # Seed the committed overrides file into the hermetic lock dir so that
+    # compile_exclusions -> load_overrides finds force-include/force-exclude
+    # entries.  Without this, load_overrides reads LOCKFILE_DIR (redirected to
+    # the scratch lock dir) and finds nothing, silently omitting all overrides.
+    committed_overrides = _REPO_ROOT / "data" / "exclusions" / f"{cohort}_overrides.json"
+    if committed_overrides.is_file():
+        from neuro_workflow.core.exclusions import _overrides_path as _op
+        shutil.copy2(committed_overrides, _op(cohort))
+    # else: no overrides file committed — fine, compile_exclusions will see none.
+
     # Compile (write to scratch)
     compiled = compile_exclusions(cohort, bids_dir=str(bids_dir))
 
@@ -376,11 +385,33 @@ def main(cohort: str, out: Path) -> None:
 
     produced_bidsignore = bidsignore_lineset(bidsignore_text)
     committed_bidsignore_path = paths["committed_bidsignore"]
+
+    # Prereq guard: the reference .bidsignore must exist and contain real content
+    # (not an unresolved git-annex pointer).  A symlink whose target does not
+    # exist, or a file whose content starts with the git-annex pointer magic,
+    # means the prerequisite recompile / de-annex step (plan Task 10.2) has not
+    # been run yet.  Exit 2 — distinct from the reproduction-FAIL exit 1 — so
+    # callers can distinguish "prereq not met" from "reproduction diverged".
+    _bidsignore_ok = False
     if committed_bidsignore_path.is_file():
-        reference_bidsignore = bidsignore_lineset(committed_bidsignore_path.read_text())
-    else:
-        print(f"WARNING: committed .bidsignore not found: {committed_bidsignore_path}")
-        reference_bidsignore = set()
+        try:
+            _content = committed_bidsignore_path.read_text(errors="replace")
+            # git-annex pointers start with "/annex/objects/"
+            if not _content.startswith("/annex/objects/"):
+                _bidsignore_ok = True
+        except OSError:
+            pass
+    if not _bidsignore_ok:
+        print(
+            f"PREREQ: reference .bidsignore unavailable for {cohort} "
+            f"(annex content not present / lockfile not yet regenerated) — "
+            f"run the prerequisite recompile + de-annex (plan Task 10.2) "
+            f"before reproduction can be asserted.\n"
+            f"  path: {committed_bidsignore_path}"
+        )
+        sys.exit(2)
+
+    reference_bidsignore = bidsignore_lineset(_content)
     diff_excl = diff_sets(produced_bidsignore, reference_bidsignore)
 
     diff_lev2 = diff_sets(produced_lev2, reference_lev2)
