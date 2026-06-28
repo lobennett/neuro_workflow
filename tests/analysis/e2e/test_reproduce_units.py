@@ -147,3 +147,23 @@ def test_lev2_reference_set_globs_and_filters_belowminruns(tmp_path):
     ref = lev2_reference_set([tmp_path / "lev1"])
     assert ("sub-s03", "flanker", "incongruent-congruent") in ref
     assert all("rare" not in c for (_, _, c) in ref)  # belowMinRuns filtered
+
+
+# ---------------------------------------------------------------------------
+# Task 7 — diff_sets + build_report
+# ---------------------------------------------------------------------------
+from neuro_workflow.testing.reproduce.report import diff_sets, build_report
+
+
+def test_diff_sets_partitions():
+    d = diff_sets({"a", "b"}, {"b", "c"})
+    assert d["matched"] == {"b"} and d["only_produced"] == {"a"} and d["only_reference"] == {"c"}
+
+
+def test_build_report_pass_fail():
+    clean = diff_sets({"a"}, {"a"})
+    dirty = diff_sets({"a"}, {"a", "b"})
+    rep_ok = build_report("discovery", clean, clean, clean, provenance={"sha": "x"})
+    assert "PASS" in rep_ok.splitlines()[0] and "FAIL" not in rep_ok.splitlines()[0]
+    rep_bad = build_report("discovery", clean, dirty, clean, provenance={"sha": "x"})
+    assert "FAIL" in rep_bad.splitlines()[0]
