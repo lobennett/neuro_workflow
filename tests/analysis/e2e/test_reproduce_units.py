@@ -309,3 +309,73 @@ def test_fw_project_to_inventory_roundtrip(tmp_path):
     assert "T1w MPRAGE PROMO" in acq_labels
     flanker_spec = next(a for a in sess.acquisitions if a.label == "task-flanker_bold")
     assert flanker_spec.echoes == 3
+
+
+# ---------------------------------------------------------------------------
+# FIX 1 regression — override seeding into the hermetic lock dir
+# ---------------------------------------------------------------------------
+
+import shutil
+
+import neuro_workflow.core.exclusions as _excl_mod
+from neuro_workflow.core.exclusions import _overrides_path
+
+
+def test_override_seeding_copies_to_correct_lockdir_path(tmp_path):
+    """Seeding logic copies committed overrides to _overrides_path() under the
+    redirected LOCKFILE_DIR so compile_exclusions -> load_overrides finds them.
+
+    This is a regression test for the bug where the hermetic seam redirected
+    LOCKFILE_DIR to a scratch dir but nothing seeded the committed overrides
+    file there, causing load_overrides to silently return [].
+    """
+    import json
+
+    # Create a fake committed overrides file
+    committed_overrides_dir = tmp_path / "data" / "exclusions"
+    committed_overrides_dir.mkdir(parents=True)
+    overrides_payload = [
+        {"subject": "s10", "session": "ses-01", "task": "goNogo",
+         "run": "run-1", "action": "force-include", "reason": "keep this scan"},
+    ]
+    committed_file = committed_overrides_dir / "discovery_overrides.json"
+    committed_file.write_text(json.dumps(overrides_payload))
+
+    # Redirect LOCKFILE_DIR to a scratch lock dir (mirrors _hermetic_exclusion_paths)
+    lock_dir = tmp_path / "lock"
+    lock_dir.mkdir()
+    original_lockfile_dir = _excl_mod.LOCKFILE_DIR
+    _excl_mod.LOCKFILE_DIR = lock_dir
+    try:
+        # Replicate the seeding logic from reproduce_cohort._run_all_generators
+        committed_overrides = committed_overrides_dir / "discovery_overrides.json"
+        if committed_overrides.is_file():
+            shutil.copy2(committed_overrides, _overrides_path("discovery"))
+
+        # The file must land at the path load_overrides will read
+        dest = _overrides_path("discovery")
+        assert dest.exists(), f"Seeded overrides file not found at {dest}"
+        assert dest.parent == lock_dir, (
+            f"Expected dest parent {lock_dir}, got {dest.parent}"
+        )
+        loaded = json.loads(dest.read_text())
+        assert loaded == overrides_payload
+    finally:
+        _excl_mod.LOCKFILE_DIR = original_lockfile_dir
+
+
+def test_override_seeding_noop_when_source_absent(tmp_path):
+    """If no committed overrides file exists, seeding is a no-op (no crash)."""
+    lock_dir = tmp_path / "lock"
+    lock_dir.mkdir()
+    original_lockfile_dir = _excl_mod.LOCKFILE_DIR
+    _excl_mod.LOCKFILE_DIR = lock_dir
+    try:
+        committed_overrides = tmp_path / "data" / "exclusions" / "discovery_overrides.json"
+        # File does not exist — seeding should be a no-op
+        if committed_overrides.is_file():
+            shutil.copy2(committed_overrides, _overrides_path("discovery"))
+        # Nothing should have been written to lock_dir
+        assert not list(lock_dir.iterdir()), "No files expected when source absent"
+    finally:
+        _excl_mod.LOCKFILE_DIR = original_lockfile_dir

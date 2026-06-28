@@ -9,8 +9,27 @@ from neuro_workflow.events.create import run_create_events
 from neuro_workflow.testing.fake_flywheel import FlywheelCohortSpec, make_fake_flywheel
 
 
+def _find_trim_bold() -> Path:
+    """Walk up from this file's directory until scripts/trim_bold.py is found.
+
+    This is robust to both editable and non-editable installs, where the
+    package location relative to the repo root can vary.  Raises
+    FileNotFoundError with a clear message if the repo root cannot be located.
+    """
+    candidate = Path(__file__).resolve()
+    for parent in candidate.parents:
+        target = parent / "scripts" / "trim_bold.py"
+        if target.is_file():
+            return target
+    raise FileNotFoundError(
+        "Could not locate scripts/trim_bold.py by walking up from "
+        f"{Path(__file__).resolve()} — is the package installed inside its "
+        "repo checkout?"
+    )
+
+
 def _trim_dir(bids_dir: Path):
-    trim_path = Path(__file__).resolve().parents[4] / "scripts" / "trim_bold.py"
+    trim_path = _find_trim_bold()
     spec = _ilu.spec_from_file_location("trim_bold", str(trim_path))
     mod = _ilu.module_from_spec(spec); spec.loader.exec_module(mod)
     return mod.trim_bold_directory(bids_dir)
