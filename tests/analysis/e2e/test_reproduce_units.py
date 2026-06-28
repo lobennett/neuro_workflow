@@ -90,3 +90,45 @@ def test_stage_metrics_symlinks(tmp_path):
     link = bids / "derivatives" / "fmriprep_25.2.4"
     assert link.is_symlink() and (link / "marker.txt").exists()
     assert staged["fmriprep"] == link
+
+
+# ---------------------------------------------------------------------------
+# Task 5 — canonical set extractors
+# ---------------------------------------------------------------------------
+from neuro_workflow.testing.reproduce.canonical import (
+    compiled_to_keyset, bidsignore_lineset, bids_fileset)
+
+
+def test_compiled_keyset_normalizes_task_prefix():
+    compiled = [
+        {"subject": "sub-s10", "session": "ses-01", "task": "task-goNogo",
+         "run": "run-1", "action": "exclude", "source": "qa_decisions", "reason": "x"},
+        {"subject": "sub-s10", "session": "ses-01", "task": "goNogo",
+         "run": "run-1", "action": "exclude", "source": "collection", "reason": "y"},
+        {"subject": "sub-s10", "session": "ses-02", "task": "flanker",
+         "run": "run-1", "action": "force-include", "source": "override", "reason": "z"},
+    ]
+    ks = compiled_to_keyset(compiled)
+    assert ("sub-s10","ses-01","goNogo","run-1","exclude","qa_decisions") in ks
+    assert ("sub-s10","ses-01","goNogo","run-1","exclude","collection") in ks
+    # force-include is not a gating action -> excluded from the set
+    assert all(t[4] in ("exclude","trim") for t in ks)
+    assert len(ks) == 2
+
+
+def test_bidsignore_lineset_ignores_comments_blanks():
+    text = "# header\n\nsub-s10/ses-01/func/foo_bold.*\n  \nsub-s19/ses-02/func/bar_bold.*\n"
+    assert bidsignore_lineset(text) == {
+        "sub-s10/ses-01/func/foo_bold.*", "sub-s19/ses-02/func/bar_bold.*"}
+
+
+def test_bids_fileset_relative(tmp_path):
+    (tmp_path / "sub-s03/ses-01/func").mkdir(parents=True)
+    (tmp_path / "sub-s03/ses-01/func/a_bold.nii.gz").write_bytes(b"")
+    (tmp_path / "sub-s03/ses-01/func/a_events.tsv").write_text("")
+    (tmp_path / "sourcedata").mkdir()
+    (tmp_path / "sourcedata/x.json").write_text("")
+    fs = bids_fileset(tmp_path)
+    assert "sub-s03/ses-01/func/a_bold.nii.gz" in fs
+    assert "sub-s03/ses-01/func/a_events.tsv" in fs
+    assert not any(f.startswith("sourcedata/") for f in fs)
