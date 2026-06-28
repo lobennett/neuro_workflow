@@ -77,3 +77,16 @@ def test_replay_produces_named_trimmed_bids(tmp_path, monkeypatch):
     import json as _j
     sc = _j.loads(next(bids.glob("sub-s03/ses-01/func/*task-flanker*_bold.json")).read_text())
     assert sc.get("NumberOfVolumesDiscardedByUser") == 7
+
+
+from neuro_workflow.testing.reproduce.stage_metrics import stage_metrics
+
+
+def test_stage_metrics_symlinks(tmp_path):
+    bids = tmp_path / "bids"; (bids / "derivatives").mkdir(parents=True)
+    real_fmriprep = tmp_path / "real_fmriprep_25.2.4"; real_fmriprep.mkdir()
+    (real_fmriprep / "marker.txt").write_text("x")
+    staged = stage_metrics(bids, fmriprep_src=real_fmriprep, version="25.2.4")
+    link = bids / "derivatives" / "fmriprep_25.2.4"
+    assert link.is_symlink() and (link / "marker.txt").exists()
+    assert staged["fmriprep"] == link
