@@ -132,3 +132,18 @@ def test_bids_fileset_relative(tmp_path):
     assert "sub-s03/ses-01/func/a_bold.nii.gz" in fs
     assert "sub-s03/ses-01/func/a_events.tsv" in fs
     assert not any(f.startswith("sourcedata/") for f in fs)
+
+
+# ---------------------------------------------------------------------------
+# Task 6 — lev2 reference set
+# ---------------------------------------------------------------------------
+from neuro_workflow.testing.reproduce.lev2_select import lev2_reference_set
+
+
+def test_lev2_reference_set_globs_and_filters_belowminruns(tmp_path):
+    base = tmp_path / "lev1/sub-s03/task-flanker/fixed_effects"; base.mkdir(parents=True)
+    (base / "sub-s03_task-flanker_contrast-incongruent-congruent_rtmodel-RTDur_stat-fixed-effects.nii.gz").write_bytes(b"")
+    (base / "sub-s03_task-flanker_contrast-rare_rtmodel-RTDur_desc-belowMinRuns_stat-fixed-effects.nii.gz").write_bytes(b"")
+    ref = lev2_reference_set([tmp_path / "lev1"])
+    assert ("sub-s03", "flanker", "incongruent-congruent") in ref
+    assert all("rare" not in c for (_, _, c) in ref)  # belowMinRuns filtered
