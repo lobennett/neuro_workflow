@@ -167,3 +167,145 @@ def test_build_report_pass_fail():
     assert "PASS" in rep_ok.splitlines()[0] and "FAIL" not in rep_ok.splitlines()[0]
     rep_bad = build_report("discovery", clean, dirty, clean, provenance={"sha": "x"})
     assert "FAIL" in rep_bad.splitlines()[0]
+
+
+# ---------------------------------------------------------------------------
+# Task 8 — fw_project_to_inventory
+# ---------------------------------------------------------------------------
+from neuro_workflow.testing.reproduce.snapshot import fw_project_to_inventory
+
+
+class _FakeFile:
+    """Duck-typed Flywheel file — only .name is read by fw_project_to_inventory."""
+
+    def __init__(self, name):
+        self.name = name
+
+
+class _FakeAcq:
+    """Duck-typed Flywheel acquisition."""
+
+    def __init__(self, label, timestamp, files):
+        self.label = label
+        self.timestamp = timestamp
+        self.files = files
+
+
+class _FakeSess:
+    """Duck-typed Flywheel session."""
+
+    def __init__(self, label, timestamp, acqs):
+        self.label = label
+        self.timestamp = timestamp
+        self._acqs = acqs
+
+    def acquisitions(self):
+        return list(self._acqs)
+
+
+class _FakeSubj:
+    """Duck-typed Flywheel subject."""
+
+    def __init__(self, label, sessions):
+        self.label = label
+        self._sessions = sessions
+
+    def sessions(self):
+        return list(self._sessions)
+
+
+class _FakeProject:
+    """Duck-typed Flywheel project."""
+
+    def __init__(self, label, subjects):
+        self.label = label
+        self._subjects = subjects
+
+    def subjects(self):
+        return list(self._subjects)
+
+
+def _make_fake_fw_project():
+    """Build a minimal duck-typed Flywheel project with one subject/session/acq."""
+    # Multi-echo BOLD acq: files include _e1.nii.gz, _e2.nii.gz, _e3.nii.gz
+    bold_files = [
+        _FakeFile("task-flanker_bold_e1.nii.gz"),
+        _FakeFile("task-flanker_bold_e1.json"),
+        _FakeFile("task-flanker_bold_e2.nii.gz"),
+        _FakeFile("task-flanker_bold_e2.json"),
+        _FakeFile("task-flanker_bold_e3.nii.gz"),
+        _FakeFile("task-flanker_bold_e3.json"),
+    ]
+    # Anatomical acq: no echo files
+    anat_files = [
+        _FakeFile("T1w_MPRAGE_PROMO.nii.gz"),
+        _FakeFile("T1w_MPRAGE_PROMO.json"),
+    ]
+    acq_bold = _FakeAcq(
+        label="task-flanker_bold",
+        timestamp="2021-01-15T10:35:00+00:00",
+        files=bold_files,
+    )
+    acq_anat = _FakeAcq(
+        label="T1w MPRAGE PROMO",
+        timestamp="2021-01-15T10:50:00+00:00",
+        files=anat_files,
+    )
+    sess = _FakeSess(
+        label="ses-A",
+        timestamp="2021-01-15T10:30:00+00:00",
+        acqs=[acq_bold, acq_anat],
+    )
+    subj = _FakeSubj(label="s03", sessions=[sess])
+    return _FakeProject(label="r01network", subjects=[subj])
+
+
+def test_fw_project_to_inventory_shape(tmp_path):
+    """fw_project_to_inventory produces a dict load_inventory can round-trip."""
+    project = _make_fake_fw_project()
+    inv = fw_project_to_inventory(project)
+
+    # Top-level shape
+    assert inv["project"] == "r01network"
+    assert len(inv["subjects"]) == 1
+
+    subj_d = inv["subjects"][0]
+    assert subj_d["label"] == "s03"
+    assert len(subj_d["sessions"]) == 1
+
+    sess_d = subj_d["sessions"][0]
+    assert sess_d["label"] == "ses-A"
+    # timestamp must be a string (ISO-8601) for JSON serialisation
+    assert isinstance(sess_d["timestamp"], str)
+    assert "2021-01-15" in sess_d["timestamp"]
+
+    acqs = sess_d["acquisitions"]
+    assert len(acqs) == 2
+    flanker = next(a for a in acqs if a["label"] == "task-flanker_bold")
+    # 3 echo .nii.gz files -> echoes == 3
+    assert flanker["echoes"] == 3
+
+    anat = next(a for a in acqs if a["label"] == "T1w MPRAGE PROMO")
+    # No echo files -> echoes == 0 (non-func)
+    assert anat["echoes"] == 0
+
+
+def test_fw_project_to_inventory_roundtrip(tmp_path):
+    """fw_project_to_inventory output -> JSON -> load_inventory round-trips."""
+    import json
+
+    project = _make_fake_fw_project()
+    inv = fw_project_to_inventory(project)
+    p = tmp_path / "inv.json"
+    p.write_text(json.dumps(inv, default=str))
+
+    spec = load_inventory(p)
+    assert spec.project == "r01network"
+    assert [s.label for s in spec.subjects] == ["s03"]
+    sess = spec.subjects[0].sessions[0]
+    assert sess.label == "ses-A"
+    acq_labels = [a.label for a in sess.acquisitions]
+    assert "task-flanker_bold" in acq_labels
+    assert "T1w MPRAGE PROMO" in acq_labels
+    flanker_spec = next(a for a in sess.acquisitions if a.label == "task-flanker_bold")
+    assert flanker_spec.echoes == 3
