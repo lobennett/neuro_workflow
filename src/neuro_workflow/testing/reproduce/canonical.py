@@ -28,11 +28,19 @@ def bidsignore_lineset(text: str) -> set:
 
 
 def bids_fileset(bids_dir: Path) -> set:
-    """All files under sub-*/ (bold, events, sidecars, anat), as posix relpaths."""
+    """All files under sub-*/ (bold, events, sidecars, anat), as posix relpaths.
+
+    Physiological recordings (``*_physio.*``) are intentionally EXCLUDED: they are
+    derived from a separate Flywheel gephysio processing step that the inventory
+    snapshot + FakeFlywheel replay does not model, and they are not inputs to
+    lev1/lev2. Reproducing physio is an accepted out-of-scope boundary (see the
+    harness design doc "Out of scope"); leaving them in would make the filename
+    diff spuriously FAIL on files the replay never claims to produce.
+    """
     bids_dir = Path(bids_dir)
     out = set()
     for sub in sorted(bids_dir.glob("sub-*")):
         for f in sub.rglob("*"):
-            if f.is_file():
+            if f.is_file() and "_physio." not in f.name:
                 out.add(f.relative_to(bids_dir).as_posix())
     return out
