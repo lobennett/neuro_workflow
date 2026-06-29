@@ -3,7 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable
 
-_GATING_ACTIONS = {"exclude", "trim"}
+# Scan-level gating (removes the BOLD) + per-contrast gating (drops one contrast's
+# fixed-effects contribution). exclude-contrast entries carry a `contrast`.
+_GATING_ACTIONS = {"exclude", "trim", "exclude-contrast"}
 
 
 def _bare_task(task: str) -> str:
@@ -11,14 +13,15 @@ def _bare_task(task: str) -> str:
 
 
 def compiled_to_keyset(compiled: Iterable[dict]) -> set:
-    """6-tuple gating set (subject, session, task[bare], run, action, source);
-    reason intentionally excluded (informational)."""
+    """7-tuple gating set (subject, session, task[bare], run, action, source,
+    contrast); contrast is None for scan-level entries. reason intentionally
+    excluded (informational)."""
     out = set()
     for e in compiled:
         if e.get("action") not in _GATING_ACTIONS:
             continue
         out.add((e["subject"], e["session"], _bare_task(e["task"]),
-                 e["run"], e["action"], e.get("source")))
+                 e["run"], e["action"], e.get("source"), e.get("contrast")))
     return out
 
 

@@ -107,13 +107,20 @@ def test_compiled_keyset_normalizes_task_prefix():
          "run": "run-1", "action": "exclude", "source": "collection", "reason": "y"},
         {"subject": "sub-s10", "session": "ses-02", "task": "flanker",
          "run": "run-1", "action": "force-include", "source": "override", "reason": "z"},
+        # per-contrast exclusion: gating, carries a contrast in the 7th slot
+        {"subject": "sub-s10", "session": "ses-02", "task": "task-shapeMatching",
+         "run": "run-1", "action": "exclude-contrast", "source": "lev1_outlier",
+         "contrast": "DDS", "reason": "vif"},
     ]
     ks = compiled_to_keyset(compiled)
-    assert ("sub-s10","ses-01","goNogo","run-1","exclude","qa_decisions") in ks
-    assert ("sub-s10","ses-01","goNogo","run-1","exclude","collection") in ks
+    # scan-level entries carry contrast=None in the 7th slot
+    assert ("sub-s10","ses-01","goNogo","run-1","exclude","qa_decisions",None) in ks
+    assert ("sub-s10","ses-01","goNogo","run-1","exclude","collection",None) in ks
+    # per-contrast entry carries its contrast
+    assert ("sub-s10","ses-02","shapeMatching","run-1","exclude-contrast","lev1_outlier","DDS") in ks
     # force-include is not a gating action -> excluded from the set
-    assert all(t[4] in ("exclude","trim") for t in ks)
-    assert len(ks) == 2
+    assert all(t[4] in ("exclude","trim","exclude-contrast") for t in ks)
+    assert len(ks) == 3
 
 
 def test_bidsignore_lineset_ignores_comments_blanks():
