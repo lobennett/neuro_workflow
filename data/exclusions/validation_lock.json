@@ -1,17 +1,17 @@
 {
   "dataset": "validation",
-  "compiled_at": "2026-06-29T17:17:34Z",
-  "compiled_at_code_sha": "f5648e7+dirty",
+  "compiled_at": "2026-06-29T17:42:38Z",
+  "compiled_at_code_sha": "c1bb151+dirty",
   "compiled_path": "/home/users/logben/.neuro_workflow/exclusions/validation/compiled_exclusions.json",
-  "n_total_entries": 145,
+  "n_total_entries": 142,
   "n_overrides": 6,
   "sources": [
     {
       "generator": "behavioral-qc",
-      "ran_at": "2026-06-29T17:16:37Z",
-      "code_sha": "f5648e7+dirty",
+      "ran_at": "2026-06-29T17:41:47Z",
+      "code_sha": "c1bb151+dirty",
       "args": null,
-      "n_entries": 11
+      "n_entries": 8
     },
     {
       "generator": "behavioral",
@@ -38,29 +38,29 @@
     },
     {
       "generator": "collection",
-      "ran_at": "2026-06-29T17:17:33Z",
-      "code_sha": "f5648e7+dirty",
+      "ran_at": "2026-06-29T17:42:38Z",
+      "code_sha": "c1bb151+dirty",
       "args": null,
       "n_entries": 15
     },
     {
       "generator": "lev1_outlier",
-      "ran_at": "2026-06-29T17:17:33Z",
-      "code_sha": "f5648e7+dirty",
+      "ran_at": "2026-06-29T17:42:38Z",
+      "code_sha": "c1bb151+dirty",
       "args": null,
       "n_entries": 97
     },
     {
       "generator": "motion",
-      "ran_at": "2026-06-29T17:17:33Z",
-      "code_sha": "f5648e7+dirty",
+      "ran_at": "2026-06-29T17:42:38Z",
+      "code_sha": "c1bb151+dirty",
       "args": null,
       "n_entries": 10
     },
     {
       "generator": "qa_decisions",
-      "ran_at": "2026-06-29T17:17:33Z",
-      "code_sha": "f5648e7+dirty",
+      "ran_at": "2026-06-29T17:42:38Z",
+      "code_sha": "c1bb151+dirty",
       "args": null,
       "n_entries": 10
     }
