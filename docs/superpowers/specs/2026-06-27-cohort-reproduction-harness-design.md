@@ -190,6 +190,13 @@ The harness is the durable verification that step 2's recompile is reproducible.
 
 ## Out of scope (YAGNI)
 
+- **Physiological recordings (`*_physio.*`).** Cardiac/respiratory sidecars come
+  from a separate Flywheel gephysio processing step that the inventory snapshot +
+  FakeFlywheel replay does not model. They are not inputs to lev1/lev2, so the
+  filename diff (`canonical.bids_fileset`) explicitly excludes them. Verified
+  2026-06-28: the *only* real-BIDS files the replay does not reproduce are physio
+  sidecars (9088 in validation) + events.tsv (checked separately) — every
+  BOLD/anat/fmap/sbref reproduces exactly, with exact session/run/echo structure.
 - Real GLM/fMRIPrep execution (stubs only; selection is modeled deterministically).
 - A portable hermetic version with committed real-data fixtures (the synthetic
   harness already covers portable logic; this one is Sherlock-gated by design).

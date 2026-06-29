@@ -128,10 +128,15 @@ def test_bids_fileset_relative(tmp_path):
     (tmp_path / "sub-s03/ses-01/func/a_events.tsv").write_text("")
     (tmp_path / "sourcedata").mkdir()
     (tmp_path / "sourcedata/x.json").write_text("")
+    # physio sidecars are an accepted out-of-scope boundary (gephysio-derived,
+    # not modeled by the snapshot replay, not a lev1/lev2 input)
+    (tmp_path / "sub-s03/ses-01/func/a_recording-cardiac_physio.tsv.gz").write_bytes(b"")
+    (tmp_path / "sub-s03/ses-01/func/a_recording-cardiac_physio.json").write_text("")
     fs = bids_fileset(tmp_path)
     assert "sub-s03/ses-01/func/a_bold.nii.gz" in fs
     assert "sub-s03/ses-01/func/a_events.tsv" in fs
     assert not any(f.startswith("sourcedata/") for f in fs)
+    assert not any("_physio." in f for f in fs)
 
 
 # ---------------------------------------------------------------------------
