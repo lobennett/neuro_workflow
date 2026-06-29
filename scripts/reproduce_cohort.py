@@ -365,9 +365,20 @@ def main(cohort: str, out: Path) -> None:
     tasks = _tasks_from_bids(stub_bids)
     print(f"  tasks discovered: {tasks}")
 
-    # 6-tuple keyset from compiled; derive bare 4-tuple excluded_keys
-    keyset_6 = compiled_to_keyset(compiled)
-    excluded_keys = {(s, ses, t, r) for (s, ses, t, r, _act, _src) in keyset_6}
+    # 7-tuple keyset from compiled (…, action, source, contrast). Split into
+    # scan-level exclusions (4-tuple; exclude/trim — contrast is None) and
+    # per-contrast exclusions (5-tuple; the exclude-contrast action).
+    keyset_7 = compiled_to_keyset(compiled)
+    excluded_keys = {
+        (s, ses, t, r)
+        for (s, ses, t, r, act, _src, _c) in keyset_7
+        if act != "exclude-contrast"
+    }
+    contrast_excluded = {
+        (s, ses, t, r, c)
+        for (s, ses, t, r, act, _src, c) in keyset_7
+        if act == "exclude-contrast" and c is not None
+    }
 
     produced_lev2 = lev2_eligible_set(
         stub_bids,
@@ -375,6 +386,7 @@ def main(cohort: str, out: Path) -> None:
         subjects,
         tasks,
         excluded_keys,
+        contrast_excluded=contrast_excluded,
     )
     reference_lev2 = lev2_reference_set([paths["lev1_fe_dir"]])
 
