@@ -49,6 +49,7 @@ from neuro_workflow.analysis.lev1.processing.surface_data import (
 )
 from neuro_workflow.analysis.lev1.spaces import is_surface_space, resolve_surface_space
 from neuro_workflow.analysis.task_config.loader import get_task_contrasts
+from neuro_workflow.analysis.core.utils import load_contrast_exclusions
 
 logger = logging.getLogger(__name__)
 
@@ -381,6 +382,12 @@ def compute_fixed_effects_all(
             successful_runs, run_count,
         )
 
+    # Per-contrast VIF exclusions (lev1_outlier 'exclude-contrast'): drop a single
+    # run's contribution to one contrast's fixed-effects (not the whole run).
+    contrast_exclusions = load_contrast_exclusions(args.exclusions_file)
+    if contrast_exclusions:
+        logger.info('Loaded %d per-contrast exclusions', len(contrast_exclusions))
+
     logger.info('Computing fixed effects...')
     try:
         if is_surface_space(args.space):
@@ -393,6 +400,7 @@ def compute_fixed_effects_all(
                     min_runs=args.min_runs,
                     hemisphere=hemisphere,
                     surface_space=surface_space,
+                    contrast_exclusions=contrast_exclusions,
                 )
                 logger.info('Fixed effects: %d contrasts (hemi-%s)', len(results), hemisphere)
         else:
@@ -400,6 +408,7 @@ def compute_fixed_effects_all(
                 args.subj_id, args.task_name, dirs['indiv_contrasts'],
                 dirs['fixed_effects'], combined_mask_path, exclusions,
                 min_runs=args.min_runs,
+                contrast_exclusions=contrast_exclusions,
             )
             logger.info('Fixed effects: %d contrasts', len(results))
     except Exception as e:
