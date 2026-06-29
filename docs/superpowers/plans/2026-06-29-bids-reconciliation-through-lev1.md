@@ -208,3 +208,5 @@ For each of discovery / validation (in an `sbatch` job, git-annex on PATH):
 - Dual-task lev1 (s43) is deferred per the confirmed decision; its events are already corrected/committed.
 - The FE-only path (Task 5) has a fallback (delete fixed_effects dir to force recompute) if `--skip-existing` skips fixed-effects.
 - Re-QA loop (Task 5 Step 5) guards against VIF drift on the one events-changed single-task scan; bounded (re-run generator+compile+render only if it actually changed).
+
+> **UPDATE (user, 2026-06-29):** orphan decision changed from leave->REMOVE. Stage 3 now git-rm's the 24 orphan scans' fMRIPrep func-level derivatives (+manifest); Stage 2 rebuilds BOTH fmriprep_25.2.4_input AND xcp_d_26.0.2_input views; XCP-D derivative cleanup deferred. All 24 orphans verified legitimate (qa_decisions junk-trial / motion FD-DVARS / rank-deficient / 1 behavioral override).
