@@ -1,15 +1,21 @@
 """Lev1 outlier exclusion generator.
 
 Reads cohort QC's lev1_outliers.csv (produced by neuro_workflow.qa.lev1_outliers)
-and applies three OR'd auto-exclude rules to flag whole scans:
+and applies three OR'd auto-exclude rules PER CONTRAST:
 
     combined:        vif >= combined_vif AND outlier_pct >= combined_outlier_pct
     strict_vif:      vif >= strict_vif
     strict_outliers: outlier_pct >= strict_outlier_pct
 
-Per-scan aggregation: if any contrast on (subject, session, task, run) fires
-any rule, emit one exclusion entry whose `reason` lists the offending
-contrasts and which rule fired for each.
+Per-contrast emission: each (subject, session, run, contrast) that fires a rule
+gets its own ``action='exclude-contrast'`` entry carrying a ``contrast`` field.
+Unlike scan-level exclusions these do NOT remove the BOLD (no .bidsignore glob,
+no lev1 run-skip); they drop only that contrast's fixed-effects contribution via
+the per-contrast ``belowMinRuns`` floor (see fixed_effects.py + the design doc).
+
+The VIF rules (combined, strict_vif) are SKIPPED for ``exempt_contrasts``
+(task-baseline, response_time) — structurally high-VIF, not quality signals; the
+outlier-only rule still applies to them.
 """
 from __future__ import annotations
 
@@ -33,6 +39,11 @@ class Thresholds:
     strict_outlier_pct: float = _LEV1["strict_outlier_pct"]
 
 
+# Contrasts exempt from the VIF rules (structurally high-VIF, not quality signals).
+# The outlier-only rule still applies to them. Sourced from config/thresholds.yaml.
+_EXEMPT_CONTRASTS = frozenset(_LEV1.get("exempt_contrasts", ["task-baseline", "response_time"]))
+
+
 def _to_float_or_zero(value: str | None) -> float:
     """Empty string / NaN-ish -> 0.0; otherwise parsed float."""
     if value is None or value == "":
@@ -54,13 +65,20 @@ def _read_outliers_csv(path: Path) -> list[dict]:
         return list(csv.DictReader(f))
 
 
-def _rules_fired(vif: float, outlier_pct: float, t: Thresholds) -> list[str]:
-    """Return the names of all rules that fire for this (vif, outlier_pct) pair."""
+def _rules_fired(vif: float, outlier_pct: float, t: Thresholds,
+                 *, vif_exempt: bool = False) -> list[str]:
+    """Return the names of all rules that fire for this (vif, outlier_pct) pair.
+
+    ``vif_exempt`` skips the two VIF-based rules (``combined``, ``strict_vif``)
+    for structurally high-VIF contrasts (task-baseline / response_time); the
+    outlier-only rule still applies.
+    """
     fired: list[str] = []
-    if vif >= t.combined_vif and outlier_pct >= t.combined_outlier_pct:
-        fired.append("combined")
-    if vif >= t.strict_vif:
-        fired.append("strict_vif")
+    if not vif_exempt:
+        if vif >= t.combined_vif and outlier_pct >= t.combined_outlier_pct:
+            fired.append("combined")
+        if vif >= t.strict_vif:
+            fired.append("strict_vif")
     if outlier_pct >= t.strict_outlier_pct:
         fired.append("strict_outliers")
     return fired
@@ -77,51 +95,45 @@ def _format_contrast_clause(contrast: str, vif: float, outlier_pct: float,
     return f"{contrast} {','.join(parts)} ({','.join(rules)})"
 
 
-def _aggregate_to_scan_entries(
+def _emit_contrast_entries(
     rows: list[dict], thresholds: Thresholds,
+    exempt: frozenset[str] = _EXEMPT_CONTRASTS,
 ) -> list[dict]:
-    """Group rows by (subject, session, task, run); emit one exclusion entry per
-    scan that has at least one contrast firing any rule."""
-    by_scan: dict[tuple[str, str, str, str], list[dict]] = {}
-    for row in rows:
-        key = (row["subject"], row["session"], row["task"], row["run"])
-        by_scan.setdefault(key, []).append(row)
+    """Emit one PER-CONTRAST exclusion entry for each (subject, session, run,
+    contrast) firing a rule.
 
+    VIF rules are skipped for contrasts in ``exempt`` (structurally high-VIF).
+    Entries use ``action='exclude-contrast'`` and carry a ``contrast`` field;
+    they drop only that contrast's fixed-effects contribution (via the per-contrast
+    ``belowMinRuns`` floor), NOT the whole scan — see the design doc.
+    """
     entries: list[dict] = []
-    for (subject, session, task, run), scan_rows in sorted(by_scan.items()):
-        flagged: list[tuple[str, float, float, list[str]]] = []
-        for row in scan_rows:
-            vif = _to_float_or_zero(row.get("vif"))
-            pct = _to_float_or_zero(row.get("outlier_pct"))
-            fired = _rules_fired(vif, pct, thresholds)
-            if fired:
-                flagged.append((row["contrast"], vif, pct, fired))
-        if not flagged:
+    for row in rows:
+        contrast = row["contrast"]
+        vif = _to_float_or_zero(row.get("vif"))
+        pct = _to_float_or_zero(row.get("outlier_pct"))
+        fired = _rules_fired(vif, pct, thresholds, vif_exempt=(contrast in exempt))
+        if not fired:
             continue
-        clauses = [
-            _format_contrast_clause(c, v, p, r) for c, v, p, r in flagged
-        ]
-        all_rules: set[str] = set()
-        for _, _, _, r in flagged:
-            all_rules.update(r)
-        max_vif = max(v for _, v, _, _ in flagged)
-        max_pct = max(p for _, _, p, _ in flagged)
         entries.append({
-            "subject": subject,
-            "session": session,
-            "task": f"task-{task}",
-            "run": f"run-{run}",
+            "subject": row["subject"],
+            "session": row["session"],
+            "task": f"task-{row['task']}",
+            "run": f"run-{row['run']}",
+            "contrast": contrast,
             "source": "lev1_outlier",
-            "action": "exclude",
-            "reason": "lev1_outlier: " + "; ".join(clauses),
+            "action": "exclude-contrast",
+            "reason": "lev1_outlier: " + _format_contrast_clause(contrast, vif, pct, fired),
             "metrics": {
-                "max_vif": max_vif,
-                "max_outlier_pct": max_pct,
-                "n_flagged_contrasts": len(flagged),
-                "rules_fired": sorted(all_rules),
+                "vif": vif,
+                "outlier_pct": pct,
+                "rules_fired": fired,
             },
         })
-    return entries
+    return sorted(
+        entries,
+        key=lambda e: (e["subject"], e["session"], e["task"], e["run"], e["contrast"]),
+    )
 
 
 class Lev1OutlierGenerator:
@@ -174,7 +186,7 @@ class Lev1OutlierGenerator:
                 f"lev1_outlier: dropped {dropped}/{before} rows whose subject "
                 f"is not in dataset '{dataset_name}' ({len(sample)} subjects)."
             )
-        return _aggregate_to_scan_entries(rows, thresholds)
+        return _emit_contrast_entries(rows, thresholds)
 
 
 register_generator(Lev1OutlierGenerator())
