@@ -59,22 +59,37 @@ Per collaborator quality review. Comparable-quality scans are both retained.
 |---------|---------|------|--------|
 | s19 | ses-09 | flanker | Omission rate 30% > 25% threshold |
 
-### Non-monotonic onsets — break before 50% of scan
+### Non-monotonic onsets — backward time_elapsed glitch
 
-These events files have onsets that decrease before 50% of the scan data was collected. Caused by negative RT correction reconstructing `time_elapsed` out of order. Cannot be reliably modeled.
+Some raw jsPsych exports log a one-time **backward jump in `time_elapsed`** (a clock
+glitch, NOT negative-RT correction — `get_neg_rt_correction` does not fire on these
+scans), which produces an events file whose onsets step backward once. Trials after
+the jump have unreliable absolute timing.
 
-| Subject | Session | Task | Break onset | % of BOLD at break |
-|---------|---------|------|-------------|-------------------|
-| s03 | ses-11 | stopSignalWDirectedForgetting | 221.0s → 211.9s | 21% |
-| s10 | ses-01 | cuedTS | 72.1s → 70.2s | 15% |
+**Now enforced in code** (`events.create.create_events_df` + `events.qc.run_qc`, since
+2026-06-29): the events are **truncated at the first non-monotonic onset** (clean
+monotonic prefix kept), and if truncation would drop **>50% of the run's test trials**
+the scan is auto-excluded by the behavioral-qc generator
+(`NONMONOTONIC_EXCLUDE_FRACTION = 0.5`). A cohort sweep (2111 CSVs) found exactly the
+4 scans below; the two excludes were already hand-listed here for the same glitch and
+are now reproduced automatically.
 
-Salvaged (break after 50% — events trimmed to monotonic portion):
+Excluded (>50% of test trials past the break):
 
-| Subject | Session | Task | Break onset | % of BOLD at break | Rows kept |
-|---------|---------|------|-------------|-------------------|-----------|
-| s10 | ses-02 | shapeMatching | 419.7s → 413.8s | 86% | 469/509 |
+| Subject | Session | Task | Break onset | test trials dropped |
+|---------|---------|------|-------------|---------------------|
+| s03 | ses-11 | stopSignalWDirectedForgetting | 221.0s → 211.9s | 113/144 (78%) |
+| s10 | ses-01 | cuedTS | 72.1s → 70.2s | 163/196 (83%) |
 
-Note: s43 ses-11 stopSignalWFlanker had a non-monotonic break at 364s but the BOLD is only 143s (26% TRs) — the break is in the overrun region and the scan is already excluded for being <50% TRs.
+Salvaged (≤50% dropped — events truncated to the monotonic prefix):
+
+| Subject | Session | Task | Break onset | Rows kept | test trials dropped |
+|---------|---------|------|-------------|-----------|---------------------|
+| s10 | ses-02 | shapeMatching | 419.7s → 413.8s | 469/509 | 13/168 (8%) |
+
+Note: s43 ses-11 stopSignalWFlanker also has a backward glitch (drops 69/240 test
+trials) but is **already excluded** for being <50% TRs (BOLD 143s of 366 expected);
+its events were re-truncated for consistency but do not feed analysis.
 
 ---
 
