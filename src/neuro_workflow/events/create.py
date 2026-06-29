@@ -13,6 +13,7 @@ from neuro_workflow.events.utils import (
     add_choice_acc,
     add_cols,
     response_time_and_junk,
+    find_nonmonotonic_cut,
 )
 
 log = logging.getLogger(__name__)
@@ -110,8 +111,8 @@ def _get_rows_with_feedback(df: pd.DataFrame, original_df: pd.DataFrame):
     return feedback_block_rows, indices_to_change
 
 
-def create_events_df(filename: Path, short_name: str) -> pd.DataFrame:
-    """Create a BIDS events dataframe from a behavioral CSV."""
+def _build_events_df(filename: Path, short_name: str) -> pd.DataFrame:
+    """Build the events dataframe up to (but excluding) non-monotonic truncation."""
     original_df = pd.read_csv(filename)
     exp_id = original_df["exp_id"][0]
     log.info("Processing %s for %s", filename, exp_id)
@@ -142,11 +143,59 @@ def create_events_df(filename: Path, short_name: str) -> pd.DataFrame:
         if index in df.index:
             df.loc[index, "trial_id"] = "break_with_performance_feedback"
 
-    # Flag non-monotonic onsets (from neg_rt_correction time_elapsed reconstruction)
-    if not df["onset"].is_monotonic_increasing:
-        log.warning("Non-monotonic onsets detected in %s — add to .bidsignore", short_name)
-
     return df
+
+
+def _nonmonotonic_truncation(df: pd.DataFrame):
+    """Locate the non-monotonic-onset truncation point and its test-trial cost.
+
+    Returns ``(cut, n_test_total, n_test_dropped)`` where ``cut`` is the
+    positional index of the first backward onset step (or ``None`` if monotonic).
+    """
+    cut = find_nonmonotonic_cut(df["onset"])
+    n_test_total = int((df["trial_id"] == "test_trial").sum())
+    if cut is None:
+        return None, n_test_total, 0
+    n_test_dropped = int((df["trial_id"].iloc[cut:] == "test_trial").sum())
+    return cut, n_test_total, n_test_dropped
+
+
+def create_events_df(filename: Path, short_name: str) -> pd.DataFrame:
+    """Create a BIDS events dataframe from a behavioral CSV.
+
+    Truncates at the first non-monotonic onset (a backward ``time_elapsed`` clock
+    glitch): trials after the jump have unreliable absolute timing, so the clean
+    monotonic prefix is kept. The complementary >half-test-trials exclusion lives
+    in :func:`neuro_workflow.events.qc.run_qc` (via :func:`events_truncation_stats`).
+    """
+    df = _build_events_df(filename, short_name)
+    cut, n_total, n_dropped = _nonmonotonic_truncation(df)
+    if cut is not None:
+        log.warning(
+            "Non-monotonic onset in %s at row %d — truncating %d trailing rows "
+            "(%d/%d test trials dropped)",
+            short_name, cut, len(df) - cut, n_dropped, n_total,
+        )
+        df = df.iloc[:cut].reset_index(drop=True)
+    return df
+
+
+def events_truncation_stats(filename: Path, short_name: str) -> dict:
+    """Non-monotonic-onset truncation stats for a behavioral CSV (no side effects).
+
+    Returns ``{cut, n_test_total, n_test_dropped, fraction_test_dropped}``.
+    Used by behavioral QC to decide whether the truncation drops too much of the
+    run to keep (see :func:`neuro_workflow.events.qc.run_qc`).
+    """
+    df = _build_events_df(filename, short_name)
+    cut, n_total, n_dropped = _nonmonotonic_truncation(df)
+    frac = (n_dropped / n_total) if n_total else 0.0
+    return {
+        "cut": cut,
+        "n_test_total": n_total,
+        "n_test_dropped": n_dropped,
+        "fraction_test_dropped": frac,
+    }
 
 
 def discover_nifti_tasks(func_dir: Path) -> set[str]:
