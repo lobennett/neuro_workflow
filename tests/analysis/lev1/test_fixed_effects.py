@@ -6,6 +6,62 @@ import logging
 import pytest
 
 
+def _touch_contrast_run(contrast_dir, sub, ses, task, run, contrast):
+    """Create effect-size + variance stubs for one (run, contrast)."""
+    base = f"{sub}_{ses}_task-{task}_run-{run}_contrast-{contrast}_rtmodel-RTDur"
+    (contrast_dir / f"{base}_stat-effect-size.nii.gz").write_bytes(b"")
+    (contrast_dir / f"{base}_stat-variance.nii.gz").write_bytes(b"")
+
+
+def test_find_contrast_files_drops_excluded_run_contrast_only(tmp_path):
+    """A (run, contrast) in contrast_exclusions is dropped; the same run's OTHER
+    contrasts and other runs' SAME contrast are kept."""
+    from neuro_workflow.analysis.lev1.processing.fixed_effects import FixedEffectsAnalyzer
+    cdir = tmp_path / "contrasts"
+    cdir.mkdir()
+    for run in ("1", "2", "3"):
+        _touch_contrast_run(cdir, "sub-s10", "ses-02", "shapeMatching", run, "DDS")
+        _touch_contrast_run(cdir, "sub-s10", "ses-02", "shapeMatching", run, "SSS")
+
+    analyzer = FixedEffectsAnalyzer("sub-s10", "shapeMatching")
+    cx = {("sub-s10_ses-02_task-shapeMatching_run-2", "DDS")}
+
+    eff_dds, var_dds = analyzer.find_contrast_files(cdir, "DDS", contrast_exclusions=cx)
+    assert len(eff_dds) == 2 and len(var_dds) == 2
+    assert not any("run-2" in p.name for p in eff_dds)  # run-2 DDS dropped
+
+    eff_sss, _ = analyzer.find_contrast_files(cdir, "SSS", contrast_exclusions=cx)
+    assert len(eff_sss) == 3  # SSS unaffected, including run-2
+
+
+def test_find_contrast_files_no_contrast_exclusions_keeps_all(tmp_path):
+    from neuro_workflow.analysis.lev1.processing.fixed_effects import FixedEffectsAnalyzer
+    cdir = tmp_path / "contrasts"
+    cdir.mkdir()
+    for run in ("1", "2"):
+        _touch_contrast_run(cdir, "sub-s10", "ses-02", "shapeMatching", run, "DDS")
+    analyzer = FixedEffectsAnalyzer("sub-s10", "shapeMatching")
+    eff, var = analyzer.find_contrast_files(cdir, "DDS")
+    assert len(eff) == 2 and len(var) == 2
+
+
+def test_load_contrast_exclusions_parses_only_exclude_contrast(tmp_path):
+    """load_contrast_exclusions returns (scan_key, contrast) for exclude-contrast
+    entries and ignores scan-level exclude/trim entries."""
+    import json
+    from neuro_workflow.analysis.core.utils import load_contrast_exclusions
+    p = tmp_path / "compiled.json"
+    p.write_text(json.dumps([
+        {"subject": "sub-s10", "session": "ses-02", "task": "task-shapeMatching",
+         "run": "run-1", "action": "exclude-contrast", "contrast": "DDS",
+         "source": "lev1_outlier", "reason": "x"},
+        {"subject": "sub-s10", "session": "ses-01", "task": "task-cuedTS",
+         "run": "run-1", "action": "exclude", "source": "behavioral-qc", "reason": "y"},
+    ]))
+    cx = load_contrast_exclusions(p)
+    assert cx == {("sub-s10_ses-02_task-shapeMatching_run-1", "DDS")}
+
+
 def test_missing_contrast_warning_lists_contrasts_with_no_files(tmp_path, caplog):
     """``compute_all_task_fixed_effects`` must warn when expected contrasts
     have no per-run files at all.

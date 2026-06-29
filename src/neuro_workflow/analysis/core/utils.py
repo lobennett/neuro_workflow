@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +170,45 @@ def load_exclusions(
             logger.info('Excluded keys: %s', sorted(all_exclusions))
 
     return all_exclusions
+
+
+def load_contrast_exclusions(
+    exclusions_file: Union[str, Path],
+) -> Set[Tuple[str, str]]:
+    """Load per-contrast exclusions (action 'exclude-contrast') from the compiled file.
+
+    Returns a set of ``(scan_key, contrast)`` pairs, where ``scan_key`` matches
+    :func:`create_exclusion_key` (``{sub}_{ses}_task-{task}_{run}``). These drop a
+    single contrast's per-run fixed-effects input, not the whole scan (see
+    fixed_effects.FixedEffectsAnalyzer.find_contrast_files). Scan-level actions
+    (exclude/trim) are ignored here — they are handled by load_exclusions.
+    """
+    exclusions_file = Path(exclusions_file)
+    if not exclusions_file.exists():
+        return set()
+    try:
+        with open(exclusions_file, 'r') as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, IOError) as e:
+        logger.warning('Failed to load contrast exclusions from %s: %s', exclusions_file, e)
+        return set()
+    if not isinstance(data, list):
+        return set()  # only the neuro_workflow flat-list format carries exclude-contrast
+    out: Set[Tuple[str, str]] = set()
+    for entry in data:
+        if entry.get('action') != 'exclude-contrast':
+            continue
+        contrast = entry.get('contrast')
+        if not contrast:
+            logger.warning('Skipping exclude-contrast entry with no contrast: %s', entry)
+            continue
+        try:
+            out.add((create_exclusion_key(entry), contrast))
+        except KeyError as e:
+            logger.warning('Skipping invalid exclude-contrast entry: %s', e)
+    if out:
+        logger.info('Loaded %d per-contrast exclusions', len(out))
+    return out
 
 
 def normalize_subject_id(subject: str) -> str:
