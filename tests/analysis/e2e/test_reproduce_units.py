@@ -161,6 +161,61 @@ def test_lev2_reference_set_globs_and_filters_belowminruns(tmp_path):
     assert all("rare" not in c for (_, _, c) in ref)  # belowMinRuns filtered
 
 
+def test_lev2_eligible_set_per_contrast_drops_below_min_runs(monkeypatch):
+    """A per-contrast exclusion that pushes one contrast below min_runs drops only
+    that (sub,task,contrast); other contrasts on the same runs stay eligible."""
+    from neuro_workflow.testing.reproduce import lev2_select
+
+    # s10 task-shapeMatching has 3 runs across 3 sessions.
+    class _FakeFinder:
+        def __init__(self, *a, **k): pass
+        @staticmethod
+        def get_required_files_for_space(space): return []
+        def get_files(self, sub, task, required_files=None):
+            return {"ses-01": {"run-1": {}}, "ses-02": {"run-1": {}}, "ses-04": {"run-1": {}}}
+
+    monkeypatch.setattr(
+        "neuro_workflow.analysis.io.file_discovery.FileFinder", _FakeFinder)
+    monkeypatch.setattr(
+        "neuro_workflow.analysis.task_config.loader.get_task_contrasts",
+        lambda task: ["DDS", "task-baseline"])
+
+    # Drop contrast DDS on 2 of the 3 runs -> DDS has only 1 run left (< min_runs=2)
+    contrast_excluded = {
+        ("sub-s10", "ses-01", "shapeMatching", "run-1", "DDS"),
+        ("sub-s10", "ses-02", "shapeMatching", "run-1", "DDS"),
+    }
+    out = lev2_select.lev2_eligible_set(
+        bids_dir=".", fmriprep_dir=".", subjects=["sub-s10"], tasks=["shapeMatching"],
+        excluded_keys=set(), contrast_excluded=contrast_excluded, min_runs=2)
+
+    assert ("sub-s10", "shapeMatching", "DDS") not in out      # below floor -> dropped
+    assert ("sub-s10", "shapeMatching", "task-baseline") in out  # exempt, 3 runs -> kept
+
+
+def test_lev2_eligible_set_scan_exclusion_drops_all_contrasts(monkeypatch):
+    from neuro_workflow.testing.reproduce import lev2_select
+
+    class _FakeFinder:
+        def __init__(self, *a, **k): pass
+        @staticmethod
+        def get_required_files_for_space(space): return []
+        def get_files(self, sub, task, required_files=None):
+            return {"ses-01": {"run-1": {}}, "ses-02": {"run-1": {}}}
+
+    monkeypatch.setattr(
+        "neuro_workflow.analysis.io.file_discovery.FileFinder", _FakeFinder)
+    monkeypatch.setattr(
+        "neuro_workflow.analysis.task_config.loader.get_task_contrasts",
+        lambda task: ["DDS", "task-baseline"])
+
+    # whole-scan exclude of ses-02 -> only 1 run survives -> nothing eligible
+    out = lev2_select.lev2_eligible_set(
+        bids_dir=".", fmriprep_dir=".", subjects=["sub-s10"], tasks=["shapeMatching"],
+        excluded_keys={("sub-s10", "ses-02", "shapeMatching", "run-1")}, min_runs=2)
+    assert out == set()
+
+
 # ---------------------------------------------------------------------------
 # Task 7 — diff_sets + build_report
 # ---------------------------------------------------------------------------
