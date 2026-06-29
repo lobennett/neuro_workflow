@@ -1,4 +1,4 @@
-"""Tests for src/neuro_workflow/exclusions/lev1_outlier.py."""
+"""Tests for src/neuro_workflow/exclusions/lev1_outlier.py (per-contrast emission)."""
 from __future__ import annotations
 
 import csv
@@ -41,8 +41,8 @@ def _make_args(csv_path: Path, **overrides) -> "object":
     return Namespace(**base)
 
 
-def test_strict_vif_rule_fires(tmp_path):
-    """A scan-contrast with vif >= strict_vif emits an exclusion entry."""
+def test_strict_vif_rule_fires_per_contrast(tmp_path):
+    """A non-exempt contrast with vif >= strict_vif emits one exclude-contrast entry."""
     from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
 
     csv_path = tmp_path / "lev1_outliers.csv"
@@ -52,34 +52,65 @@ def test_strict_vif_rule_fires(tmp_path):
          "flagged_outliers": "0", "flagged_vif": "1"},
     ])
 
-    entries = Lev1OutlierGenerator().generate(
-        "discovery", {}, _make_args(csv_path)
-    )
+    entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
     assert len(entries) == 1
     e = entries[0]
     assert e["subject"] == "sub-s03"
     assert e["session"] == "ses-01"
     assert e["task"] == "task-stopSignal"
     assert e["run"] == "run-1"
+    assert e["contrast"] == "stop_success-go"
     assert e["source"] == "lev1_outlier"
-    assert e["action"] == "exclude"
-    assert "strict_vif" in e["reason"]
-    assert "stop_success-go" in e["reason"]
+    assert e["action"] == "exclude-contrast"
+    assert "strict_vif" in e["reason"] and "stop_success-go" in e["reason"]
+    assert e["metrics"]["vif"] == pytest.approx(18.0)
+    assert e["metrics"]["rules_fired"] == ["strict_vif"]
 
 
-def test_combined_rule_fires(tmp_path):
-    """A row with vif>=combined_vif AND outlier_pct>=combined_outlier_pct fires combined."""
+def test_exempt_contrast_skips_vif_rules(tmp_path):
+    """task-baseline / response_time with huge VIF do NOT fire the VIF rules."""
     from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
     csv_path = tmp_path / "lev1_outliers.csv"
     _write_csv(csv_path, [
-        {"subject": "sub-s10", "session": "ses-02", "run": "1", "task": "cuedTS",
-         "contrast": "response_time", "outlier_pct": "11.0", "vif": "11.0",
+        {"subject": "sub-s10", "session": "ses-02", "run": "1", "task": "shapeMatching",
+         "contrast": "task-baseline", "outlier_pct": "2.0", "vif": "129.0",
+         "flagged_outliers": "0", "flagged_vif": "1"},
+        {"subject": "sub-s10", "session": "ses-02", "run": "1", "task": "shapeMatching",
+         "contrast": "response_time", "outlier_pct": "1.0", "vif": "40.0",
+         "flagged_outliers": "0", "flagged_vif": "1"},
+    ])
+    entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
+    assert entries == []  # both exempt from VIF rules; neither has high outlier_pct
+
+
+def test_exempt_contrast_still_fires_outlier_rule(tmp_path):
+    """An exempt contrast is still excluded if it trips the outlier-only rule."""
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+    csv_path = tmp_path / "lev1_outliers.csv"
+    _write_csv(csv_path, [
+        {"subject": "sub-s10", "session": "ses-02", "run": "1", "task": "shapeMatching",
+         "contrast": "task-baseline", "outlier_pct": "20.0", "vif": "129.0",
          "flagged_outliers": "1", "flagged_vif": "1"},
     ])
     entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
     assert len(entries) == 1
-    assert "combined" in entries[0]["reason"]
+    assert entries[0]["contrast"] == "task-baseline"
+    assert entries[0]["metrics"]["rules_fired"] == ["strict_outliers"]
+
+
+def test_combined_rule_fires_non_exempt(tmp_path):
+    """A non-exempt row with vif>=combined_vif AND outlier_pct>=combined_outlier_pct."""
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
+    csv_path = tmp_path / "lev1_outliers.csv"
+    _write_csv(csv_path, [
+        {"subject": "sub-s10", "session": "ses-02", "run": "1", "task": "cuedTS",
+         "contrast": "cue_switch_cost", "outlier_pct": "11.0", "vif": "11.0",
+         "flagged_outliers": "1", "flagged_vif": "1"},
+    ])
+    entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
+    assert len(entries) == 1
     assert "combined" in entries[0]["metrics"]["rules_fired"]
+    assert entries[0]["action"] == "exclude-contrast"
 
 
 def test_strict_outliers_rule_fires(tmp_path):
@@ -94,6 +125,7 @@ def test_strict_outliers_rule_fires(tmp_path):
     entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
     assert len(entries) == 1
     assert "strict_outliers" in entries[0]["reason"]
+    assert entries[0]["contrast"] == "incongruent-congruent"
 
 
 def test_below_all_thresholds_emits_nothing(tmp_path):
@@ -109,60 +141,45 @@ def test_below_all_thresholds_emits_nothing(tmp_path):
     assert entries == []
 
 
-def test_per_scan_aggregation_collapses_multiple_contrasts(tmp_path):
-    """Two flagged contrasts on the same (subject, session, task, run) -> one entry."""
+def test_multiple_contrasts_emit_separate_entries(tmp_path):
+    """Two flagged contrasts on one scan -> two entries; an exempt high-VIF row -> none."""
     from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
     csv_path = tmp_path / "lev1_outliers.csv"
     _write_csv(csv_path, [
         {"subject": "sub-s03", "session": "ses-02", "run": "1", "task": "cuedTS",
-         "contrast": "response_time", "outlier_pct": "2.0", "vif": "18.09",
+         "contrast": "cue_switch_cost", "outlier_pct": "2.0", "vif": "18.09",
          "flagged_outliers": "0", "flagged_vif": "1"},
         {"subject": "sub-s03", "session": "ses-02", "run": "1", "task": "cuedTS",
-         "contrast": "cue_switch_cost", "outlier_pct": "12.3", "vif": "11.5",
+         "contrast": "task_switch_cost", "outlier_pct": "12.3", "vif": "11.5",
          "flagged_outliers": "1", "flagged_vif": "1"},
-        # An untouched contrast on the same scan — should NOT show in reason.
+        # exempt contrast with huge VIF — must NOT emit
         {"subject": "sub-s03", "session": "ses-02", "run": "1", "task": "cuedTS",
-         "contrast": "task-baseline", "outlier_pct": "1.0", "vif": "1.2",
-         "flagged_outliers": "0", "flagged_vif": "0"},
+         "contrast": "task-baseline", "outlier_pct": "1.0", "vif": "90.0",
+         "flagged_outliers": "0", "flagged_vif": "1"},
     ])
     entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
-    assert len(entries) == 1
-    e = entries[0]
-    assert "response_time" in e["reason"]
-    assert "cue_switch_cost" in e["reason"]
-    assert "task-baseline" not in e["reason"]
-    assert e["metrics"]["n_flagged_contrasts"] == 2
-    assert set(e["metrics"]["rules_fired"]) == {"strict_vif", "combined"}
-    assert e["metrics"]["max_vif"] == pytest.approx(18.09)
-    assert e["metrics"]["max_outlier_pct"] == pytest.approx(12.3)
+    assert len(entries) == 2
+    contrasts = {e["contrast"] for e in entries}
+    assert contrasts == {"cue_switch_cost", "task_switch_cost"}
+    assert all(e["action"] == "exclude-contrast" for e in entries)
+    assert all(e["run"] == "run-1" and e["task"] == "task-cuedTS" for e in entries)
 
 
 def test_threshold_configurability(tmp_path):
-    """Bumping combined_vif to 20 makes a vif=11 row stop firing combined.
-
-    The same row with strict_vif=12 still fires strict_vif. Demonstrates
-    each threshold can be tuned independently.
-    """
+    """Independent threshold tuning on a NON-exempt contrast."""
     from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
     csv_path = tmp_path / "lev1_outliers.csv"
     _write_csv(csv_path, [
         {"subject": "sub-s10", "session": "ses-02", "run": "1", "task": "cuedTS",
-         "contrast": "response_time", "outlier_pct": "11.0", "vif": "11.0",
+         "contrast": "cue_switch_cost", "outlier_pct": "11.0", "vif": "11.0",
          "flagged_outliers": "1", "flagged_vif": "1"},
     ])
-
-    # default thresholds: combined fires
     e_default = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
     assert "combined" in e_default[0]["metrics"]["rules_fired"]
 
-    # combined_vif bumped to 20: combined no longer fires; outlier_pct=11 < strict 15;
-    # vif=11 < strict 15 -> nothing fires, no entry.
     args_loose = _make_args(csv_path, combined_vif=20.0)
-    e_loose = Lev1OutlierGenerator().generate("discovery", {}, args_loose)
-    assert e_loose == []
+    assert Lev1OutlierGenerator().generate("discovery", {}, args_loose) == []
 
-    # strict_vif bumped down to 10: strict_vif fires for vif=11 even though combined
-    # still fires too. Just confirms independent threshold tuning works.
     args_tight = _make_args(csv_path, combined_vif=20.0, strict_vif=10.0)
     e_tight = Lev1OutlierGenerator().generate("discovery", {}, args_tight)
     assert len(e_tight) == 1
@@ -170,21 +187,18 @@ def test_threshold_configurability(tmp_path):
 
 
 def test_empty_outlier_pct_treated_as_zero(tmp_path):
-    """Cohort-of-1 / degenerate case: outlier_pct is empty string. Must not fire rules."""
+    """outlier_pct empty string -> 0.0; with low vif, no rule fires."""
     from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
     csv_path = tmp_path / "lev1_outliers.csv"
     _write_csv(csv_path, [
-        # outlier_pct empty (cohort QC couldn't compute) and vif=4 -> no rule fires.
         {"subject": "sub-s43", "session": "ses-01", "run": "1", "task": "nBack",
          "contrast": "twoBack-oneBack", "outlier_pct": "", "vif": "4.0",
          "flagged_outliers": "0", "flagged_vif": "0"},
     ])
-    entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
-    assert entries == []
+    assert Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path)) == []
 
 
 def test_missing_csv_raises_clear_error(tmp_path):
-    """Missing input CSV -> FileNotFoundError with the path in the message."""
     from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
     bogus = tmp_path / "does_not_exist.csv"
     with pytest.raises(FileNotFoundError, match=str(bogus)):
@@ -192,111 +206,93 @@ def test_missing_csv_raises_clear_error(tmp_path):
 
 
 def test_empty_csv_returns_empty_list(tmp_path):
-    """CSV with only the header row returns []."""
     from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
     csv_path = tmp_path / "lev1_outliers.csv"
-    _write_csv(csv_path, [])  # header only, no rows
-    entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
-    assert entries == []
+    _write_csv(csv_path, [])
+    assert Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path)) == []
 
 
 def test_generator_output_flows_through_compile(tmp_path, monkeypatch):
-    """End-to-end through compile_exclusions: generator entries appear in compiled output."""
+    """End-to-end: per-contrast entries validate, save, and survive compile."""
     from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
     from neuro_workflow.core import exclusions as core_excl
 
-    # Redirect EXCLUSIONS_DIR + LOCKFILE_DIR to tmp paths so compile_exclusions
-    # doesn't leak into the real repo's data/exclusions/.
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
     monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")
 
-    # Generate entries from a small CSV
     csv_path = tmp_path / "lev1_outliers.csv"
     _write_csv(csv_path, [
         {"subject": "sub-s03", "session": "ses-02", "run": "1", "task": "cuedTS",
-         "contrast": "response_time", "outlier_pct": "2.0", "vif": "18.09",
+         "contrast": "cue_switch_cost", "outlier_pct": "2.0", "vif": "18.09",
          "flagged_outliers": "0", "flagged_vif": "1"},
     ])
-    entries = Lev1OutlierGenerator().generate(
-        "discovery", {}, _make_args(csv_path)
-    )
+    entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
     assert len(entries) == 1
 
-    # Save to sources/<dataset>/lev1_outlier.json (matches what cmd_exclusions_generate does)
     core_excl.save_source_entries("discovery", "lev1_outlier", entries)
-
-    # Run compile (load_overrides returns [] for missing file, so no overrides.json needed)
     compiled = core_excl.compile_exclusions("discovery")
 
-    # Compiled output should contain our entry, with source preserved
     assert len(compiled) == 1
     assert compiled[0]["source"] == "lev1_outlier"
-    assert compiled[0]["subject"] == "sub-s03"
-    assert compiled[0]["task"] == "task-cuedTS"
-    assert compiled[0]["action"] == "exclude"
+    assert compiled[0]["action"] == "exclude-contrast"
+    assert compiled[0]["contrast"] == "cue_switch_cost"
+    # contrast-level exclusion must NOT mark the scan excluded (run still runs in lev1)
+    assert not core_excl.is_excluded("sub-s03", "ses-02", "task-cuedTS", "run-1", compiled)
+
+
+def test_exclude_contrast_not_rendered_to_bidsignore():
+    """A contrast-level entry produces no .bidsignore glob (it's not a BOLD removal)."""
+    from neuro_workflow.core.exclusions_render import _entry_to_bidsignore_glob
+    entry = {
+        "subject": "sub-s10", "session": "ses-02", "task": "shapeMatching",
+        "run": "run-1", "contrast": "DDS", "action": "exclude-contrast",
+        "source": "lev1_outlier", "reason": "lev1_outlier: DDS vif=18 (strict_vif)",
+    }
+    assert _entry_to_bidsignore_glob(entry) is None
 
 
 def test_end_to_end_on_real_discovery_cohort_qc():
-    """Smoke: generator runs against real cohort QC output and produces sensible entries.
-
-    Skipped if the discovery cohort QC output isn't present.
-    """
+    """Smoke: generator runs against real cohort QC output; per-contrast shape sound."""
     from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
-
     real_csv = Path("/scratch/users/logben/qa_lev1_discovery/lev1_outliers.csv")
     if not real_csv.is_file():
         pytest.skip(f"discovery cohort QC output not present at {real_csv}")
 
-    entries = Lev1OutlierGenerator().generate(
-        "discovery", {}, _make_args(real_csv)
-    )
-
-    # Discovery cohort N=5: only strict_vif rule should fire (per the math finding
-    # in docs/audits/2026-05-06-lev1-base-task-audit.md — outlier_pct bounded by
-    # sqrt(N-1) ~= 2.0 for N=5, so neither combined nor strict_outliers fires).
-    # Just assert the shape is sound; counts depend on the actual data.
+    entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(real_csv))
     for e in entries:
         assert e["source"] == "lev1_outlier"
-        assert e["action"] == "exclude"
+        assert e["action"] == "exclude-contrast"
         assert e["subject"].startswith("sub-")
-        assert e["session"].startswith("ses-")
-        assert e["task"].startswith("task-")
-        assert e["run"].startswith("run-")
-        assert "lev1_outlier:" in e["reason"]
-        assert "max_vif" in e["metrics"]
-        assert e["metrics"]["n_flagged_contrasts"] >= 1
-        # Discovery shouldn't fire outlier-based rules
-        assert "strict_outliers" not in e["metrics"]["rules_fired"]
+        assert e["contrast"]  # non-empty
+        # exempt contrasts must never appear via a VIF rule
+        if e["contrast"] in {"task-baseline", "response_time"}:
+            assert "strict_outliers" in e["metrics"]["rules_fired"]
+            assert "strict_vif" not in e["metrics"]["rules_fired"]
+            assert "combined" not in e["metrics"]["rules_fired"]
 
 
 def test_dataset_filter_drops_non_member_subjects(tmp_path):
-    """A pooled CSV with discovery + validation subjects must filter to just
-    the dataset's canonical roster (pipeline_config.json `samples`). s1035 is a
-    validation subject, so it is dropped from a discovery compile."""
     from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
     csv_path = tmp_path / "lev1_outliers.csv"
     _write_csv(csv_path, [
         {"subject": "sub-s03", "session": "ses-01", "run": "1", "task": "stopSignal",
-         "contrast": "go", "outlier_pct": "1.0", "vif": "18.0",
+         "contrast": "go-stop", "outlier_pct": "1.0", "vif": "18.0",
          "flagged_outliers": "0", "flagged_vif": "1"},
         {"subject": "sub-s1035", "session": "ses-02", "run": "1", "task": "flanker",
          "contrast": "incongruent-congruent", "outlier_pct": "1.0", "vif": "20.0",
          "flagged_outliers": "0", "flagged_vif": "1"},
     ])
-
     entries = Lev1OutlierGenerator().generate("discovery", {}, _make_args(csv_path))
-
     assert len(entries) == 1
     assert entries[0]["subject"] == "sub-s03"
 
 
 def test_unknown_dataset_fails_loud(tmp_path):
-    """An unknown dataset name fails loud (no silent no-filter / None path)."""
     from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
     csv_path = tmp_path / "lev1_outliers.csv"
     _write_csv(csv_path, [
         {"subject": "sub-s03", "session": "ses-01", "run": "1", "task": "stopSignal",
-         "contrast": "go", "outlier_pct": "1.0", "vif": "18.0",
+         "contrast": "go-stop", "outlier_pct": "1.0", "vif": "18.0",
          "flagged_outliers": "0", "flagged_vif": "1"},
     ])
     with pytest.raises(ValueError, match="anything"):
