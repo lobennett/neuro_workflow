@@ -56,7 +56,13 @@ _COHORT_PATHS: dict[str, dict] = {
             "/scratch/users/logben/qa_lev1_discovery/lev1_outliers.csv"
         ),
         "decisions_tsv":      _REPO_ROOT / "config" / "manifests" / "qc_decisions.tsv",
-        "lev1_fe_dir":        Path("/scratch/users/logben/lev1_discovery"),
+        # Reference the SURFACE lev1 (the reconciled science output that feeds
+        # lev2/network analysis), not the older volumetric QC scaffold
+        # /scratch/users/logben/lev1_discovery (May-2026, pre per-contrast +
+        # pre response_time-exemption — stale).
+        "lev1_fe_dir":        Path(
+            "/scratch/users/logben/discovery_bids/derivatives/lev1_surface"
+        ),
         # Flywheel snapshot — must be captured first with scripts/capture_fw_inventory.py
         "snapshot":           _REPO_ROOT / "data" / "repro" / "fw_inventory_discovery.json",
         # Reference is the full rendered .bidsignore (collection + QC lines) at
@@ -75,7 +81,10 @@ _COHORT_PATHS: dict[str, dict] = {
             "/scratch/users/logben/qa_lev1_validation/lev1_outliers.csv"
         ),
         "decisions_tsv":      _REPO_ROOT / "config" / "manifests" / "qc_decisions.tsv",
-        "lev1_fe_dir":        Path("/scratch/users/logben/lev1_validation"),
+        # SURFACE lev1 science output (see discovery note above).
+        "lev1_fe_dir":        Path(
+            "/scratch/users/logben/validation_bids/derivatives/lev1_surface"
+        ),
         "snapshot":           _REPO_ROOT / "data" / "repro" / "fw_inventory_validation.json",
         # Reference is the full rendered .bidsignore at the real BIDS root.
         "committed_bidsignore": Path("/scratch/users/logben/validation_bids/.bidsignore"),

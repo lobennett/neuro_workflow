@@ -216,6 +216,36 @@ def test_lev2_eligible_set_scan_exclusion_drops_all_contrasts(monkeypatch):
     assert out == set()
 
 
+def test_lev2_eligible_set_skips_dual_tasks_without_contrasts(monkeypatch):
+    """Dual tasks (e.g. stopSignalWFlanker) have no lev1 contrast config —
+    get_task_contrasts raises ValueError — so they're skipped, not crash."""
+    from neuro_workflow.testing.reproduce import lev2_select
+
+    class _FakeFinder:
+        def __init__(self, *a, **k): pass
+        @staticmethod
+        def get_required_files_for_space(space): return []
+        def get_files(self, sub, task, required_files=None):
+            return {"ses-11": {"run-1": {}}, "ses-12": {"run-1": {}}}
+
+    def _contrasts(task):
+        if task == "stopSignalWFlanker":
+            raise ValueError("Contrast config is empty for task 'stopSignalWFlanker'.")
+        return ["incongruent-congruent"]
+
+    monkeypatch.setattr(
+        "neuro_workflow.analysis.io.file_discovery.FileFinder", _FakeFinder)
+    monkeypatch.setattr(
+        "neuro_workflow.analysis.task_config.loader.get_task_contrasts", _contrasts)
+
+    out = lev2_select.lev2_eligible_set(
+        bids_dir=".", fmriprep_dir=".", subjects=["sub-s43"],
+        tasks=["flanker", "stopSignalWFlanker"], excluded_keys=set(), min_runs=2)
+    # base task included; dual task silently skipped (no crash)
+    assert ("sub-s43", "flanker", "incongruent-congruent") in out
+    assert not any(t == "stopSignalWFlanker" for (_, t, _) in out)
+
+
 # ---------------------------------------------------------------------------
 # Task 7 — diff_sets + build_report
 # ---------------------------------------------------------------------------
