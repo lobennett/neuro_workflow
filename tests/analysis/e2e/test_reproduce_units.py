@@ -216,6 +216,39 @@ def test_lev2_eligible_set_scan_exclusion_drops_all_contrasts(monkeypatch):
     assert out == set()
 
 
+def test_strip_filename_boundaries_classes():
+    import importlib.util
+    from pathlib import Path
+    spec = importlib.util.spec_from_file_location(
+        "_rc", Path(__file__).resolve().parents[3] / "scripts" / "reproduce_cohort.py")
+    rc = importlib.util.module_from_spec(spec); spec.loader.exec_module(rc)
+
+    produced = {
+        "sub-s19/ses-01/func/sub-s19_ses-01_task-flanker_run-1_echo-1_bold.nii.gz",
+        "sub-s19-2/ses-01/func/sub-s19-2_ses-01_task-cuedTS_run-1_echo-1_bold.nii.gz",  # rescan
+    }
+    reference = {
+        "sub-s19/ses-01/func/sub-s19_ses-01_task-flanker_run-1_echo-1_bold.nii.gz",
+        "sub-s03/ses-13/anat/sub-s03_ses-13_acq-SagMPRAGE_run-1_T1w.nii.gz",            # anat-only ses
+        "sub-s03/ses-01/fmap/sub-s03_ses-01_run-1_magnitude.json",                      # fmap sidecar
+        "sub-s10/ses-01/func/sub-s10_ses-01_task-goNogo_run-1_events.tsv",              # orphan (excluded)
+    }
+    inert = lambda f: f.endswith("sub-s10_ses-01_task-goNogo_run-1_events.tsv")
+    pf, rf, dropped = rc._strip_filename_boundaries(produced, reference, inert_events=inert)
+
+    assert dropped["rescan_subject"] == {
+        "sub-s19-2/ses-01/func/sub-s19-2_ses-01_task-cuedTS_run-1_echo-1_bold.nii.gz"}
+    assert dropped["anat_only_session"] == {
+        "sub-s03/ses-13/anat/sub-s03_ses-13_acq-SagMPRAGE_run-1_T1w.nii.gz"}
+    assert dropped["fmap_sidecar"] == {
+        "sub-s03/ses-01/fmap/sub-s03_ses-01_run-1_magnitude.json"}
+    assert dropped["orphan_events"] == {
+        "sub-s10/ses-01/func/sub-s10_ses-01_task-goNogo_run-1_events.tsv"}
+    # the one genuine shared BOLD survives on both sides -> diff would be empty
+    assert pf == rf == {
+        "sub-s19/ses-01/func/sub-s19_ses-01_task-flanker_run-1_echo-1_bold.nii.gz"}
+
+
 def test_lev2_eligible_set_skips_dual_tasks_without_contrasts(monkeypatch):
     """Dual tasks (e.g. stopSignalWFlanker) have no lev1 contrast config —
     get_task_contrasts raises ValueError — so they're skipped, not crash."""

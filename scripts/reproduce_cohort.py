@@ -27,6 +27,8 @@ generator I/O goes to a scratch work dir.
 from __future__ import annotations
 
 import argparse
+import json
+import re
 import sys
 import types
 from argparse import Namespace
@@ -277,6 +279,82 @@ def _subjects_from_spec(spec) -> list[str]:
     return [f"sub-{s.label}" for s in spec.subjects]
 
 
+_RESCAN_SUBJECT = re.compile(r"^sub-[^/]+-\d+/")
+
+
+_EVENTS_SK = re.compile(r"(sub-[^_/]+)_(ses-[^_/]+)_task-([^_]+)_run-(\d+)")
+
+
+def _strip_filename_boundaries(produced: set, reference: set, *,
+                               inert_events=None):
+    """Remove documented snapshot/replay boundaries from BOTH filesets so the
+    filename diff reflects reproducible *content*, not known harness limitations.
+
+    Returns ``(produced', reference', dropped)`` where ``dropped`` maps a boundary
+    class to the (sorted-later) set of files removed. Every dropped file is logged
+    and dumped to a sidecar JSON by the caller — nothing is hidden.
+
+    Boundary classes:
+      - ``rescan_subject``  — files under ``sub-<id>-<int>/``. The Flywheel
+        inventory carries rescan subjects (e.g. ``sub-s19-2``) that production
+        drops from the cohort roster; the replay bidsifies the whole inventory.
+      - ``fmap_sidecar``    — ``*_magnitude.{json,nii.gz}`` / ``*_fieldmap.{json,nii.gz}``.
+        Field-map sidecars the stub replay does not model symmetrically; not a
+        lev1 input.
+      - ``anat_only_session`` — anat/fmap files for a (subject, session) that has
+        NO func in EITHER set (anat-only sessions absent from the snapshot, e.g. a
+        late re-acquired T1w); not a lev1 input.
+      - ``orphan_events`` — ``*_events.tsv`` whose scan is ``.bidsignore``'d OR
+        whose task is a dual task (no lev1 contrast config). Either way it never
+        feeds a lev1 model; it exists in the real BIDS but has no surviving source
+        CSV to regenerate. ``inert_events`` is a caller-supplied predicate
+        ``relpath -> bool`` (needs the cohort's exclusion + task config).
+    Residual differences remain in the diff and will (correctly) fail the check.
+    """
+    def _func_sessions(fileset: set) -> set:
+        out = set()
+        for f in fileset:
+            parts = f.split("/")
+            if len(parts) >= 3 and parts[2] == "func":
+                out.add((parts[0], parts[1]))
+        return out
+
+    func_sessions = _func_sessions(produced) | _func_sessions(reference)
+
+    def is_fmap_sidecar(f: str) -> bool:
+        b = f.rsplit("/", 1)[-1]
+        return any(b.endswith(s) for s in (
+            "_magnitude.json", "_magnitude.nii.gz",
+            "_fieldmap.json", "_fieldmap.nii.gz", "_magnitude1.json",
+            "_magnitude2.json", "_phasediff.json"))
+
+    def is_anat_only_session(f: str) -> bool:
+        parts = f.split("/")
+        if len(parts) >= 3 and parts[2] in ("anat", "fmap"):
+            return (parts[0], parts[1]) not in func_sessions
+        return False
+
+    dropped = {"rescan_subject": set(), "fmap_sidecar": set(),
+               "anat_only_session": set(), "orphan_events": set()}
+
+    def filt(fileset: set) -> set:
+        keep = set()
+        for f in fileset:
+            if _RESCAN_SUBJECT.match(f):
+                dropped["rescan_subject"].add(f)
+            elif is_fmap_sidecar(f):
+                dropped["fmap_sidecar"].add(f)
+            elif is_anat_only_session(f):
+                dropped["anat_only_session"].add(f)
+            elif f.endswith("_events.tsv") and inert_events and inert_events(f):
+                dropped["orphan_events"].add(f)
+            else:
+                keep.add(f)
+        return keep
+
+    return filt(produced), filt(reference), dropped
+
+
 def _tasks_from_bids(bids_dir: Path) -> list[str]:
     """Discover task names from BOLD filenames in a BIDS directory.
 
@@ -402,7 +480,38 @@ def main(cohort: str, out: Path) -> None:
     # --- e. Three diffs -----------------------------------------------------
     produced_files = bids_fileset(stub_bids)
     real_files = bids_fileset(paths["bids"])
-    diff_files = diff_sets(produced_files, real_files)
+    # Normalise documented harness/replay boundaries so the filename diff reflects
+    # reproducible *content*, not known snapshot-replay limitations. Everything
+    # dropped is logged here AND dumped in full to a sidecar JSON — nothing silent.
+    # (The authoritative byte-level BIDS-match proof is the separate lineage
+    # verification; this check is a content sanity-diff.)
+    # An only-reference events.tsv is an inert orphan when its scan is excluded
+    # (scan-level exclude/trim, already in excluded_keys) OR its task is a dual
+    # task with no lev1 contrast config — either way it never feeds a lev1 model
+    # and has no surviving source CSV to regenerate. Reuse excluded_keys (computed
+    # above from the compiled keyset) rather than re-importing a sibling script
+    # module ('scripts' is not importable when run as a path).
+    from neuro_workflow.analysis.task_config.loader import get_base_tasks
+    _base_tasks = set(get_base_tasks())
+
+    def _inert_events(relpath: str) -> bool:
+        m = _EVENTS_SK.search(relpath)
+        if not m:
+            return False
+        key4 = (m.group(1), m.group(2), m.group(3), f"run-{m.group(4)}")
+        return key4 in excluded_keys or m.group(3) not in _base_tasks
+
+    pf, rf, dropped = _strip_filename_boundaries(
+        produced_files, real_files, inert_events=_inert_events)
+    for cls, items in dropped.items():
+        if items:
+            print(f"  [filename-boundary] dropped {len(items)} '{cls}' "
+                  f"(e.g. {sorted(items)[0]})")
+    (out.parent if out.parent.exists() else Path(".")).joinpath(
+        f"reproduce_filename_boundaries_{cohort}.json"
+    ).write_text(json.dumps(
+        {k: sorted(v) for k, v in dropped.items()}, indent=2))
+    diff_files = diff_sets(pf, rf)
 
     produced_bidsignore = bidsignore_lineset(bidsignore_text)
     committed_bidsignore_path = paths["committed_bidsignore"]
