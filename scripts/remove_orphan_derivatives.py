@@ -28,8 +28,18 @@ SCRATCH = Path("/scratch/users/logben")
 _SK = re.compile(r"(sub-[^_]+)_(ses-[^_]+)_task-([^_]+)_run-(\d+)")
 
 
+# Confounds are the EVIDENCE a motion exclusion is derived from. If we delete an
+# excluded scan's confounds, that motion exclusion can no longer be reproduced from
+# the cleaned derivatives (it was a Stage-3 bug that broke validation reproducibility).
+# So always PRESERVE the confounds timeseries (tiny) while removing heavy preproc.
+_PRESERVE_SUFFIXES = ("_desc-confounds_timeseries.tsv", "_desc-confounds_timeseries.json")
+
+
 def orphan_func_files(bids_dir: Path, fmriprep_ver: str, scankeys: list[str]) -> dict[str, list[Path]]:
-    """Map each orphan scan-key -> the list of fMRIPrep func files to remove."""
+    """Map each orphan scan-key -> the list of fMRIPrep func files to remove.
+
+    Confounds timeseries (.tsv/.json) are preserved as the motion-exclusion evidence
+    that keeps the exclusion reproducible after cleanup."""
     deriv = bids_dir / "derivatives" / f"fmriprep_{fmriprep_ver}"
     out: dict[str, list[Path]] = {}
     for sk in scankeys:
@@ -40,7 +50,7 @@ def orphan_func_files(bids_dir: Path, fmriprep_ver: str, scankeys: list[str]) ->
         sub, ses = m.group(1), m.group(2)
         func = deriv / sub / ses / "func"
         files = sorted(func.glob(f"{sk}_*")) + sorted(func.glob(f"{sk}.*")) if func.is_dir() else []
-        out[sk] = files
+        out[sk] = [f for f in files if not f.name.endswith(_PRESERVE_SUFFIXES)]
     return out
 
 
