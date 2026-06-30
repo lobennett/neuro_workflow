@@ -10,15 +10,23 @@ _FE_RE = re.compile(
 
 
 def lev2_reference_set(level1_dirs: Iterable[Path]) -> set:
-    """Glob real fixed-effects maps lev2 consumes; drop _desc-belowMinRuns."""
+    """Glob real fixed-effects maps lev2 consumes; drop _desc-belowMinRuns.
+
+    Matches both volumetric (``.nii.gz``) and surface (``.func.gii``) fixed-effects
+    maps — the surface ``lev1_surface`` tree is the science output that actually
+    feeds lev2/network analysis. ``_FE_RE`` tolerates the optional ``hemi-`` and
+    ``space-`` entities, so the per-hemisphere surface files dedupe to one
+    ``(subject, task, contrast)`` tuple."""
     out = set()
     for d in level1_dirs:
-        for f in Path(d).glob("sub-*/*/fixed_effects/*_stat-fixed-effects.nii.gz"):
-            if "_desc-belowMinRuns" in f.name:
-                continue
-            m = _FE_RE.search(f.name)
-            if m:
-                out.add((m.group("sub"), m.group("task"), m.group("contrast")))
+        for pat in ("sub-*/*/fixed_effects/*_stat-fixed-effects.nii.gz",
+                    "sub-*/*/fixed_effects/*_stat-fixed-effects.func.gii"):
+            for f in Path(d).glob(pat):
+                if "_desc-belowMinRuns" in f.name:
+                    continue
+                m = _FE_RE.search(f.name)
+                if m:
+                    out.add((m.group("sub"), m.group("task"), m.group("contrast")))
     return out
 
 
@@ -49,6 +57,14 @@ def lev2_eligible_set(bids_dir: Path, fmriprep_dir: Path, subjects, tasks,
         for task in tasks:
             if task == "rest":
                 continue
+            # Dual tasks (e.g. stopSignalWFlanker) have no lev1 contrast config —
+            # get_task_contrasts raises for an empty/undefined config. lev1 cannot
+            # run them (no contrasts -> no fixed-effects), so they never appear in
+            # the lev2-eligible set; skip them exactly as lev1 does.
+            try:
+                contrasts = get_task_contrasts(task)
+            except ValueError:
+                continue
             files = finder.get_files(
                 sub, task, required_files=FileFinder.get_required_files_for_space("MNI"))
             # Runs surviving scan-level exclusion (shared across all contrasts).
@@ -58,7 +74,7 @@ def lev2_eligible_set(bids_dir: Path, fmriprep_dir: Path, subjects, tasks,
                 for run in runs
                 if (sub, ses, task, run) not in excluded_keys
             ]
-            for contrast in get_task_contrasts(task):
+            for contrast in contrasts:
                 n = sum(
                     1 for (ses, run) in scan_runs
                     if (sub, ses, task, run, contrast) not in contrast_excluded
