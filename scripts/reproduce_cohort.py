@@ -38,8 +38,6 @@ from pathlib import Path
 # Per-cohort canonical paths on Sherlock
 # ---------------------------------------------------------------------------
 
-_MAIN_ARGS = None
-
 # Repository root: two levels up from this script (scripts/ -> repo root).
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -403,7 +401,9 @@ def _tasks_from_bids(bids_dir: Path) -> list[str]:
     return sorted(found)
 
 
-def main(cohort: str, out: Path) -> None:
+def main(cohort: str, out: Path, *,
+         bids_root: Path | None = None,
+         lev1_outliers_csv: Path | None = None) -> None:
     """Reproduce the given cohort and write a diff report to ``out``.
 
     Orchestration only — every load-bearing step calls production code.
@@ -432,9 +432,8 @@ def main(cohort: str, out: Path) -> None:
     from neuro_workflow.testing.reproduce.snapshot import load_inventory
     from neuro_workflow.testing.reproduce.stage_metrics import stage_metrics
 
-    paths = _resolve_cohort_paths(
-        cohort, bids_root=getattr(_MAIN_ARGS, "bids_root", None),
-        lev1_outliers_csv=getattr(_MAIN_ARGS, "lev1_outliers_csv", None))
+    paths = _resolve_cohort_paths(cohort, bids_root=bids_root,
+                                  lev1_outliers_csv=lev1_outliers_csv)
 
     # --- a. Replay FW snapshot -> stub BIDS ---------------------------------
     print(f"[reproduce_cohort] loading inventory: {paths['snapshot']}")
@@ -645,16 +644,25 @@ def _parse_args(argv=None):
         default=Path("reproduce_report.md"),
         help="Path to write the Markdown reproduction report (default: reproduce_report.md).",
     )
-    parser.add_argument("--bids-root", type=Path, default=None,
-        help="Retarget all BIDS-derived paths to this dataset root (e.g. the Oak dataset).")
-    parser.add_argument("--lev1-outliers-csv", type=Path, default=None,
-        help="Override the lev1_outliers.csv reference path.")
+    parser.add_argument(
+        "--bids-root",
+        type=Path,
+        default=None,
+        help="Retarget all BIDS-derived paths to this dataset root (e.g. the Oak dataset).",
+    )
+    parser.add_argument(
+        "--lev1-outliers-csv",
+        type=Path,
+        default=None,
+        help="Override the lev1_outliers.csv reference path.",
+    )
     return parser.parse_args(argv)
 
 
 if __name__ == "__main__":
     args = _parse_args()
-    _MAIN_ARGS = args
-    main(args.cohort, args.out)
+    main(args.cohort, args.out,
+         bids_root=args.bids_root,
+         lev1_outliers_csv=args.lev1_outliers_csv)
     report_text = args.out.read_text()
     sys.exit(0 if "PASS" in report_text.splitlines()[0] else 1)
