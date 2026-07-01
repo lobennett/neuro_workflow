@@ -38,6 +38,8 @@ from pathlib import Path
 # Per-cohort canonical paths on Sherlock
 # ---------------------------------------------------------------------------
 
+_MAIN_ARGS = None
+
 # Repository root: two levels up from this script (scripts/ -> repo root).
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -92,6 +94,29 @@ _COHORT_PATHS: dict[str, dict] = {
         "committed_bidsignore": Path("/scratch/users/logben/validation_bids/.bidsignore"),
     },
 }
+
+
+def _resolve_cohort_paths(cohort: str, *, bids_root: Path | None = None,
+                          lev1_outliers_csv: Path | None = None) -> dict:
+    """Return the cohort path dict, optionally retargeted to a new BIDS root.
+
+    When ``bids_root`` is given, the four BIDS-derived paths (bids, fmriprep_src,
+    lev1_fe_dir, committed_bidsignore) are recomputed under it — so the same
+    reproduction can certify the Oak datasets. Non-BIDS-derived paths (snapshot,
+    behavioral, decisions_tsv) are unchanged. ``lev1_outliers_csv`` overrides the
+    lev1-outlier reference CSV location (regenerated on Oak).
+    """
+    base = dict(_COHORT_PATHS[cohort])
+    ver = base["fmriprep_version"]
+    if bids_root is not None:
+        bids_root = Path(bids_root)
+        base["bids"] = bids_root
+        base["fmriprep_src"] = bids_root / "derivatives" / f"fmriprep_{ver}"
+        base["lev1_fe_dir"] = bids_root / "derivatives" / "lev1_surface"
+        base["committed_bidsignore"] = bids_root / ".bidsignore"
+    if lev1_outliers_csv is not None:
+        base["lev1_outliers_csv"] = Path(lev1_outliers_csv)
+    return base
 
 
 # ---------------------------------------------------------------------------
@@ -407,7 +432,9 @@ def main(cohort: str, out: Path) -> None:
     from neuro_workflow.testing.reproduce.snapshot import load_inventory
     from neuro_workflow.testing.reproduce.stage_metrics import stage_metrics
 
-    paths = _COHORT_PATHS[cohort]
+    paths = _resolve_cohort_paths(
+        cohort, bids_root=getattr(_MAIN_ARGS, "bids_root", None),
+        lev1_outliers_csv=getattr(_MAIN_ARGS, "lev1_outliers_csv", None))
 
     # --- a. Replay FW snapshot -> stub BIDS ---------------------------------
     print(f"[reproduce_cohort] loading inventory: {paths['snapshot']}")
@@ -618,12 +645,16 @@ def _parse_args(argv=None):
         default=Path("reproduce_report.md"),
         help="Path to write the Markdown reproduction report (default: reproduce_report.md).",
     )
+    parser.add_argument("--bids-root", type=Path, default=None,
+        help="Retarget all BIDS-derived paths to this dataset root (e.g. the Oak dataset).")
+    parser.add_argument("--lev1-outliers-csv", type=Path, default=None,
+        help="Override the lev1_outliers.csv reference path.")
     return parser.parse_args(argv)
 
 
 if __name__ == "__main__":
     args = _parse_args()
+    _MAIN_ARGS = args
     main(args.cohort, args.out)
-    # Read the first line to determine exit code.
     report_text = args.out.read_text()
     sys.exit(0 if "PASS" in report_text.splitlines()[0] else 1)
