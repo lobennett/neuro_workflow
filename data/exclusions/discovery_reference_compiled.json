@@ -1,0 +1,574 @@
+[
+  {
+    "subject": "sub-s03",
+    "session": "ses-11",
+    "task": "task-stopSignalWDirectedForgetting",
+    "run": "run-1",
+    "action": "exclude",
+    "source": "behavioral-qc",
+    "reason": "non-monotonic onset truncation drops 113/144 test trials (>50%)"
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-01",
+    "task": "task-cuedTS",
+    "run": "run-1",
+    "action": "exclude",
+    "source": "behavioral-qc",
+    "reason": "non-monotonic onset truncation drops 163/196 test trials (>50%)"
+  },
+  {
+    "subject": "sub-s19",
+    "session": "ses-09",
+    "task": "task-flanker",
+    "run": "run-1",
+    "action": "exclude",
+    "source": "behavioral-qc",
+    "reason": "omission_rate (0.30) > 0.25"
+  },
+  {
+    "subject": "sub-s03",
+    "session": "ses-01",
+    "task": "task-nBack",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s03 ses-01 nBack: missing behavioral"
+  },
+  {
+    "subject": "sub-s03",
+    "session": "ses-11",
+    "task": "task-stopSignalWDirectedForgetting",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s03 ses-11 stopSignalWDirectedForgetting: onset break at 221s (21% of 1064s)"
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-01",
+    "task": "task-cuedTS",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s10 ses-01 cuedTS: onset break at 72s (15% of 489s)"
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-01",
+    "task": "task-goNogo",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s10 ses-01 goNogo run-1: 31 of 382 TRs (8%) \u2014 run-2 has full data"
+  },
+  {
+    "subject": "sub-s19",
+    "session": "ses-02",
+    "task": "task-goNogo",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s19 ses-02 goNogo: missing behavioral per scan notes"
+  },
+  {
+    "subject": "sub-s19",
+    "session": "ses-11",
+    "task": "task-directedForgettingWFlanker",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s19 ses-11 directedForgettingWFlanker: missing behavioral per scan notes"
+  },
+  {
+    "subject": "sub-s29",
+    "session": "ses-01",
+    "task": "task-cuedTS",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s29 ses-01 cuedTS: protocol mismatch (spatialTS was behavioral task, cuedTS was scanned)"
+  },
+  {
+    "subject": "sub-s29",
+    "session": "ses-02",
+    "task": "task-goNogo",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s29 ses-02 goNogo: missing behavioral per scan notes"
+  },
+  {
+    "subject": "sub-s29",
+    "session": "ses-03",
+    "task": "task-spatialTS",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s29 ses-03 spatialTS: 15 of 328 TRs (5%)"
+  },
+  {
+    "subject": "sub-s29",
+    "session": "ses-03",
+    "task": "task-spatialTS",
+    "run": "run-2",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s29 ses-03 spatialTS: 15 of 328 TRs (5%)"
+  },
+  {
+    "subject": "sub-s29",
+    "session": "ses-11",
+    "task": "task-stopSignalWFlanker",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s29 ses-11 stopSignalWFlanker: 179 of 366 TRs (49%)"
+  },
+  {
+    "subject": "sub-s29",
+    "session": "ses-12",
+    "task": "task-directedForgettingWFlanker",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s29 ses-12 directedForgettingWFlanker: 54 of 598 TRs (9%)"
+  },
+  {
+    "subject": "sub-s29",
+    "session": "ses-12",
+    "task": "task-directedForgettingWFlanker",
+    "run": "run-2",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s29 ses-12 directedForgettingWFlanker: 54 of 598 TRs (9%)"
+  },
+  {
+    "subject": "sub-s43",
+    "session": "ses-02",
+    "task": "task-goNogo",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s43 ses-02 goNogo: missing behavioral per scan notes"
+  },
+  {
+    "subject": "sub-s43",
+    "session": "ses-08",
+    "task": "task-directedForgetting",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: 3D BOLD scans (dim4=1) \u2014 incomplete acquisitions"
+  },
+  {
+    "subject": "sub-s43",
+    "session": "ses-11",
+    "task": "task-stopSignalWFlanker",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s43 ses-11 stopSignalWFlanker: 96 of 366 TRs (26%)"
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-02",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=19.80,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 19.8008,
+      "outlier_pct": 0.3981,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-02",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DNN vif=16.92,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 16.9189,
+      "outlier_pct": 0.4788,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-02",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=17.11,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 17.111,
+      "outlier_pct": 0.3637,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-04",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=15.82,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 15.8234,
+      "outlier_pct": 0.2668,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-04",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=15.73,outlier=0.2% (strict_vif)",
+    "metrics": {
+      "vif": 15.728,
+      "outlier_pct": 0.2086,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=17.57,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 17.5655,
+      "outlier_pct": 0.5498,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDD vif=16.59,outlier=0.6% (strict_vif)",
+    "metrics": {
+      "vif": 16.589,
+      "outlier_pct": 0.6492,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=23.32,outlier=1.1% (strict_vif)",
+    "metrics": {
+      "vif": 23.3158,
+      "outlier_pct": 1.1101,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DNN vif=21.17,outlier=1.2% (strict_vif)",
+    "metrics": {
+      "vif": 21.1674,
+      "outlier_pct": 1.1618,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=17.47,outlier=1.0% (strict_vif)",
+    "metrics": {
+      "vif": 17.4666,
+      "outlier_pct": 1.0366,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=27.68,outlier=1.0% (strict_vif)",
+    "metrics": {
+      "vif": 27.6778,
+      "outlier_pct": 0.988,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SNN vif=20.34,outlier=0.9% (strict_vif)",
+    "metrics": {
+      "vif": 20.3418,
+      "outlier_pct": 0.9133,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DNN vif=15.75,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 15.7539,
+      "outlier_pct": 0.3485,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s19",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=15.36,outlier=0.6% (strict_vif)",
+    "metrics": {
+      "vif": 15.363,
+      "outlier_pct": 0.5983,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s19",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SNN vif=18.33,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 18.3284,
+      "outlier_pct": 0.3479,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s43",
+    "session": "ses-03",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDD vif=15.32,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 15.3184,
+      "outlier_pct": 0.2783,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s43",
+    "session": "ses-03",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=15.14,outlier=0.2% (strict_vif)",
+    "metrics": {
+      "vif": 15.1392,
+      "outlier_pct": 0.25,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s43",
+    "session": "ses-03",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DNN vif=17.24,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 17.2398,
+      "outlier_pct": 0.3493,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s43",
+    "session": "ses-05",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=18.06,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 18.0632,
+      "outlier_pct": 0.3371,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s43",
+    "session": "ses-05",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=17.44,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 17.4448,
+      "outlier_pct": 0.2678,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s43",
+    "session": "ses-07",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DNN vif=21.06,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 21.06,
+      "outlier_pct": 0.3465,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s43",
+    "session": "ses-07",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=15.26,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 15.2633,
+      "outlier_pct": 0.3681,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-05",
+    "task": "task-goNogo",
+    "run": "run-1",
+    "source": "qa_decisions",
+    "action": "exclude",
+    "reason": "qa_decisions: lev1_qa: junk-trial rate 30.6% > 30% threshold (omission/commission/rt_too_fast) (scan-level)"
+  },
+  {
+    "subject": "sub-s19",
+    "session": "ses-10",
+    "task": "task-goNogo",
+    "run": "run-1",
+    "source": "qa_decisions",
+    "action": "exclude",
+    "reason": "qa_decisions: lev1_qa: junk-trial rate 33.3% > 30% threshold (omission/commission/rt_too_fast) (scan-level)"
+  },
+  {
+    "subject": "sub-s29",
+    "session": "ses-10",
+    "task": "task-goNogo",
+    "run": "run-1",
+    "source": "qa_decisions",
+    "action": "exclude",
+    "reason": "qa_decisions: lev1_qa: junk-trial rate 30.6% > 30% threshold (omission/commission/rt_too_fast) (scan-level)"
+  }
+]
