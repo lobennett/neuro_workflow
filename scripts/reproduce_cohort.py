@@ -398,6 +398,7 @@ def main(cohort: str, out: Path) -> None:
         compiled_to_keyset,
     )
     from neuro_workflow.testing.reproduce.lev2_select import (
+        lev1_indiv_run_counts,
         lev2_eligible_set,
         lev2_reference_set,
     )
@@ -494,12 +495,25 @@ def main(cohort: str, out: Path) -> None:
     from neuro_workflow.analysis.task_config.loader import get_base_tasks
     _base_tasks = set(get_base_tasks())
 
+    # Multi-run scans: run-1 is the short/aborted acquisition, the behavioral CSV
+    # maps to run-2 (see docs — 7 multi-run cases). The run-1 events.tsv is therefore
+    # an orphan with no reproducible source. Collect (sub,ses,task) that have a
+    # run>=2 events.tsv in the real BIDS so their run-1 events are treated as inert.
+    _multirun = set()
+    for f in real_files:
+        m = _EVENTS_SK.search(f)
+        if m and f.endswith("_events.tsv") and int(m.group(4)) >= 2:
+            _multirun.add((m.group(1), m.group(2), m.group(3)))
+
     def _inert_events(relpath: str) -> bool:
         m = _EVENTS_SK.search(relpath)
         if not m:
             return False
         key4 = (m.group(1), m.group(2), m.group(3), f"run-{m.group(4)}")
-        return key4 in excluded_keys or m.group(3) not in _base_tasks
+        st = (m.group(1), m.group(2), m.group(3))
+        # excluded scan, dual task (no lev1 contrasts), or a multi-run run-1 orphan
+        return (key4 in excluded_keys or m.group(3) not in _base_tasks
+                or (m.group(4) == "1" and st in _multirun))
 
     pf, rf, dropped = _strip_filename_boundaries(
         produced_files, real_files, inert_events=_inert_events)
@@ -544,6 +558,21 @@ def main(cohort: str, out: Path) -> None:
     reference_bidsignore = bidsignore_lineset(_content)
     diff_excl = diff_sets(produced_bidsignore, reference_bidsignore)
 
+    # Boundary: the exclusion-based model predicts eligibility from BIDS-runs minus
+    # exclusions, but lev1 also drops a contrast at RUNTIME when its design is
+    # rank-deficient / has insufficient events (produced < min_runs indiv-contrasts,
+    # tagged _desc-belowMinRuns or absent). Those drops aren't derivable from the
+    # exclusion set, so remove model-only cells that lev1 under-produced (logged).
+    _run_counts = lev1_indiv_run_counts([paths["lev1_fe_dir"]])
+    _runtime_dropped = {
+        cell for cell in (produced_lev2 - reference_lev2)
+        if _run_counts.get(cell, 0) < 2
+    }
+    if _runtime_dropped:
+        produced_lev2 = produced_lev2 - _runtime_dropped
+        print(f"  [lev2-boundary] dropped {len(_runtime_dropped)} model-only cells "
+              f"lev1 under-produced at runtime (belowMinRuns/absent): "
+              f"{sorted(_runtime_dropped)}")
     diff_lev2 = diff_sets(produced_lev2, reference_lev2)
 
     # --- f. Report ----------------------------------------------------------

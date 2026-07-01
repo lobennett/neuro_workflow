@@ -8,6 +8,34 @@ _FE_RE = re.compile(
     r"(?P<sub>sub-[^_/]+)_(?:hemi-[^_]+_)?(?:space-[^_]+_)?task-(?P<task>[^_]+)"
     r"_contrast-(?P<contrast>.+?)_rtmodel-[^_]+(?:_desc-belowMinRuns)?_stat-fixed-effects")
 
+# per-run indiv-contrast filename: sub-X_ses-Y_task-T_run-N_hemi-.._contrast-C_rtmodel-.._stat-effect-size
+_INDIV_RE = re.compile(
+    r"(?P<sub>sub-[^_/]+)_(?P<ses>ses-[^_/]+)_task-(?P<task>[^_]+)_run-(?P<run>\d+)"
+    r"_(?:hemi-[^_]+_)?(?:space-[^_]+_)?contrast-(?P<contrast>.+?)_rtmodel-[^_]+_stat-effect-size")
+
+
+def lev1_indiv_run_counts(level1_dirs: Iterable[Path]) -> dict:
+    """Return {(subject, task, contrast): n_runs} — how many per-run indiv-contrasts
+    lev1 actually emitted for each cell (counting unique session/run).
+
+    Used to detect lev1 *runtime* drops: a contrast is not emitted for a run when
+    its design is rank-deficient / has insufficient events (e.g. goNogo task-baseline
+    when a condition is empty). A model-predicted cell whose count here is < min_runs
+    (including 0 = absent from this dict) was dropped by lev1 at runtime — NOT
+    derivable from the exclusion set, so the exclusion-based ``lev2_eligible_set``
+    cannot predict it; the reproduce harness treats it as a documented boundary."""
+    from collections import defaultdict
+    runs: dict = defaultdict(set)
+    for d in level1_dirs:
+        for pat in ("sub-*/*/indiv_contrasts/*_stat-effect-size.nii.gz",
+                    "sub-*/*/indiv_contrasts/*_stat-effect-size.func.gii"):
+            for f in Path(d).glob(pat):
+                m = _INDIV_RE.search(f.name)
+                if m:
+                    cell = (m.group("sub"), m.group("task"), m.group("contrast"))
+                    runs[cell].add((m.group("ses"), m.group("run")))
+    return {cell: len(r) for cell, r in runs.items()}
+
 
 def lev2_reference_set(level1_dirs: Iterable[Path]) -> set:
     """Glob real fixed-effects maps lev2 consumes; drop _desc-belowMinRuns.
