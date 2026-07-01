@@ -2,6 +2,8 @@
 
 **Last updated:** 2026-06-09
 
+Terse stage reference (Steps 1–14). For the full narrated recipe — every command in order, with what each does and why, reflecting the current Oak re-execution (Drift Gate, exclusion diff-gates, reproduce certification, read-only finalize) — see **`docs/PIPELINE-WALKTHROUGH.md`**.
+
 Exact commands to reproduce the BIDS datasets and run the analysis pipeline from Flywheel. Each stage depends on the previous one.
 
 ---
