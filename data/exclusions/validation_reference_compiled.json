@@ -1,0 +1,2138 @@
+[
+  {
+    "subject": "sub-s1058",
+    "session": "ses-02",
+    "task": "task-directedForgetting",
+    "run": "run-1",
+    "action": "exclude",
+    "source": "behavioral-qc",
+    "reason": "omission_rate (0.50) > 0.25"
+  },
+  {
+    "subject": "sub-s1134",
+    "session": "ses-08",
+    "task": "task-spatialTS",
+    "run": "run-1",
+    "action": "exclude",
+    "source": "behavioral-qc",
+    "reason": "omission_rate (0.26) > 0.25"
+  },
+  {
+    "subject": "sub-s1258",
+    "session": "ses-12",
+    "task": "task-stopSignalWDirectedForgetting",
+    "run": "run-1",
+    "action": "exclude",
+    "source": "behavioral-qc",
+    "reason": "go_rt (1013ms) > 1000ms"
+  },
+  {
+    "subject": "sub-s1351",
+    "session": "ses-06",
+    "task": "task-flanker",
+    "run": "run-1",
+    "action": "exclude",
+    "source": "behavioral-qc",
+    "reason": "omission_rate (0.30) > 0.25"
+  },
+  {
+    "subject": "sub-s1408",
+    "session": "ses-12",
+    "task": "task-spatialTSWCuedTS",
+    "run": "run-1",
+    "action": "exclude",
+    "source": "behavioral-qc",
+    "reason": "omission_rate (0.27) > 0.25"
+  },
+  {
+    "subject": "sub-s1445",
+    "session": "ses-12",
+    "task": "task-spatialTSWCuedTS",
+    "run": "run-1",
+    "action": "exclude",
+    "source": "behavioral-qc",
+    "reason": "omission_rate (0.26) > 0.25"
+  },
+  {
+    "subject": "sub-s180",
+    "session": "ses-12",
+    "task": "task-shapeMatchingWCuedTS",
+    "run": "run-1",
+    "action": "exclude",
+    "source": "behavioral-qc",
+    "reason": "omission_rate (0.76) > 0.25"
+  },
+  {
+    "subject": "sub-s956",
+    "session": "ses-04",
+    "task": "task-cuedTS",
+    "run": "run-1",
+    "action": "exclude",
+    "source": "behavioral-qc",
+    "reason": "omission_rate (0.50) > 0.25"
+  },
+  {
+    "subject": "sub-s1058",
+    "session": "ses-02",
+    "task": "task-directedForgetting",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s1058 ses-02 directedForgetting: 196 of 405 TRs (48%)"
+  },
+  {
+    "subject": "sub-s1175",
+    "session": "ses-11",
+    "task": "task-cuedTSWFlanker",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s1175 ses-11 cuedTSWFlanker: missing behavioral per scan notes"
+  },
+  {
+    "subject": "sub-s1292",
+    "session": "ses-04",
+    "task": "task-nBack",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s1292 ses-04 nBack: scanner failure, no behavioral data"
+  },
+  {
+    "subject": "sub-s216",
+    "session": "ses-05",
+    "task": "task-directedForgetting",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s216 ses-05 directedForgetting: 94 of 405 TRs (23%)"
+  },
+  {
+    "subject": "sub-s216",
+    "session": "ses-05",
+    "task": "task-directedForgetting",
+    "run": "run-2",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s216 ses-05 directedForgetting: 94 of 405 TRs (23%)"
+  },
+  {
+    "subject": "sub-s247",
+    "session": "ses-11",
+    "task": "task-stopSignalWDirectedForgetting",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s247 ses-11 stopSignalWDirectedForgetting: 345 of 715 TRs (48%)"
+  },
+  {
+    "subject": "sub-s300",
+    "session": "ses-08",
+    "task": "task-flanker",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s300 ses-08 flanker: behavioral lost in server crash, makeup in ses-09"
+  },
+  {
+    "subject": "sub-s373",
+    "session": "ses-02",
+    "task": "task-spatialTS",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s373 ses-02 spatialTS: 12 of 328 TRs (4%)"
+  },
+  {
+    "subject": "sub-s373",
+    "session": "ses-02",
+    "task": "task-spatialTS",
+    "run": "run-2",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s373 ses-02 spatialTS: 12 of 328 TRs (4%)"
+  },
+  {
+    "subject": "sub-s394",
+    "session": "ses-04",
+    "task": "task-cuedTS",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s394 ses-04 cuedTS: 2 of 329 TRs (1%)"
+  },
+  {
+    "subject": "sub-s394",
+    "session": "ses-04",
+    "task": "task-cuedTS",
+    "run": "run-2",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s394 ses-04 cuedTS: 2 of 329 TRs (1%)"
+  },
+  {
+    "subject": "sub-s480",
+    "session": "ses-03",
+    "task": "task-goNogo",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: 3D BOLD scans (dim4=1) \u2014 incomplete acquisitions"
+  },
+  {
+    "subject": "sub-s480",
+    "session": "ses-03",
+    "task": "task-nBack",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s480 ses-03 nBack run-1: 3 of 505 TRs (1%) \u2014 scan terminated immediately"
+  },
+  {
+    "subject": "sub-s599",
+    "session": "ses-02",
+    "task": "task-rest",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s599 ses-02 rest: 31 of 156 TRs (20%)"
+  },
+  {
+    "subject": "sub-s956",
+    "session": "ses-04",
+    "task": "task-cuedTS",
+    "run": "run-1",
+    "source": "collection",
+    "action": "exclude",
+    "reason": "collection: s956 ses-04 cuedTS: 155 of 329 TRs (47%)"
+  },
+  {
+    "subject": "sub-s1035",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=15.22,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 15.2231,
+      "outlier_pct": 0.2676,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1035",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=16.31,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 16.3144,
+      "outlier_pct": 0.2884,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1035",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=16.33,outlier=0.6% (strict_vif)",
+    "metrics": {
+      "vif": 16.3252,
+      "outlier_pct": 0.6491,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1057",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=16.30,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 16.305,
+      "outlier_pct": 0.4025,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1057",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=16.62,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 16.6153,
+      "outlier_pct": 0.3007,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1058",
+    "session": "ses-09",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDD vif=15.67,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 15.6688,
+      "outlier_pct": 0.466,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1058",
+    "session": "ses-09",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=15.19,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 15.1862,
+      "outlier_pct": 0.5112,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1127",
+    "session": "ses-01",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=16.51,outlier=1.4% (strict_vif)",
+    "metrics": {
+      "vif": 16.5113,
+      "outlier_pct": 1.3712,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1134",
+    "session": "ses-01",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDD vif=17.95,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 17.9489,
+      "outlier_pct": 0.3786,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1134",
+    "session": "ses-01",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=16.88,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 16.8786,
+      "outlier_pct": 0.4876,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1258",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DNN vif=15.93,outlier=1.6% (strict_vif)",
+    "metrics": {
+      "vif": 15.931,
+      "outlier_pct": 1.6004,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1267",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDD vif=17.11,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 17.1111,
+      "outlier_pct": 0.4112,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1267",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=16.87,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 16.866,
+      "outlier_pct": 0.3762,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1267",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=15.02,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 15.0225,
+      "outlier_pct": 0.4879,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1267",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=16.87,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 16.8734,
+      "outlier_pct": 0.3902,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1267",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=20.43,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 20.4257,
+      "outlier_pct": 0.3972,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1267",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=22.24,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 22.2396,
+      "outlier_pct": 0.4182,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1270",
+    "session": "ses-07",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=15.42,outlier=0.2% (strict_vif)",
+    "metrics": {
+      "vif": 15.4171,
+      "outlier_pct": 0.2004,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1270",
+    "session": "ses-07",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=15.88,outlier=0.2% (strict_vif)",
+    "metrics": {
+      "vif": 15.8778,
+      "outlier_pct": 0.1777,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1292",
+    "session": "ses-11",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=15.62,outlier=0.2% (strict_vif)",
+    "metrics": {
+      "vif": 15.6197,
+      "outlier_pct": 0.2289,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1326",
+    "session": "ses-07",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=15.66,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 15.6626,
+      "outlier_pct": 0.2904,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1326",
+    "session": "ses-09",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDD vif=16.04,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 16.0388,
+      "outlier_pct": 0.3715,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1402",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=17.58,outlier=0.2% (strict_vif)",
+    "metrics": {
+      "vif": 17.5794,
+      "outlier_pct": 0.1992,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1402",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SNN vif=16.29,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 16.2853,
+      "outlier_pct": 0.278,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1402",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=18.42,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 18.4227,
+      "outlier_pct": 0.2732,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1408",
+    "session": "ses-04",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=15.32,outlier=0.2% (strict_vif)",
+    "metrics": {
+      "vif": 15.3225,
+      "outlier_pct": 0.222,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1408",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDD vif=22.65,outlier=1.7% (strict_vif)",
+    "metrics": {
+      "vif": 22.6522,
+      "outlier_pct": 1.7087,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1408",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=23.33,outlier=1.6% (strict_vif)",
+    "metrics": {
+      "vif": 23.3308,
+      "outlier_pct": 1.5959,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1408",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=16.58,outlier=1.6% (strict_vif)",
+    "metrics": {
+      "vif": 16.5776,
+      "outlier_pct": 1.5835,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1408",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SNN vif=24.03,outlier=1.9% (strict_vif)",
+    "metrics": {
+      "vif": 24.0259,
+      "outlier_pct": 1.8587,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1408",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=16.86,outlier=1.7% (strict_vif)",
+    "metrics": {
+      "vif": 16.8627,
+      "outlier_pct": 1.7445,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1408",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=17.65,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 17.6456,
+      "outlier_pct": 0.5269,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1408",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DNN vif=15.91,outlier=1.1% (strict_vif)",
+    "metrics": {
+      "vif": 15.9095,
+      "outlier_pct": 1.0664,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1408",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=16.46,outlier=0.9% (strict_vif)",
+    "metrics": {
+      "vif": 16.4591,
+      "outlier_pct": 0.8566,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1481",
+    "session": "ses-07",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=15.73,outlier=0.2% (strict_vif)",
+    "metrics": {
+      "vif": 15.728,
+      "outlier_pct": 0.2456,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1481",
+    "session": "ses-07",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=15.61,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 15.6086,
+      "outlier_pct": 0.3017,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1481",
+    "session": "ses-09",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=17.08,outlier=0.2% (strict_vif)",
+    "metrics": {
+      "vif": 17.0806,
+      "outlier_pct": 0.2292,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1481",
+    "session": "ses-09",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=24.09,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 24.0925,
+      "outlier_pct": 0.3416,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1481",
+    "session": "ses-09",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SNN vif=21.66,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 21.659,
+      "outlier_pct": 0.3648,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1481",
+    "session": "ses-09",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=16.58,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 16.5805,
+      "outlier_pct": 0.2758,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s180",
+    "session": "ses-04",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=15.28,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 15.2786,
+      "outlier_pct": 0.4987,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s247",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=16.13,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 16.1289,
+      "outlier_pct": 0.3994,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s286",
+    "session": "ses-02",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=16.14,outlier=0.2% (strict_vif)",
+    "metrics": {
+      "vif": 16.1421,
+      "outlier_pct": 0.1893,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s286",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=15.32,outlier=0.8% (strict_vif)",
+    "metrics": {
+      "vif": 15.3241,
+      "outlier_pct": 0.7589,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-02",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=16.43,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 16.4291,
+      "outlier_pct": 0.2918,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-02",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=16.17,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 16.1705,
+      "outlier_pct": 0.3564,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-02",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SNN vif=15.27,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 15.2697,
+      "outlier_pct": 0.3009,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-02",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=18.54,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 18.5383,
+      "outlier_pct": 0.4201,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-03",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDD vif=16.30,outlier=0.9% (strict_vif)",
+    "metrics": {
+      "vif": 16.3027,
+      "outlier_pct": 0.863,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-03",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=21.27,outlier=0.8% (strict_vif)",
+    "metrics": {
+      "vif": 21.2668,
+      "outlier_pct": 0.8059,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-03",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DNN vif=22.88,outlier=1.0% (strict_vif)",
+    "metrics": {
+      "vif": 22.8804,
+      "outlier_pct": 1.0327,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-03",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=25.66,outlier=0.7% (strict_vif)",
+    "metrics": {
+      "vif": 25.6578,
+      "outlier_pct": 0.7123,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-03",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=25.90,outlier=0.8% (strict_vif)",
+    "metrics": {
+      "vif": 25.9033,
+      "outlier_pct": 0.7943,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-03",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SNN vif=18.30,outlier=0.8% (strict_vif)",
+    "metrics": {
+      "vif": 18.3001,
+      "outlier_pct": 0.8234,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-03",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=19.49,outlier=0.8% (strict_vif)",
+    "metrics": {
+      "vif": 19.4866,
+      "outlier_pct": 0.8207,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDD vif=18.68,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 18.682,
+      "outlier_pct": 0.5158,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=18.05,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 18.0544,
+      "outlier_pct": 0.4665,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DNN vif=15.25,outlier=0.6% (strict_vif)",
+    "metrics": {
+      "vif": 15.2507,
+      "outlier_pct": 0.6012,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=19.85,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 19.8452,
+      "outlier_pct": 0.5269,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=17.54,outlier=0.7% (strict_vif)",
+    "metrics": {
+      "vif": 17.5424,
+      "outlier_pct": 0.6959,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SNN vif=20.34,outlier=0.7% (strict_vif)",
+    "metrics": {
+      "vif": 20.3429,
+      "outlier_pct": 0.6832,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=22.22,outlier=0.6% (strict_vif)",
+    "metrics": {
+      "vif": 22.2223,
+      "outlier_pct": 0.6464,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=20.78,outlier=0.6% (strict_vif)",
+    "metrics": {
+      "vif": 20.784,
+      "outlier_pct": 0.6473,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SNN vif=18.54,outlier=0.7% (strict_vif)",
+    "metrics": {
+      "vif": 18.5438,
+      "outlier_pct": 0.7398,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=16.08,outlier=0.7% (strict_vif)",
+    "metrics": {
+      "vif": 16.0766,
+      "outlier_pct": 0.7022,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDD vif=18.13,outlier=0.7% (strict_vif)",
+    "metrics": {
+      "vif": 18.1273,
+      "outlier_pct": 0.7,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=29.80,outlier=0.8% (strict_vif)",
+    "metrics": {
+      "vif": 29.7959,
+      "outlier_pct": 0.7717,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DNN vif=28.20,outlier=0.9% (strict_vif)",
+    "metrics": {
+      "vif": 28.2046,
+      "outlier_pct": 0.9051,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=33.05,outlier=0.8% (strict_vif)",
+    "metrics": {
+      "vif": 33.0459,
+      "outlier_pct": 0.8011,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=39.22,outlier=0.9% (strict_vif)",
+    "metrics": {
+      "vif": 39.2186,
+      "outlier_pct": 0.9354,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SNN vif=23.25,outlier=1.0% (strict_vif)",
+    "metrics": {
+      "vif": 23.2453,
+      "outlier_pct": 0.9675,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s295",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=26.56,outlier=1.0% (strict_vif)",
+    "metrics": {
+      "vif": 26.5584,
+      "outlier_pct": 0.9526,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s300",
+    "session": "ses-07",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=15.76,outlier=0.2% (strict_vif)",
+    "metrics": {
+      "vif": 15.7594,
+      "outlier_pct": 0.1695,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s336",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDD vif=19.72,outlier=0.7% (strict_vif)",
+    "metrics": {
+      "vif": 19.7154,
+      "outlier_pct": 0.6526,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s336",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=19.66,outlier=0.6% (strict_vif)",
+    "metrics": {
+      "vif": 19.6556,
+      "outlier_pct": 0.5672,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s336",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DNN vif=18.86,outlier=0.6% (strict_vif)",
+    "metrics": {
+      "vif": 18.8571,
+      "outlier_pct": 0.6277,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s336",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=19.92,outlier=0.6% (strict_vif)",
+    "metrics": {
+      "vif": 19.9207,
+      "outlier_pct": 0.5854,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s336",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=27.77,outlier=0.9% (strict_vif)",
+    "metrics": {
+      "vif": 27.7662,
+      "outlier_pct": 0.8978,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s336",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SNN vif=20.57,outlier=0.9% (strict_vif)",
+    "metrics": {
+      "vif": 20.5686,
+      "outlier_pct": 0.9109,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s336",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=23.04,outlier=0.9% (strict_vif)",
+    "metrics": {
+      "vif": 23.0372,
+      "outlier_pct": 0.9007,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s415",
+    "session": "ses-01",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=16.65,outlier=1.2% (strict_vif)",
+    "metrics": {
+      "vif": 16.6517,
+      "outlier_pct": 1.1958,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s415",
+    "session": "ses-05",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=16.40,outlier=0.7% (strict_vif)",
+    "metrics": {
+      "vif": 16.3958,
+      "outlier_pct": 0.6705,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s415",
+    "session": "ses-09",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=19.09,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 19.0869,
+      "outlier_pct": 0.4372,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s415",
+    "session": "ses-09",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=15.36,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 15.3613,
+      "outlier_pct": 0.4228,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s480",
+    "session": "ses-03",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=15.66,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 15.6633,
+      "outlier_pct": 0.5445,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s480",
+    "session": "ses-03",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=16.86,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 16.8598,
+      "outlier_pct": 0.4567,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s480",
+    "session": "ses-03",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SNN vif=16.25,outlier=0.6% (strict_vif)",
+    "metrics": {
+      "vif": 16.2546,
+      "outlier_pct": 0.6437,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s599",
+    "session": "ses-10",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=16.19,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 16.1864,
+      "outlier_pct": 0.3626,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s645",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDS vif=16.41,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 16.4144,
+      "outlier_pct": 0.4025,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s645",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=17.31,outlier=0.5% (strict_vif)",
+    "metrics": {
+      "vif": 17.3099,
+      "outlier_pct": 0.5142,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s645",
+    "session": "ses-06",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=18.04,outlier=0.4% (strict_vif)",
+    "metrics": {
+      "vif": 18.0431,
+      "outlier_pct": 0.4488,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s874",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DDD vif=20.84,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 20.845,
+      "outlier_pct": 0.2814,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s874",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DNN vif=16.58,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 16.5843,
+      "outlier_pct": 0.3436,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s874",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "DSD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: DSD vif=15.52,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 15.5169,
+      "outlier_pct": 0.2621,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s874",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SDD",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SDD vif=16.43,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 16.4259,
+      "outlier_pct": 0.2924,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s874",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SNN",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SNN vif=17.80,outlier=0.2% (strict_vif)",
+    "metrics": {
+      "vif": 17.7978,
+      "outlier_pct": 0.2319,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s874",
+    "session": "ses-08",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "contrast": "SSS",
+    "source": "lev1_outlier",
+    "action": "exclude-contrast",
+    "reason": "lev1_outlier: SSS vif=19.01,outlier=0.3% (strict_vif)",
+    "metrics": {
+      "vif": 19.012,
+      "outlier_pct": 0.2641,
+      "rules_fired": [
+        "strict_vif"
+      ]
+    }
+  },
+  {
+    "subject": "sub-s1134",
+    "session": "ses-10",
+    "task": "task-rest",
+    "run": "run-1",
+    "source": "motion",
+    "action": "exclude",
+    "reason": "Resting state FD mean (0.302) exceeded threshold (0.2)",
+    "metrics": {
+      "fmriprep_fd_mean": 0.30243723268452666,
+      "fmriprep_fd_std": 1.0318233031730015,
+      "fmriprep_proportion_fd_over_0.5": 0.05161290322580645,
+      "fmriprep_std_dvars_mean": 1.3673247677419356,
+      "fmriprep_std_dvars_std": 1.311049127341955,
+      "fmriprep_proportion_std_dvars_over_1.5": 0.13548387096774195
+    }
+  },
+  {
+    "subject": "sub-s1258",
+    "session": "ses-11",
+    "task": "task-shapeMatching",
+    "run": "run-1",
+    "source": "motion",
+    "action": "exclude",
+    "reason": "Proportion FD > 0.5 (0.207) exceeded threshold (0.2)",
+    "metrics": {
+      "fmriprep_fd_mean": 0.33677486573751747,
+      "fmriprep_fd_std": 0.43341593647200083,
+      "fmriprep_proportion_fd_over_0.5": 0.20679012345679013,
+      "fmriprep_std_dvars_mean": 1.03062175,
+      "fmriprep_std_dvars_std": 0.43346460096072376,
+      "fmriprep_proportion_std_dvars_over_1.5": 0.12962962962962962
+    }
+  },
+  {
+    "subject": "sub-s1314",
+    "session": "ses-11",
+    "task": "task-spatialTSWCuedTS",
+    "run": "run-1",
+    "source": "motion",
+    "action": "exclude",
+    "reason": "Proportion std_dvars > 1.5 (0.206) exceeded threshold (0.2)",
+    "metrics": {
+      "fmriprep_fd_mean": 0.2977353512419774,
+      "fmriprep_fd_std": 0.4395369518502555,
+      "fmriprep_proportion_fd_over_0.5": 0.16666666666666666,
+      "fmriprep_std_dvars_mean": 1.1918104897119344,
+      "fmriprep_std_dvars_std": 0.8375946928571829,
+      "fmriprep_proportion_std_dvars_over_1.5": 0.205761316872428
+    }
+  },
+  {
+    "subject": "sub-s1391",
+    "session": "ses-02",
+    "task": "task-rest",
+    "run": "run-1",
+    "source": "motion",
+    "action": "exclude",
+    "reason": "Resting state FD mean (0.220) exceeded threshold (0.2)",
+    "metrics": {
+      "fmriprep_fd_mean": 0.2196171939931282,
+      "fmriprep_fd_std": 0.32602709021990695,
+      "fmriprep_proportion_fd_over_0.5": 0.05806451612903226,
+      "fmriprep_std_dvars_mean": 1.005739141935484,
+      "fmriprep_std_dvars_std": 0.25429885376595984,
+      "fmriprep_proportion_std_dvars_over_1.5": 0.05806451612903226
+    }
+  },
+  {
+    "subject": "sub-s1391",
+    "session": "ses-10",
+    "task": "task-rest",
+    "run": "run-1",
+    "source": "motion",
+    "action": "exclude",
+    "reason": "Resting state FD mean (0.210) exceeded threshold (0.2)",
+    "metrics": {
+      "fmriprep_fd_mean": 0.2098310307133426,
+      "fmriprep_fd_std": 0.13087039552956928,
+      "fmriprep_proportion_fd_over_0.5": 0.05161290322580645,
+      "fmriprep_std_dvars_mean": 1.1113799032258065,
+      "fmriprep_std_dvars_std": 0.2207092028163489,
+      "fmriprep_proportion_std_dvars_over_1.5": 0.05806451612903226
+    }
+  },
+  {
+    "subject": "sub-s1408",
+    "session": "ses-07",
+    "task": "task-goNogo",
+    "run": "run-1",
+    "source": "motion",
+    "action": "exclude",
+    "reason": "Proportion FD > 0.5 (0.231) exceeded threshold (0.2)",
+    "metrics": {
+      "fmriprep_fd_mean": 0.47970756670070724,
+      "fmriprep_fd_std": 0.9408054465158785,
+      "fmriprep_proportion_fd_over_0.5": 0.23097112860892388,
+      "fmriprep_std_dvars_mean": 0.9906636692913385,
+      "fmriprep_std_dvars_std": 0.6595566460716311,
+      "fmriprep_proportion_std_dvars_over_1.5": 0.16272965879265092
+    }
+  },
+  {
+    "subject": "sub-s216",
+    "session": "ses-05",
+    "task": "task-rest",
+    "run": "run-1",
+    "source": "motion",
+    "action": "exclude",
+    "reason": "Resting state FD mean (0.237) exceeded threshold (0.2); Proportion std_dvars > 1.5 (0.219) exceeded threshold (0.2)",
+    "metrics": {
+      "fmriprep_fd_mean": 0.23675781986113545,
+      "fmriprep_fd_std": 0.1720751865723542,
+      "fmriprep_proportion_fd_over_0.5": 0.08387096774193549,
+      "fmriprep_std_dvars_mean": 1.2402711225806453,
+      "fmriprep_std_dvars_std": 0.31040099629545675,
+      "fmriprep_proportion_std_dvars_over_1.5": 0.21935483870967742
+    }
+  },
+  {
+    "subject": "sub-s321",
+    "session": "ses-08",
+    "task": "task-flanker",
+    "run": "run-1",
+    "source": "motion",
+    "action": "exclude",
+    "reason": "Proportion FD > 0.5 (0.243) exceeded threshold (0.2)",
+    "metrics": {
+      "fmriprep_fd_mean": 0.6430293653356843,
+      "fmriprep_fd_std": 1.311429276741467,
+      "fmriprep_proportion_fd_over_0.5": 0.2425531914893617,
+      "fmriprep_std_dvars_mean": 1.0719610723404256,
+      "fmriprep_std_dvars_std": 0.9701175948386025,
+      "fmriprep_proportion_std_dvars_over_1.5": 0.2
+    }
+  },
+  {
+    "subject": "sub-s321",
+    "session": "ses-10",
+    "task": "task-flanker",
+    "run": "run-1",
+    "source": "motion",
+    "action": "exclude",
+    "reason": "Proportion FD > 0.5 (0.226) exceeded threshold (0.2)",
+    "metrics": {
+      "fmriprep_fd_mean": 0.46229160923631024,
+      "fmriprep_fd_std": 0.8164152855468508,
+      "fmriprep_proportion_fd_over_0.5": 0.225531914893617,
+      "fmriprep_std_dvars_mean": 1.0244214127659574,
+      "fmriprep_std_dvars_std": 1.0010269808766843,
+      "fmriprep_proportion_std_dvars_over_1.5": 0.1829787234042553
+    }
+  },
+  {
+    "subject": "sub-s321",
+    "session": "ses-13",
+    "task": "task-nBackWShapeMatching",
+    "run": "run-1",
+    "source": "motion",
+    "action": "exclude",
+    "reason": "Proportion FD > 0.5 (0.201) exceeded threshold (0.2)",
+    "metrics": {
+      "fmriprep_fd_mean": 0.4427032387505712,
+      "fmriprep_fd_std": 0.8611856944948287,
+      "fmriprep_proportion_fd_over_0.5": 0.20098039215686275,
+      "fmriprep_std_dvars_mean": 1.0809147205882352,
+      "fmriprep_std_dvars_std": 0.9040427374931282,
+      "fmriprep_proportion_std_dvars_over_1.5": 0.19117647058823528
+    }
+  },
+  {
+    "subject": "sub-s1058",
+    "session": "ses-01",
+    "task": "task-nBack",
+    "run": "run-1",
+    "source": "qa_decisions",
+    "action": "exclude",
+    "reason": "qa_decisions: lev1_qa: junk-trial rate 40.3% > 30% threshold (omission/commission/rt_too_fast) (scan-level)"
+  },
+  {
+    "subject": "sub-s1134",
+    "session": "ses-08",
+    "task": "task-flanker",
+    "run": "run-1",
+    "source": "qa_decisions",
+    "action": "exclude",
+    "reason": "qa_decisions: lev1_qa: rank-deficient design matrix (trans_y_derivative1_power2 vs trans_z_derivative1_power2 |r|=0.9924) (scan-level)"
+  },
+  {
+    "subject": "sub-s1175",
+    "session": "ses-02",
+    "task": "task-directedForgetting",
+    "run": "run-1",
+    "source": "qa_decisions",
+    "action": "exclude",
+    "reason": "qa_decisions: lev1_qa: junk-trial rate 37.5% > 30% threshold (omission/commission/rt_too_fast) (scan-level)"
+  },
+  {
+    "subject": "sub-s1175",
+    "session": "ses-04",
+    "task": "task-spatialTS",
+    "run": "run-1",
+    "source": "qa_decisions",
+    "action": "exclude",
+    "reason": "qa_decisions: lev1_qa: junk-trial rate 32.1% > 30% threshold (omission/commission/rt_too_fast) (scan-level)"
+  },
+  {
+    "subject": "sub-s1314",
+    "session": "ses-05",
+    "task": "task-goNogo",
+    "run": "run-1",
+    "source": "qa_decisions",
+    "action": "exclude",
+    "reason": "qa_decisions: lev1_qa: junk-trial rate 34.4% > 30% threshold (omission/commission/rt_too_fast) (scan-level)"
+  },
+  {
+    "subject": "sub-s1351",
+    "session": "ses-06",
+    "task": "task-nBack",
+    "run": "run-1",
+    "source": "qa_decisions",
+    "action": "exclude",
+    "reason": "qa_decisions: lev1_qa: junk-trial rate 47.3% > 30% threshold (omission/commission/rt_too_fast) (scan-level)"
+  },
+  {
+    "subject": "sub-s1351",
+    "session": "ses-07",
+    "task": "task-directedForgetting",
+    "run": "run-1",
+    "source": "qa_decisions",
+    "action": "exclude",
+    "reason": "qa_decisions: lev1_qa: junk-trial rate 45.0% > 30% threshold (omission/commission/rt_too_fast) (scan-level)"
+  },
+  {
+    "subject": "sub-s1351",
+    "session": "ses-07",
+    "task": "task-spatialTS",
+    "run": "run-1",
+    "source": "qa_decisions",
+    "action": "exclude",
+    "reason": "qa_decisions: lev1_qa: junk-trial rate 44.9% > 30% threshold (omission/commission/rt_too_fast) (scan-level)"
+  },
+  {
+    "subject": "sub-s1445",
+    "session": "ses-04",
+    "task": "task-goNogo",
+    "run": "run-1",
+    "source": "qa_decisions",
+    "action": "exclude",
+    "reason": "qa_decisions: lev1_qa: junk-trial rate 36.6% > 30% threshold (omission/commission/rt_too_fast) (scan-level)"
+  },
+  {
+    "subject": "sub-s394",
+    "session": "ses-07",
+    "task": "task-goNogo",
+    "run": "run-1",
+    "source": "qa_decisions",
+    "action": "exclude",
+    "reason": "qa_decisions: lev1_qa: junk-trial rate 40.0% > 30% threshold (omission/commission/rt_too_fast) (scan-level)"
+  },
+  {
+    "subject": "sub-s1273",
+    "session": "ses-12",
+    "task": "task-spatialTSWCuedTS",
+    "run": "run-1",
+    "source": "override",
+    "action": "exclude",
+    "reason": "Behavioral exclusion",
+    "metrics": {}
+  },
+  {
+    "subject": "sub-s1445",
+    "session": "ses-11",
+    "task": "task-stopSignalWDirectedForgetting",
+    "run": "run-1",
+    "source": "override",
+    "action": "exclude",
+    "reason": "Behavioral exclusion",
+    "metrics": {}
+  }
+]

@@ -1,0 +1,3255 @@
+{
+  "project": "r01network",
+  "subjects": [
+    {
+      "label": "s03",
+      "sessions": [
+        {
+          "label": "22461",
+          "timestamp": "2020-11-18T02:42:36+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-11-18T02:42:36+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-11-18T02:42:36+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-18T02:42:36+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-18T02:42:36+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-11-18T02:42:36+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2020-11-18T02:42:36+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2020-11-18T02:42:36+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2020-11-18T02:42:36+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2020-11-18T02:42:36+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "T1w MPRAGE PROMO",
+              "timestamp": "2020-11-18T02:42:36+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "DTI_pe0_g105",
+              "timestamp": "2020-11-18T02:42:36+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "DTI_pe1_g105",
+              "timestamp": "2020-11-18T02:42:36+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22472",
+          "timestamp": "2020-11-19T02:40:31+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-11-19T02:40:31+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-11-19T02:40:31+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-19T02:40:31+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-19T02:40:31+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-11-19T02:40:31+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2020-11-19T02:40:31+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2020-11-19T02:40:31+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2020-11-19T02:40:31+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2020-11-19T02:40:31+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2020-11-19T02:40:31+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22568",
+          "timestamp": "2020-12-09T02:39:02+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-12-09T02:39:02+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-12-09T02:39:02+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-09T02:39:02+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-09T02:39:02+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-12-09T02:39:02+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2020-12-09T02:39:02+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2020-12-09T02:39:02+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2020-12-09T02:39:02+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2020-12-09T02:39:02+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22578",
+          "timestamp": "2020-12-10T02:36:06+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-12-10T02:36:06+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-12-10T02:36:06+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-10T02:36:06+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-10T02:36:06+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-12-10T02:36:06+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2020-12-10T02:36:06+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2020-12-10T02:36:06+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2020-12-10T02:36:06+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2020-12-10T02:36:06+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "T2w CUBE PROMO .8mm sag",
+              "timestamp": "2020-12-10T02:36:06+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22734",
+          "timestamp": "2021-02-10T02:33:48+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-10T02:33:48+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-10T02:33:48+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-10T02:33:48+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-10T02:33:48+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-10T02:33:48+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-02-10T02:33:48+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-02-10T02:33:48+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-02-10T02:33:48+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-02-10T02:33:48+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "NEW Sag_MPRAGE_T1",
+              "timestamp": "2021-02-10T02:33:48+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22743",
+          "timestamp": "2021-02-11T02:33:21+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-11T02:33:21+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-11T02:33:21+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-11T02:33:21+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-11T02:33:21+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-11T02:33:21+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-02-11T02:33:21+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-02-11T02:33:21+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-02-11T02:33:21+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-02-11T02:33:21+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22752",
+          "timestamp": "2021-02-12T17:10:11+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-12T17:10:11+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-12T17:10:11+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-12T17:10:11+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-12T17:10:11+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-12T17:10:11+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-02-12T17:10:11+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-02-12T17:10:11+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-02-12T17:10:11+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-02-12T17:10:11+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22829",
+          "timestamp": "2021-03-03T02:31:44+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-03T02:31:44+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-03T02:31:44+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-03T02:31:44+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-03T02:31:44+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-03T02:31:44+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-03T02:31:44+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-03-03T02:31:44+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-03-03T02:31:44+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-03-03T02:31:44+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-03-03T02:31:44+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22834",
+          "timestamp": "2021-03-04T02:47:07+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-04T02:47:07+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-04T02:47:07+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-04T02:47:07+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-04T02:47:07+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-04T02:47:07+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-03-04T02:47:07+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-03-04T02:47:07+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-03-04T02:47:07+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-03-04T02:47:07+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22862",
+          "timestamp": "2021-03-10T02:38:23+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-10T02:38:23+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-10T02:38:23+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-10T02:38:23+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-10T02:38:23+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-10T02:38:23+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-03-10T02:38:23+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-03-10T02:38:23+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-03-10T02:38:23+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-03-10T02:38:23+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22867",
+          "timestamp": "2021-03-11T02:35:01+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-11T02:35:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-11T02:35:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-11T02:35:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-11T02:35:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-11T02:35:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-03-11T02:35:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-03-11T02:35:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-03-11T02:35:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-03-11T02:35:01+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22930",
+          "timestamp": "2021-03-24T01:38:01+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-24T01:38:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-24T01:38:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-24T01:38:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-24T01:38:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-24T01:38:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "directed_forgetting_w_flanker_bold",
+              "timestamp": "2021-03-24T01:38:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_directed_forgetting_bold",
+              "timestamp": "2021-03-24T01:38:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_flanker_bold",
+              "timestamp": "2021-03-24T01:38:01+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22935",
+          "timestamp": "2021-03-25T01:39:39+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-25T01:39:39+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-25T01:39:39+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-25T01:39:39+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-25T01:39:39+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-25T01:39:39+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_directed_forgetting_bold",
+              "timestamp": "2021-03-25T01:39:39+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_flanker_bold",
+              "timestamp": "2021-03-25T01:39:39+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "directed_forgetting_w_flanker_bold",
+              "timestamp": "2021-03-25T01:39:39+00:00",
+              "echoes": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "s10",
+      "sessions": [
+        {
+          "label": "22455",
+          "timestamp": "2020-11-17T17:14:53+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-11-17T17:14:53+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-17T17:14:53+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-17T17:14:53+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-11-17T17:14:53+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-11-17T17:14:53+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2020-11-17T17:14:53+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2020-11-17T17:14:53+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2020-11-17T17:14:53+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2020-11-17T17:14:53+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2020-11-17T17:14:53+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "T1w MPRAGE PROMO",
+              "timestamp": "2020-11-17T17:14:53+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "T2w CUBE PROMO .8mm sag",
+              "timestamp": "2020-11-17T17:14:53+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22479",
+          "timestamp": "2020-11-20T17:14:41+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-11-20T17:14:41+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-20T17:14:41+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-20T17:14:41+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-11-20T17:14:41+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-11-20T17:14:41+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2020-11-20T17:14:41+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2020-11-20T17:14:41+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2020-11-20T17:14:41+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2020-11-20T17:14:41+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22563",
+          "timestamp": "2020-12-08T17:15:50+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-12-08T17:15:50+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-08T17:15:50+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-08T17:15:50+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-12-08T17:15:50+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-12-08T17:15:50+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2020-12-08T17:15:50+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2020-12-08T17:15:50+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2020-12-08T17:15:50+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2020-12-08T17:15:50+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22591",
+          "timestamp": "2020-12-11T17:11:09+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-12-11T17:11:09+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-12-11T17:11:09+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-11T17:11:09+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-11T17:11:09+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-12-11T17:11:09+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2020-12-11T17:11:09+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2020-12-11T17:11:09+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2020-12-11T17:11:09+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2020-12-11T17:11:09+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "20210209",
+          "timestamp": "2021-02-09T17:11:28+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-09T17:11:28+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-09T17:11:28+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-09T17:11:28+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-09T17:11:28+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-09T17:11:28+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-02-09T17:11:28+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-02-09T17:11:28+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-02-09T17:11:28+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-02-09T17:11:28+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22824",
+          "timestamp": "2021-03-02T17:05:05+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-02T17:05:05+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-02T17:05:05+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-02T17:05:05+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-02T17:05:05+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-02T17:05:05+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-03-02T17:05:05+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-03-02T17:05:05+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-03-02T17:05:05+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-03-02T17:05:05+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22842",
+          "timestamp": "2021-03-05T17:10:37+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-05T17:10:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-05T17:10:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-05T17:10:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-05T17:10:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-05T17:10:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-03-05T17:10:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-03-05T17:10:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-03-05T17:10:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-03-05T17:10:37+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22856",
+          "timestamp": "2021-03-09T17:02:46+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-09T17:02:46+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-09T17:02:46+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-09T17:02:46+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-09T17:02:46+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-09T17:02:46+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-03-09T17:02:46+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-03-09T17:02:46+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-03-09T17:02:46+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-03-09T17:02:46+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "NEW Sag_MPRAGE_T1",
+              "timestamp": "2021-03-09T17:02:46+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22877",
+          "timestamp": "2021-03-12T17:10:12+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-12T17:10:12+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-12T17:10:12+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-12T17:10:12+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-12T17:10:12+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-12T17:10:12+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-03-12T17:10:12+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-03-12T17:10:12+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-03-12T17:10:12+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-03-12T17:10:12+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22926",
+          "timestamp": "2021-03-23T15:43:10+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-23T15:43:10+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-23T15:43:10+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-23T15:43:10+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-23T15:43:10+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-23T15:43:10+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_flanker_bold",
+              "timestamp": "2021-03-23T15:43:10+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "directed_forgetting_w_flanker_bold",
+              "timestamp": "2021-03-23T15:43:10+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_directed_forgetting_bold",
+              "timestamp": "2021-03-23T15:43:10+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "DTI_pe0_g105",
+              "timestamp": "2021-03-23T15:43:10+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "DTI_pe1_g105",
+              "timestamp": "2021-03-23T15:43:10+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22942",
+          "timestamp": "2021-03-26T16:08:34+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-26T16:08:34+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-26T16:08:34+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-26T16:08:34+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-26T16:08:34+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-26T16:08:34+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_directed_forgetting_bold",
+              "timestamp": "2021-03-26T16:08:34+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "directed_forgetting_w_flanker_bold",
+              "timestamp": "2021-03-26T16:08:34+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_flanker_bold",
+              "timestamp": "2021-03-26T16:08:34+00:00",
+              "echoes": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "s19",
+      "sessions": [
+        {
+          "label": "22437",
+          "timestamp": "2020-11-13T22:31:52+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-11-13T22:31:52+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-11-13T22:31:52+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-13T22:31:52+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-13T22:31:52+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-11-13T22:31:52+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2020-11-13T22:31:52+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2020-11-13T22:31:52+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2020-11-13T22:31:52+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2020-11-13T22:31:52+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "T1w MPRAGE PROMO",
+              "timestamp": "2020-11-13T22:31:52+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "T2w CUBE PROMO .8mm sag",
+              "timestamp": "2020-11-13T22:31:52+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22453",
+          "timestamp": "2020-11-16T22:41:01+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-11-16T22:41:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-16T22:41:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-16T22:41:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-11-16T22:41:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-11-16T22:41:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2020-11-16T22:41:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2020-11-16T22:41:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2020-11-16T22:41:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2020-11-16T22:41:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "DTI_pe0_g105",
+              "timestamp": "2020-11-16T22:41:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "DTI_pe1_g105",
+              "timestamp": "2020-11-16T22:41:01+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22557",
+          "timestamp": "2020-12-07T22:40:25+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-12-07T22:40:25+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-07T22:40:25+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-07T22:40:25+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-12-07T22:40:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2020-12-07T22:40:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2020-12-07T22:40:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2020-12-07T22:40:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2020-12-07T22:40:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-12-07T22:40:25+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22755",
+          "timestamp": "2021-02-12T22:41:25+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-12T22:41:25+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-12T22:41:25+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-12T22:41:25+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-12T22:41:25+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-12T22:41:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-02-12T22:41:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-02-12T22:41:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-02-12T22:41:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-02-12T22:41:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "NEW Sag_MPRAGE_T1",
+              "timestamp": "2021-02-12T22:41:25+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22758",
+          "timestamp": "2021-02-15T22:39:20+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-15T22:39:20+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-15T22:39:20+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-15T22:39:20+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-15T22:39:20+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-15T22:39:20+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-02-15T22:39:20+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-02-15T22:39:20+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-02-15T22:39:20+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-02-15T22:39:20+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22807",
+          "timestamp": "2021-02-26T22:48:41+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-26T22:48:41+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-26T22:48:41+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-26T22:48:41+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-26T22:48:41+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-26T22:48:41+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-02-26T22:48:41+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-02-26T22:48:41+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-02-26T22:48:41+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-02-26T22:48:41+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22820",
+          "timestamp": "2021-03-01T22:33:28+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-01T22:33:28+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-01T22:33:28+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-01T22:33:28+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-01T22:33:28+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-01T22:33:28+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-03-01T22:33:28+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-03-01T22:33:28+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-03-01T22:33:28+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-03-01T22:33:28+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22878",
+          "timestamp": "2021-03-12T22:44:56+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-12T22:44:56+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-12T22:44:56+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-12T22:44:56+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-12T22:44:56+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-12T22:44:56+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-03-12T22:44:56+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-03-12T22:44:56+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-03-12T22:44:56+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-03-12T22:44:56+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22888",
+          "timestamp": "2021-03-15T21:34:05+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-15T21:34:05+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-15T21:34:05+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-15T21:34:05+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-15T21:34:05+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-15T21:34:05+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-03-15T21:34:05+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-03-15T21:34:05+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-03-15T21:34:05+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-03-15T21:34:05+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22978",
+          "timestamp": "2021-04-02T22:31:32+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-04-02T22:31:32+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-04-02T22:31:32+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-04-02T22:31:32+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-04-02T22:31:32+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-04-02T22:31:32+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_flanker_bold",
+              "timestamp": "2021-04-02T22:31:32+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_directed_forgetting_bold",
+              "timestamp": "2021-04-02T22:31:32+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "directed_forgetting_w_flanker_bold",
+              "timestamp": "2021-04-02T22:31:32+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22987",
+          "timestamp": "2021-04-05T22:32:02+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-04-05T22:32:02+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-04-05T22:32:02+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-04-05T22:32:02+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-04-05T22:32:02+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-04-05T22:32:02+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "stop_signal_w_directed_forgetting_bold",
+              "timestamp": "2021-04-05T22:32:02+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "directed_forgetting_w_flanker_bold",
+              "timestamp": "2021-04-05T22:32:02+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_flanker_bold",
+              "timestamp": "2021-04-05T22:32:02+00:00",
+              "echoes": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "s19-2",
+      "sessions": [
+        {
+          "label": "22542",
+          "timestamp": "2020-12-04T22:47:01+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-12-04T22:47:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-12-04T22:47:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-12-04T22:47:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-04T22:47:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-04T22:47:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-12-04T22:47:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2020-12-04T22:47:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2020-12-04T22:47:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2020-12-04T22:47:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2020-12-04T22:47:01+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "NEW Sag_MPRAGE_T1",
+              "timestamp": "2020-12-04T22:47:01+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "T2w CUBE PROMO .8mm sag",
+              "timestamp": "2020-12-04T22:47:01+00:00",
+              "echoes": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "s29",
+      "sessions": [
+        {
+          "label": "20201113",
+          "timestamp": "2020-11-13T16:56:33+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-11-13T16:56:33+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-13T16:56:33+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-13T16:56:33+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-11-13T16:56:33+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-11-13T16:56:33+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2020-11-13T16:56:33+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2020-11-13T16:56:33+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2020-11-13T16:56:33+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2020-11-13T16:56:33+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "T2w CUBE PROMO .8mm sag",
+              "timestamp": "2020-11-13T16:56:33+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22439",
+          "timestamp": "2020-11-14T16:23:32+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-11-14T16:23:32+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-14T16:23:32+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-14T16:23:32+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-11-14T16:23:32+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-11-14T16:23:32+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2020-11-14T16:23:32+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2020-11-14T16:23:32+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2020-11-14T16:23:32+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2020-11-14T16:23:32+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "T1w MPRAGE PROMO",
+              "timestamp": "2020-11-14T16:23:32+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "DTI_pe0_g105",
+              "timestamp": "2020-11-14T16:23:32+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "DTI_pe1_g105",
+              "timestamp": "2020-11-14T16:23:32+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22521",
+          "timestamp": "2020-12-02T16:39:37+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-12-02T16:39:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-02T16:39:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-02T16:39:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-12-02T16:39:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2020-12-02T16:39:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2020-12-02T16:39:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2020-12-02T16:39:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2020-12-02T16:39:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2020-12-02T16:39:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-12-02T16:39:37+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22538",
+          "timestamp": "2020-12-04T16:31:59+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-12-04T16:31:59+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-12-04T16:31:59+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-04T16:31:59+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-04T16:31:59+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-12-04T16:31:59+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2020-12-04T16:31:59+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-12-04T16:31:59+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2020-12-04T16:31:59+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2020-12-04T16:31:59+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2020-12-04T16:31:59+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "NEW Sag_MPRAGE_T1",
+              "timestamp": "2020-12-04T16:31:59+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "T2w CUBE PROMO .8mm sag",
+              "timestamp": "2020-12-04T16:31:59+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "20210203",
+          "timestamp": "2021-02-03T16:42:15+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-03T16:42:15+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-03T16:42:15+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-03T16:42:15+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-03T16:42:15+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-03T16:42:15+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-02-03T16:42:15+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-02-03T16:42:15+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-02-03T16:42:15+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-02-03T16:42:15+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-03T16:42:15+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "20210205",
+          "timestamp": "2021-02-05T16:43:52+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-05T16:43:52+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-05T16:43:52+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-05T16:43:52+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-05T16:43:52+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-05T16:43:52+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-02-05T16:43:52+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-02-05T16:43:52+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-02-05T16:43:52+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-02-05T16:43:52+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22793",
+          "timestamp": "2021-02-24T16:44:28+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-24T16:44:28+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-24T16:44:28+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-24T16:44:28+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-24T16:44:28+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-24T16:44:28+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-02-24T16:44:28+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-02-24T16:44:28+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-02-24T16:44:28+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-02-24T16:44:28+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22799",
+          "timestamp": "2021-02-25T18:11:34+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-25T18:11:34+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-25T18:11:34+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-25T18:11:34+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-25T18:11:34+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-25T18:11:34+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-02-25T18:11:34+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-02-25T18:11:34+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-02-25T18:11:34+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-02-25T18:11:34+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22831",
+          "timestamp": "2021-03-03T20:00:07+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-03T20:00:07+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-03T20:00:07+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-03T20:00:07+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-03T20:00:07+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-03T20:00:07+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-03-03T20:00:07+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-03-03T20:00:07+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-03-03T20:00:07+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-03-03T20:00:07+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22895",
+          "timestamp": "2021-03-17T15:50:47+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-17T15:50:47+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-17T15:50:47+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-17T15:50:47+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-17T15:50:47+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-17T15:50:47+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_directed_forgetting_bold",
+              "timestamp": "2021-03-17T15:50:47+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_flanker_bold",
+              "timestamp": "2021-03-17T15:50:47+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "directed_forgetting_w_flanker_bold",
+              "timestamp": "2021-03-17T15:50:47+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22909",
+          "timestamp": "2021-03-19T15:33:45+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-19T15:33:45+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-19T15:33:45+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-19T15:33:45+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-19T15:33:45+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-19T15:33:45+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_flanker_bold",
+              "timestamp": "2021-03-19T15:33:45+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "directed_forgetting_w_flanker_bold",
+              "timestamp": "2021-03-19T15:33:45+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_directed_forgetting_bold",
+              "timestamp": "2021-03-19T15:33:45+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "directed_forgetting_w_flanker_bold",
+              "timestamp": "2021-03-19T15:33:45+00:00",
+              "echoes": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "s29-2",
+      "sessions": [
+        {
+          "label": "20210305",
+          "timestamp": "2021-03-05T18:37:37+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-05T18:37:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-05T18:37:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-05T18:37:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-05T18:37:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-05T18:37:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-05T18:37:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-03-05T18:37:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-03-05T18:37:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-03-05T18:37:37+00:00",
+              "echoes": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "s43",
+      "sessions": [
+        {
+          "label": "22473",
+          "timestamp": "2020-11-19T16:39:37+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-11-19T16:39:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-19T16:39:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-19T16:39:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-11-19T16:39:37+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-11-19T16:39:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2020-11-19T16:39:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2020-11-19T16:39:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2020-11-19T16:39:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2020-11-19T16:39:37+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "DTI_pe1_g105",
+              "timestamp": "2020-11-19T16:39:37+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22572",
+          "timestamp": "2020-12-09T16:36:35+00:00",
+          "acquisitions": [
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-12-09T16:36:35+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-12-09T16:36:35+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-09T16:36:35+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-09T16:36:35+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-12-09T16:36:35+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2020-12-09T16:36:35+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2020-12-09T16:36:35+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2020-12-09T16:36:35+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2020-12-09T16:36:35+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22581",
+          "timestamp": "2020-12-10T16:36:17+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-12-10T16:36:17+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-10T16:36:17+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-12-10T16:36:17+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-12-10T16:36:17+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-12-10T16:36:17+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2020-12-10T16:36:17+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2020-12-10T16:36:17+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2020-12-10T16:36:17+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2020-12-10T16:36:17+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "20210202",
+          "timestamp": "2021-02-02T16:40:02+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-02T16:40:02+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-02T16:40:02+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-02T16:40:02+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-02T16:40:02+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-02T16:40:02+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-02-02T16:40:02+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-02-02T16:40:02+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-02-02T16:40:02+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-02-02T16:40:02+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "NEW Sag_MPRAGE_T1",
+              "timestamp": "2021-02-02T16:40:02+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "20210204",
+          "timestamp": "2021-02-04T16:43:24+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-04T16:43:24+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-04T16:43:24+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-04T16:43:24+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-04T16:43:24+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-02-04T16:43:24+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-02-04T16:43:24+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-02-04T16:43:24+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-02-04T16:43:24+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-04T16:43:24+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22757",
+          "timestamp": "2021-02-15T16:48:53+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-15T16:48:53+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-15T16:48:53+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-15T16:48:53+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-15T16:48:53+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-15T16:48:53+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-02-15T16:48:53+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-02-15T16:48:53+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-02-15T16:48:53+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-02-15T16:48:53+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22759",
+          "timestamp": "2021-02-16T16:39:17+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-16T16:39:17+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-16T16:39:17+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-16T16:39:17+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-16T16:39:17+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-16T16:39:17+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-16T16:39:17+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-02-16T16:39:17+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-02-16T16:39:17+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-02-16T16:39:17+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-02-16T16:39:17+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-02-16T16:39:17+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22788",
+          "timestamp": "2021-02-23T16:37:38+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-23T16:37:38+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-23T16:37:38+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-23T16:37:38+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-23T16:37:38+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-23T16:37:38+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2021-02-23T16:37:38+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2021-02-23T16:37:38+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2021-02-23T16:37:38+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2021-02-23T16:37:38+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "DTI_pe0_g105",
+              "timestamp": "2021-02-23T16:37:38+00:00",
+              "echoes": 0
+            }
+          ]
+        },
+        {
+          "label": "22798",
+          "timestamp": "2021-02-25T16:38:25+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-02-25T16:38:25+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-25T16:38:25+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-02-25T16:38:25+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-02-25T16:38:25+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-02-25T16:38:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-directedForgetting_bold",
+              "timestamp": "2021-02-25T16:38:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-spatialTS_bold",
+              "timestamp": "2021-02-25T16:38:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-goNogo_bold",
+              "timestamp": "2021-02-25T16:38:25+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-flanker_bold",
+              "timestamp": "2021-02-25T16:38:25+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22890",
+          "timestamp": "2021-03-16T15:41:43+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-16T15:41:43+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-16T15:41:43+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-16T15:41:43+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-16T15:41:43+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-16T15:41:43+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stop_signal_with_directed_forgetting_bold",
+              "timestamp": "2021-03-16T15:41:43+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stop_with_df_bold",
+              "timestamp": "2021-03-16T15:41:43+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stop_with_flanker_bold",
+              "timestamp": "2021-03-16T15:41:43+00:00",
+              "echoes": 3
+            }
+          ]
+        },
+        {
+          "label": "22901",
+          "timestamp": "2021-03-18T16:19:09+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2021-03-18T16:19:09+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-18T16:19:09+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-18T16:19:09+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2021-03-18T16:19:09+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2021-03-18T16:19:09+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2021-03-18T16:19:09+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "directed_forgetting_w_flanker_bold",
+              "timestamp": "2021-03-18T16:19:09+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_directed_forgetting_bold",
+              "timestamp": "2021-03-18T16:19:09+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "stop_signal_w_flanker_bold",
+              "timestamp": "2021-03-18T16:19:09+00:00",
+              "echoes": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "s43-2",
+      "sessions": [
+        {
+          "label": "20201112",
+          "timestamp": "2020-11-12T16:39:45+00:00",
+          "acquisitions": [
+            {
+              "label": "3Plane Loc SSFSE",
+              "timestamp": "2020-11-12T16:39:45+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-12T16:39:45+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "GE HOS FOV28",
+              "timestamp": "2020-11-12T16:39:45+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "fmap-fieldmap",
+              "timestamp": "2020-11-12T16:39:45+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "task-rest_bold",
+              "timestamp": "2020-11-12T16:39:45+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-cuedTS_bold",
+              "timestamp": "2020-11-12T16:39:45+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-nBack_bold",
+              "timestamp": "2020-11-12T16:39:45+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-stopSignal_bold",
+              "timestamp": "2020-11-12T16:39:45+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "task-shapeMaching_bold",
+              "timestamp": "2020-11-12T16:39:45+00:00",
+              "echoes": 3
+            },
+            {
+              "label": "T1w MPRAGE PROMO",
+              "timestamp": "2020-11-12T16:39:45+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "DTI_pe0_g105",
+              "timestamp": "2020-11-12T16:39:45+00:00",
+              "echoes": 0
+            },
+            {
+              "label": "DTI_pe1_g71",
+              "timestamp": "2020-11-12T16:39:45+00:00",
+              "echoes": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
