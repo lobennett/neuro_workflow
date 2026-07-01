@@ -28,7 +28,9 @@ qa = [
     "bold-reliability-movies>=0.1",
 ]
 bidsify = [
-    "flywheel-sdk>=17.0",
+    # Pinned for a reproducible live Flywheel pull (Oak re-execution): the pull
+    # behavior must not drift if the container is rebuilt. Matches uv.lock.
+    "flywheel-sdk==21.5.0",
 ]
 events = [
     "pandas>=2.0",
