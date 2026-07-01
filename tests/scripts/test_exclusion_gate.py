@@ -55,3 +55,32 @@ def test_source_filter_scopes_the_diff(tmp_path):
         new_path=_write(tmp_path, "new2.json", new),
         reference_path=_write(tmp_path, "ref2.json", ref))
     assert res_all["ok"] is False and len(res_all["dropped"]) == 1
+
+
+def test_exclude_contrast_drift_detected(tmp_path):
+    # lev1_outlier exclusions are per-contrast; a change from contrast-DDS to
+    # contrast-SSS on the same scan must flag BOTH an add and a drop.
+    ref = [_entry("sub-s1", "ses-01", "task-shapeMatching", "run-1",
+                  action="exclude-contrast", source="lev1_outlier", contrast="DDS")]
+    new = [_entry("sub-s1", "ses-01", "task-shapeMatching", "run-1",
+                  action="exclude-contrast", source="lev1_outlier", contrast="SSS")]
+    result = gate.diff_gate(
+        new_path=_write(tmp_path, "new.json", new),
+        reference_path=_write(tmp_path, "ref.json", ref))
+    assert result["ok"] is False
+    assert len(result["added"]) == 1 and len(result["dropped"]) == 1
+    assert result["added"][0]["contrast"] == "SSS"
+    assert result["dropped"][0]["contrast"] == "DDS"
+
+
+def test_scan_level_vs_contrast_level_not_confused(tmp_path):
+    # A scan-level exclude (contrast None) and a per-contrast exclude on the same
+    # scan are distinct — changing action from exclude to exclude-contrast flags both.
+    ref = [_entry("sub-s1", "ses-01", "task-goNogo", "run-1", action="exclude", source="motion")]
+    new = [_entry("sub-s1", "ses-01", "task-goNogo", "run-1",
+                  action="exclude-contrast", source="lev1_outlier", contrast="go")]
+    result = gate.diff_gate(
+        new_path=_write(tmp_path, "new.json", new),
+        reference_path=_write(tmp_path, "ref.json", ref))
+    assert result["ok"] is False
+    assert len(result["added"]) == 1 and len(result["dropped"]) == 1

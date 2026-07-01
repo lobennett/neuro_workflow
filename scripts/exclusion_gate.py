@@ -27,9 +27,19 @@ from neuro_workflow.testing.reproduce.canonical import compiled_to_keyset
 
 
 def _load(path: Path) -> list[dict]:
+    """Load a compiled-exclusions file (a bare list of entry dicts).
+
+    Tolerates a ``{"exclusions": [...]}`` wrapper; anything else is a hard error
+    rather than a silently-wrong fallback."""
     data = json.loads(Path(path).read_text())
-    # compiled files are a bare list of entry dicts
-    return data if isinstance(data, list) else data.get("exclusions", data)
+    if isinstance(data, list):
+        return data
+    entries = data.get("exclusions") if isinstance(data, dict) else None
+    if not isinstance(entries, list):
+        raise ValueError(
+            f"{path}: expected a bare list or a dict with an 'exclusions' list, "
+            f"got {type(data).__name__}")
+    return entries
 
 
 def _keyset(entries: list[dict], source: str | None) -> set:
@@ -47,12 +57,17 @@ def _entries_for_keys(entries: list[dict], keys: set) -> list[dict]:
         for t in compiled_to_keyset([e]):
             if t in keys:
                 out.append(e)
+                break  # an entry maps to at most one gating tuple; guard duplicates
     return out
 
 
 def diff_gate(*, new_path: Path, reference_path: Path,
               source: str | None = None) -> dict:
-    """Return {ok, added, dropped} — added = in new not reference; dropped = reverse."""
+    """Return {ok, added, dropped} — added = in new not reference; dropped = reverse.
+
+    A ``--source``-scoped run is an intentionally partial view: a scan that moved
+    between sources will appear as a drop under its old source and an add under its
+    new source; run unscoped (source=None) for the full picture."""
     new_entries = _load(new_path)
     ref_entries = _load(reference_path)
     new_ks = _keyset(new_entries, source)
