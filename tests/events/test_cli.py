@@ -7,12 +7,23 @@ class TestEventsSubcommand:
         """neuro-run events create <dataset> --behavioral-dir <dir>"""
         import sys
         from neuro_workflow.cli import main
-        with patch.object(sys, "argv", [
-            "neuro-run", "events", "create", "discovery",
-            "--behavioral-dir", "/tmp/sourcedata",
-        ]):
+
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "neuro-run",
+                "events",
+                "create",
+                "discovery",
+                "--behavioral-dir",
+                "/tmp/sourcedata",
+            ],
+        ):
             with patch("neuro_workflow.cli.cmd_events_create") as mock_create:
-                with patch("neuro_workflow.cli.get_dataset", return_value={"bids_dir": "/tmp/bids"}):
+                with patch(
+                    "neuro_workflow.cli.get_dataset", return_value={"bids_dir": "/tmp/bids"}
+                ):
                     main()
                     mock_create.assert_called_once()
 
@@ -20,12 +31,23 @@ class TestEventsSubcommand:
         """neuro-run events qc <dataset> --behavioral-dir <dir>"""
         import sys
         from neuro_workflow.cli import main
-        with patch.object(sys, "argv", [
-            "neuro-run", "events", "qc", "discovery",
-            "--behavioral-dir", "/tmp/sourcedata",
-        ]):
+
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "neuro-run",
+                "events",
+                "qc",
+                "discovery",
+                "--behavioral-dir",
+                "/tmp/sourcedata",
+            ],
+        ):
             with patch("neuro_workflow.cli.cmd_events_qc") as mock_qc:
-                with patch("neuro_workflow.cli.get_dataset", return_value={"bids_dir": "/tmp/bids"}):
+                with patch(
+                    "neuro_workflow.cli.get_dataset", return_value={"bids_dir": "/tmp/bids"}
+                ):
                     main()
                     mock_qc.assert_called_once()
 
@@ -33,10 +55,20 @@ class TestEventsSubcommand:
         """neuro-run events trim <dataset>"""
         import sys
         from neuro_workflow.cli import main
-        with patch.object(sys, "argv", [
-            "neuro-run", "events", "trim", "discovery",
-        ]):
+
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "neuro-run",
+                "events",
+                "trim",
+                "discovery",
+            ],
+        ):
             with patch("neuro_workflow.cli.cmd_events_trim") as mock_trim:
-                with patch("neuro_workflow.cli.get_dataset", return_value={"bids_dir": "/tmp/bids"}):
+                with patch(
+                    "neuro_workflow.cli.get_dataset", return_value={"bids_dir": "/tmp/bids"}
+                ):
                     main()
                     mock_trim.assert_called_once()

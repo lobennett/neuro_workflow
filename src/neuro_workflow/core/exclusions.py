@@ -1,4 +1,5 @@
 """Scan exclusion management: schema, persistence, compilation, and query API."""
+
 from __future__ import annotations
 
 import json
@@ -178,16 +179,18 @@ def compile_exclusions(dataset_name: str, bids_dir: Optional[str] = None) -> lis
     for fe in force_excludes:
         if _scan_key(fe) in existing_keys:
             continue
-        all_entries.append({
-            "subject": fe["subject"],
-            "session": fe["session"],
-            "task": fe["task"],
-            "run": fe["run"],
-            "source": "override",
-            "action": "exclude",
-            "reason": fe.get("reason", "Manual force-exclude"),
-            "metrics": fe.get("metrics", {}),
-        })
+        all_entries.append(
+            {
+                "subject": fe["subject"],
+                "session": fe["session"],
+                "task": fe["task"],
+                "run": fe["run"],
+                "source": "override",
+                "action": "exclude",
+                "reason": fe.get("reason", "Manual force-exclude"),
+                "metrics": fe.get("metrics", {}),
+            }
+        )
         existing_keys.add(_scan_key(fe))
 
     # Save compiled
@@ -239,7 +242,9 @@ def is_excluded(subject: str, session: str, task: str, run: str, compiled: list[
     return any(_scan_key(e) == key for e in compiled if e["action"] in ("exclude", "trim"))
 
 
-def get_trim_info(subject: str, session: str, task: str, run: str, compiled: list[dict]) -> Optional[dict]:
+def get_trim_info(
+    subject: str, session: str, task: str, run: str, compiled: list[dict]
+) -> Optional[dict]:
     """Get trim metrics for a scan, or None if not a trim action."""
     key = (subject, session, task, run)
     for e in compiled:
@@ -267,7 +272,7 @@ def _normalise_bids_field(value: str, prefix: str) -> str:
     'goNogo'
     """
     if value.startswith(prefix):
-        return value[len(prefix):]
+        return value[len(prefix) :]
     return value
 
 

@@ -4,6 +4,7 @@ VIFs are computed and saved to the contrastVIFs.csv but do NOT fail QA —
 high-VIF runs are surfaced for manual review by the cohort QC step
 (`neuro_workflow.qa.lev1_outliers`), not auto-skipped at run time.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -26,11 +27,13 @@ from neuro_workflow.analysis.lev1.processing.quality_control import run_quality_
 
 def _design(n: int = 200, seed: int = 0) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
-    return pd.DataFrame({
-        "go": rng.normal(size=n),
-        "stop": rng.normal(size=n),
-        "constant": np.ones(n),
-    })
+    return pd.DataFrame(
+        {
+            "go": rng.normal(size=n),
+            "stop": rng.normal(size=n),
+            "constant": np.ones(n),
+        }
+    )
 
 
 def test_low_contrast_vif_passes_qa(tmp_path: Path):
@@ -60,11 +63,13 @@ def test_high_contrast_vif_does_not_fail_qa(tmp_path: Path):
     n = 200
     rng = np.random.default_rng(7)
     base = rng.normal(size=n)
-    dm = pd.DataFrame({
-        "a": base,
-        "b": base + rng.normal(scale=0.05, size=n),
-        "constant": np.ones(n),
-    })
+    dm = pd.DataFrame(
+        {
+            "a": base,
+            "b": base + rng.normal(scale=0.05, size=n),
+            "constant": np.ones(n),
+        }
+    )
     contrasts = {"a-b": "a - b"}
     vifs, any_fail = run_quality_control(
         design_matrix=dm,

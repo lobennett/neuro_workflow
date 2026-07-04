@@ -11,6 +11,7 @@ Validates that:
 These tests NEVER write to the real BIDS dirs or docs/EXCLUSIONS.md; the real
 .bidsignore files are read READ-ONLY as ground truth.
 """
+
 from __future__ import annotations
 
 import re
@@ -36,9 +37,11 @@ def _non_comment_globs(text: str) -> list[str]:
 # Collection files exist + non-empty
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("dataset", ["discovery", "validation"])
 def test_collection_file_exists_and_nonempty(dataset):
     from neuro_workflow.core.exclusions_render import collection_path
+
     path = collection_path(dataset)
     assert path.is_file(), f"missing committed collection file: {path}"
     globs = _non_comment_globs(path.read_text())
@@ -48,6 +51,7 @@ def test_collection_file_exists_and_nonempty(dataset):
 @pytest.mark.parametrize("dataset", ["discovery", "validation"])
 def test_collection_file_has_human_curated_header(dataset):
     from neuro_workflow.core.exclusions_render import collection_path
+
     text = collection_path(dataset).read_text()
     assert "Human-curated" in text
 
@@ -56,24 +60,27 @@ def test_collection_file_has_human_curated_header(dataset):
 # SUBSET PROOF — collection ⊆ real .bidsignore (verbatim)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("dataset", ["discovery", "validation"])
 def test_collection_lines_subset_of_real_bidsignore(dataset):
     from neuro_workflow.core.exclusions_render import collection_path
+
     real = REAL_BIDSIGNORE[dataset]
     if not real.is_file():
         pytest.skip(f"real ground-truth .bidsignore not present: {real}")
     real_set = set(real.read_text().splitlines())
     coll_globs = _non_comment_globs(collection_path(dataset).read_text())
     missing = [l for l in coll_globs if l not in real_set]
-    assert not missing, (
-        f"{dataset}: collection lines not found VERBATIM in real .bidsignore: {missing}"
-    )
+    assert (
+        not missing
+    ), f"{dataset}: collection lines not found VERBATIM in real .bidsignore: {missing}"
 
 
 @pytest.mark.parametrize("dataset", ["discovery", "validation"])
 def test_residual_real_lines_are_scan_shaped(dataset):
     """Real .bidsignore globs NOT in the collection file must be QC scan-lines."""
     from neuro_workflow.core.exclusions_render import collection_path
+
     real = REAL_BIDSIGNORE[dataset]
     if not real.is_file():
         pytest.skip(f"real ground-truth .bidsignore not present: {real}")
@@ -104,6 +111,7 @@ def test_render_with_collection_starts_with_collection_block():
         render_bidsignore_with_collection,
         collection_path,
     )
+
     out = render_bidsignore_with_collection("discovery", [_QC_ENTRY])
     collection_block = collection_path("discovery").read_text()
     assert out.startswith(collection_block)
@@ -117,9 +125,10 @@ def test_render_with_collection_appends_generated_qc_after_collection():
         render_bidsignore_with_collection,
         collection_path,
     )
+
     out = render_bidsignore_with_collection("discovery", [_QC_ENTRY])
     collection_block = collection_path("discovery").read_text()
-    generated_portion = out[len(collection_block):]
+    generated_portion = out[len(collection_block) :]
     assert "DO NOT EDIT" in generated_portion
     assert "render-bidsignore" in generated_portion
     # The QC scan-line is in the generated portion, not the collection block.
@@ -129,6 +138,7 @@ def test_render_with_collection_appends_generated_qc_after_collection():
 
 def test_render_with_collection_order_human_header_before_do_not_edit():
     from neuro_workflow.core.exclusions_render import render_bidsignore_with_collection
+
     out = render_bidsignore_with_collection("validation", [])
     assert out.index("Human-curated") < out.index("DO NOT EDIT")
 
@@ -136,6 +146,7 @@ def test_render_with_collection_order_human_header_before_do_not_edit():
 def test_render_with_collection_missing_file_raises(tmp_path, monkeypatch):
     """A missing collection file must raise — never silently drop collection."""
     import neuro_workflow.core.exclusions_render as r
+
     monkeypatch.setattr(r, "_COLLECTION_DIR", tmp_path)
     with pytest.raises(FileNotFoundError):
         r.render_bidsignore_with_collection("nonexistent_ds", [])
@@ -147,6 +158,7 @@ def test_render_with_collection_includes_all_collection_globs_verbatim():
         render_bidsignore_with_collection,
         collection_path,
     )
+
     for ds in ("discovery", "validation"):
         out = render_bidsignore_with_collection(ds, [_QC_ENTRY])
         for glob in _non_comment_globs(collection_path(ds).read_text()):

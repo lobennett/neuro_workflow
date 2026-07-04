@@ -37,6 +37,7 @@ def cmd_exclusions_compile(args, remaining):
     config = cli.get_dataset(args.dataset)
     compiled = compile_exclusions(args.dataset, bids_dir=config.get("bids_dir"))
     from collections import Counter
+
     by_source = Counter(e["source"] for e in compiled)
     by_action = Counter(e["action"] for e in compiled)
     print(f"Compiled {len(compiled)} exclusions for '{args.dataset}':")
@@ -54,7 +55,9 @@ def cmd_exclusions_show(args, remaining):
 
     # Existing per-source count table (only if compiled exists).
     if not compiled:
-        print(f"No compiled exclusions for '{args.dataset}'. Run 'neuro-run exclusions compile {args.dataset}' first.")
+        print(
+            f"No compiled exclusions for '{args.dataset}'. Run 'neuro-run exclusions compile {args.dataset}' first."
+        )
     else:
         by_source = Counter(e["source"] for e in compiled)
         by_action = Counter(e["action"] for e in compiled)
@@ -67,7 +70,9 @@ def cmd_exclusions_show(args, remaining):
             n_trim = sum(1 for e in src_entries if e["action"] == "trim")
             print(f"{source:<15} {n_exc:>8} {n_trim:>8} {len(src_entries):>8}")
         print("-" * 41)
-        print(f"{'Total':<15} {by_action.get('exclude', 0):>8} {by_action.get('trim', 0):>8} {len(compiled):>8}")
+        print(
+            f"{'Total':<15} {by_action.get('exclude', 0):>8} {by_action.get('trim', 0):>8} {len(compiled):>8}"
+        )
 
     # Provenance block from lockfile, if present.
     lock_path = _lockfile_path(args.dataset)
@@ -75,7 +80,9 @@ def cmd_exclusions_show(args, remaining):
         lock = json.loads(lock_path.read_text())
         print()
         print(f"Provenance ({lock_path}):")
-        print(f"  Compiled at: {lock['compiled_at']} (code_sha: {lock.get('compiled_at_code_sha')})")
+        print(
+            f"  Compiled at: {lock['compiled_at']} (code_sha: {lock.get('compiled_at_code_sha')})"
+        )
         print(f"  Total entries: {lock['n_total_entries']}, overrides: {lock['n_overrides']}")
         for s in lock["sources"]:
             ran_at = s.get("ran_at") or "<unknown>"
@@ -86,6 +93,7 @@ def cmd_exclusions_show(args, remaining):
 
 def cmd_exclusions_import(args, remaining):
     import json
+
     with open(args.input_file) as f:
         entries = json.load(f)
     for entry in entries:
@@ -126,12 +134,12 @@ def cmd_exclusions_query(args, remaining):
         qualifier += f"/{task}"
 
     if not matches:
-        print(
-            f"No exclusions recorded for {qualifier} in '{args.dataset}'."
-        )
+        print(f"No exclusions recorded for {qualifier} in '{args.dataset}'.")
         return
 
-    print(f"Exclusions for {qualifier} in '{args.dataset}' ({len(matches)} entr{'y' if len(matches) == 1 else 'ies'}):")
+    print(
+        f"Exclusions for {qualifier} in '{args.dataset}' ({len(matches)} entr{'y' if len(matches) == 1 else 'ies'}):"
+    )
     for e in matches:
         subj = e["subject"]
         sess = e["session"]

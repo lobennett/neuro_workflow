@@ -61,9 +61,7 @@ def parse_flt_trig(trig_path: Path) -> list[int]:
     return [int(line) for line in text.split("\n") if line.strip()]
 
 
-def build_trigger_column(
-    timestamps: list[int], trigger_times: list[int]
-) -> list[int]:
+def build_trigger_column(timestamps: list[int], trigger_times: list[int]) -> list[int]:
     """Build a binary trigger column: 1 at trigger timestamps, 0 elsewhere."""
     trigger_set = set(trigger_times)
     return [1 if ts in trigger_set else 0 for ts in timestamps]
@@ -109,9 +107,7 @@ def convert_physio_to_bids(
     triggers = build_trigger_column(timestamps, trigger_times)
 
     # Build BIDS filename
-    stem = bids_filename(
-        subject, session, task=task, run=run, recording=channel, suffix="physio"
-    )
+    stem = bids_filename(subject, session, task=task, run=run, recording=channel, suffix="physio")
 
     # Write gzipped TSV
     output_dir.mkdir(parents=True, exist_ok=True)

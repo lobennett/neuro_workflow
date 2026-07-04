@@ -20,7 +20,7 @@ def detect_sample_type(bids_dir: Path) -> str:
         >>> detect_sample_type(Path('/data/validation/bids'))
         'validation'
     """
-    return 'discovery' if 'discovery' in str(bids_dir) else 'validation'
+    return "discovery" if "discovery" in str(bids_dir) else "validation"
 
 
 def get_expected_sessions(task_name: str) -> int:
@@ -39,4 +39,4 @@ def get_expected_sessions(task_name: str) -> int:
         2
     """
     params = get_task_parameters(task_name)
-    return params['expected_sessions']
+    return params["expected_sessions"]

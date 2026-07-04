@@ -15,11 +15,19 @@ def test_add_dataset_creates_config(tmp_path, monkeypatch):
     bids = tmp_path / "bids"
     bids.mkdir()
 
-    monkeypatch.setattr(sys, "argv", [
-        "neuro-run", "add-dataset", "myds",
-        "--bids-dir", str(bids),
-        "--subjects-file", str(subs),
-    ])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "neuro-run",
+            "add-dataset",
+            "myds",
+            "--bids-dir",
+            str(bids),
+            "--subjects-file",
+            str(subs),
+        ],
+    )
     main()
 
     data = json.loads(config_file.read_text())
@@ -40,13 +48,23 @@ def test_add_dataset_with_optional_args(tmp_path, monkeypatch):
     bids = tmp_path / "bids"
     bids.mkdir()
 
-    monkeypatch.setattr(sys, "argv", [
-        "neuro-run", "add-dataset", "myds",
-        "--bids-dir", str(bids),
-        "--subjects-file", str(subs),
-        "--partition", "normal",
-        "--mail-user", "test@stanford.edu",
-    ])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "neuro-run",
+            "add-dataset",
+            "myds",
+            "--bids-dir",
+            str(bids),
+            "--subjects-file",
+            str(subs),
+            "--partition",
+            "normal",
+            "--mail-user",
+            "test@stanford.edu",
+        ],
+    )
     main()
 
     data = json.loads(config_file.read_text())
@@ -65,9 +83,13 @@ def test_show_list_empty(tmp_path, monkeypatch, capsys):
 
 def test_show_list_with_datasets(tmp_path, monkeypatch, capsys):
     config_file = tmp_path / "datasets.json"
-    config_file.write_text(json.dumps({
-        "discovery": {"bids_dir": "/oak/disc", "subjects_file": "/s.txt"},
-    }))
+    config_file.write_text(
+        json.dumps(
+            {
+                "discovery": {"bids_dir": "/oak/disc", "subjects_file": "/s.txt"},
+            }
+        )
+    )
     monkeypatch.setattr("neuro_workflow.core.config.CONFIG_DIR", tmp_path)
     monkeypatch.setattr("neuro_workflow.core.config.CONFIG_FILE", config_file)
     monkeypatch.setattr(sys, "argv", ["neuro-run", "show", "--list"])
@@ -82,21 +104,35 @@ def test_show_renders_fmriprep_script(tmp_path, monkeypatch, capsys):
     subs.write_text("s03\ns10\n")
 
     config_file = tmp_path / "datasets.json"
-    config_file.write_text(json.dumps({
-        "test_ds": {
-            "bids_dir": "/oak/data/bids",
-            "subjects_file": str(subs),
-        },
-    }))
+    config_file.write_text(
+        json.dumps(
+            {
+                "test_ds": {
+                    "bids_dir": "/oak/data/bids",
+                    "subjects_file": str(subs),
+                },
+            }
+        )
+    )
     monkeypatch.setattr("neuro_workflow.core.config.CONFIG_DIR", tmp_path)
     monkeypatch.setattr("neuro_workflow.core.config.CONFIG_FILE", config_file)
 
-    monkeypatch.setattr(sys, "argv", [
-        "neuro-run", "show", "fmriprep", "test_ds",
-        "--version", "24.1.0",
-        "--output-spaces", "MNI152NLin2009cAsym:res-2",
-        "--fs-license", "/home/user/license.txt",
-    ])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "neuro-run",
+            "show",
+            "fmriprep",
+            "test_ds",
+            "--version",
+            "24.1.0",
+            "--output-spaces",
+            "MNI152NLin2009cAsym:res-2",
+            "--fs-license",
+            "/home/user/license.txt",
+        ],
+    )
     main()
     output = capsys.readouterr().out
     assert "#SBATCH -J fmriprep_test_ds" in output
@@ -106,6 +142,7 @@ def test_show_renders_fmriprep_script(tmp_path, monkeypatch, capsys):
 def test_qa_subcommand_no_args(capsys):
     """qa subcommand without required args should fail."""
     from unittest.mock import patch
+
     with patch("sys.argv", ["neuro-run", "qa"]):
         with pytest.raises(SystemExit):
             main()
@@ -114,6 +151,7 @@ def test_qa_subcommand_no_args(capsys):
 def test_qa_unknown_command(tmp_path, monkeypatch, capsys):
     """qa with unknown command should print error."""
     from unittest.mock import patch
+
     config_file = tmp_path / "datasets.json"
     config_file.write_text('{"discovery": {"bids_dir": "/bids", "subjects_file": "/s.txt"}}')
     monkeypatch.setattr("neuro_workflow.core.config.CONFIG_FILE", config_file)
@@ -130,26 +168,43 @@ def test_submit_renders_and_calls_sbatch(tmp_path, monkeypatch, capsys):
     sif.touch()
 
     config_file = tmp_path / "datasets.json"
-    config_file.write_text(json.dumps({
-        "test_ds": {
-            "bids_dir": "/oak/data/bids",
-            "subjects_file": str(subs),
-            "image_dir": str(sif.parent),
-        },
-    }))
+    config_file.write_text(
+        json.dumps(
+            {
+                "test_ds": {
+                    "bids_dir": "/oak/data/bids",
+                    "subjects_file": str(subs),
+                    "image_dir": str(sif.parent),
+                },
+            }
+        )
+    )
     monkeypatch.setattr("neuro_workflow.core.config.CONFIG_DIR", tmp_path)
     monkeypatch.setattr("neuro_workflow.core.config.CONFIG_FILE", config_file)
 
     # Mock submit_sbatch to avoid actually calling sbatch
     submitted = []
-    monkeypatch.setattr("neuro_workflow.cli.submit_sbatch", lambda script: submitted.append(script) or "Submitted batch job 12345")
+    monkeypatch.setattr(
+        "neuro_workflow.cli.submit_sbatch",
+        lambda script: submitted.append(script) or "Submitted batch job 12345",
+    )
 
-    monkeypatch.setattr(sys, "argv", [
-        "neuro-run", "submit", "fmriprep", "test_ds",
-        "--version", "24.1.0",
-        "--output-spaces", "MNI152NLin2009cAsym:res-2",
-        "--fs-license", "/home/user/license.txt",
-    ])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "neuro-run",
+            "submit",
+            "fmriprep",
+            "test_ds",
+            "--version",
+            "24.1.0",
+            "--output-spaces",
+            "MNI152NLin2009cAsym:res-2",
+            "--fs-license",
+            "/home/user/license.txt",
+        ],
+    )
     main()
     assert len(submitted) == 1
     assert "#SBATCH -J fmriprep_test_ds" in submitted[0]

@@ -17,6 +17,7 @@ byte-identical and all existing importers keep working (DRY, behavior-preserving
 
 PR4a adds the primitive + tests only; wiring it into lev1/lev2 is a later PR.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -58,7 +59,9 @@ def git_sha() -> str:
     try:
         sha = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
             cwd=_REPO_ROOT,
         ).stdout.strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -66,11 +69,15 @@ def git_sha() -> str:
     if not sha:
         return "unknown"
     try:
-        dirty = bool(subprocess.run(
-            ["git", "status", "--porcelain"],
-            capture_output=True, text=True, check=True,
-            cwd=_REPO_ROOT,
-        ).stdout.strip())
+        dirty = bool(
+            subprocess.run(
+                ["git", "status", "--porcelain"],
+                capture_output=True,
+                text=True,
+                check=True,
+                cwd=_REPO_ROOT,
+            ).stdout.strip()
+        )
     except (subprocess.CalledProcessError, FileNotFoundError):
         return sha
     return f"{sha}+dirty" if dirty else sha
@@ -85,7 +92,9 @@ def git_is_dirty() -> bool:
     try:
         out = subprocess.run(
             ["git", "status", "--porcelain"],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
             cwd=_REPO_ROOT,
         ).stdout.strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -160,14 +169,14 @@ def file_manifest(paths: list[Path]) -> list[dict]:
     for p in paths:
         p = Path(p)
         if not p.is_file():
-            raise FileNotFoundError(
-                f"file_manifest: input does not exist: {p}"
-            )
-        manifest.append({
-            "path": str(p),
-            "size_bytes": p.stat().st_size,
-            "sha256": _sha256_file(p),
-        })
+            raise FileNotFoundError(f"file_manifest: input does not exist: {p}")
+        manifest.append(
+            {
+                "path": str(p),
+                "size_bytes": p.stat().st_size,
+                "sha256": _sha256_file(p),
+            }
+        )
     return manifest
 
 
@@ -258,6 +267,7 @@ def write_run_manifest(
     output_dir.mkdir(parents=True, exist_ok=True)
     out_path = output_dir / "run-manifest.json"
     import json
+
     out_path.write_text(json.dumps(manifest, indent=2))
     return out_path
 
@@ -294,11 +304,13 @@ def write_dataset_description(
         "Name": name,
         "BIDSVersion": "1.10.0",
         "DatasetType": "derivative",
-        "GeneratedBy": [{
-            "Name": "neuro-workflow",
-            "Version": pipeline_version,
-            "CodeURL": f"git:{git_sha()}",
-        }],
+        "GeneratedBy": [
+            {
+                "Name": "neuro-workflow",
+                "Version": pipeline_version,
+                "CodeURL": f"git:{git_sha()}",
+            }
+        ],
         "SourceDatasets": source_datasets if source_datasets is not None else [],
     }
 
@@ -306,5 +318,6 @@ def write_dataset_description(
     output_dir.mkdir(parents=True, exist_ok=True)
     out_path = output_dir / "dataset_description.json"
     import json
+
     out_path.write_text(json.dumps(desc, indent=2))
     return out_path

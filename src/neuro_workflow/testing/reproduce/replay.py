@@ -1,5 +1,6 @@
 """Replay a Flywheel snapshot through the REAL bidsify -> trim -> events chain,
 producing a stub BIDS tree (tiny valid NIfTIs)."""
+
 from __future__ import annotations
 import importlib.util as _ilu
 from pathlib import Path
@@ -31,13 +32,21 @@ def _find_trim_bold() -> Path:
 def _trim_dir(bids_dir: Path):
     trim_path = _find_trim_bold()
     spec = _ilu.spec_from_file_location("trim_bold", str(trim_path))
-    mod = _ilu.module_from_spec(spec); spec.loader.exec_module(mod)
+    mod = _ilu.module_from_spec(spec)
+    spec.loader.exec_module(mod)
     return mod.trim_bold_directory(bids_dir)
 
 
-def replay_to_bids(spec: FlywheelCohortSpec, root: Path, *, sample_name: str,
-                   behavioral_dir: Path, install_flywheel) -> Path:
-    root = Path(root); bids = root / "bids"
+def replay_to_bids(
+    spec: FlywheelCohortSpec,
+    root: Path,
+    *,
+    sample_name: str,
+    behavioral_dir: Path,
+    install_flywheel,
+) -> Path:
+    root = Path(root)
+    bids = root / "bids"
     fake = make_fake_flywheel(spec)
     install_flywheel(fake)
     subjects = [s.label for s in spec.subjects]

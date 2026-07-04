@@ -5,6 +5,7 @@ tool_versions, file_manifest, write_run_manifest, write_dataset_description,
 and require_clean_tree. Tests must not depend on the real working tree being
 clean (we monkeypatch git_is_dirty / repo-root paths where needed).
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -153,9 +154,18 @@ def test_write_run_manifest_all_keys_and_roundtrip(tmp_path, monkeypatch):
 
     m = json.loads(path.read_text())
     expected_keys = {
-        "stage", "code_sha", "code_dirty", "uv_lock_hash", "config_version",
-        "tool_versions", "exclusions_source", "args", "created_at", "host",
-        "slurm_job_id", "inputs",
+        "stage",
+        "code_sha",
+        "code_dirty",
+        "uv_lock_hash",
+        "config_version",
+        "tool_versions",
+        "exclusions_source",
+        "args",
+        "created_at",
+        "host",
+        "slurm_job_id",
+        "inputs",
     }
     assert expected_keys.issubset(set(m.keys()))
 

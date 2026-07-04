@@ -44,13 +44,15 @@ def setup_analysis(args):
     sample_type = detect_sample_type(config.bids_dir)
     expected_sessions = get_expected_sessions(args.task_name)
 
-    logger.info('Level 1 GLM: %s / %s / %s / %s', args.subj_id, args.task_name, args.space, sample_type)
+    logger.info(
+        "Level 1 GLM: %s / %s / %s / %s", args.subj_id, args.task_name, args.space, sample_type
+    )
 
     # Load exclusions (compiled exclusions are all action='exclude'; the legacy
     # behavioral-salvage "trim" path was dead and has been removed).
     exclusions_by_type = load_exclusions_by_type(args.exclusions_file)
     exclusions = load_exclusions(args.exclusions_file)
-    logger.info('Loaded %d exclusions', len(exclusions))
+    logger.info("Loaded %d exclusions", len(exclusions))
 
     # Create subject-specific directories
     dirs = config.create_subject_dirs(clean_existing=True)
@@ -67,27 +69,26 @@ def discover_and_validate_files(config, args):
     finder = FileFinder(
         config.bids_dir,
         config.fmriprep_dir,
-        mni_template=getattr(args, 'mni_template', 'MNI152NLin6Asym'),
-        mni_res=getattr(args, 'mni_res', '2'),
+        mni_template=getattr(args, "mni_template", "MNI152NLin6Asym"),
+        mni_res=getattr(args, "mni_res", "2"),
     )
     required_files = FileFinder.get_required_files_for_space(args.space)
     surface_space = resolve_surface_space(args.space)
     files = finder.get_files(
-        args.subj_id, args.task_name,
+        args.subj_id,
+        args.task_name,
         required_files=required_files,
         surface_space=surface_space,
     )
 
     if not files:
-        raise ValueError(
-            'No complete runs found! Check that all required files are present.'
-        )
+        raise ValueError("No complete runs found! Check that all required files are present.")
 
     validation = finder.validate_file_completeness(files, args.task_name)
     logger.info(
-        'Found %d complete runs across %d sessions',
-        validation['complete_runs'],
-        validation['total_sessions'],
+        "Found %d complete runs across %d sessions",
+        validation["complete_runs"],
+        validation["total_sessions"],
     )
 
     return files
@@ -100,19 +101,19 @@ def setup_masks(files, args, dirs):
         Path to combined mask or None for surface space.
     """
     if is_surface_space(args.space):
-        logger.info('Skipping mask processing for surface space')
+        logger.info("Skipping mask processing for surface space")
         return None
 
     mask_info = MaskProcessor.get_mask_info(files, args.space)
-    logger.info('Found %d %s brain masks', mask_info['total_masks'], args.space)
+    logger.info("Found %d %s brain masks", mask_info["total_masks"], args.space)
 
-    if not mask_info['all_valid']:
-        raise ValueError('Some masks are invalid - cannot proceed')
+    if not mask_info["all_valid"]:
+        raise ValueError("Some masks are invalid - cannot proceed")
 
-    mask_filename = f'{args.subj_id}_space-{args.space}_desc-combinedMask.nii.gz'
-    combined_mask_path = dirs['masks'] / mask_filename
+    mask_filename = f"{args.subj_id}_space-{args.space}_desc-combinedMask.nii.gz"
+    combined_mask_path = dirs["masks"] / mask_filename
     MaskProcessor.create_combined_mask(
         files, args.space, args.within_subject_threshold, combined_mask_path
     )
-    logger.info('Combined mask saved: %s', combined_mask_path)
+    logger.info("Combined mask saved: %s", combined_mask_path)
     return combined_mask_path

@@ -33,17 +33,35 @@ ACQUISITION_MAP = {
     "task-stopSignal_bold": {"modality": "func", "task": "stopSignal"},
     "task_stopSignal_bold": {"modality": "func", "task": "stopSignal"},
     # --- Dual tasks (stopSignal combinations) ---
-    "stop_signal_w_directed_forgetting_bold": {"modality": "func", "task": "stopSignalWDirectedForgetting"},
-    "stop_signal_w_directed_forgetting_bold_1": {"modality": "func", "task": "stopSignalWDirectedForgetting"},
-    "task-stop_signal_with_directed_forgetting_bold": {"modality": "func", "task": "stopSignalWDirectedForgetting"},
+    "stop_signal_w_directed_forgetting_bold": {
+        "modality": "func",
+        "task": "stopSignalWDirectedForgetting",
+    },
+    "stop_signal_w_directed_forgetting_bold_1": {
+        "modality": "func",
+        "task": "stopSignalWDirectedForgetting",
+    },
+    "task-stop_signal_with_directed_forgetting_bold": {
+        "modality": "func",
+        "task": "stopSignalWDirectedForgetting",
+    },
     "task-stop_with_df_bold": {"modality": "func", "task": "stopSignalWDirectedForgetting"},
     "stop_signal_w_flanker_bold": {"modality": "func", "task": "stopSignalWFlanker"},
     "stop_w_flanker_bold": {"modality": "func", "task": "stopSignalWFlanker"},
     "task-stop_with_flanker_bold": {"modality": "func", "task": "stopSignalWFlanker"},
     # --- Dual tasks (directedForgetting combinations) ---
-    "directed_forgetting_w_flanker_bold": {"modality": "func", "task": "directedForgettingWFlanker"},
-    "directed_forgetting_w_flanker_bold_2": {"modality": "func", "task": "directedForgettingWFlanker"},
-    "directed_forgetting_w_cuedTaskSwitching_bold": {"modality": "func", "task": "directedForgettingWCuedTS"},
+    "directed_forgetting_w_flanker_bold": {
+        "modality": "func",
+        "task": "directedForgettingWFlanker",
+    },
+    "directed_forgetting_w_flanker_bold_2": {
+        "modality": "func",
+        "task": "directedForgettingWFlanker",
+    },
+    "directed_forgetting_w_cuedTaskSwitching_bold": {
+        "modality": "func",
+        "task": "directedForgettingWCuedTS",
+    },
     "cued_w_directed_forgetting_bold": {"modality": "func", "task": "directedForgettingWCuedTS"},
     # --- Dual tasks (spatialTS + cuedTS combinations) ---
     "spatialTS_w_cuedTS_bold": {"modality": "func", "task": "spatialTSWCuedTS"},
@@ -52,10 +70,22 @@ ACQUISITION_MAP = {
     "cued_w_spatial_bold": {"modality": "func", "task": "spatialTSWCuedTS"},
     "cuedTS_w_spatialTS_bold": {"modality": "func", "task": "spatialTSWCuedTS"},
     "cuedTS_w_spatial_bold": {"modality": "func", "task": "spatialTSWCuedTS"},
-    "spatialTaskSwitching_w_cuedTaskSwitching_bold": {"modality": "func", "task": "spatialTSWCuedTS"},
-    "cuedTaskSwitching_w_spatialTaskSwitching_bold": {"modality": "func", "task": "spatialTSWCuedTS"},
-    "spatialTaskSwitching_with_cuedTaskSwitching_bold": {"modality": "func", "task": "spatialTSWCuedTS"},
-    "cued_task_switching_w_spatial_task_switching_bold": {"modality": "func", "task": "spatialTSWCuedTS"},
+    "spatialTaskSwitching_w_cuedTaskSwitching_bold": {
+        "modality": "func",
+        "task": "spatialTSWCuedTS",
+    },
+    "cuedTaskSwitching_w_spatialTaskSwitching_bold": {
+        "modality": "func",
+        "task": "spatialTSWCuedTS",
+    },
+    "spatialTaskSwitching_with_cuedTaskSwitching_bold": {
+        "modality": "func",
+        "task": "spatialTSWCuedTS",
+    },
+    "cued_task_switching_w_spatial_task_switching_bold": {
+        "modality": "func",
+        "task": "spatialTSWCuedTS",
+    },
     # --- Dual tasks (flanker combinations) ---
     "flanker_w_shapeMatching_bold": {"modality": "func", "task": "flankerWShapeMatching"},
     "flanker_w_cuedTaskSwitching_bold": {"modality": "func", "task": "cuedTSWFlanker"},
@@ -67,8 +97,14 @@ ACQUISITION_MAP = {
     # --- Dual tasks (shapeMatching combinations) ---
     "shapeMatching_w_cued_bold": {"modality": "func", "task": "shapeMatchingWCuedTS"},
     "cuedTaskSwitching_w_shape_matching_bold": {"modality": "func", "task": "shapeMatchingWCuedTS"},
-    "cued_taskSwitching_w_shape_matching_bold": {"modality": "func", "task": "shapeMatchingWCuedTS"},
-    "shapeMatching_w_spatialTaskSwitching_bold": {"modality": "func", "task": "spatialTSWShapeMatching"},
+    "cued_taskSwitching_w_shape_matching_bold": {
+        "modality": "func",
+        "task": "shapeMatchingWCuedTS",
+    },
+    "shapeMatching_w_spatialTaskSwitching_bold": {
+        "modality": "func",
+        "task": "spatialTSWShapeMatching",
+    },
     "shape_matching_w_spatial_bold": {"modality": "func", "task": "spatialTSWShapeMatching"},
     # --- Fieldmaps ---
     "fmap-fieldmap": {"modality": "fmap"},

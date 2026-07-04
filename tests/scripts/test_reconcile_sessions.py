@@ -1,4 +1,5 @@
 """Tests for scripts/reconcile_sessions.py"""
+
 import csv
 from pathlib import Path
 
@@ -62,17 +63,36 @@ class TestNormalizeTaskName:
 
     def test_underscore_dual_tasks(self):
         assert normalize_task_name("stop_signal_with_flanker") == "stopSignalWFlanker"
-        assert normalize_task_name("stop_signal_with_directed_forgetting") == "stopSignalWDirectedForgetting"
-        assert normalize_task_name("directed_forgetting_with_flanker") == "directedForgettingWFlanker"
-        assert normalize_task_name("directed_forgetting_with_cued_task_switching") == "directedForgettingWCuedTS"
-        assert normalize_task_name("cued_task_switching_with_directed_forgetting") == "directedForgettingWCuedTS"
-        assert normalize_task_name("spatial_task_switching_with_cued_task_switching") == "spatialTSWCuedTS"
+        assert (
+            normalize_task_name("stop_signal_with_directed_forgetting")
+            == "stopSignalWDirectedForgetting"
+        )
+        assert (
+            normalize_task_name("directed_forgetting_with_flanker") == "directedForgettingWFlanker"
+        )
+        assert (
+            normalize_task_name("directed_forgetting_with_cued_task_switching")
+            == "directedForgettingWCuedTS"
+        )
+        assert (
+            normalize_task_name("cued_task_switching_with_directed_forgetting")
+            == "directedForgettingWCuedTS"
+        )
+        assert (
+            normalize_task_name("spatial_task_switching_with_cued_task_switching")
+            == "spatialTSWCuedTS"
+        )
         assert normalize_task_name("flanker_with_shape_matching") == "flankerWShapeMatching"
         assert normalize_task_name("flanker_with_cued_task_switching") == "cuedTSWFlanker"
         assert normalize_task_name("n_back_with_shape_matching") == "nBackWShapeMatching"
         assert normalize_task_name("n_back_with_spatial_task_switching") == "nBackWSpatialTS"
-        assert normalize_task_name("shape_matching_with_cued_task_switching") == "shapeMatchingWCuedTS"
-        assert normalize_task_name("shape_matching_with_spatial_task_switching") == "spatialTSWShapeMatching"
+        assert (
+            normalize_task_name("shape_matching_with_cued_task_switching") == "shapeMatchingWCuedTS"
+        )
+        assert (
+            normalize_task_name("shape_matching_with_spatial_task_switching")
+            == "spatialTSWShapeMatching"
+        )
 
     def test_unknown_returns_none(self):
         assert normalize_task_name("unknown_task") is None
@@ -91,55 +111,30 @@ class TestParseBehavioralCsv:
     def test_descriptive_pattern(self):
         """Pattern 1: descriptive filenames with __fmri_results."""
         assert (
-            parse_behavioral_csv(
-                "cued_task_switching_single_task_network__fmri_results (5).csv"
-            )
+            parse_behavioral_csv("cued_task_switching_single_task_network__fmri_results (5).csv")
             == "cuedTS"
         )
-        assert (
-            parse_behavioral_csv("stop_signal__fmri_results.csv")
-            == "stopSignal"
-        )
+        assert parse_behavioral_csv("stop_signal__fmri_results.csv") == "stopSignal"
         assert (
             parse_behavioral_csv("directed_forgetting__fmri_results (2).csv")
             == "directedForgetting"
         )
         assert (
-            parse_behavioral_csv(
-                "directed_forgetting_with_flanker__fmri_results.csv"
-            )
+            parse_behavioral_csv("directed_forgetting_with_flanker__fmri_results.csv")
             == "directedForgettingWFlanker"
         )
 
     def test_bids_dash_pattern(self):
         """Pattern 2: BIDS-style with dash-separated task names."""
-        assert (
-            parse_behavioral_csv("sub-s03_ses-1_task-go-nogo_desc-raw.csv")
-            == "goNogo"
-        )
-        assert (
-            parse_behavioral_csv("sub-s10_ses-03_task-stop-signal_desc-raw.csv")
-            == "stopSignal"
-        )
-        assert (
-            parse_behavioral_csv("sub-s19_ses-05_task-n-back_desc-raw.csv")
-            == "nBack"
-        )
+        assert parse_behavioral_csv("sub-s03_ses-1_task-go-nogo_desc-raw.csv") == "goNogo"
+        assert parse_behavioral_csv("sub-s10_ses-03_task-stop-signal_desc-raw.csv") == "stopSignal"
+        assert parse_behavioral_csv("sub-s19_ses-05_task-n-back_desc-raw.csv") == "nBack"
 
     def test_bids_camelcase_pattern(self):
         """Pattern 3: BIDS-style with camelCase task names."""
-        assert (
-            parse_behavioral_csv("sub-s76_ses-01_task-stopSignal_desc-beh.csv")
-            == "stopSignal"
-        )
-        assert (
-            parse_behavioral_csv("sub-s43_ses-03_task-flanker_desc-raw.csv")
-            == "flanker"
-        )
-        assert (
-            parse_behavioral_csv("sub-s10_ses-02_task-nBack_desc-beh.csv")
-            == "nBack"
-        )
+        assert parse_behavioral_csv("sub-s76_ses-01_task-stopSignal_desc-beh.csv") == "stopSignal"
+        assert parse_behavioral_csv("sub-s43_ses-03_task-flanker_desc-raw.csv") == "flanker"
+        assert parse_behavioral_csv("sub-s10_ses-02_task-nBack_desc-beh.csv") == "nBack"
 
     def test_dual_underscore_pattern(self):
         """Pattern 4: BIDS-style with underscore task names."""
@@ -150,9 +145,7 @@ class TestParseBehavioralCsv:
             == "directedForgettingWFlanker"
         )
         assert (
-            parse_behavioral_csv(
-                "sub-s29_ses_11_task-stop_signal_with_flanker_desc_raw.csv"
-            )
+            parse_behavioral_csv("sub-s29_ses_11_task-stop_signal_with_flanker_desc_raw.csv")
             == "stopSignalWFlanker"
         )
 
@@ -288,8 +281,12 @@ class TestScanRawBehavioral:
     def test_exclusions_directory(self, tmp_path):
         """Files in exclusions/ directory should be found with in_exclusions=True."""
         excl_dir = tmp_path / "exclusions"
-        _make_raw_csv(excl_dir, "s180", "ses-12",
-                       "shape_matching_with_cued_task_switching__fmri_results (3).csv")
+        _make_raw_csv(
+            excl_dir,
+            "s180",
+            "ses-12",
+            "shape_matching_with_cued_task_switching__fmri_results (3).csv",
+        )
 
         result = scan_raw_behavioral(tmp_path)
 
@@ -323,8 +320,12 @@ class TestScanRawBehavioral:
         assert len(result) == 0
 
     def test_descriptive_filenames(self, tmp_path):
-        _make_raw_csv(tmp_path, "s10", "ses-03",
-                       "cued_task_switching_single_task_network__fmri_results (5).csv")
+        _make_raw_csv(
+            tmp_path,
+            "s10",
+            "ses-03",
+            "cued_task_switching_single_task_network__fmri_results (5).csv",
+        )
 
         result = scan_raw_behavioral(tmp_path)
 
@@ -462,8 +463,7 @@ class TestReconcile:
         # Create a minimal scan notes file
         notes_path = tmp_path / "notes.md"
         notes_path.write_text(
-            "### s29\n"
-            "| ses-01 | 1 | cuedTS was scanned instead of spatialTS |\n"
+            "### s29\n" "| ses-01 | 1 | cuedTS was scanned instead of spatialTS |\n"
         )
 
         rows = reconcile(bids_dir, raw_dir, scan_notes_path=notes_path)

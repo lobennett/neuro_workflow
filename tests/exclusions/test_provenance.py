@@ -1,4 +1,5 @@
 """Tests for exclusion-run audit trail (Project C, slice C0)."""
+
 from __future__ import annotations
 
 from argparse import Namespace
@@ -81,9 +82,15 @@ def test_save_source_entries_wraps_with_meta(tmp_path, monkeypatch):
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
 
     entries = [
-        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
-         "run": "run-1", "source": "lev1_outlier", "action": "exclude",
-         "reason": "noisy"},
+        {
+            "subject": "sub-s03",
+            "session": "ses-02",
+            "task": "task-cuedTS",
+            "run": "run-1",
+            "source": "lev1_outlier",
+            "action": "exclude",
+            "reason": "noisy",
+        },
     ]
     args = Namespace(combined_vif=10.0, strict_vif=15.0)
 
@@ -107,9 +114,15 @@ def test_save_source_entries_args_none_records_null(tmp_path, monkeypatch):
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
 
     entries = [
-        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
-         "run": "run-1", "source": "behavioral-qc", "action": "exclude",
-         "reason": "x"},
+        {
+            "subject": "sub-s03",
+            "session": "ses-02",
+            "task": "task-cuedTS",
+            "run": "run-1",
+            "source": "behavioral-qc",
+            "action": "exclude",
+            "reason": "x",
+        },
     ]
 
     core_excl.save_source_entries("discovery", "behavioral-qc", entries)
@@ -130,11 +143,23 @@ def test_load_source_entries_handles_wrapped_format(tmp_path, monkeypatch):
     sources_dir = tmp_path / "exclusions" / "discovery" / "sources"
     sources_dir.mkdir(parents=True)
     payload = {
-        "_meta": {"generator": "x", "ran_at": "2026-05-07T00:00:00Z",
-                  "code_sha": "abc", "args": {}, "n_entries": 1},
+        "_meta": {
+            "generator": "x",
+            "ran_at": "2026-05-07T00:00:00Z",
+            "code_sha": "abc",
+            "args": {},
+            "n_entries": 1,
+        },
         "entries": [
-            {"subject": "sub-s03", "session": "ses-02", "task": "task-x",
-             "run": "run-1", "source": "x", "action": "exclude", "reason": "y"},
+            {
+                "subject": "sub-s03",
+                "session": "ses-02",
+                "task": "task-x",
+                "run": "run-1",
+                "source": "x",
+                "action": "exclude",
+                "reason": "y",
+            },
         ],
     }
     (sources_dir / "x.json").write_text(json.dumps(payload))
@@ -154,8 +179,15 @@ def test_load_source_entries_handles_bare_list(tmp_path, monkeypatch):
     sources_dir = tmp_path / "exclusions" / "discovery" / "sources"
     sources_dir.mkdir(parents=True)
     bare = [
-        {"subject": "sub-s03", "session": "ses-02", "task": "task-x",
-         "run": "run-1", "source": "x", "action": "exclude", "reason": "y"},
+        {
+            "subject": "sub-s03",
+            "session": "ses-02",
+            "task": "task-x",
+            "run": "run-1",
+            "source": "x",
+            "action": "exclude",
+            "reason": "y",
+        },
     ]
     (sources_dir / "x.json").write_text(json.dumps(bare))
 
@@ -176,18 +208,37 @@ def test_compile_handles_mixed_wrapped_and_bare_sources(tmp_path, monkeypatch):
     sources_dir.mkdir(parents=True)
 
     wrapped = {
-        "_meta": {"generator": "lev1_outlier", "ran_at": "2026-05-07T00:00:00Z",
-                  "code_sha": "abc", "args": {}, "n_entries": 1},
+        "_meta": {
+            "generator": "lev1_outlier",
+            "ran_at": "2026-05-07T00:00:00Z",
+            "code_sha": "abc",
+            "args": {},
+            "n_entries": 1,
+        },
         "entries": [
-            {"subject": "sub-s03", "session": "ses-02", "task": "task-x",
-             "run": "run-1", "source": "lev1_outlier", "action": "exclude", "reason": "y"},
+            {
+                "subject": "sub-s03",
+                "session": "ses-02",
+                "task": "task-x",
+                "run": "run-1",
+                "source": "lev1_outlier",
+                "action": "exclude",
+                "reason": "y",
+            },
         ],
     }
     (sources_dir / "lev1_outlier.json").write_text(json.dumps(wrapped))
 
     bare = [
-        {"subject": "sub-s10", "session": "ses-02", "task": "task-x",
-         "run": "run-1", "source": "motion", "action": "exclude", "reason": "z"},
+        {
+            "subject": "sub-s10",
+            "session": "ses-02",
+            "task": "task-x",
+            "run": "run-1",
+            "source": "motion",
+            "action": "exclude",
+            "reason": "z",
+        },
     ]
     (sources_dir / "motion.json").write_text(json.dumps(bare))
 
@@ -206,10 +257,22 @@ def test_compile_writes_lockfile(tmp_path, monkeypatch):
     monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")
 
     args = Namespace(combined_vif=10.0)
-    core_excl.save_source_entries("discovery", "lev1_outlier", [
-        {"subject": "sub-s03", "session": "ses-02", "task": "task-x",
-         "run": "run-1", "source": "lev1_outlier", "action": "exclude", "reason": "y"},
-    ], args=args)
+    core_excl.save_source_entries(
+        "discovery",
+        "lev1_outlier",
+        [
+            {
+                "subject": "sub-s03",
+                "session": "ses-02",
+                "task": "task-x",
+                "run": "run-1",
+                "source": "lev1_outlier",
+                "action": "exclude",
+                "reason": "y",
+            },
+        ],
+        args=args,
+    )
     core_excl.save_source_entries("discovery", "motion", [], args=Namespace(fd_threshold=0.2))
 
     core_excl.compile_exclusions("discovery")
@@ -257,10 +320,21 @@ def test_compile_with_bare_list_sources_records_null_meta(tmp_path, monkeypatch)
 
     sources_dir = tmp_path / "home" / "exclusions" / "discovery" / "sources"
     sources_dir.mkdir(parents=True)
-    (sources_dir / "old_source.json").write_text(json.dumps([
-        {"subject": "sub-s03", "session": "ses-02", "task": "task-x",
-         "run": "run-1", "source": "old_source", "action": "exclude", "reason": "y"},
-    ]))
+    (sources_dir / "old_source.json").write_text(
+        json.dumps(
+            [
+                {
+                    "subject": "sub-s03",
+                    "session": "ses-02",
+                    "task": "task-x",
+                    "run": "run-1",
+                    "source": "old_source",
+                    "action": "exclude",
+                    "reason": "y",
+                },
+            ]
+        )
+    )
 
     core_excl.compile_exclusions("discovery")
 
@@ -286,6 +360,7 @@ def test_cmd_exclusions_generate_passes_args_through(tmp_path, monkeypatch):
 
     # Stub get_dataset to avoid loading real datasets.json.
     import neuro_workflow.cli as cli_mod
+
     monkeypatch.setattr(cli_mod, "get_dataset", lambda name: {"bids_dir": "/tmp"})
 
     # Build a fake generator that returns a known entry list.
@@ -295,16 +370,25 @@ def test_cmd_exclusions_generate_passes_args_through(tmp_path, monkeypatch):
         name = "stub_gen"
         description = "stub"
 
-        def add_cli_args(self, parser): pass
+        def add_cli_args(self, parser):
+            pass
 
         def generate(self, dataset_name, dataset_config, args):
             captured["args_seen"] = args
             return [
-                {"subject": "sub-s03", "session": "ses-02", "task": "task-x",
-                 "run": "run-1", "source": "stub_gen", "action": "exclude", "reason": "y"},
+                {
+                    "subject": "sub-s03",
+                    "session": "ses-02",
+                    "task": "task-x",
+                    "run": "run-1",
+                    "source": "stub_gen",
+                    "action": "exclude",
+                    "reason": "y",
+                },
             ]
 
     from neuro_workflow.exclusions import base as base_mod
+
     base_mod.register_generator(StubGenerator())
 
     args = Namespace(
@@ -321,7 +405,9 @@ def test_cmd_exclusions_generate_passes_args_through(tmp_path, monkeypatch):
 
 
 def test_cmd_exclusions_show_prints_provenance_when_lockfile_exists(
-    tmp_path, monkeypatch, capsys,
+    tmp_path,
+    monkeypatch,
+    capsys,
 ):
     """cmd_exclusions_show prints lockfile-based provenance when available."""
     import json
@@ -334,9 +420,19 @@ def test_cmd_exclusions_show_prints_provenance_when_lockfile_exists(
 
     # Compile something so a lockfile exists.
     core_excl.save_source_entries(
-        "discovery", "lev1_outlier",
-        [{"subject": "sub-s03", "session": "ses-02", "task": "task-x",
-          "run": "run-1", "source": "lev1_outlier", "action": "exclude", "reason": "y"}],
+        "discovery",
+        "lev1_outlier",
+        [
+            {
+                "subject": "sub-s03",
+                "session": "ses-02",
+                "task": "task-x",
+                "run": "run-1",
+                "source": "lev1_outlier",
+                "action": "exclude",
+                "reason": "y",
+            }
+        ],
         args=Namespace(combined_vif=10.0),
     )
     core_excl.compile_exclusions("discovery")

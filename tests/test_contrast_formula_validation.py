@@ -47,6 +47,7 @@ def tmp_task_yaml(tmp_path, monkeypatch):
         tasks_dir.mkdir(exist_ok=True)
         # Patch the module-level _TASKS_DIR so _load_yaml resolves against tmp
         import neuro_workflow.analysis.task_config.loader as loader_mod
+
         monkeypatch.setattr(loader_mod, "_TASKS_DIR", tasks_dir)
         # Also clear the lru_cache so the patched path is used
         loader_mod._get_task_config.cache_clear()
@@ -58,6 +59,7 @@ def tmp_task_yaml(tmp_path, monkeypatch):
 
     # Clear cache after each test so real tasks load normally afterwards
     import neuro_workflow.analysis.task_config.loader as loader_mod
+
     loader_mod._get_task_config.cache_clear()
 
 

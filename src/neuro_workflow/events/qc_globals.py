@@ -4,6 +4,7 @@ Threshold VALUES now live in config/thresholds.yaml (config-as-code); this modul
 binds the same public constant names from that config at import, so importers
 (events/qc.py, etc.) are unchanged. See neuro_workflow.core.thresholds.
 """
+
 from neuro_workflow.core.thresholds import behavioral_qc as _behavioral_qc
 
 _BQC = _behavioral_qc()
@@ -22,13 +23,21 @@ GONOGO_NOGO_ACC_THRESHOLD_2 = _BQC["gonogo_nogo_acc_threshold_2"]
 
 # N-back fMRI exclusion thresholds (both conditions must be met)
 NBACK_1BACK_MATCH_ACC_COMBINED_THRESHOLD_1 = _BQC["nback_1back_match_acc_combined_threshold_1"]
-NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1 = _BQC["nback_1back_mismatch_acc_combined_threshold_1"]
+NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1 = _BQC[
+    "nback_1back_mismatch_acc_combined_threshold_1"
+]
 NBACK_1BACK_MATCH_ACC_COMBINED_THRESHOLD_2 = _BQC["nback_1back_match_acc_combined_threshold_2"]
-NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_2 = _BQC["nback_1back_mismatch_acc_combined_threshold_2"]
+NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_2 = _BQC[
+    "nback_1back_mismatch_acc_combined_threshold_2"
+]
 NBACK_2BACK_MATCH_ACC_COMBINED_THRESHOLD_1 = _BQC["nback_2back_match_acc_combined_threshold_1"]
-NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1 = _BQC["nback_2back_mismatch_acc_combined_threshold_1"]
+NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1 = _BQC[
+    "nback_2back_mismatch_acc_combined_threshold_1"
+]
 NBACK_2BACK_MATCH_ACC_COMBINED_THRESHOLD_2 = _BQC["nback_2back_match_acc_combined_threshold_2"]
-NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_2 = _BQC["nback_2back_mismatch_acc_combined_threshold_2"]
+NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_2 = _BQC[
+    "nback_2back_mismatch_acc_combined_threshold_2"
+]
 
 # All other tasks
 ACC_THRESHOLD = _BQC["acc_threshold"]

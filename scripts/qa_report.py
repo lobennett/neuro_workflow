@@ -10,6 +10,7 @@ Usage:
         [--no-reliability-movies] \\
         [--euler-n-sigma 2.0]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -21,19 +22,36 @@ from neuro_workflow.qa.report import build_reports
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--fmriprep-dir", required=True, type=Path,
-                        help="fmriprep derivatives directory "
-                             "(e.g. <bids>/derivatives/fmriprep_25.2.4)")
-    parser.add_argument("--output-dir", type=Path, default=None,
-                        help="Output directory (default: <fmriprep-dir>/qa_html)")
-    parser.add_argument("--subjects", nargs="+", default=None,
-                        help="Restrict to these subjects (default: all)")
-    parser.add_argument("--decisions", type=Path, default=None,
-                        help="Path to qc_decisions.tsv (sidecar TSV with QC decisions)")
-    parser.add_argument("--no-reliability-movies", action="store_true",
-                        help="Skip brm reliability movie generation")
-    parser.add_argument("--euler-n-sigma", type=float, default=2.0,
-                        help="Cohort MAD multiplier for Euler outlier detection (default 2.0)")
+    parser.add_argument(
+        "--fmriprep-dir",
+        required=True,
+        type=Path,
+        help="fmriprep derivatives directory " "(e.g. <bids>/derivatives/fmriprep_25.2.4)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Output directory (default: <fmriprep-dir>/qa_html)",
+    )
+    parser.add_argument(
+        "--subjects", nargs="+", default=None, help="Restrict to these subjects (default: all)"
+    )
+    parser.add_argument(
+        "--decisions",
+        type=Path,
+        default=None,
+        help="Path to qc_decisions.tsv (sidecar TSV with QC decisions)",
+    )
+    parser.add_argument(
+        "--no-reliability-movies", action="store_true", help="Skip brm reliability movie generation"
+    )
+    parser.add_argument(
+        "--euler-n-sigma",
+        type=float,
+        default=2.0,
+        help="Cohort MAD multiplier for Euler outlier detection (default 2.0)",
+    )
     args = parser.parse_args()
 
     fmriprep_dir: Path = args.fmriprep_dir

@@ -62,6 +62,7 @@ def _build_fmriprep(tmp_path: Path):
     }
 
     from neuro_workflow.pipelines.fmriprep import FmriprepPipeline
+
     pipeline = FmriprepPipeline()
     parser = ArgumentParser()
     pipeline.add_cli_args(parser)
@@ -83,6 +84,7 @@ def _build_freesurfer(tmp_path: Path):
     }
 
     from neuro_workflow.pipelines.freesurfer import FreesurferPipeline
+
     pipeline = FreesurferPipeline()
     parser = ArgumentParser()
     pipeline.add_cli_args(parser)
@@ -104,6 +106,7 @@ def _build_qsiprep(tmp_path: Path):
     }
 
     from neuro_workflow.pipelines.qsiprep import QsiprepPipeline
+
     pipeline = QsiprepPipeline()
     parser = ArgumentParser()
     pipeline.add_cli_args(parser)
@@ -133,6 +136,7 @@ def _build_happy(tmp_path: Path):
     }
 
     from neuro_workflow.pipelines.happy import HappyPipeline
+
     pipeline = HappyPipeline()
     parser = ArgumentParser()
     pipeline.add_cli_args(parser)
@@ -154,13 +158,18 @@ def _build_fsqc(tmp_path: Path):
     }
 
     from neuro_workflow.pipelines.fsqc import FsqcPipeline
+
     pipeline = FsqcPipeline()
     parser = ArgumentParser()
     pipeline.add_cli_args(parser)
-    args = parser.parse_args([
-        "--version", "2.1.4",
-        "--freesurfer-dir", str(tmp_path / "freesurfer"),
-    ])
+    args = parser.parse_args(
+        [
+            "--version",
+            "2.1.4",
+            "--freesurfer-dir",
+            str(tmp_path / "freesurfer"),
+        ]
+    )
 
     return "testds", dataset_config, args
 
@@ -179,15 +188,22 @@ def _build_lev1(tmp_path: Path):
     }
 
     from neuro_workflow.pipelines.lev1 import Lev1Pipeline
+
     pipeline = Lev1Pipeline()
     parser = ArgumentParser()
     pipeline.add_cli_args(parser)
-    args = parser.parse_args([
-        "--tasks", "flanker",
-        "--fmriprep-dir", "/fmriprep",
-        "--results-dir", str(tmp_path / "out"),
-        "--exclusions-file", str(exc_file),
-    ])
+    args = parser.parse_args(
+        [
+            "--tasks",
+            "flanker",
+            "--fmriprep-dir",
+            "/fmriprep",
+            "--results-dir",
+            str(tmp_path / "out"),
+            "--exclusions-file",
+            str(exc_file),
+        ]
+    )
 
     return "testds", dataset_config, args
 
@@ -204,14 +220,20 @@ def _build_lev2(tmp_path: Path):
     }
 
     from neuro_workflow.pipelines.lev2 import Lev2Pipeline
+
     pipeline = Lev2Pipeline()
     parser = ArgumentParser()
     pipeline.add_cli_args(parser)
-    args = parser.parse_args([
-        "--lev1-dirs", "/lev1",
-        "--results-dir", str(tmp_path / "out"),
-        "--contrasts", "task-flanker_contrast-test",
-    ])
+    args = parser.parse_args(
+        [
+            "--lev1-dirs",
+            "/lev1",
+            "--results-dir",
+            str(tmp_path / "out"),
+            "--contrasts",
+            "task-flanker_contrast-test",
+        ]
+    )
 
     return "testds", dataset_config, args
 
@@ -223,6 +245,7 @@ def _build_bidsify(tmp_path: Path):
     }
 
     from neuro_workflow.pipelines.bidsify import BidsifyPipeline
+
     pipeline = BidsifyPipeline()
     parser = ArgumentParser()
     pipeline.add_cli_args(parser)
@@ -264,12 +287,10 @@ def test_pipeline_registry_is_fully_covered() -> None:
     missing = registered - fixtured
     extra = fixtured - registered
 
-    assert not missing, (
-        f"Registered pipelines with NO fixture builder (add one to _FIXTURE_BUILDERS): {sorted(missing)}"
-    )
-    assert not extra, (
-        f"_FIXTURE_BUILDERS has entries for unknown pipelines (stale? rename?): {sorted(extra)}"
-    )
+    assert not missing, f"Registered pipelines with NO fixture builder (add one to _FIXTURE_BUILDERS): {sorted(missing)}"
+    assert (
+        not extra
+    ), f"_FIXTURE_BUILDERS has entries for unknown pipelines (stale? rename?): {sorted(extra)}"
 
 
 # ---------------------------------------------------------------------------

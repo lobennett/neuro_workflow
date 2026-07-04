@@ -49,14 +49,18 @@ def collect_subject_sessions(
             if ovr.get("exclude"):
                 logger.info(
                     "Excluding %s/%s: %s",
-                    subj.label, sess.label, ovr.get("reason", ""),
+                    subj.label,
+                    sess.label,
+                    ovr.get("reason", ""),
                 )
                 continue
             if ovr.get("reassign_to"):
                 logger.info(
                     "Skipping %s/%s (reassigned to %s): %s",
-                    subj.label, sess.label,
-                    ovr["reassign_to"], ovr.get("reason", ""),
+                    subj.label,
+                    sess.label,
+                    ovr["reassign_to"],
+                    ovr.get("reason", ""),
                 )
                 continue
             sessions.append(
@@ -84,8 +88,10 @@ def collect_subject_sessions(
                 if sess.label == ses_label:
                     logger.info(
                         "Reassigning %s/%s -> %s: %s",
-                        src_label, ses_label,
-                        canonical_label, ovr.get("reason", ""),
+                        src_label,
+                        ses_label,
+                        canonical_label,
+                        ovr.get("reason", ""),
                     )
                     sessions.append(
                         {

@@ -20,10 +20,14 @@ class FsqcPipeline(ContainerPipeline):
 
     def add_cli_args(self, parser: ArgumentParser) -> None:
         parser.add_argument("--version", default=None, help="FSQC version tag (e.g. 2.1.4)")
-        parser.add_argument("--freesurfer-dir", default=None, help="Path to FreeSurfer derivatives directory")
+        parser.add_argument(
+            "--freesurfer-dir", default=None, help="Path to FreeSurfer derivatives directory"
+        )
         parser.add_argument("--fsqc-args", default="", help="Additional FSQC arguments")
         parser.add_argument("--nthreads", type=int, default=None, help="CPUs per task (default: 4)")
-        parser.add_argument("--mem-per-cpu-gb", type=int, default=None, help="Memory per CPU in GB (default: 8)")
+        parser.add_argument(
+            "--mem-per-cpu-gb", type=int, default=None, help="Memory per CPU in GB (default: 8)"
+        )
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 2-00:00:00)")
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
@@ -35,9 +39,7 @@ class FsqcPipeline(ContainerPipeline):
         resources = self._resolve(args)
 
         subjects = resolve_pipeline_subjects(dataset_name, dataset_config)
-        subjects_list = " ".join(
-            f"sub-{s}" if not s.startswith("sub-") else s for s in subjects
-        )
+        subjects_list = " ".join(f"sub-{s}" if not s.startswith("sub-") else s for s in subjects)
 
         output_dir = f"{dataset_config['bids_dir']}/derivatives/fsqc_{args.version}"
 

@@ -1,5 +1,6 @@
 """The DCT-cosine cap is config-driven (thresholds.yaml confounds.cosine_max_index),
 preserving the historical discovery/nBack behavior and applying nowhere else."""
+
 import neuro_workflow.core.thresholds as thr
 from neuro_workflow.analysis.lev1.processing.confounds import _get_base_confound_pattern
 

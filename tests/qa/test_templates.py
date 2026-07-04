@@ -1,4 +1,5 @@
 """Tests for src/neuro_workflow/qa/templates rendering."""
+
 from neuro_workflow.qa.templates import render_cohort_html, render_subject_html
 from neuro_workflow.qa.metrics.freesurfer import FreeSurferMetrics
 from neuro_workflow.qa.metrics.motion import MotionMetrics
@@ -7,11 +8,19 @@ import pandas as pd
 
 def _fs_ok(euler=-100.0):
     return FreeSurferMetrics(
-        status="OK", elapsed_hours=10.0,
-        euler_lh=int(euler), euler_rh=int(euler), euler_mean=euler,
-        holes_lh=51, holes_rh=51, holes_mean=51.0,
-        brain_vol=1100000.0, gm_vol=600000.0, wm_vol=500000.0,
-        csf_vol=1500.0, etiv=1500000.0,
+        status="OK",
+        elapsed_hours=10.0,
+        euler_lh=int(euler),
+        euler_rh=int(euler),
+        euler_mean=euler,
+        holes_lh=51,
+        holes_rh=51,
+        holes_mean=51.0,
+        brain_vol=1100000.0,
+        gm_vol=600000.0,
+        wm_vol=500000.0,
+        csf_vol=1500.0,
+        etiv=1500000.0,
     )
 
 
@@ -33,7 +42,10 @@ def test_render_cohort_html_contains_subjects():
         },
     ]
     html = render_cohort_html(
-        rows=rows, n_subjects=1, n_scans=57, n_flagged_scans=0,
+        rows=rows,
+        n_subjects=1,
+        n_scans=57,
+        n_flagged_scans=0,
         fmriprep_version="25.2.4",
     )
     assert "sub-s03" in html
@@ -43,14 +55,24 @@ def test_render_cohort_html_contains_subjects():
 
 def test_render_cohort_html_marks_excluded():
     rows = [
-        {"subject": "sub-bad", "sessions": 12, "scans": 50,
-         "fs_euler_mean": -100.0, "fs_holes_mean": 51.0, "fs_status": "OK",
-         "scans_flagged_motion": 0, "scans_flagged_outputs": 0,
-         "scan_flags_total": 0, "decision_action": "exclude",
-         "decision_reason": "manual exclusion", "outlier": False},
+        {
+            "subject": "sub-bad",
+            "sessions": 12,
+            "scans": 50,
+            "fs_euler_mean": -100.0,
+            "fs_holes_mean": 51.0,
+            "fs_status": "OK",
+            "scans_flagged_motion": 0,
+            "scans_flagged_outputs": 0,
+            "scan_flags_total": 0,
+            "decision_action": "exclude",
+            "decision_reason": "manual exclusion",
+            "outlier": False,
+        },
     ]
-    html = render_cohort_html(rows=rows, n_subjects=1, n_scans=50,
-                              n_flagged_scans=0, fmriprep_version="25.2.4")
+    html = render_cohort_html(
+        rows=rows, n_subjects=1, n_scans=50, n_flagged_scans=0, fmriprep_version="25.2.4"
+    )
     assert "excluded" in html.lower()
 
 
@@ -92,14 +114,24 @@ def test_render_subject_html_auto_expands_flagged_scans():
     fs = _fs_ok()
     scans = [
         {
-            "session": "ses-01", "task": "rest", "run": "1",
-            "n_vols": 154, "fd_mean": 0.3, "fd_prop_over_05": 0.05,
-            "dvars_mean": 1.2, "dvars_prop_over_15": 0.05,
+            "session": "ses-01",
+            "task": "rest",
+            "run": "1",
+            "n_vols": 154,
+            "fd_mean": 0.3,
+            "fd_prop_over_05": 0.05,
+            "dvars_mean": 1.2,
+            "dvars_prop_over_15": 0.05,
             "n_motion_outliers": 2,
-            "outputs_complete": True, "missing_outputs": [],
-            "flagged": True, "flag_reasons": ["rest FD mean 0.300 > 0.2"],
-            "decision_action": "unset", "decision_reason": "",
-            "carpetplot_svg": "", "coreg_svg": "", "sdc_svg": "",
+            "outputs_complete": True,
+            "missing_outputs": [],
+            "flagged": True,
+            "flag_reasons": ["rest FD mean 0.300 > 0.2"],
+            "decision_action": "unset",
+            "decision_reason": "",
+            "carpetplot_svg": "",
+            "coreg_svg": "",
+            "sdc_svg": "",
         }
     ]
     html = render_subject_html(
@@ -120,11 +152,19 @@ def test_render_subject_html_partial_volumes_no_crash():
     # Real-world: aseg.stats may have brain_vol but lack csf_vol etc.
     # Template must not crash on `"%.0f"|format(None)`.
     fs = FreeSurferMetrics(
-        status="OK", elapsed_hours=3.0,
-        euler_lh=-50, euler_rh=-60, euler_mean=-55.0,
-        holes_lh=26, holes_rh=31, holes_mean=28.5,
-        brain_vol=1100000.0, gm_vol=None, wm_vol=None,
-        csf_vol=None, etiv=None,
+        status="OK",
+        elapsed_hours=3.0,
+        euler_lh=-50,
+        euler_rh=-60,
+        euler_mean=-55.0,
+        holes_lh=26,
+        holes_rh=31,
+        holes_mean=28.5,
+        brain_vol=1100000.0,
+        gm_vol=None,
+        wm_vol=None,
+        csf_vol=None,
+        etiv=None,
     )
     html = render_subject_html(
         subject="sub-s03",
@@ -145,12 +185,16 @@ def test_render_subject_html_one_video_per_space():
     fs = _fs_ok()
     movies = [
         {"label": "T1w", "relpath": "../movies/sub-s03_space-T1w.mp4", "error": None},
-        {"label": "MNI152NLin2009cAsym (res-1)",
-         "relpath": "../movies/sub-s03_space-MNI152NLin2009cAsym_res-1.mp4",
-         "error": None},
-        {"label": "MNI152NLin6Asym (res-2)",
-         "relpath": "../movies/sub-s03_space-MNI152NLin6Asym_res-2.mp4",
-         "error": None},
+        {
+            "label": "MNI152NLin2009cAsym (res-1)",
+            "relpath": "../movies/sub-s03_space-MNI152NLin2009cAsym_res-1.mp4",
+            "error": None,
+        },
+        {
+            "label": "MNI152NLin6Asym (res-2)",
+            "relpath": "../movies/sub-s03_space-MNI152NLin6Asym_res-2.mp4",
+            "error": None,
+        },
     ]
     html = render_subject_html(
         subject="sub-s03",
@@ -178,8 +222,7 @@ def test_render_subject_html_per_space_failure_renders_message():
     fs = _fs_ok()
     movies = [
         {"label": "T1w", "relpath": "../movies/sub-s03_space-T1w.mp4", "error": None},
-        {"label": "MNI152NLin6Asym (res-2)", "relpath": "",
-         "error": "ffmpeg crashed"},
+        {"label": "MNI152NLin6Asym (res-2)", "relpath": "", "error": "ffmpeg crashed"},
     ]
     html = render_subject_html(
         subject="sub-s03",
