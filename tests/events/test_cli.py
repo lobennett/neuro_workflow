@@ -1,11 +1,11 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 
 class TestEventsSubcommand:
     def test_events_create_parses(self):
         """neuro-run events create <dataset> --behavioral-dir <dir>"""
         import sys
+
         from neuro_workflow.cli import main
 
         with patch.object(
@@ -30,6 +30,7 @@ class TestEventsSubcommand:
     def test_events_qc_parses(self):
         """neuro-run events qc <dataset> --behavioral-dir <dir>"""
         import sys
+
         from neuro_workflow.cli import main
 
         with patch.object(
@@ -54,6 +55,7 @@ class TestEventsSubcommand:
     def test_events_trim_parses(self):
         """neuro-run events trim <dataset>"""
         import sys
+
         from neuro_workflow.cli import main
 
         with patch.object(

@@ -1,8 +1,4 @@
 import pandas as pd
-import numpy as np
-import pytest
-from pathlib import Path
-from unittest.mock import patch
 
 
 def _make_stop_signal_csv(tmp_path):

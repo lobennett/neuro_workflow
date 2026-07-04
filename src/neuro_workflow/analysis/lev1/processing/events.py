@@ -14,7 +14,6 @@ labeling are handled upstream during event file creation (events/create.py).
 
 import logging
 from pathlib import Path
-from typing import Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -104,7 +103,7 @@ def preprocess_events(
     return events_df
 
 
-def define_nuisance_trials(events_df: pd.DataFrame, task: str) -> Dict[str, pd.Series]:
+def define_nuisance_trials(events_df: pd.DataFrame, task: str) -> dict[str, pd.Series]:
     """Define nuisance trials based on task type and response patterns.
 
     Args:
@@ -194,7 +193,7 @@ def add_junk_trials(events_df: pd.DataFrame, task_name: str) -> tuple[pd.DataFra
     return events_df, junk_percentage
 
 
-def save_simplified_events(regressor_3cols: list, output_file: Union[str, Path]) -> Path:
+def save_simplified_events(regressor_3cols: list, output_file: str | Path) -> Path:
     """Save simplified events in 3-column format.
 
     Args:
@@ -241,7 +240,7 @@ def save_simplified_events(regressor_3cols: list, output_file: Union[str, Path])
     return output_file
 
 
-def load_bold_data_with_dummy_removal(bold_file: Union[str, Path], dummy_scans: int = 0):
+def load_bold_data_with_dummy_removal(bold_file: str | Path, dummy_scans: int = 0):
     """Load BOLD data and optionally remove dummy scans.
 
     Default is 0 since BOLD is pre-trimmed by scripts/trim_bold.py in this

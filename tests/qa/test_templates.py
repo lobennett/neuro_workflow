@@ -1,9 +1,7 @@
 """Tests for src/neuro_workflow/qa/templates rendering."""
 
-from neuro_workflow.qa.templates import render_cohort_html, render_subject_html
 from neuro_workflow.qa.metrics.freesurfer import FreeSurferMetrics
-from neuro_workflow.qa.metrics.motion import MotionMetrics
-import pandas as pd
+from neuro_workflow.qa.templates import render_cohort_html, render_subject_html
 
 
 def _fs_ok(euler=-100.0):

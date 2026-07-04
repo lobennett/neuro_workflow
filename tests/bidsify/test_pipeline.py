@@ -2,13 +2,12 @@
 
 import sys
 from argparse import Namespace
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 
-from neuro_workflow.pipelines.base import get_pipeline, TEMPLATE_DIR
 from neuro_workflow.core.slurm import render_template
+from neuro_workflow.pipelines.base import TEMPLATE_DIR, get_pipeline
 
 
 @pytest.fixture

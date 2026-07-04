@@ -15,8 +15,6 @@ import sys
 import types
 from pathlib import Path
 
-import pytest
-
 from neuro_workflow.analysis.lev2 import run as lev2_run
 
 

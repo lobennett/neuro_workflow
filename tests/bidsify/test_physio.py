@@ -2,15 +2,12 @@
 
 import gzip
 import json
-from pathlib import Path
-
-import pytest
 
 from neuro_workflow.bidsify.physio import (
+    build_trigger_column,
     convert_physio_to_bids,
     parse_flt_data,
     parse_flt_trig,
-    build_trigger_column,
 )
 
 

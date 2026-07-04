@@ -10,7 +10,6 @@ top-level ``analysis/config`` to avoid a name collision with the unrelated
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +29,8 @@ class Config:
     bids_dir: Path
     fmriprep_dir: Path
     output_dir: Path = Path("./results/")
-    subject_id: Optional[str] = None
-    task_name: Optional[str] = None
+    subject_id: str | None = None
+    task_name: str | None = None
 
     def __post_init__(self):
         """Convert string paths to Path objects if needed."""
@@ -39,7 +38,7 @@ class Config:
         self.fmriprep_dir = Path(self.fmriprep_dir)
         self.output_dir = Path(self.output_dir)
 
-    def get_subject_dirs(self) -> Dict[str, Path]:
+    def get_subject_dirs(self) -> dict[str, Path]:
         """Get subject-specific output directories.
 
         Returns:
@@ -63,7 +62,7 @@ class Config:
             "base": base_dir,
         }
 
-    def create_subject_dirs(self, clean_existing: bool = True) -> Dict[str, Path]:
+    def create_subject_dirs(self, clean_existing: bool = True) -> dict[str, Path]:
         """Create subject-specific output directories.
 
         Args:

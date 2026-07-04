@@ -1,14 +1,11 @@
 """Tests for surface fixed effects NaN handling."""
 
-import tempfile
 from pathlib import Path
 
 import nibabel as nib
 import numpy as np
-import pytest
 
 from neuro_workflow.analysis.lev1.processing.surface_data import (
-    SurfaceResult,
     compute_surface_fixed_effects,
 )
 
@@ -32,7 +29,7 @@ class TestComputeSurfaceFixedEffects:
         variances = [np.array([1.0, 1.0, 1.0]), np.array([1.0, 1.0, 1.0])]
 
         eff_files, var_files = [], []
-        for i, (e, v) in enumerate(zip(effects, variances)):
+        for i, (e, v) in enumerate(zip(effects, variances, strict=False)):
             ep = tmp_path / f"eff_{i}.func.gii"
             vp = tmp_path / f"var_{i}.func.gii"
             _write_gifti(ep, e)
@@ -52,7 +49,7 @@ class TestComputeSurfaceFixedEffects:
         variances = [np.array([1.0, np.nan, 1.0]), np.array([1.0, 1.0, 1.0])]
 
         eff_files, var_files = [], []
-        for i, (e, v) in enumerate(zip(effects, variances)):
+        for i, (e, v) in enumerate(zip(effects, variances, strict=False)):
             ep = tmp_path / f"eff_{i}.func.gii"
             vp = tmp_path / f"var_{i}.func.gii"
             _write_gifti(ep, e)
@@ -81,7 +78,7 @@ class TestComputeSurfaceFixedEffects:
         variances = [np.array([1.0, np.nan]), np.array([1.0, np.nan])]
 
         eff_files, var_files = [], []
-        for i, (e, v) in enumerate(zip(effects, variances)):
+        for i, (e, v) in enumerate(zip(effects, variances, strict=False)):
             ep = tmp_path / f"eff_{i}.func.gii"
             vp = tmp_path / f"var_{i}.func.gii"
             _write_gifti(ep, e)
@@ -103,7 +100,7 @@ class TestComputeSurfaceFixedEffects:
         variances = [np.array([1.0, np.nan, 1.0]), np.array([1.0, 1.0, 1.0])]
 
         eff_files, var_files = [], []
-        for i, (e, v) in enumerate(zip(effects, variances)):
+        for i, (e, v) in enumerate(zip(effects, variances, strict=False)):
             ep = tmp_path / f"eff_{i}.func.gii"
             vp = tmp_path / f"var_{i}.func.gii"
             _write_gifti(ep, e)
@@ -132,7 +129,7 @@ class TestComputeSurfaceFixedEffects:
         variances = [(rng.rand(n_vox) + 0.5).astype(np.float32) for _ in range(n_runs)]
 
         eff_files, var_files = [], []
-        for i, (e, v) in enumerate(zip(effects, variances)):
+        for i, (e, v) in enumerate(zip(effects, variances, strict=False)):
             ep = tmp_path / f"eff_{i}.func.gii"
             vp = tmp_path / f"var_{i}.func.gii"
             _write_gifti(ep, e)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from argparse import ArgumentParser, Namespace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -79,9 +79,9 @@ def _jsonify(value):
                 continue
             out[k] = _jsonify(v)
         return out
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list | tuple):
         return [_jsonify(v) for v in value]
-    if isinstance(value, (str, int, float, bool, type(None))):
+    if isinstance(value, str | int | float | bool | type(None)):
         return value
     # Unknown type — stringify so json.dumps doesn't crash.
     return f"<{type(value).__name__}:{value!r}>"
@@ -89,7 +89,7 @@ def _jsonify(value):
 
 def make_meta(
     generator_name: str,
-    args: "Namespace | dict | None",
+    args: Namespace | dict | None,
     n_entries: int,
 ) -> dict:
     """Build the _meta block for a generator's saved sources file.
@@ -106,7 +106,7 @@ def make_meta(
 
     return {
         "generator": generator_name,
-        "ran_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "ran_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "code_sha": _git_sha(),
         "args": _jsonify(args_dict) if args_dict is not None else None,
         "n_entries": n_entries,

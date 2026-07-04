@@ -40,7 +40,7 @@ def find_gephysio_analyses(session: Any) -> list[Any]:
 
     # For each acquisition, keep only the most recently created analysis
     latest = []
-    for acq_id, analyses in by_acq.items():
+    for _acq_id, analyses in by_acq.items():
         newest = max(analyses, key=lambda a: a.created or "")
         latest.append(newest)
 

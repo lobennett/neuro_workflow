@@ -9,8 +9,6 @@ import json
 import sys
 from unittest.mock import patch
 
-import pytest
-
 from scripts.lev1_outliers import main
 
 

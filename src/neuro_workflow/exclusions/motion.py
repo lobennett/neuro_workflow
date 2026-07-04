@@ -42,7 +42,7 @@ def _parse_confounds_filename(filename: str) -> dict | None:
     }
 
 
-def _compute_metrics(df: "pd.DataFrame") -> dict:
+def _compute_metrics(df: pd.DataFrame) -> dict:
     """Compute motion metrics from a confounds dataframe.
 
     DVARS uses fmriprep's `std_dvars` (standardized, ~0-3 z-units), not the raw

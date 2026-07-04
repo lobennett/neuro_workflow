@@ -15,7 +15,7 @@ import json
 import logging
 import shutil
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 log = logging.getLogger(__name__)
@@ -151,7 +151,7 @@ def main():
 
     # Write migration report
     report_out = {
-        "generated": datetime.now(timezone.utc).isoformat(),
+        "generated": datetime.now(UTC).isoformat(),
         "manifest": str(args.manifest),
         "sample": args.sample,
         **{k: v for k, v in report.items() if k != "files"},

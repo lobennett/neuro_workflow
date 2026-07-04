@@ -3,8 +3,7 @@
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from neuro_workflow.pipelines.base import register, build_mail_line, resolve_resources
-
+from neuro_workflow.pipelines.base import build_mail_line, register, resolve_resources
 
 _DEFAULT_CONTAINER = "/home/groups/russpold/singularity_images/neuro_workflow.sif"
 

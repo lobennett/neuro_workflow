@@ -149,6 +149,7 @@ def main() -> int:
     # Enumerate FW sessions directly: collect_subject_sessions filters out
     # excluded/reassigned sessions, but the audit needs to surface those.
     import flywheel
+
     from neuro_workflow.bidsify.flywheel_query import query_project_subjects
 
     fw = flywheel.Client()

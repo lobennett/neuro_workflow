@@ -51,7 +51,9 @@ def path_matches_any(rel_path: str, patterns: list[str]) -> bool:
         pattern_parts = pattern.split("/")
         if len(path_parts) != len(pattern_parts):
             continue
-        if all(fnmatch.fnmatchcase(p, pat) for p, pat in zip(path_parts, pattern_parts)):
+        if all(
+            fnmatch.fnmatchcase(p, pat) for p, pat in zip(path_parts, pattern_parts, strict=False)
+        ):
             return True
     return False
 
@@ -230,13 +232,13 @@ EXPECTED_MULTI_ANAT = {
 def _load_datasets(datasets_json: Path) -> dict:
     try:
         return json.loads(datasets_json.read_text())
-    except FileNotFoundError:
+    except FileNotFoundError as exc:
         raise SystemExit(
             f"ERROR: datasets.json not found: {datasets_json}\n"
             f"Create it or pass --datasets-json <path>"
-        )
+        ) from exc
     except json.JSONDecodeError as exc:
-        raise SystemExit(f"ERROR: malformed JSON in {datasets_json}: {exc}")
+        raise SystemExit(f"ERROR: malformed JSON in {datasets_json}: {exc}") from exc
 
 
 _ECHO_RE = re.compile(r"_echo-\d+")

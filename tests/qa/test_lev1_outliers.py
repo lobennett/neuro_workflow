@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 
 from neuro_workflow.qa.lev1_outliers import (
-    ScanContrast,
     discover_contrast_files,
     parse_contrast_path,
 )
@@ -33,8 +32,8 @@ def test_exclusion_key_matches_compiled_registry_format():
     drops nothing — the exact failure mode that made the events .bidsignore filter
     inert. This pins both sides to one format.
     """
-    from neuro_workflow.qa.lev1_outliers import _make_exclusion_key
     from neuro_workflow.analysis.core.utils import create_exclusion_key
+    from neuro_workflow.qa.lev1_outliers import _make_exclusion_key
 
     path = Path(
         "/lev1/sub-s10/task-goNogo/indiv_contrasts/"
@@ -76,7 +75,6 @@ import numpy as np
 
 from neuro_workflow.qa.lev1_outliers import (
     compute_cohort_outliers,
-    OutlierResult,
 )
 
 
@@ -139,7 +137,6 @@ def test_compute_cohort_outliers_groups_by_task_contrast(tmp_path: Path):
 
 def test_aggregate_vifs_from_csv(tmp_path: Path):
     """A VIF CSV with two contrasts → both VIFs ingested into the right ScanContrast."""
-    import pandas as pd
 
     sub_dir = tmp_path / "sub-s03/task-goNogo/quality_control"
     sub_dir.mkdir(parents=True)
@@ -163,8 +160,8 @@ def test_aggregate_vifs_from_csv(tmp_path: Path):
 def test_write_outputs_csv_and_flagged(tmp_path: Path):
     from neuro_workflow.qa.lev1_outliers import (
         FlaggedRow,
-        write_outliers_csv,
         write_flagged_tsv,
+        write_outliers_csv,
     )
 
     rows = [

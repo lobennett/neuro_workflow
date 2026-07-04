@@ -431,6 +431,7 @@ class TestExclusionKeyMatchesRunnerForAllGenerators:
         """
         pytest.importorskip("pandas")
         import pandas as pd
+
         from neuro_workflow.events.qc import run_qc
 
         # Build a sourcedata CSV for a generic task that trips the omission-rate

@@ -1,20 +1,15 @@
-import pytest
-from pathlib import Path
-from unittest.mock import patch
-
-
 class TestBehavioralGenerator:
     def test_registered_as_behavioral(self):
+        import neuro_workflow.exclusions.behavioral  # noqa: F401 -- trigger registration
         from neuro_workflow.exclusions.base import get_generator
-        import neuro_workflow.exclusions.behavioral  # trigger registration
 
         gen = get_generator("behavioral")
         assert gen is not None
         assert gen.name == "behavioral"
 
     def test_generate_returns_list(self, tmp_path):
+        import neuro_workflow.exclusions.behavioral  # noqa: F401 -- trigger registration
         from neuro_workflow.exclusions.base import get_generator
-        import neuro_workflow.exclusions.behavioral
 
         gen = get_generator("behavioral")
         # Create minimal sourcedata structure

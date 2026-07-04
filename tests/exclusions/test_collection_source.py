@@ -30,7 +30,7 @@ _SCAN_RE = re.compile(r"^sub-[^/]+/ses-[^/]+/func/.*task-.*_bold\..*$")
 
 
 def _non_comment_globs(text: str) -> list[str]:
-    return [l for l in text.splitlines() if l and not l.startswith("#")]
+    return [ln for ln in text.splitlines() if ln and not ln.startswith("#")]
 
 
 # ---------------------------------------------------------------------------
@@ -70,7 +70,7 @@ def test_collection_lines_subset_of_real_bidsignore(dataset):
         pytest.skip(f"real ground-truth .bidsignore not present: {real}")
     real_set = set(real.read_text().splitlines())
     coll_globs = _non_comment_globs(collection_path(dataset).read_text())
-    missing = [l for l in coll_globs if l not in real_set]
+    missing = [ln for ln in coll_globs if ln not in real_set]
     assert (
         not missing
     ), f"{dataset}: collection lines not found VERBATIM in real .bidsignore: {missing}"
@@ -85,8 +85,8 @@ def test_residual_real_lines_are_scan_shaped(dataset):
     if not real.is_file():
         pytest.skip(f"real ground-truth .bidsignore not present: {real}")
     coll_set = set(_non_comment_globs(collection_path(dataset).read_text()))
-    residual = [l for l in _non_comment_globs(real.read_text()) if l not in coll_set]
-    bad = [l for l in residual if not _SCAN_RE.match(l)]
+    residual = [ln for ln in _non_comment_globs(real.read_text()) if ln not in coll_set]
+    bad = [ln for ln in residual if not _SCAN_RE.match(ln)]
     assert not bad, f"{dataset}: residual real lines not scan-shaped: {bad}"
 
 
@@ -108,8 +108,8 @@ _QC_ENTRY = {
 def test_render_with_collection_starts_with_collection_block():
     """Output begins with the committed collection block (its header first)."""
     from neuro_workflow.core.exclusions_render import (
-        render_bidsignore_with_collection,
         collection_path,
+        render_bidsignore_with_collection,
     )
 
     out = render_bidsignore_with_collection("discovery", [_QC_ENTRY])
@@ -122,8 +122,8 @@ def test_render_with_collection_starts_with_collection_block():
 def test_render_with_collection_appends_generated_qc_after_collection():
     """Generated QC stamp + scan-line follow the collection block."""
     from neuro_workflow.core.exclusions_render import (
-        render_bidsignore_with_collection,
         collection_path,
+        render_bidsignore_with_collection,
     )
 
     out = render_bidsignore_with_collection("discovery", [_QC_ENTRY])
@@ -155,8 +155,8 @@ def test_render_with_collection_missing_file_raises(tmp_path, monkeypatch):
 def test_render_with_collection_includes_all_collection_globs_verbatim():
     """Every collection glob is present verbatim in the concatenated output."""
     from neuro_workflow.core.exclusions_render import (
-        render_bidsignore_with_collection,
         collection_path,
+        render_bidsignore_with_collection,
     )
 
     for ds in ("discovery", "validation"):

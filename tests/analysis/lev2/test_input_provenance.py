@@ -17,8 +17,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 
 def _write_manifest(
     base_dir: Path,

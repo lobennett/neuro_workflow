@@ -11,8 +11,6 @@ unreliable absolute timing, so:
 """
 
 import pandas as pd
-import pytest
-
 
 # --- pure cut-finder -------------------------------------------------------
 

@@ -1,7 +1,8 @@
 import json
 import sys
+
 import pytest
-from pathlib import Path
+
 from neuro_workflow.cli import main
 
 

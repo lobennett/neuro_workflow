@@ -36,7 +36,7 @@ def _write_csv(path: Path, rows: list[dict]) -> None:
             w.writerow(r)
 
 
-def _make_args(csv_path: Path, **overrides) -> "object":
+def _make_args(csv_path: Path, **overrides) -> object:
     """Minimal Namespace stand-in for args (only attributes the generator reads)."""
     from argparse import Namespace
 
@@ -357,8 +357,8 @@ def test_empty_csv_returns_empty_list(tmp_path):
 
 def test_generator_output_flows_through_compile(tmp_path, monkeypatch):
     """End-to-end: per-contrast entries validate, save, and survive compile."""
-    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
     from neuro_workflow.core import exclusions as core_excl
+    from neuro_workflow.exclusions.lev1_outlier import Lev1OutlierGenerator
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
     monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")

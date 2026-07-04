@@ -7,9 +7,9 @@ from pathlib import Path
 
 try:
     import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_pdf import PdfPages
-    import numpy as np
     import nibabel as nib
+    import numpy as np
+    from matplotlib.backends.backend_pdf import PdfPages
 except ImportError:
     plt = None  # type: ignore[assignment]
 
@@ -76,7 +76,7 @@ class GlobalSignalQa:
                 logger.info(f"Processing {sub_str}: {num_runs} runs...")
 
                 fig, axes = plt.subplots(num_runs, 1, figsize=(12, 2.5 * num_runs), squeeze=False)
-                for i, (m, ax_arr) in enumerate(zip(sub_files, axes)):
+                for i, (m, ax_arr) in enumerate(zip(sub_files, axes, strict=False)):
                     ax = ax_arr[0]
                     try:
                         gs = _calculate_global_signal(m["path"])

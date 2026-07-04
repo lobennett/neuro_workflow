@@ -1,8 +1,6 @@
 """Tests for the events processing module."""
 
-import numpy as np
 import pandas as pd
-import pytest
 
 from neuro_workflow.analysis.lev1.processing.events import (
     define_nuisance_trials,

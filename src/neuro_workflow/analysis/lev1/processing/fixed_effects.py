@@ -3,15 +3,12 @@
 import logging
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, Union
 
-import numpy as np
 from nilearn.glm.contrasts import compute_fixed_effects
 
 from neuro_workflow.analysis.lev1.processing.imaging import cast_nifti_to_float32
 from neuro_workflow.analysis.lev1.processing.surface_data import (
     compute_surface_fixed_effects,
-    SurfaceResult,
 )
 from neuro_workflow.analysis.task_config.loader import get_task_contrasts
 
@@ -25,9 +22,9 @@ class FixedEffectsAnalyzer:
         self,
         subject_id: str,
         task_name: str,
-        mask_img: Optional[Union[str, Path]] = None,
+        mask_img: str | Path | None = None,
         min_runs: int = 2,
-        hemisphere: Optional[str] = None,
+        hemisphere: str | None = None,
         surface_space: str = "fsnative",
     ):
         """Initialize fixed effects analyzer.
@@ -56,9 +53,9 @@ class FixedEffectsAnalyzer:
         self,
         contrast_dir: Path,
         contrast_name: str,
-        exclusions: Optional[Set[str]] = None,
-        contrast_exclusions: Optional[Set[Tuple[str, str]]] = None,
-    ) -> Tuple[List[Path], List[Path]]:
+        exclusions: set[str] | None = None,
+        contrast_exclusions: set[tuple[str, str]] | None = None,
+    ) -> tuple[list[Path], list[Path]]:
         """Find effect size and variance files for a contrast.
 
         Args:
@@ -183,10 +180,10 @@ class FixedEffectsAnalyzer:
     def compute_fixed_effects_contrast(
         self,
         contrast_name: str,
-        effect_files: List[Path],
-        variance_files: List[Path],
+        effect_files: list[Path],
+        variance_files: list[Path],
         precision_weighted: bool = False,
-    ) -> Tuple[Optional[any], Optional[any], Optional[any]]:
+    ) -> tuple[any | None, any | None, any | None]:
         """Compute fixed effects for a single contrast.
 
         Args:
@@ -292,8 +289,8 @@ class FixedEffectsAnalyzer:
         )
 
     def save_fixed_effects_maps(
-        self, contrast_name: str, output_dir: Path, base_filename: Optional[str] = None
-    ) -> Dict[str, Path]:
+        self, contrast_name: str, output_dir: Path, base_filename: str | None = None
+    ) -> dict[str, Path]:
         """Save fixed effects maps for a contrast.
 
         Args:
@@ -369,10 +366,10 @@ class FixedEffectsAnalyzer:
         self,
         contrast_dir: Path,
         output_dir: Path,
-        exclusions: Optional[Set[str]] = None,
-        contrasts: Optional[Dict[str, str]] = None,
-        contrast_exclusions: Optional[Set[Tuple[str, str]]] = None,
-    ) -> Dict[str, Dict[str, Path]]:
+        exclusions: set[str] | None = None,
+        contrasts: dict[str, str] | None = None,
+        contrast_exclusions: set[tuple[str, str]] | None = None,
+    ) -> dict[str, dict[str, Path]]:
         """Compute fixed effects for all task contrasts.
 
         Args:
@@ -437,7 +434,7 @@ class FixedEffectsAnalyzer:
 
         return all_saved_files
 
-    def get_contrast_summary(self) -> Dict[str, Dict]:
+    def get_contrast_summary(self) -> dict[str, dict]:
         """Get summary of computed fixed effects contrasts.
 
         Returns:
@@ -468,13 +465,13 @@ def compute_subject_fixed_effects(
     task_name: str,
     contrast_dir: Path,
     output_dir: Path,
-    mask_img: Optional[Union[str, Path]] = None,
-    exclusions: Optional[Set[str]] = None,
+    mask_img: str | Path | None = None,
+    exclusions: set[str] | None = None,
     min_runs: int = 2,
-    hemisphere: Optional[str] = None,
+    hemisphere: str | None = None,
     surface_space: str = "fsnative",
-    contrast_exclusions: Optional[Set[Tuple[str, str]]] = None,
-) -> Dict[str, Dict[str, Path]]:
+    contrast_exclusions: set[tuple[str, str]] | None = None,
+) -> dict[str, dict[str, Path]]:
     """Compute fixed effects for all contrasts for a subject.
 
     Args:

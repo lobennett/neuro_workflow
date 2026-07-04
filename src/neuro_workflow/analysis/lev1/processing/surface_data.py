@@ -2,26 +2,25 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 # Use non-interactive backend for HPC environments without display
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-
 import nibabel as nib
 import numpy as np
 import pandas as pd
-from nilearn.glm.first_level import run_glm
 from nilearn.glm.contrasts import Contrast, compute_contrast, expression_to_contrast_vector
+from nilearn.glm.first_level import run_glm
 
 from neuro_workflow.analysis.task_config.loader import DUMMY_SCANS
 
 logger = logging.getLogger(__name__)
 
 
-def get_surface_scan_info(gii_file: Union[str, Path]) -> Tuple[int, int]:
+def get_surface_scan_info(gii_file: str | Path) -> tuple[int, int]:
     """Get scan count information from GIFTI file.
 
     Args:
@@ -39,7 +38,7 @@ def get_surface_scan_info(gii_file: Union[str, Path]) -> Tuple[int, int]:
     return total_scans, n_vertices
 
 
-def load_surface_data(gii_file: Union[str, Path], dummy_scans: int = DUMMY_SCANS) -> np.ndarray:
+def load_surface_data(gii_file: str | Path, dummy_scans: int = DUMMY_SCANS) -> np.ndarray:
     """Load surface BOLD data from GIFTI file as numpy array.
 
     Args:
@@ -67,7 +66,7 @@ def load_surface_data(gii_file: Union[str, Path], dummy_scans: int = DUMMY_SCANS
     return data
 
 
-def find_freesurfer_subjects_dir(fmriprep_dir: Path) -> Optional[Path]:
+def find_freesurfer_subjects_dir(fmriprep_dir: Path) -> Path | None:
     """Find FreeSurfer SUBJECTS_DIR from fMRIPrep output.
 
     Args:
@@ -88,7 +87,7 @@ def find_freesurfer_subjects_dir(fmriprep_dir: Path) -> Optional[Path]:
 
 def resolve_freesurfer_subject(
     canonical_subject: str,
-    subjects_dir: Union[str, Path],
+    subjects_dir: str | Path,
 ) -> str:
     """Resolve canonical subject id to actual FreeSurfer SUBJECTS_DIR name.
 
@@ -142,12 +141,12 @@ def resolve_freesurfer_subject(
 
 
 def smooth_surface_gifti(
-    input_file: Union[str, Path],
-    output_file: Union[str, Path],
+    input_file: str | Path,
+    output_file: str | Path,
     subject_id: str,
     hemisphere: str,
     fwhm: float,
-    subjects_dir: Union[str, Path],
+    subjects_dir: str | Path,
 ) -> Path:
     """Smooth a surface GIFTI file using FreeSurfer mri_surf2surf.
 
@@ -283,7 +282,7 @@ class SurfaceGLM:
 
         return Y - Y_hat
 
-    def compute_contrast(self, contrast_def: str, output_type: str = "all") -> Dict[str, Any]:
+    def compute_contrast(self, contrast_def: str, output_type: str = "all") -> dict[str, Any]:
         """Compute a contrast using nilearn's compute_contrast.
 
         Args:
@@ -354,7 +353,7 @@ class SurfaceResult:
         """Initialize with 1D array of vertex values."""
         self.data = data
 
-    def to_filename(self, filename: Union[str, Path]) -> None:
+    def to_filename(self, filename: str | Path) -> None:
         """Save result to GIFTI file."""
         filename = str(filename)
 
@@ -368,7 +367,7 @@ class SurfaceResult:
         nib.save(gii_img, filename)
 
 
-def load_surface_stat_map(gii_file: Union[str, Path]) -> np.ndarray:
+def load_surface_stat_map(gii_file: str | Path) -> np.ndarray:
     """Load a surface statistic map from GIFTI file.
 
     Args:
@@ -387,7 +386,7 @@ def compute_surface_fixed_effects(
     effect_files: list,
     variance_files: list,
     precision_weighted: bool = False,
-) -> Tuple[SurfaceResult, SurfaceResult, SurfaceResult]:
+) -> tuple[SurfaceResult, SurfaceResult, SurfaceResult]:
     """Compute fixed effects for surface data.
 
     Args:
@@ -493,15 +492,15 @@ def compute_surface_fixed_effects(
 
 
 def plot_surface_stat_map(
-    stat_file: Union[str, Path],
-    output_path: Union[str, Path],
+    stat_file: str | Path,
+    output_path: str | Path,
     hemisphere: str,
-    title: Optional[str] = None,
-    threshold: Optional[float] = None,
-    vmax: Optional[float] = None,
+    title: str | None = None,
+    threshold: float | None = None,
+    vmax: float | None = None,
     cmap: str = "cold_hot",
-    fmriprep_dir: Optional[Union[str, Path]] = None,
-    subject_id: Optional[str] = None,
+    fmriprep_dir: str | Path | None = None,
+    subject_id: str | None = None,
 ) -> Path:
     """Plot surface stat map and save as PNG.
 
@@ -519,7 +518,7 @@ def plot_surface_stat_map(
     Returns:
         Path to saved PNG file
     """
-    from nilearn import datasets, plotting, surface
+    from nilearn import datasets, plotting
 
     stat_file = Path(stat_file)
     output_path = Path(output_path)
@@ -582,7 +581,7 @@ def plot_surface_stat_map(
         vmax = abs_max if abs_max > 0 else 1.0
 
     # Plot each view
-    for ax, view in zip(axes, views):
+    for ax, view in zip(axes, views, strict=False):
         plotting.plot_surf_stat_map(
             surf_mesh,
             stat_data,
@@ -616,15 +615,15 @@ def plot_surface_stat_map(
 
 
 def plot_surface_contrast_qc(
-    contrast_files: Dict[str, Path],
+    contrast_files: dict[str, Path],
     output_dir: Path,
     hemisphere: str,
     subject_id: str,
     session: str,
     run: str,
     task_name: str,
-    fmriprep_dir: Optional[Path] = None,
-) -> List[Path]:
+    fmriprep_dir: Path | None = None,
+) -> list[Path]:
     """Generate QC plots for all contrasts from a run.
 
     Args:

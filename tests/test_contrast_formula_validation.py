@@ -11,12 +11,11 @@ import textwrap
 from pathlib import Path
 
 import pytest
-import yaml
 
 from neuro_workflow.analysis.task_config.loader import (
+    _TASKS_DIR,
     ContrastFormulaError,
     _load_yaml,
-    _TASKS_DIR,
     get_task_contrasts,
     list_available_tasks,
 )
@@ -262,8 +261,6 @@ class TestRealTasksAllValidate:
 
     def test_all_available_non_placeholder_tasks_load(self):
         """Every task returned by list_available_tasks that has regressors must validate."""
-        import neuro_workflow.analysis.task_config.loader as loader_mod
-        from neuro_workflow.analysis.task_config.loader import TaskNotConfiguredError
         import yaml as _yaml
 
         failed = []

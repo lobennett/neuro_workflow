@@ -19,12 +19,10 @@ These tests verify two things:
 
 from __future__ import annotations
 
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import nibabel as nib
 import numpy as np
-import pytest
 
 from neuro_workflow.analysis.lev1.processing.residuals import process_run_residuals
 

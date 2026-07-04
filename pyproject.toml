@@ -80,6 +80,21 @@ extend-exclude = ["docs", "external"]
 select = ["E", "F", "I", "UP", "B"]
 ignore = ["E501"]  # line length handled by the formatter, not the linter
 
+[tool.ruff.lint.per-file-ignores]
+# These files deliberately place imports next to the section/task that first
+# uses them (scripts organize a "paths" block before a "hermetic seam" import
+# block; tests colocate an import with the numbered task/section it exercises)
+# rather than hoisting everything to the top. E402 fights that established,
+# intentional layout, so it is narrowed to just these files instead of fixed
+# by restructuring (which would reduce readability for no behavior benefit).
+"scripts/reproduce_cohort.py" = ["E402"]
+"scripts/recompile_delta.py" = ["E402"]
+"tests/analysis/e2e/test_reproduce_units.py" = ["E402"]
+"tests/analysis/test_synthetic_cohort.py" = ["E402"]
+"tests/exclusions/test_render.py" = ["E402"]
+"tests/qa/test_lev1_outliers.py" = ["E402"]
+"tests/scripts/test_fmriprep_preflight.py" = ["E402"]
+
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
 skip = '.git,.gitignore,.gitattributes,*.lock,validator-outputs,*.min.js,*.min.css,*/archive/*'

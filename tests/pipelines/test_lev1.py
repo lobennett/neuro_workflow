@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from neuro_workflow.pipelines.lev1 import Lev1Pipeline
-from neuro_workflow.analysis.task_config.loader import get_base_tasks, get_dual_tasks, get_all_tasks
-from neuro_workflow.pipelines.base import get_pipeline, TEMPLATE_DIR
+from neuro_workflow.analysis.task_config.loader import get_all_tasks, get_base_tasks, get_dual_tasks
 from neuro_workflow.core.slurm import render_template
+from neuro_workflow.pipelines.base import TEMPLATE_DIR, get_pipeline
+from neuro_workflow.pipelines.lev1 import Lev1Pipeline
 
 
 def test_lev1_build_context_no_exclusions_file_and_no_compiled_exits(tmp_path, monkeypatch):
@@ -115,7 +115,7 @@ def test_lev1_build_context_base_tasks(tmp_path):
     # Verify job list file was written
     job_list = Path(ctx["job_list_file"])
     assert job_list.exists()
-    lines = [l for l in job_list.read_text().strip().split("\n") if l]
+    lines = [ln for ln in job_list.read_text().strip().split("\n") if ln]
     assert len(lines) == 16
 
 

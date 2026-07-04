@@ -1,6 +1,7 @@
 """Tests for src/neuro_workflow/analysis/lev2/run.py."""
 
 from __future__ import annotations
+
 from pathlib import Path
 
 

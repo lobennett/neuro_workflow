@@ -3,7 +3,7 @@
 import pytest
 
 try:
-    import nibabel
+    import nibabel  # noqa: F401 -- availability guard, skips module if missing
 except ImportError:
     pytest.skip(
         "neuroimaging dependencies not installed (install with: uv pip install -e '.[lev1]')",
@@ -15,7 +15,6 @@ from pathlib import Path
 
 import nibabel as nib
 import numpy as np
-import pandas as pd
 import pytest
 
 

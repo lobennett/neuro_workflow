@@ -29,7 +29,7 @@ import csv
 import json
 import logging
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 log = logging.getLogger(__name__)
@@ -137,7 +137,7 @@ def main():
     survey_copied = migrate_survey(args.survey_root, args.output_dir, subjects)
 
     report = {
-        "generated": datetime.now(timezone.utc).isoformat(),
+        "generated": datetime.now(UTC).isoformat(),
         "subjects": sorted(subjects),
         "out_scanner_files": out_scanner_copied,
         "survey_files": survey_copied,

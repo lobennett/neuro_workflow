@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
@@ -54,11 +53,11 @@ def _get_base_confound_pattern(task_name: str, sample_type: str) -> str:
 
 
 def load_and_process_confounds(
-    confounds_file: Union[str, Path],
+    confounds_file: str | Path,
     task_name: str,
     sample_type: str = "validation",
     dummy_scans: int = 0,
-    additional_patterns: Optional[List[str]] = None,
+    additional_patterns: list[str] | None = None,
 ) -> pd.DataFrame:
     """Load and process confounds with task-specific selection.
 

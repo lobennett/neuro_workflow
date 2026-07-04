@@ -1,9 +1,9 @@
-import os
 from argparse import Namespace
 from pathlib import Path
-from neuro_workflow.pipelines.fmriprep import FmriprepPipeline
-from neuro_workflow.pipelines.base import get_pipeline, TEMPLATE_DIR
+
 from neuro_workflow.core.slurm import render_template
+from neuro_workflow.pipelines.base import TEMPLATE_DIR, get_pipeline
+from neuro_workflow.pipelines.fmriprep import FmriprepPipeline
 
 
 def test_fmriprep_pipeline_is_registered():
@@ -298,7 +298,8 @@ def test_fmriprep_render_with_output_dir(tmp_path):
     assert "/data /out/fmriprep_25.2.5 participant" in script
     assert "/data/derivatives" not in script
 
-    import subprocess, tempfile
+    import subprocess
+    import tempfile
 
     with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as f:
         f.write(script)
@@ -390,7 +391,8 @@ def test_fmriprep_bids_dir_override_in_rendered_template(tmp_path):
     # No /data/derivatives anywhere (would mean output is going under the view)
     assert "/data/derivatives" not in script
     # bash syntax
-    import subprocess, tempfile
+    import subprocess
+    import tempfile
 
     with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as f:
         f.write(script)
@@ -435,6 +437,7 @@ def test_fmriprep_bids_dir_override_default_none(tmp_path):
 def test_fmriprep_bids_dir_override_and_output_dir_are_mutually_exclusive():
     """Argparse should reject --bids-dir-override and --output-dir together."""
     import argparse
+
     import pytest
 
     parser = argparse.ArgumentParser()
@@ -638,7 +641,8 @@ def test_fmriprep_template_log_path_uses_array_job_id(tmp_path):
     assert "fmriprep_discovery-${SLURM_ARRAY_JOB_ID}-${SLURM_ARRAY_TASK_ID}.out" in script
 
     # Bash syntax must be valid
-    import subprocess, tempfile
+    import subprocess
+    import tempfile
 
     with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as f:
         f.write(script)

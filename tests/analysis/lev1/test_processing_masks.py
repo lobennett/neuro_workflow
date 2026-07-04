@@ -1,8 +1,9 @@
 """Tests for the masks processing module."""
 
-import pytest
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+import pytest
 from nilearn.image import load_img
 
 from neuro_workflow.analysis.lev1.processing.masks import MaskProcessor

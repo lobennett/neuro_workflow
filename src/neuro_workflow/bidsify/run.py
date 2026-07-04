@@ -4,22 +4,22 @@ import json
 import logging
 import tempfile
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from neuro_workflow.bidsify.config import map_acquisition, load_pipeline_config
-from neuro_workflow.bidsify.flywheel_query import (
-    collect_subject_sessions,
-    build_session_timeline,
-    query_project_subjects,
-)
-from neuro_workflow.bidsify.file_selector import select_files
 from neuro_workflow.bidsify.bids_writer import (
     bids_filename,
+    download_and_place,
     patch_sidecar,
     write_dataset_description,
     write_readme,
-    download_and_place,
+)
+from neuro_workflow.bidsify.config import load_pipeline_config, map_acquisition
+from neuro_workflow.bidsify.file_selector import select_files
+from neuro_workflow.bidsify.flywheel_query import (
+    build_session_timeline,
+    collect_subject_sessions,
+    query_project_subjects,
 )
 from neuro_workflow.bidsify.physio import convert_physio_to_bids
 from neuro_workflow.bidsify.physio_query import (
@@ -384,7 +384,7 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
         if s in skip:
             logger.info("Skipping %s (in skip list)", s)
 
-    reconciliation = {"generated": datetime.now(timezone.utc).isoformat(), "subjects": {}}
+    reconciliation = {"generated": datetime.now(UTC).isoformat(), "subjects": {}}
     all_log_entries = []
     all_timestamp_rows = []
 
@@ -429,7 +429,7 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
         notes_path.write_text("\n".join(sample_notes) + "\n")
 
     log = {
-        "generated": datetime.now(timezone.utc).isoformat(),
+        "generated": datetime.now(UTC).isoformat(),
         "total_files": len(all_log_entries),
         "files": all_log_entries,
     }

@@ -20,7 +20,6 @@ from pathlib import Path
 
 from neuro_workflow.analysis.io.file_discovery import FileFinder
 
-
 # (BIDS-side session, behavioral session that should NOT be substituted)
 OFFSET_CASES = [
     ("s321", "ses-02", "ses-01"),

@@ -52,7 +52,6 @@ from __future__ import annotations
 import argparse
 import csv
 import getpass
-import glob
 import logging
 import re
 import subprocess
@@ -102,7 +101,7 @@ STAGE_CFG = {
 def parse_scanlist(path: Path):
     text = path.read_text().splitlines()
     cols = text[0].split(",")
-    rows = [dict(zip(cols, ln.split(","))) for ln in text[1:] if ln.strip()]
+    rows = [dict(zip(cols, ln.split(","), strict=False)) for ln in text[1:] if ln.strip()]
     return text[0], rows
 
 

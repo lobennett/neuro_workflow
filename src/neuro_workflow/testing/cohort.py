@@ -35,7 +35,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -283,7 +282,7 @@ class SessionSpec:
     """One session containing scans."""
 
     session: str
-    scans: List[ScanSpec] = field(default_factory=list)
+    scans: list[ScanSpec] = field(default_factory=list)
 
 
 @dataclass
@@ -291,14 +290,14 @@ class SubjectSpec:
     """One subject containing sessions."""
 
     subject: str
-    sessions: List[SessionSpec] = field(default_factory=list)
+    sessions: list[SessionSpec] = field(default_factory=list)
 
 
 @dataclass
 class CohortSpec:
     """A whole synthetic cohort: subjects -> sessions -> scans."""
 
-    subjects: List[SubjectSpec] = field(default_factory=list)
+    subjects: list[SubjectSpec] = field(default_factory=list)
 
 
 # --------------------------------------------------------------------------- #
@@ -317,7 +316,7 @@ def make_synthetic_cohort(
     *,
     version: str = "25.2.4",
     seed: int = 0,
-) -> Dict:
+) -> dict:
     """Assemble a synthetic BIDS + sourcedata + fMRIPrep cohort with planted exclusions.
 
     Builds, under ``root``:
@@ -371,8 +370,8 @@ def make_synthetic_cohort(
     fmriprep_dir = root / "derivatives" / f"fmriprep_{version}"
     sourcedata_dir = root / "sourcedata"
 
-    scans_manifest: List[Dict] = []
-    collection_lines: List[str] = []
+    scans_manifest: list[dict] = []
+    collection_lines: list[str] = []
     scan_seed = seed
 
     for subj in spec.subjects:
@@ -416,7 +415,7 @@ def _build_scan(
     scan: ScanSpec,
     version: str,
     seed: int,
-) -> Dict:
+) -> dict:
     """Write all files for one planted scan and return its manifest record."""
     sub = f"sub-{subject}"
     ses = f"ses-{session}"
@@ -529,7 +528,7 @@ _COLLECTION_HEADER = (
 )
 
 
-def _write_collection_block(root: Path, lines: List[str]) -> Optional[Path]:
+def _write_collection_block(root: Path, lines: list[str]) -> Path | None:
     """Write the synthetic collection ``.bidsignore`` block, if any lines.
 
     Returns the written path, or ``None`` when there are no

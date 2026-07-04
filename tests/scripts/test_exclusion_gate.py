@@ -1,6 +1,6 @@
+import importlib.util
 import json
 from pathlib import Path
-import importlib.util
 
 _spec = importlib.util.spec_from_file_location(
     "exclusion_gate", Path(__file__).resolve().parents[2] / "scripts" / "exclusion_gate.py"
