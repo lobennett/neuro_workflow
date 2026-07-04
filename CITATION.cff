@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "neuro-workflow: a BIDS-to-second-level fMRI pipeline"
+authors:
+  - family-names: Bennett
+    given-names: Logan
+  - name: "Russell Poldrack Lab, Stanford University"
+repository-code: "https://github.com/lobennett/neuro_workflow"
+license: MIT
+version: "0.2.0"
