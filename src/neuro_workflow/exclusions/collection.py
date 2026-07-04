@@ -14,6 +14,7 @@ multi-echo files deduped to one entry per scan). Anatomical / wildcard-subject
 lines (``anat/``, ``*_T1w.*``, ``sub-*/...``) are skipped: they affect fMRIPrep
 anatomical selection, not the lev1 BOLD-scan gate.
 """
+
 from __future__ import annotations
 
 import re
@@ -41,7 +42,12 @@ _BOLD_FILE_RE = re.compile(
 
 
 def _expand_glob_to_entries(
-    subject: str, session: str, task: str, run_token: str, reason: str, bids_dir: Path,
+    subject: str,
+    session: str,
+    task: str,
+    run_token: str,
+    reason: str,
+    bids_dir: Path,
 ) -> list[dict]:
     """Expand one func collection glob to one entry per (sub, ses, task, run).
 
@@ -66,15 +72,17 @@ def _expand_glob_to_entries(
         if key in seen:
             continue
         seen.add(key)
-        out.append({
-            "subject": key[0],
-            "session": key[1],
-            "task": key[2],
-            "run": key[3],
-            "source": "collection",
-            "action": "exclude",
-            "reason": reason,
-        })
+        out.append(
+            {
+                "subject": key[0],
+                "session": key[1],
+                "task": key[2],
+                "run": key[3],
+                "source": "collection",
+                "action": "exclude",
+                "reason": reason,
+            }
+        )
     return out
 
 
@@ -91,7 +99,10 @@ class CollectionGenerator:
         pass
 
     def generate(
-        self, dataset_name: str, dataset_config: dict, args: Namespace,
+        self,
+        dataset_name: str,
+        dataset_config: dict,
+        args: Namespace,
     ) -> list[dict]:
         path = collection_path(dataset_name)
         if not path.is_file():
@@ -121,12 +132,17 @@ class CollectionGenerator:
             if f"sub-{m.group('subject')}" not in sample:
                 continue
             reason = (
-                f"collection: {last_comment}" if last_comment
+                f"collection: {last_comment}"
+                if last_comment
                 else "collection: data-collection exclusion"
             )
             expanded = _expand_glob_to_entries(
-                m.group("subject"), m.group("session"), m.group("task"),
-                m.group("run"), reason, bids_dir,
+                m.group("subject"),
+                m.group("session"),
+                m.group("task"),
+                m.group("run"),
+                reason,
+                bids_dir,
             )
             entries.extend(expanded)
             n_expanded += len(expanded)

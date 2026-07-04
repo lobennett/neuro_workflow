@@ -8,11 +8,13 @@ import numpy as np
 class TestCalculateVolumeCutoff:
     def test_basic_calculation(self):
         from neuro_workflow.events.trim import calculate_volume_cutoff
+
         # onset_cutoff=10000ms, TR=2000ms -> 5 volumes
         assert calculate_volume_cutoff(10000.0, 2.0) == 5
 
     def test_rounds_down(self):
         from neuro_workflow.events.trim import calculate_volume_cutoff
+
         # onset_cutoff=11000ms, TR=2000ms -> floor(5.5) = 5
         assert calculate_volume_cutoff(11000.0, 2.0) == 5
 

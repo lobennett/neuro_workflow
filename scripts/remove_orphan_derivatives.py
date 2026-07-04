@@ -16,6 +16,7 @@ Usage:
     uv run python scripts/remove_orphan_derivatives.py discovery --fmriprep-version 25.2.4
     uv run python scripts/remove_orphan_derivatives.py discovery --fmriprep-version 25.2.4 --execute
 """
+
 from __future__ import annotations
 
 import argparse
@@ -35,7 +36,9 @@ _SK = re.compile(r"(sub-[^_]+)_(ses-[^_]+)_task-([^_]+)_run-(\d+)")
 _PRESERVE_SUFFIXES = ("_desc-confounds_timeseries.tsv", "_desc-confounds_timeseries.json")
 
 
-def orphan_func_files(bids_dir: Path, fmriprep_ver: str, scankeys: list[str]) -> dict[str, list[Path]]:
+def orphan_func_files(
+    bids_dir: Path, fmriprep_ver: str, scankeys: list[str]
+) -> dict[str, list[Path]]:
     """Map each orphan scan-key -> the list of fMRIPrep func files to remove.
 
     Confounds timeseries (.tsv/.json) are preserved as the motion-exclusion evidence
@@ -59,8 +62,12 @@ def run(cohort: str, bids_dir: Path, fmriprep_ver: str, execute: bool) -> dict:
     orphans = worklist["fmriprep_orphans"]
     mapping = orphan_func_files(bids_dir, fmriprep_ver, orphans)
 
-    manifest = {"cohort": cohort, "fmriprep_version": fmriprep_ver,
-                "executed": execute, "scans": {}}
+    manifest = {
+        "cohort": cohort,
+        "fmriprep_version": fmriprep_ver,
+        "executed": execute,
+        "scans": {},
+    }
     total = 0
     for sk, files in mapping.items():
         rels = [str(f.relative_to(bids_dir)) for f in files]
@@ -87,8 +94,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("dataset")
     p.add_argument("--fmriprep-version", required=True)
     p.add_argument("--execute", action="store_true", help="actually delete (default: dry-run)")
-    p.add_argument("--datasets-json",
-                   default=str(Path.home() / ".neuro_workflow" / "datasets.json"))
+    p.add_argument(
+        "--datasets-json", default=str(Path.home() / ".neuro_workflow" / "datasets.json")
+    )
     args = p.parse_args(argv)
     datasets = json.loads(Path(args.datasets_json).read_text())
     if args.dataset not in datasets:

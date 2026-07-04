@@ -96,7 +96,8 @@ def _select_multiecho(files):
             if len(sizes) > 1:
                 logger.warning(
                     "Echo %d has duplicates with different sizes: %s",
-                    echo, [(f.name, f.size) for f in nifti_candidates],
+                    echo,
+                    [(f.name, f.size) for f in nifti_candidates],
                 )
 
         results.append({"echo": echo, "nifti": nifti, "json": json_file})

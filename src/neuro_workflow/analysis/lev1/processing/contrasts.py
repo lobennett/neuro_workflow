@@ -59,19 +59,23 @@ def filter_contrasts_for_dropped_columns(
         for col in dropped_columns:
             # Match the column name as a whole word in the formula
             # This handles formulas like "stop_success - go" or "0.5*go + 0.5*stop"
-            pattern = rf'\b{re.escape(col)}\b'
+            pattern = rf"\b{re.escape(col)}\b"
             if re.search(pattern, formula):
                 references_dropped = True
                 dropped_refs.append(col)
 
         if references_dropped:
-            skipped[contrast_name] = f'References dropped column(s): {dropped_refs}'
-            logger.warning('Skipping contrast "%s" - references dropped column(s): %s', contrast_name, dropped_refs)
+            skipped[contrast_name] = f"References dropped column(s): {dropped_refs}"
+            logger.warning(
+                'Skipping contrast "%s" - references dropped column(s): %s',
+                contrast_name,
+                dropped_refs,
+            )
         else:
             computable[contrast_name] = formula
 
     if skipped:
-        logger.warning('%d contrast(s) skipped due to dropped columns', len(skipped))
+        logger.warning("%d contrast(s) skipped due to dropped columns", len(skipped))
 
     return computable, skipped
 
@@ -116,22 +120,20 @@ def compute_run_contrasts(
     for contrast_name, contrast_formula in contrasts.items():
         try:
             # Compute contrast
-            contrast_result = fitted_glm.compute_contrast(
-                contrast_formula, output_type='all'
-            )
+            contrast_result = fitted_glm.compute_contrast(contrast_formula, output_type="all")
 
             # Determine file extension based on data type (surface vs volumetric)
             if hemisphere is not None:
                 # Surface data - use GIFTI format
-                file_ext = '.func.gii'
-                hemi_part = f'_hemi-{hemisphere}'
+                file_ext = ".func.gii"
+                hemi_part = f"_hemi-{hemisphere}"
             else:
                 # Volumetric data - use NIfTI format
-                file_ext = '.nii.gz'
-                hemi_part = ''
+                file_ext = ".nii.gz"
+                hemi_part = ""
 
             # Create filenames
-            contrast_base = f'{base_filename}{hemi_part}_contrast-{contrast_name}_rtmodel-RTDur'
+            contrast_base = f"{base_filename}{hemi_part}_contrast-{contrast_name}_rtmodel-RTDur"
 
             saved_files = {}
             # Save contrast outputs as float32. nilearn's compute_contrast returns
@@ -141,21 +143,21 @@ def compute_run_contrasts(
             # variance maps (most values truncate to 0) and degrades z_score and
             # effect_size precision. Cast to float32 explicitly.
             for stat_key, suffix in [
-                ('effect_size', 'effect-size'),
-                ('effect_variance', 'variance'),
-                ('z_score', 'z_score'),
+                ("effect_size", "effect-size"),
+                ("effect_variance", "variance"),
+                ("z_score", "z_score"),
             ]:
                 # Skip surface (GIFTI) — only volumetric NIfTIs need the dtype fix.
                 img = cast_nifti_to_float32(
                     contrast_result[stat_key], is_surface=hemisphere is not None
                 )
-                path = output_dir / f'{contrast_base}_stat-{suffix}{file_ext}'
+                path = output_dir / f"{contrast_base}_stat-{suffix}{file_ext}"
                 img.to_filename(path)
                 saved_files[stat_key] = path
 
             all_saved_files[contrast_name] = saved_files
 
         except Exception as e:
-            logger.error('Failed to compute/save contrast %s: %s', contrast_name, e)
+            logger.error("Failed to compute/save contrast %s: %s", contrast_name, e)
 
     return all_saved_files

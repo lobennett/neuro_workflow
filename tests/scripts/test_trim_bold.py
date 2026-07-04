@@ -1,4 +1,5 @@
 """Tests for scripts/trim_bold.py"""
+
 import json
 import numpy as np
 import nibabel as nib

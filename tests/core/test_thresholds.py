@@ -4,6 +4,7 @@ These guard the behavior-preserving externalization of analysis thresholds
 into config/thresholds.yaml. Every value loaded from the config MUST equal the
 pre-refactor literal, and a missing/empty config MUST fail loud.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -191,6 +192,4 @@ def test_raw_yaml_config_returns_deepcopy():
             break
     again = get_raw_yaml_config("flanker")
     assert "__poison__" not in again
-    assert not any(
-        isinstance(v, dict) and "__nested_poison__" in v for v in again.values()
-    )
+    assert not any(isinstance(v, dict) and "__nested_poison__" in v for v in again.values())

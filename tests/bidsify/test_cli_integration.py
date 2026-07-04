@@ -6,11 +6,20 @@ from neuro_workflow.cli import main
 
 def test_bidsify_cli_parses_args(monkeypatch):
     """Test that the bidsify subcommand parses correctly."""
-    monkeypatch.setattr(sys, "argv", [
-        "neuro-run", "bidsify", "discovery",
-        "--output-dir", "/tmp/test_bids",
-        "--subjects", "s03", "s10",
-    ])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "neuro-run",
+            "bidsify",
+            "discovery",
+            "--output-dir",
+            "/tmp/test_bids",
+            "--subjects",
+            "s03",
+            "s10",
+        ],
+    )
     with patch("neuro_workflow.cli.cmd_bidsify") as mock_cmd:
         mock_cmd.return_value = None
         main()

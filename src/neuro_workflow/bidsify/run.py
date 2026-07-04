@@ -64,7 +64,9 @@ def write_session_timestamps(rows, sourcedata_dir, suffix=""):
     header = "subject\tbids_session\tflywheel_session_label\tflywheel_timestamp"
     lines = [header]
     for row in sorted(rows, key=lambda r: (r["subject"], r["bids_session"])):
-        lines.append(f"{row['subject']}\t{row['bids_session']}\t{row['flywheel_session_label']}\t{row['flywheel_timestamp']}")
+        lines.append(
+            f"{row['subject']}\t{row['bids_session']}\t{row['flywheel_session_label']}\t{row['flywheel_timestamp']}"
+        )
     tsv_path.write_text("\n".join(lines) + "\n")
 
 
@@ -87,7 +89,11 @@ def download_physio_analysis(analysis, dest_dir):
 
 
 def process_subject_session(
-    subject_label, session_info, acq_objects, output_dir, log_entries,
+    subject_label,
+    session_info,
+    acq_objects,
+    output_dir,
+    log_entries,
 ):
     """Process a single session: select files, download, rename, patch sidecars.
 
@@ -123,7 +129,10 @@ def process_subject_session(
         mapping = map_acquisition(acq.label)
         if mapping is None:
             if acq.label not in (
-                "3Plane Loc SSFSE", "GE HOS FOV28", "GE HOS FOV28_1", "GE HOS FOV28_2"
+                "3Plane Loc SSFSE",
+                "GE HOS FOV28",
+                "GE HOS FOV28_1",
+                "GE HOS FOV28_2",
             ):
                 logger.warning("Unknown acquisition '%s', skipping", acq.label)
             continue
@@ -143,7 +152,9 @@ def process_subject_session(
             if not selected:
                 logger.error(
                     "No echo files found for %s %s %s, skipping",
-                    subject_label, bids_ses, acq.label,
+                    subject_label,
+                    bids_ses,
+                    acq.label,
                 )
                 continue
 
@@ -151,15 +162,17 @@ def process_subject_session(
 
             for echo_info in selected:
                 stem = bids_filename(
-                    subject_label, bids_ses,
-                    task=task_name, run=run, echo=echo_info["echo"], suffix="bold",
+                    subject_label,
+                    bids_ses,
+                    task=task_name,
+                    run=run,
+                    echo=echo_info["echo"],
+                    suffix="bold",
                 )
                 dest_dir = sub_dir / "func"
                 if echo_info["nifti"]:
                     nifti_path = dest_dir / f"{stem}.nii.gz"
-                    info = download_and_place(
-                        acq, echo_info["nifti"], nifti_path
-                    )
+                    info = download_and_place(acq, echo_info["nifti"], nifti_path)
                     log_entries.append(info)
 
                 if echo_info["json"]:
@@ -172,9 +185,7 @@ def process_subject_session(
 
         elif modality == "fmap":
             run = 1  # one fieldmap per session
-            fmap_id = bids_filename(
-                subject_label, bids_ses, run=run, suffix="fieldmap"
-            )
+            fmap_id = bids_filename(subject_label, bids_ses, run=run, suffix="fieldmap")
             fieldmap_id = fmap_id
             dest_dir = sub_dir / "fmap"
 
@@ -224,11 +235,18 @@ def process_subject_session(
             dwi_run_counter[dwi_key] += 1
             run = dwi_run_counter[dwi_key]
 
-            stem = bids_filename(subject_label, bids_ses, acq=acq_label, dir=dir_label, run=run, suffix="dwi")
+            stem = bids_filename(
+                subject_label, bids_ses, acq=acq_label, dir=dir_label, run=run, suffix="dwi"
+            )
 
             for ext in ("nifti", "json", "bval", "bvec"):
                 if selected.get(ext):
-                    file_ext = {"nifti": ".nii.gz", "json": ".json", "bval": ".bval", "bvec": ".bvec"}[ext]
+                    file_ext = {
+                        "nifti": ".nii.gz",
+                        "json": ".json",
+                        "bval": ".bval",
+                        "bvec": ".bvec",
+                    }[ext]
                     info = download_and_place(acq, selected[ext], dest_dir / f"{stem}{file_ext}")
                     log_entries.append(info)
 
@@ -244,15 +262,11 @@ def process_subject_session(
             fw_session = session_info["fw_session"].reload()
             physio_analyses = find_gephysio_analyses(fw_session)
             if physio_analyses:
-                matched = match_analyses_to_acquisitions(
-                    physio_analyses, acq_id_to_task
-                )
+                matched = match_analyses_to_acquisitions(physio_analyses, acq_id_to_task)
                 func_dir = sub_dir / "func"
                 for match in matched:
                     with tempfile.TemporaryDirectory() as tmpdir:
-                        dl_dir = download_physio_analysis(
-                            match["analysis"], tmpdir
-                        )
+                        dl_dir = download_physio_analysis(match["analysis"], tmpdir)
                         for channel in ("cardiac", "respiratory"):
                             convert_physio_to_bids(
                                 input_dir=dl_dir,
@@ -287,7 +301,10 @@ def _process_one_subject(subject_label, all_subjects, aliases, output_dir, sessi
 
     logger.info("Processing %s...", subject_label)
     sessions = collect_subject_sessions(
-        subject_label, all_subjects, aliases, session_overrides=session_overrides,
+        subject_label,
+        all_subjects,
+        aliases,
+        session_overrides=session_overrides,
     )
     sessions = build_session_timeline(sessions)
 
@@ -303,17 +320,25 @@ def _process_one_subject(subject_label, all_subjects, aliases, output_dir, sessi
         acq_objects = list(session_info["acquisitions"])
 
         session_warnings = process_subject_session(
-            subject_label, session_info, acq_objects, output_dir, log_entries,
+            subject_label,
+            session_info,
+            acq_objects,
+            output_dir,
+            log_entries,
         )
         if session_warnings:
             recon["sessions"][i]["warnings"] = session_warnings
 
-        timestamp_rows.append({
-            "subject": subject_label,
-            "bids_session": session_info["bids_session"],
-            "flywheel_session_label": session_info["fw_session"].label,
-            "flywheel_timestamp": session_info["timestamp"].isoformat() if session_info["timestamp"] else "",
-        })
+        timestamp_rows.append(
+            {
+                "subject": subject_label,
+                "bids_session": session_info["bids_session"],
+                "flywheel_session_label": session_info["fw_session"].label,
+                "flywheel_timestamp": session_info["timestamp"].isoformat()
+                if session_info["timestamp"]
+                else "",
+            }
+        )
 
     logger.info("Finished %s: %d files", subject_label, len(log_entries))
     return {
@@ -368,7 +393,10 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
     for subject_label in subjects_to_process:
         try:
             result = _process_one_subject(
-                subject_label, all_subjects, aliases, output_dir,
+                subject_label,
+                all_subjects,
+                aliases,
+                output_dir,
                 session_overrides=session_overrides,
             )
             reconciliation["subjects"][result["subject"]] = result["reconciliation"]
@@ -410,5 +438,7 @@ def run_bidsify(sample_name, output_dir, subjects=None, flywheel_project=None, o
 
     logger.info(
         "Done. %d subjects, %d files written to %s",
-        len(subjects_to_process), len(all_log_entries), output_dir,
+        len(subjects_to_process),
+        len(all_log_entries),
+        output_dir,
     )

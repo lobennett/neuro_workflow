@@ -20,20 +20,21 @@ def _make_deriv_tree(tmp_path, version="24.1.0rc2"):
     # Good scan (low motion)
     func1 = deriv / "sub-s01" / "ses-01" / "func"
     func1.mkdir(parents=True)
-    _make_confounds_tsv(func1, "sub-s01", "ses-01", "flanker", "1",
-                        [0.1] * 100, [1.0] * 100)
+    _make_confounds_tsv(func1, "sub-s01", "ses-01", "flanker", "1", [0.1] * 100, [1.0] * 100)
 
     # Bad scan (high FD proportion)
     func2 = deriv / "sub-s02" / "ses-01" / "func"
     func2.mkdir(parents=True)
-    _make_confounds_tsv(func2, "sub-s02", "ses-01", "flanker", "1",
-                        [0.6] * 100, [1.0] * 100)  # all FD > 0.5
+    _make_confounds_tsv(
+        func2, "sub-s02", "ses-01", "flanker", "1", [0.6] * 100, [1.0] * 100
+    )  # all FD > 0.5
 
     # Bad resting-state (high FD mean)
     func3 = deriv / "sub-s03" / "ses-01" / "func"
     func3.mkdir(parents=True)
-    _make_confounds_tsv(func3, "sub-s03", "ses-01", "rest", "1",
-                        [0.25] * 100, [1.0] * 100)  # mean FD = 0.25 > 0.2
+    _make_confounds_tsv(
+        func3, "sub-s03", "ses-01", "rest", "1", [0.25] * 100, [1.0] * 100
+    )  # mean FD = 0.25 > 0.2
 
     return str(tmp_path / "bids")
 
@@ -91,9 +92,9 @@ def test_generate_uses_std_dvars_not_raw_dvars(tmp_path):
     entries = g.generate("discovery", config, args)
     # Reading raw `dvars` would yield prop>1.5 = 1.0 and flag the scan.
     # Reading `std_dvars` (1.10 < 1.5) yields prop = 0.0 and produces no entry.
-    assert entries == [], (
-        f"Expected no exclusions when std_dvars=1.10 is below threshold; got {entries}"
-    )
+    assert (
+        entries == []
+    ), f"Expected no exclusions when std_dvars=1.10 is below threshold; got {entries}"
 
 
 def test_generate_raises_on_missing_or_empty_derivatives(tmp_path):

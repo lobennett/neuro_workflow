@@ -1,4 +1,11 @@
-from neuro_workflow.pipelines.base import Pipeline, TEMPLATE_DIR, get_pipeline, list_pipelines, build_mail_line, resolve_resources
+from neuro_workflow.pipelines.base import (
+    Pipeline,
+    TEMPLATE_DIR,
+    get_pipeline,
+    list_pipelines,
+    build_mail_line,
+    resolve_resources,
+)
 
 
 def test_template_dir_exists():
@@ -8,6 +15,7 @@ def test_template_dir_exists():
 def test_pipeline_protocol_has_required_attributes():
     """Verify the protocol defines the expected interface."""
     import inspect
+
     annotations = Pipeline.__protocol_attrs__
     assert "name" in annotations
     assert "docker_uri" in annotations
@@ -40,6 +48,7 @@ def test_build_mail_line_without_user():
 
 def test_resolve_resources_defaults():
     from argparse import Namespace
+
     defaults = {"nthreads": 8, "mem_gb": 64, "time": "2-00:00:00"}
     args = Namespace(nthreads=None, mem_gb=None, time=None)
     result = resolve_resources(args, defaults)
@@ -48,6 +57,7 @@ def test_resolve_resources_defaults():
 
 def test_resolve_resources_overrides():
     from argparse import Namespace
+
     defaults = {"nthreads": 8, "mem_gb": 64, "time": "2-00:00:00"}
     args = Namespace(nthreads=4, mem_gb=32, time="1-00:00:00")
     result = resolve_resources(args, defaults)
@@ -56,6 +66,7 @@ def test_resolve_resources_overrides():
 
 def test_resolve_resources_partial_override():
     from argparse import Namespace
+
     defaults = {"nthreads": 8, "mem_per_cpu_gb": 8, "time": "5-00:00:00"}
     args = Namespace(nthreads=4, mem_per_cpu_gb=None, time=None)
     result = resolve_resources(args, defaults)

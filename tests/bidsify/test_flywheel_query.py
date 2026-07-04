@@ -82,9 +82,7 @@ class TestCollectSubjectSessions:
                 "25210": {"exclude": True, "reason": "Empty session"},
             },
         }
-        result = collect_subject_sessions(
-            "s03", [subj], {}, session_overrides=overrides
-        )
+        result = collect_subject_sessions("s03", [subj], {}, session_overrides=overrides)
 
         labels = [r["fw_session"].label for r in result]
         assert len(result) == 2
@@ -101,9 +99,7 @@ class TestCollectSubjectSessions:
                 "22752": {"reassign_to": "s10", "reason": "Mislabeled"},
             },
         }
-        result = collect_subject_sessions(
-            "s03", [subj], {}, session_overrides=overrides
-        )
+        result = collect_subject_sessions("s03", [subj], {}, session_overrides=overrides)
 
         assert len(result) == 1
         assert result[0]["fw_session"].label == "good"

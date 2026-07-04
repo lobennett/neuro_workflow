@@ -5,6 +5,7 @@ emits per-scan exclusion entries for action=exclude rows. Subject-level
 decisions (session/task/run = '-') are expanded via the BIDS BOLD glob.
 pass/review rows are counted in a stdout summary and skipped.
 """
+
 from __future__ import annotations
 
 import re
@@ -51,7 +52,9 @@ _BOLD_RE = re.compile(
 
 
 def _expand_subject_to_entries(
-    subject: str, reason: str, bids_dir: Path,
+    subject: str,
+    reason: str,
+    bids_dir: Path,
 ) -> list[dict]:
     """Glob the dataset BIDS dir for `subject`'s BOLD files and emit one
     exclusion entry per scan. Multi-echo acquisitions yield one BOLD file per
@@ -72,15 +75,17 @@ def _expand_subject_to_entries(
         if key in seen:  # dedupe across echoes
             continue
         seen.add(key)
-        out.append({
-            "subject": key[0],
-            "session": key[1],
-            "task": key[2],
-            "run": key[3],
-            "source": "qa_decisions",
-            "action": "exclude",
-            "reason": f"qa_decisions: {reason} (subject-level)",
-        })
+        out.append(
+            {
+                "subject": key[0],
+                "session": key[1],
+                "task": key[2],
+                "run": key[3],
+                "source": "qa_decisions",
+                "action": "exclude",
+                "reason": f"qa_decisions: {reason} (subject-level)",
+            }
+        )
     return out
 
 
@@ -94,9 +99,9 @@ class QADecisionsGenerator:
     def add_cli_args(self, parser: ArgumentParser) -> None:
         # Not argparse-required (shared subparser).
         parser.add_argument(
-            "--decisions-tsv", type=Path,
-            help="Path to qa_report decisions TSV "
-                 "(required when source=qa_decisions).",
+            "--decisions-tsv",
+            type=Path,
+            help="Path to qa_report decisions TSV " "(required when source=qa_decisions).",
         )
 
     def generate(
@@ -106,13 +111,9 @@ class QADecisionsGenerator:
         args: Namespace,
     ) -> list[dict]:
         if args.decisions_tsv is None:
-            raise FileNotFoundError(
-                "qa_decisions generator requires --decisions-tsv"
-            )
+            raise FileNotFoundError("qa_decisions generator requires --decisions-tsv")
         if not args.decisions_tsv.is_file():
-            raise FileNotFoundError(
-                f"qa_decisions: TSV not found: {args.decisions_tsv}"
-            )
+            raise FileNotFoundError(f"qa_decisions: TSV not found: {args.decisions_tsv}")
 
         decisions = load_decisions(args.decisions_tsv)
         # Canonical roster from pipeline_config.json `samples` (fail-loud on an

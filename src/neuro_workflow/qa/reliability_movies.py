@@ -9,6 +9,7 @@ each space gets its own header in the QA report. We bypass brm's bids
 discovery (which sweeps in mismatched-shape variants together) and feed
 brm a manifest TSV per (subject, space) group via `brm list`.
 """
+
 from __future__ import annotations
 
 import csv
@@ -37,8 +38,9 @@ _PREPROC_RE = re.compile(
 @dataclass(frozen=True, order=True)
 class SpaceKey:
     """One (space, res) combination — one movie's worth of frames."""
-    space: str            # "T1w", "MNI152NLin2009cAsym", or "" for native
-    res: str = ""         # "1", "2", or "" if not present in filename
+
+    space: str  # "T1w", "MNI152NLin2009cAsym", or "" for native
+    res: str = ""  # "1", "2", or "" if not present in filename
 
     @property
     def label(self) -> str:
@@ -139,9 +141,13 @@ def _run_brm_for_group(
     try:
         _write_manifest(frames, group=group_name, manifest=manifest_path)
         cmd = [
-            _BRM_CMD, "list", str(manifest_path),
-            "--out", str(output_movies_dir),
-            "--renderer", "mosaic",
+            _BRM_CMD,
+            "list",
+            str(manifest_path),
+            "--out",
+            str(output_movies_dir),
+            "--renderer",
+            "mosaic",
             "--no-cache",
         ]
         try:
@@ -157,9 +163,7 @@ def _run_brm_for_group(
         return MovieResult(space.label, None, f"brm failed: {tail}")
 
     if not expected_path.is_file():
-        return MovieResult(
-            space.label, None, "brm exited 0 but produced no output file"
-        )
+        return MovieResult(space.label, None, "brm exited 0 but produced no output file")
 
     return MovieResult(space.label, expected_path, None)
 
@@ -196,9 +200,7 @@ def render_reliability_movies(
 
     for sub in subjects:
         try:
-            groups = _discover_by_space(
-                fmriprep_dir, sub, include_native=include_native
-            )
+            groups = _discover_by_space(fmriprep_dir, sub, include_native=include_native)
         except Exception as exc:  # noqa: BLE001
             log.exception("brm discovery raised for %s", sub)
             results[sub] = [MovieResult("(discovery)", None, str(exc))]

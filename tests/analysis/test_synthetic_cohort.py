@@ -70,8 +70,12 @@ class TestBehavioralCsvGeneric:
         """A flanker CSV with omission_rate=0.5 (> 0.25) trips the real
         omission threshold via determine_exclusion(compute_metrics_from_csv)."""
         csv = make_behavioral_csv(
-            tmp_path / "flanker.csv", "flanker",
-            n_trials=40, omission_rate=0.5, accuracy=1.0, seed=0,
+            tmp_path / "flanker.csv",
+            "flanker",
+            n_trials=40,
+            omission_rate=0.5,
+            accuracy=1.0,
+            seed=0,
         )
         metrics = compute_metrics_from_csv(csv, "flanker")
         assert metrics["omission_rate"] == pytest.approx(0.5)
@@ -82,8 +86,12 @@ class TestBehavioralCsvGeneric:
     def test_clean_csv_not_flagged(self, tmp_path):
         """omission_rate=0.0, accuracy=1.0 -> no exclusion."""
         csv = make_behavioral_csv(
-            tmp_path / "flanker.csv", "flanker",
-            n_trials=40, omission_rate=0.0, accuracy=1.0, seed=0,
+            tmp_path / "flanker.csv",
+            "flanker",
+            n_trials=40,
+            omission_rate=0.0,
+            accuracy=1.0,
+            seed=0,
         )
         metrics = compute_metrics_from_csv(csv, "flanker")
         assert metrics["omission_rate"] == pytest.approx(0.0)
@@ -94,8 +102,12 @@ class TestBehavioralCsvGeneric:
         """accuracy=0.4 (< 0.55) trips the acc threshold; accuracy is computed
         over RESPONDED trials only, so keep omission at 0 to isolate it."""
         csv = make_behavioral_csv(
-            tmp_path / "flanker.csv", "flanker",
-            n_trials=40, omission_rate=0.0, accuracy=0.4, seed=0,
+            tmp_path / "flanker.csv",
+            "flanker",
+            n_trials=40,
+            omission_rate=0.0,
+            accuracy=0.4,
+            seed=0,
         )
         metrics = compute_metrics_from_csv(csv, "flanker")
         assert metrics["acc"] == pytest.approx(0.4)
@@ -111,8 +123,12 @@ class TestBehavioralCsvGeneric:
         at_thresh = OMISSION_THRESH  # 0.25
         # 10/40 == 0.25 exactly -> not flagged (strict >).
         csv_at = make_behavioral_csv(
-            tmp_path / "at.csv", "flanker",
-            n_trials=n, omission_rate=at_thresh, accuracy=1.0, seed=0,
+            tmp_path / "at.csv",
+            "flanker",
+            n_trials=n,
+            omission_rate=at_thresh,
+            accuracy=1.0,
+            seed=0,
         )
         m_at = compute_metrics_from_csv(csv_at, "flanker")
         assert m_at["omission_rate"] == pytest.approx(at_thresh)
@@ -121,8 +137,12 @@ class TestBehavioralCsvGeneric:
         # 11/40 == 0.275 -> over threshold -> flagged.
         over = 11 / n
         csv_over = make_behavioral_csv(
-            tmp_path / "over.csv", "flanker",
-            n_trials=n, omission_rate=over, accuracy=1.0, seed=0,
+            tmp_path / "over.csv",
+            "flanker",
+            n_trials=n,
+            omission_rate=over,
+            accuracy=1.0,
+            seed=0,
         )
         m_over = compute_metrics_from_csv(csv_over, "flanker")
         assert m_over["omission_rate"] > at_thresh
@@ -136,8 +156,11 @@ class TestBehavioralCsvStopSignal:
     def test_slow_go_rt_is_flagged(self, tmp_path):
         """A stopSignal CSV with go_rt_ms=1200 (> 1000) trips the go_rt rule."""
         csv = make_behavioral_csv(
-            tmp_path / "ss.csv", "stopSignal",
-            n_trials=40, go_rt_ms=1200, seed=0,
+            tmp_path / "ss.csv",
+            "stopSignal",
+            n_trials=40,
+            go_rt_ms=1200,
+            seed=0,
         )
         metrics = compute_metrics_from_csv(csv, "stopSignal")
         assert metrics["go_rt"] == pytest.approx(1200.0)
@@ -149,8 +172,11 @@ class TestBehavioralCsvStopSignal:
         """A stopSignal CSV with go_rt_ms=500 and a healthy ~50% stop-success
         rate is NOT flagged (go_rt below 1000, stop_success within [0.25,0.75])."""
         csv = make_behavioral_csv(
-            tmp_path / "ss.csv", "stopSignal",
-            n_trials=40, go_rt_ms=500, seed=0,
+            tmp_path / "ss.csv",
+            "stopSignal",
+            n_trials=40,
+            go_rt_ms=500,
+            seed=0,
         )
         metrics = compute_metrics_from_csv(csv, "stopSignal")
         assert metrics["go_rt"] == pytest.approx(500.0)
@@ -161,16 +187,22 @@ class TestBehavioralCsvStopSignal:
         """Boundary on go_rt (1000ms, strict >): exactly 1000 NOT flagged; just
         over (1001) flagged."""
         csv_at = make_behavioral_csv(
-            tmp_path / "at.csv", "stopSignal",
-            n_trials=40, go_rt_ms=GO_RT_THRESH, seed=0,
+            tmp_path / "at.csv",
+            "stopSignal",
+            n_trials=40,
+            go_rt_ms=GO_RT_THRESH,
+            seed=0,
         )
         m_at = compute_metrics_from_csv(csv_at, "stopSignal")
         assert m_at["go_rt"] == pytest.approx(float(GO_RT_THRESH))
         assert determine_exclusion("stopSignal", m_at) is None
 
         csv_over = make_behavioral_csv(
-            tmp_path / "over.csv", "stopSignal",
-            n_trials=40, go_rt_ms=GO_RT_THRESH + 1, seed=0,
+            tmp_path / "over.csv",
+            "stopSignal",
+            n_trials=40,
+            go_rt_ms=GO_RT_THRESH + 1,
+            seed=0,
         )
         m_over = compute_metrics_from_csv(csv_over, "stopSignal")
         assert m_over["go_rt"] > GO_RT_THRESH
@@ -188,15 +220,16 @@ class TestRunQcOnPlantedTree:
         beh = tmp_path / "sourcedata" / "sub-s01" / "ses-01" / "beh"
         beh.mkdir(parents=True)
         make_behavioral_csv(
-            beh / "sub-s01_ses-01_task-flanker_run-1_beh.csv", "flanker",
-            n_trials=40, omission_rate=0.5, accuracy=1.0, seed=0,
+            beh / "sub-s01_ses-01_task-flanker_run-1_beh.csv",
+            "flanker",
+            n_trials=40,
+            omission_rate=0.5,
+            accuracy=1.0,
+            seed=0,
         )
         bids = tmp_path  # run_qc only writes sourcedata/behavioral_qc here
         entries, _trim = run_qc(tmp_path / "sourcedata", bids)
-        flagged = [
-            e for e in entries
-            if e["subject"] == "sub-s01" and e["task"] == "task-flanker"
-        ]
+        flagged = [e for e in entries if e["subject"] == "sub-s01" and e["task"] == "task-flanker"]
         assert len(flagged) == 1
         assert flagged[0]["action"] == "exclude"
         assert flagged[0]["source"] == "behavioral-qc"
@@ -206,8 +239,12 @@ class TestRunQcOnPlantedTree:
         beh = tmp_path / "sourcedata" / "sub-s01" / "ses-01" / "beh"
         beh.mkdir(parents=True)
         make_behavioral_csv(
-            beh / "sub-s01_ses-01_task-flanker_run-1_beh.csv", "flanker",
-            n_trials=40, omission_rate=0.0, accuracy=1.0, seed=0,
+            beh / "sub-s01_ses-01_task-flanker_run-1_beh.csv",
+            "flanker",
+            n_trials=40,
+            omission_rate=0.0,
+            accuracy=1.0,
+            seed=0,
         )
         entries, _trim = run_qc(tmp_path / "sourcedata", tmp_path)
         assert entries == []
@@ -237,7 +274,8 @@ def _small_spec() -> CohortSpec:
                         session="02",
                         scans=[
                             ScanSpec(
-                                task="flanker", run="1",
+                                task="flanker",
+                                run="1",
                                 outcome="exclude:behavioral",
                             ),
                         ],
@@ -251,11 +289,13 @@ def _small_spec() -> CohortSpec:
                         session="01",
                         scans=[
                             ScanSpec(
-                                task="flanker", run="1",
+                                task="flanker",
+                                run="1",
                                 outcome="exclude:motion",
                             ),
                             ScanSpec(
-                                task="goNogo", run="1",
+                                task="goNogo",
+                                run="1",
                                 outcome="exclude:collection",
                             ),
                         ],
@@ -287,12 +327,11 @@ class TestMakeSyntheticCohort:
         the exclude:behavioral scan and not the keep scan."""
         manifest = make_synthetic_cohort(tmp_path, _small_spec())
         entries = BehavioralGenerator().generate(
-            "sim", {"bids_dir": manifest["bids_dir"]},
+            "sim",
+            {"bids_dir": manifest["bids_dir"]},
             _behavioral_args(),
         )
-        flagged = {
-            (e["subject"], e["session"], e["task"]) for e in entries
-        }
+        flagged = {(e["subject"], e["session"], e["task"]) for e in entries}
         assert ("sub-s01", "ses-02", "task-flanker") in flagged
         assert ("sub-s01", "ses-01", "task-flanker") not in flagged
 
@@ -301,12 +340,11 @@ class TestMakeSyntheticCohort:
         not the keep scan."""
         manifest = make_synthetic_cohort(tmp_path, _small_spec(), version="25.2.4")
         entries = MotionGenerator().generate(
-            "sim", {"bids_dir": manifest["bids_dir"]},
+            "sim",
+            {"bids_dir": manifest["bids_dir"]},
             _motion_args(),
         )
-        flagged = {
-            (e["subject"], e["session"], e["task"]) for e in entries
-        }
+        flagged = {(e["subject"], e["session"], e["task"]) for e in entries}
         assert ("sub-s02", "ses-01", "task-flanker") in flagged
         assert ("sub-s01", "ses-01", "task-flanker") not in flagged
 
@@ -318,12 +356,12 @@ class TestMakeSyntheticCohort:
         lines = manifest["collection_lines"]
         # The goNogo collection scan for s02/ses-01 must be covered.
         assert any(
-            "sub-s02/ses-01/func/sub-s02_ses-01_task-goNogo" in ln
-            for ln in lines
+            "sub-s02/ses-01/func/sub-s02_ses-01_task-goNogo" in ln for ln in lines
         ), f"no collection glob for the planted collection scan: {lines}"
         coll_file = manifest.get("collection_file")
         assert coll_file is not None
         from pathlib import Path
+
         assert Path(coll_file).is_file()
 
     def test_filefinder_discovers_keep_scan(self, tmp_path):
@@ -362,11 +400,13 @@ class TestMakeSyntheticCohort:
 # --------------------------------------------------------------------------- #
 def _behavioral_args():
     from argparse import Namespace
+
     return Namespace(behavioral_dir=None)
 
 
 def _motion_args():
     from argparse import Namespace
+
     t = motion_thresholds()
     return Namespace(
         fmriprep_version="25.2.4",

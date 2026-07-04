@@ -275,9 +275,7 @@ class ScanSpec:
 
     def __post_init__(self) -> None:
         if self.outcome not in VALID_OUTCOMES:
-            raise ValueError(
-                f"outcome must be one of {VALID_OUTCOMES}, got {self.outcome!r}"
-            )
+            raise ValueError(f"outcome must be one of {VALID_OUTCOMES}, got {self.outcome!r}")
 
 
 @dataclass
@@ -479,9 +477,7 @@ def _build_scan(
     )
 
     # --- collection glob line (committed-collection .bidsignore style) -----
-    collection_glob = (
-        f"{sub}/{ses}/func/{prefix}_echo-*_bold.*"
-    )
+    collection_glob = f"{sub}/{ses}/func/{prefix}_echo-*_bold.*"
 
     return {
         "subject": sub,

@@ -9,9 +9,7 @@ CONFIG_FILE = CONFIG_DIR / "datasets.json"
 # sample. Replaces the removed root subjects_*.txt files (PR1a). Lives at the
 # repo root: config.py is at src/neuro_workflow/core/config.py, so the repo
 # root is parents[3].
-PIPELINE_CONFIG_FILE = (
-    Path(__file__).resolve().parents[3] / "config" / "pipeline_config.json"
-)
+PIPELINE_CONFIG_FILE = Path(__file__).resolve().parents[3] / "config" / "pipeline_config.json"
 
 DEFAULTS = {
     "partition": "russpold",

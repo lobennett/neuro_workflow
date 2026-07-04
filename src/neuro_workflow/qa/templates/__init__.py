@@ -1,4 +1,5 @@
 """Jinja2 template rendering for QA HTML reports."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -34,9 +35,17 @@ def render_cohort_html(*, rows, n_subjects, n_scans, n_flagged_scans, fmriprep_v
     )
 
 
-def render_subject_html(*, subject, fs_metrics, scans, fmriprep_version,
-                        movies, decision_action, decision_reason,
-                        embed_svg) -> str:
+def render_subject_html(
+    *,
+    subject,
+    fs_metrics,
+    scans,
+    fmriprep_version,
+    movies,
+    decision_action,
+    decision_reason,
+    embed_svg,
+) -> str:
     template = _env.get_template("subject.html.j2")
     return template.render(
         subject=subject,

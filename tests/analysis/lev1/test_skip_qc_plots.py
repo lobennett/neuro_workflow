@@ -31,18 +31,18 @@ def test_pipeline_propagates_skip_qc_plots_flag(tmp_path):
     from neuro_workflow.pipelines.lev1 import Lev1Pipeline
 
     pipeline = Lev1Pipeline()
-    subs_file = tmp_path / 'subjects.txt'
-    subs_file.write_text('sub-x\n')
-    exc_file = tmp_path / 'exclusions.json'
-    exc_file.write_text('[]')
+    subs_file = tmp_path / "subjects.txt"
+    subs_file.write_text("sub-x\n")
+    exc_file = tmp_path / "exclusions.json"
+    exc_file.write_text("[]")
 
     args = Namespace(
-        tasks=['flanker'],
+        tasks=["flanker"],
         tasks_flag=None,
-        fmriprep_dir='/fmriprep',
-        results_dir=str(tmp_path / 'out'),
+        fmriprep_dir="/fmriprep",
+        results_dir=str(tmp_path / "out"),
         exclusions_file=str(exc_file),
-        space='fsaverage6',
+        space="fsaverage6",
         threshold=1.0,
         smoothing_fwhm=2.0,
         residuals=True,
@@ -54,15 +54,14 @@ def test_pipeline_propagates_skip_qc_plots_flag(tmp_path):
         time=None,
     )
     cfg = {
-        'bids_dir': str(tmp_path / 'bids'),
-        'subjects_file': str(subs_file),
-        'partition': 'normal',
-        'mail_user': None,
+        "bids_dir": str(tmp_path / "bids"),
+        "subjects_file": str(subs_file),
+        "partition": "normal",
+        "mail_user": None,
     }
-    ctx = pipeline.build_context('discovery', cfg, args)
-    assert '--skip-qc-plots' in ctx['extra_flags'], (
-        f'Pipeline must propagate --skip-qc-plots into extra_flags; '
-        f"got {ctx['extra_flags']!r}"
+    ctx = pipeline.build_context("discovery", cfg, args)
+    assert "--skip-qc-plots" in ctx["extra_flags"], (
+        f'Pipeline must propagate --skip-qc-plots into extra_flags; ' f"got {ctx['extra_flags']!r}"
     )
 
 
@@ -72,18 +71,18 @@ def test_pipeline_omits_skip_qc_plots_when_unset(tmp_path):
     from neuro_workflow.pipelines.lev1 import Lev1Pipeline
 
     pipeline = Lev1Pipeline()
-    subs_file = tmp_path / 'subjects.txt'
-    subs_file.write_text('sub-x\n')
-    exc_file = tmp_path / 'exclusions.json'
-    exc_file.write_text('[]')
+    subs_file = tmp_path / "subjects.txt"
+    subs_file.write_text("sub-x\n")
+    exc_file = tmp_path / "exclusions.json"
+    exc_file.write_text("[]")
 
     args = Namespace(
-        tasks=['flanker'],
+        tasks=["flanker"],
         tasks_flag=None,
-        fmriprep_dir='/fmriprep',
-        results_dir=str(tmp_path / 'out'),
+        fmriprep_dir="/fmriprep",
+        results_dir=str(tmp_path / "out"),
         exclusions_file=str(exc_file),
-        space='MNI',
+        space="MNI",
         threshold=1.0,
         smoothing_fwhm=None,
         residuals=False,
@@ -95,13 +94,13 @@ def test_pipeline_omits_skip_qc_plots_when_unset(tmp_path):
         time=None,
     )
     cfg = {
-        'bids_dir': str(tmp_path / 'bids'),
-        'subjects_file': str(subs_file),
-        'partition': 'normal',
-        'mail_user': None,
+        "bids_dir": str(tmp_path / "bids"),
+        "subjects_file": str(subs_file),
+        "partition": "normal",
+        "mail_user": None,
     }
-    ctx = pipeline.build_context('discovery', cfg, args)
-    assert '--skip-qc-plots' not in ctx['extra_flags']
+    ctx = pipeline.build_context("discovery", cfg, args)
+    assert "--skip-qc-plots" not in ctx["extra_flags"]
 
 
 def test_surface_smoothing_uses_fsaverage6_when_bold_is_fsaverage6(tmp_path, monkeypatch):
@@ -122,83 +121,90 @@ def test_surface_smoothing_uses_fsaverage6_when_bold_is_fsaverage6(tmp_path, mon
 
     # Lay down a SUBJECTS_DIR with both a subject-specific recon and the
     # group template, mimicking what fmriprep deposits.
-    fs_dir = tmp_path / 'fmriprep' / 'sourcedata' / 'freesurfer'
-    (fs_dir / 'sub-s10_ses-09').mkdir(parents=True)
-    (fs_dir / 'fsaverage6').mkdir(parents=True)
+    fs_dir = tmp_path / "fmriprep" / "sourcedata" / "freesurfer"
+    (fs_dir / "sub-s10_ses-09").mkdir(parents=True)
+    (fs_dir / "fsaverage6").mkdir(parents=True)
 
     n_tp, n_verts = 80, 40962
     monkeypatch.setattr(
-        run_module, 'load_surface_data',
+        run_module,
+        "load_surface_data",
         lambda *a, **kw: np.random.randn(n_tp, n_verts).astype(np.float32),
     )
     monkeypatch.setattr(
-        run_module, 'plot_surface_stat_map', lambda *a, **kw: None,
+        run_module,
+        "plot_surface_stat_map",
+        lambda *a, **kw: None,
     )
 
     smooth_calls = []
     monkeypatch.setattr(
-        run_module, 'smooth_surface_gifti',
+        run_module,
+        "smooth_surface_gifti",
         lambda *args, **kw: smooth_calls.append((args, kw)) or args[1],
     )
 
     class StubResult:
         def __init__(self):
             self.data = np.zeros(n_verts)
+
         def to_filename(self, path):
             pass
 
     class StubGLM:
         def __init__(self, *a, **kw):
             pass
+
         def fit(self, data, dm):
             return self
-        def compute_contrast(self, formula, output_type='all'):
-            return {'effect_size': StubResult(),
-                    'effect_variance': StubResult(),
-                    'z_score': StubResult()}
 
-    monkeypatch.setattr(run_module, 'SurfaceGLM', StubGLM)
+        def compute_contrast(self, formula, output_type="all"):
+            return {
+                "effect_size": StubResult(),
+                "effect_variance": StubResult(),
+                "z_score": StubResult(),
+            }
 
-    dm = pd.DataFrame({'r0': np.random.randn(n_tp),
-                       'constant': np.ones(n_tp)})
+    monkeypatch.setattr(run_module, "SurfaceGLM", StubGLM)
+
+    dm = pd.DataFrame({"r0": np.random.randn(n_tp), "constant": np.ones(n_tp)})
 
     args = Namespace(
         fmriprep_dir=str(fs_dir.parent.parent),
-        subj_id='sub-s10',
-        task_name='flanker',
+        subj_id="sub-s10",
+        task_name="flanker",
         smoothing_fwhm=2.0,
-        space='fsaverage6',
+        space="fsaverage6",
         skip_qc_plots=True,
     )
-    run_files = {'left_surface': 'L.func.gii', 'right_surface': 'R.func.gii'}
-    dirs = {'indiv_contrasts': tmp_path, 'quality_control': tmp_path,
-            'task_residuals': tmp_path}
+    run_files = {"left_surface": "L.func.gii", "right_surface": "R.func.gii"}
+    dirs = {"indiv_contrasts": tmp_path, "quality_control": tmp_path, "task_residuals": tmp_path}
 
     run_module.process_surface_run(
         run_files=run_files,
         design_matrix=dm,
-        contrasts={'r0': 'r0'},
+        contrasts={"r0": "r0"},
         args=args,
         dirs=dirs,
-        base_filename='sub-s10_task-flanker_run-1',
+        base_filename="sub-s10_task-flanker_run-1",
         tr=1.5,
         dummy_scans=0,
         compute_residuals=False,
-        surface_space='fsaverage6',
+        surface_space="fsaverage6",
     )
 
     # smooth_surface_gifti gets called once per hemisphere = 2 times.
     # Each call's 3rd positional arg is the FS subject. For fsaverage6
     # BOLD this must be 'fsaverage6', NOT 'sub-s10' nor 'sub-s10_ses-09'.
-    assert len(smooth_calls) == 2, (
-        f'Expected smooth_surface_gifti called twice; got {len(smooth_calls)}'
-    )
+    assert (
+        len(smooth_calls) == 2
+    ), f"Expected smooth_surface_gifti called twice; got {len(smooth_calls)}"
     for call_args, _ in smooth_calls:
         fs_subject_passed = call_args[2]
-        assert fs_subject_passed == 'fsaverage6', (
-            f'smooth_surface_gifti must receive fsaverage6 (the template) '
-            f'as the FS subject when BOLD is in fsaverage6 space; '
-            f'got {fs_subject_passed!r}.'
+        assert fs_subject_passed == "fsaverage6", (
+            f"smooth_surface_gifti must receive fsaverage6 (the template) "
+            f"as the FS subject when BOLD is in fsaverage6 space; "
+            f"got {fs_subject_passed!r}."
         )
 
 
@@ -214,13 +220,15 @@ def test_analysis_run_skips_plot_loop_when_flag_set(tmp_path, monkeypatch):
     # Stubs: surface data, SurfaceGLM, plot function
     n_tp = 100
     monkeypatch.setattr(
-        run_module, 'load_surface_data',
+        run_module,
+        "load_surface_data",
         lambda *a, **kw: np.random.randn(n_tp, 50).astype(np.float32),
     )
 
     plot_calls = []
     monkeypatch.setattr(
-        run_module, 'plot_surface_stat_map',
+        run_module,
+        "plot_surface_stat_map",
         lambda *a, **kw: plot_calls.append((a, kw)),
     )
 
@@ -229,67 +237,71 @@ def test_analysis_run_skips_plot_loop_when_flag_set(tmp_path, monkeypatch):
     class StubResult:
         def __init__(self, n_verts=50):
             self.data = np.zeros(n_verts)
+
         def to_filename(self, path):
             written_paths.append(str(path))
 
     class StubSurfaceGLM:
         def __init__(self, *args, **kwargs):
             pass
+
         def fit(self, data, dm):
             return self
-        def compute_contrast(self, formula, output_type='all'):
+
+        def compute_contrast(self, formula, output_type="all"):
             return {
-                'effect_size': StubResult(),
-                'effect_variance': StubResult(),
-                'z_score': StubResult(),
+                "effect_size": StubResult(),
+                "effect_variance": StubResult(),
+                "z_score": StubResult(),
             }
 
-    monkeypatch.setattr(run_module, 'SurfaceGLM', StubSurfaceGLM)
+    monkeypatch.setattr(run_module, "SurfaceGLM", StubSurfaceGLM)
 
-    dm = pd.DataFrame({
-        'r0': np.random.randn(n_tp),
-        'constant': np.ones(n_tp),
-    })
+    dm = pd.DataFrame(
+        {
+            "r0": np.random.randn(n_tp),
+            "constant": np.ones(n_tp),
+        }
+    )
 
     args = Namespace(
         fmriprep_dir=str(tmp_path),
-        subj_id='sub-test',
-        task_name='flanker',
+        subj_id="sub-test",
+        task_name="flanker",
         smoothing_fwhm=None,
-        space='fsaverage6',
+        space="fsaverage6",
         skip_qc_plots=True,
     )
 
-    run_files = {'left_surface': 'L.func.gii', 'right_surface': 'R.func.gii'}
-    dirs = {'indiv_contrasts': tmp_path, 'quality_control': tmp_path,
-            'task_residuals': tmp_path}
+    run_files = {"left_surface": "L.func.gii", "right_surface": "R.func.gii"}
+    dirs = {"indiv_contrasts": tmp_path, "quality_control": tmp_path, "task_residuals": tmp_path}
 
     run_module.process_surface_run(
         run_files=run_files,
         design_matrix=dm,
-        contrasts={'incongruent-congruent': 'r0'},
+        contrasts={"incongruent-congruent": "r0"},
         args=args,
         dirs=dirs,
-        base_filename='sub-test_task-flanker_run-1',
+        base_filename="sub-test_task-flanker_run-1",
         tr=1.5,
         dummy_scans=0,
         compute_residuals=False,
-        surface_space='fsaverage6',
+        surface_space="fsaverage6",
     )
 
     assert plot_calls == [], (
-        f'plot_surface_stat_map must not be called when '
-        f'--skip-qc-plots is on; got {len(plot_calls)} calls.'
+        f"plot_surface_stat_map must not be called when "
+        f"--skip-qc-plots is on; got {len(plot_calls)} calls."
     )
     # Contrast files (effect-size, variance, z-score) per hemisphere should
     # still be written — verify by inspecting recorded to_filename() calls.
-    assert any('stat-effect-size' in p for p in written_paths), (
-        f'effect-size files must still be saved when QC plots are skipped; '
-        f'written: {written_paths}'
+    assert any("stat-effect-size" in p for p in written_paths), (
+        f"effect-size files must still be saved when QC plots are skipped; "
+        f"written: {written_paths}"
     )
-    assert any('stat-z_score' in p for p in written_paths), (
-        f'z_score files must still be saved; written: {written_paths}'
-    )
+    assert any(
+        "stat-z_score" in p for p in written_paths
+    ), f"z_score files must still be saved; written: {written_paths}"
 
 
 def test_analysis_run_keeps_plot_loop_when_flag_unset(tmp_path, monkeypatch):
@@ -298,69 +310,74 @@ def test_analysis_run_keeps_plot_loop_when_flag_unset(tmp_path, monkeypatch):
 
     n_tp = 100
     monkeypatch.setattr(
-        run_module, 'load_surface_data',
+        run_module,
+        "load_surface_data",
         lambda *a, **kw: np.random.randn(n_tp, 50).astype(np.float32),
     )
 
     plot_calls = []
     monkeypatch.setattr(
-        run_module, 'plot_surface_stat_map',
+        run_module,
+        "plot_surface_stat_map",
         lambda *a, **kw: plot_calls.append((a, kw)),
     )
 
     class StubResult:
         def __init__(self, n_verts=50):
             self.data = np.zeros(n_verts)
+
         def to_filename(self, path):
             pass
 
     class StubSurfaceGLM:
         def __init__(self, *args, **kwargs):
             pass
+
         def fit(self, data, dm):
             return self
-        def compute_contrast(self, formula, output_type='all'):
+
+        def compute_contrast(self, formula, output_type="all"):
             return {
-                'effect_size': StubResult(),
-                'effect_variance': StubResult(),
-                'z_score': StubResult(),
+                "effect_size": StubResult(),
+                "effect_variance": StubResult(),
+                "z_score": StubResult(),
             }
 
-    monkeypatch.setattr(run_module, 'SurfaceGLM', StubSurfaceGLM)
+    monkeypatch.setattr(run_module, "SurfaceGLM", StubSurfaceGLM)
 
-    dm = pd.DataFrame({
-        'r0': np.random.randn(n_tp),
-        'constant': np.ones(n_tp),
-    })
+    dm = pd.DataFrame(
+        {
+            "r0": np.random.randn(n_tp),
+            "constant": np.ones(n_tp),
+        }
+    )
 
     args = Namespace(
         fmriprep_dir=str(tmp_path),
-        subj_id='sub-test',
-        task_name='flanker',
+        subj_id="sub-test",
+        task_name="flanker",
         smoothing_fwhm=None,
-        space='fsaverage6',
+        space="fsaverage6",
         skip_qc_plots=False,
     )
 
-    run_files = {'left_surface': 'L.func.gii', 'right_surface': 'R.func.gii'}
-    dirs = {'indiv_contrasts': tmp_path, 'quality_control': tmp_path,
-            'task_residuals': tmp_path}
+    run_files = {"left_surface": "L.func.gii", "right_surface": "R.func.gii"}
+    dirs = {"indiv_contrasts": tmp_path, "quality_control": tmp_path, "task_residuals": tmp_path}
 
     run_module.process_surface_run(
         run_files=run_files,
         design_matrix=dm,
-        contrasts={'incongruent-congruent': 'r0'},
+        contrasts={"incongruent-congruent": "r0"},
         args=args,
         dirs=dirs,
-        base_filename='sub-test_task-flanker_run-1',
+        base_filename="sub-test_task-flanker_run-1",
         tr=1.5,
         dummy_scans=0,
         compute_residuals=False,
-        surface_space='fsaverage6',
+        surface_space="fsaverage6",
     )
 
     # Two hemispheres × one contrast = two plot calls
     assert len(plot_calls) == 2, (
-        f'Expected 2 plot calls (1 contrast × 2 hemispheres); '
-        f'got {len(plot_calls)}'
+        f"Expected 2 plot calls (1 contrast × 2 hemispheres); " f"got {len(plot_calls)}"
     )

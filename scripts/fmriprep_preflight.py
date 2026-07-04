@@ -10,6 +10,7 @@ Usage:
     uv run python scripts/fmriprep_preflight.py discovery --version 25.2.4
     uv run python scripts/fmriprep_preflight.py validation --version 25.2.4
 """
+
 from __future__ import annotations
 
 import argparse

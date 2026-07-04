@@ -83,9 +83,7 @@ class TestConvertPhysioToBids:
         # Create input CSVs
         input_dir = tmp_path / "input"
         input_dir.mkdir()
-        (input_dir / "PPG_FltData.csv").write_text(
-            "10,0.40\n20,0.45\n30,0.50\n40,0.55\n50,0.60\n"
-        )
+        (input_dir / "PPG_FltData.csv").write_text("10,0.40\n20,0.45\n30,0.50\n40,0.55\n50,0.60\n")
         (input_dir / "PPG_FltTrig.csv").write_text("20\n40\n")
 
         output_dir = tmp_path / "output"
@@ -124,9 +122,7 @@ class TestConvertPhysioToBids:
         """Full respiratory conversion: CSV -> tsv.gz + JSON sidecar."""
         input_dir = tmp_path / "input"
         input_dir.mkdir()
-        (input_dir / "RESP_FltData.csv").write_text(
-            "40,0.73\n80,0.74\n120,0.75\n"
-        )
+        (input_dir / "RESP_FltData.csv").write_text("40,0.73\n80,0.74\n120,0.75\n")
         (input_dir / "RESP_FltTrig.csv").write_text("80\n")
 
         output_dir = tmp_path / "output"
@@ -142,7 +138,9 @@ class TestConvertPhysioToBids:
             channel="respiratory",
         )
 
-        tsv_path = output_dir / "sub-s1175_ses-02_task-rest_run-1_recording-respiratory_physio.tsv.gz"
+        tsv_path = (
+            output_dir / "sub-s1175_ses-02_task-rest_run-1_recording-respiratory_physio.tsv.gz"
+        )
         assert tsv_path.exists()
         content = gzip.decompress(tsv_path.read_bytes()).decode()
         lines = content.strip().split("\n")
@@ -150,7 +148,9 @@ class TestConvertPhysioToBids:
         parts = lines[2].split("\t")
         assert float(parts[0]) == 0.74 and parts[1] == "1"  # trigger at timestamp 80
 
-        json_path = output_dir / "sub-s1175_ses-02_task-rest_run-1_recording-respiratory_physio.json"
+        json_path = (
+            output_dir / "sub-s1175_ses-02_task-rest_run-1_recording-respiratory_physio.json"
+        )
         meta = json.loads(json_path.read_text())
         assert meta["SamplingFrequency"] == 25
 
@@ -158,9 +158,7 @@ class TestConvertPhysioToBids:
         """Full conversion works even if trigger file is missing."""
         input_dir = tmp_path / "input"
         input_dir.mkdir()
-        (input_dir / "PPG_FltData.csv").write_text(
-            "10,0.40\n20,0.45\n30,0.50\n"
-        )
+        (input_dir / "PPG_FltData.csv").write_text("10,0.40\n20,0.45\n30,0.50\n")
         # No PPG_FltTrig.csv created
 
         output_dir = tmp_path / "output"

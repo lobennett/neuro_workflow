@@ -1,4 +1,5 @@
 """J5: surface lev2 group analysis via sign-flip permutation."""
+
 from pathlib import Path
 
 import numpy as np
@@ -16,15 +17,18 @@ CONTRAST = "task-flanker_contrast-cong"
 
 def _write_gii(path: Path, vec: np.ndarray) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    d = nib.gifti.GiftiDataArray(data=vec.astype(np.float32),
-                                 intent="NIFTI_INTENT_NONE", datatype="NIFTI_TYPE_FLOAT32")
+    d = nib.gifti.GiftiDataArray(
+        data=vec.astype(np.float32), intent="NIFTI_INTENT_NONE", datatype="NIFTI_TYPE_FLOAT32"
+    )
     nib.save(nib.GiftiImage(darrays=[d]), str(path))
 
 
 def _fe_name(sub, hemi, below=False):
     desc = "_desc-belowMinRuns" if below else ""
-    return (f"{sub}_hemi-{hemi}_space-fsaverage6_{CONTRAST}_rtmodel-RTDur"
-            f"{desc}_stat-fixed-effects.func.gii")
+    return (
+        f"{sub}_hemi-{hemi}_space-fsaverage6_{CONTRAST}_rtmodel-RTDur"
+        f"{desc}_stat-fixed-effects.func.gii"
+    )
 
 
 def _make_lev1(tmp_path, subjects, n_vert=6, signal_vertex=0, signal=3.0, seed=1):
@@ -77,8 +81,10 @@ def test_discover_drops_below_min_runs(tmp_path):
     subs = ["sub-s03", "sub-s10"]
     lev1 = _make_lev1(tmp_path, subs)
     # add a belowMinRuns file for a third subject in L
-    _write_gii(lev1 / "sub-s19" / "task-flanker" / "fixed_effects" / _fe_name("sub-s19", "L", below=True),
-               np.zeros(6, dtype=np.float32))
+    _write_gii(
+        lev1 / "sub-s19" / "task-flanker" / "fixed_effects" / _fe_name("sub-s19", "L", below=True),
+        np.zeros(6, dtype=np.float32),
+    )
     found = discover_surface_inputs([lev1], CONTRAST)
     assert len(found["L"]) == 2 and len(found["R"]) == 2
     assert not any("belowMinRuns" in f for f in found["L"])
@@ -108,4 +114,7 @@ def test_run_surface_level2_fails_on_subject_mismatch(tmp_path):
 
 def test_run_surface_level2_fails_on_no_inputs(tmp_path):
     (tmp_path / "lev1").mkdir()
-    assert run_surface_level2_analysis(CONTRAST, [tmp_path / "lev1"], tmp_path / "o", n_perm=50) is False
+    assert (
+        run_surface_level2_analysis(CONTRAST, [tmp_path / "lev1"], tmp_path / "o", n_perm=50)
+        is False
+    )

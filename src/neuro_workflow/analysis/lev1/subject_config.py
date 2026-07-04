@@ -29,7 +29,7 @@ class Config:
 
     bids_dir: Path
     fmriprep_dir: Path
-    output_dir: Path = Path('./results/')
+    output_dir: Path = Path("./results/")
     subject_id: Optional[str] = None
     task_name: Optional[str] = None
 
@@ -49,20 +49,18 @@ class Config:
             ValueError: If subject_id or task_name not set
         """
         if not self.subject_id or not self.task_name:
-            raise ValueError(
-                'subject_id and task_name must be set to create subject directories'
-            )
+            raise ValueError("subject_id and task_name must be set to create subject directories")
 
-        base_dir = self.output_dir / self.subject_id / f'task-{self.task_name}'
+        base_dir = self.output_dir / self.subject_id / f"task-{self.task_name}"
 
         return {
-            'quality_control': base_dir / 'quality_control',
-            'indiv_contrasts': base_dir / 'indiv_contrasts',
-            'fixed_effects': base_dir / 'fixed_effects',
-            'simplified_events': base_dir / 'simplified_events',
-            'task_residuals': base_dir / 'task_residuals',
-            'masks': base_dir / 'masks',
-            'base': base_dir,
+            "quality_control": base_dir / "quality_control",
+            "indiv_contrasts": base_dir / "indiv_contrasts",
+            "fixed_effects": base_dir / "fixed_effects",
+            "simplified_events": base_dir / "simplified_events",
+            "task_residuals": base_dir / "task_residuals",
+            "masks": base_dir / "masks",
+            "base": base_dir,
         }
 
     def create_subject_dirs(self, clean_existing: bool = True) -> Dict[str, Path]:
@@ -80,11 +78,12 @@ class Config:
             dir_path.mkdir(parents=True, exist_ok=True)
 
             if clean_existing:
-                existing_files = [f for f in dir_path.rglob('*') if f.is_file()]
+                existing_files = [f for f in dir_path.rglob("*") if f.is_file()]
                 if existing_files:
                     logger.warning(
-                        'Removing %d existing file(s) from %s',
-                        len(existing_files), dir_path,
+                        "Removing %d existing file(s) from %s",
+                        len(existing_files),
+                        dir_path,
                     )
                     for file_path in existing_files:
                         file_path.unlink()

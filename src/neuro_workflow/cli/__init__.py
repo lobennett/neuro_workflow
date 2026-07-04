@@ -90,7 +90,9 @@ import neuro_workflow.exclusions.collection  # noqa: F401
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="neuro-run", description="Submit neuroimaging SLURM array jobs")
+    parser = argparse.ArgumentParser(
+        prog="neuro-run", description="Submit neuroimaging SLURM array jobs"
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # add-dataset (pipeline-agnostic)

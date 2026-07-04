@@ -27,19 +27,26 @@ class FmriprepPipeline(ContainerPipeline):
         parser.add_argument("--fs-license", default="~/license.txt", help="FreeSurfer license file")
         parser.add_argument("--bids-filter-file", default=None, help="BIDS filter JSON file path")
         output_group = parser.add_mutually_exclusive_group()
-        output_group.add_argument("--output-dir", default=None,
-            help="Output derivatives root (default: <bids_dir>/derivatives)")
+        output_group.add_argument(
+            "--output-dir",
+            default=None,
+            help="Output derivatives root (default: <bids_dir>/derivatives)",
+        )
         output_group.add_argument(
             "--bids-dir-override",
             default=None,
             help="Path to bind as /data instead of the registered bids_dir. Use to "
-                 "point fmriprep at a symlink BIDS view. Output derivatives still go "
-                 "to <registered bids_dir>/derivatives/fmriprep_<version>/.",
+            "point fmriprep at a symlink BIDS view. Output derivatives still go "
+            "to <registered bids_dir>/derivatives/fmriprep_<version>/.",
         )
         parser.add_argument("--nthreads", type=int, default=None, help="CPUs per task (default: 8)")
-        parser.add_argument("--mem-per-cpu-gb", type=int, default=None, help="Memory per CPU in GB (default: 8)")
+        parser.add_argument(
+            "--mem-per-cpu-gb", type=int, default=None, help="Memory per CPU in GB (default: 8)"
+        )
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 5-00:00:00)")
-        parser.add_argument("--array-throttle", type=int, default=8, help="Max concurrent array tasks (default: 8)")
+        parser.add_argument(
+            "--array-throttle", type=int, default=8, help="Max concurrent array tasks (default: 8)"
+        )
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
         self._require_version(args)
@@ -60,9 +67,7 @@ class FmriprepPipeline(ContainerPipeline):
 
         scratch = os.environ.get("SCRATCH", "/tmp")
         work_dir = f"{scratch}/work/fmriprep_{dataset_name}_{args.version}"
-        subjects_file = str(
-            write_subjects_file(subjects, work_dir, "subjects.txt")
-        )
+        subjects_file = str(write_subjects_file(subjects, work_dir, "subjects.txt"))
 
         bids_dir_override = getattr(args, "bids_dir_override", None)
         output_dir = getattr(args, "output_dir", None)

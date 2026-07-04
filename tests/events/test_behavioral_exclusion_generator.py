@@ -7,6 +7,7 @@ class TestBehavioralGenerator:
     def test_registered_as_behavioral(self):
         from neuro_workflow.exclusions.base import get_generator
         import neuro_workflow.exclusions.behavioral  # trigger registration
+
         gen = get_generator("behavioral")
         assert gen is not None
         assert gen.name == "behavioral"
@@ -14,6 +15,7 @@ class TestBehavioralGenerator:
     def test_generate_returns_list(self, tmp_path):
         from neuro_workflow.exclusions.base import get_generator
         import neuro_workflow.exclusions.behavioral
+
         gen = get_generator("behavioral")
         # Create minimal sourcedata structure
         beh_dir = tmp_path / "sourcedata" / "sub-s01" / "ses-01" / "beh"
@@ -23,6 +25,7 @@ class TestBehavioralGenerator:
         func_dir.mkdir(parents=True)
 
         from argparse import Namespace
+
         args = Namespace(behavioral_dir=str(tmp_path / "sourcedata"))
         config = {"bids_dir": str(tmp_path)}
         result = gen.generate("test", config, args)

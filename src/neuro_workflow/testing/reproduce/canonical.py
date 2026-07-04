@@ -1,4 +1,5 @@
 """Provenance-stripped canonical sets for reproduction diffs."""
+
 from __future__ import annotations
 from pathlib import Path
 from typing import Iterable
@@ -20,14 +21,24 @@ def compiled_to_keyset(compiled: Iterable[dict]) -> set:
     for e in compiled:
         if e.get("action") not in _GATING_ACTIONS:
             continue
-        out.add((e["subject"], e["session"], _bare_task(e["task"]),
-                 e["run"], e["action"], e.get("source"), e.get("contrast")))
+        out.add(
+            (
+                e["subject"],
+                e["session"],
+                _bare_task(e["task"]),
+                e["run"],
+                e["action"],
+                e.get("source"),
+                e.get("contrast"),
+            )
+        )
     return out
 
 
 def bidsignore_lineset(text: str) -> set:
-    return {ln.strip() for ln in text.splitlines()
-            if ln.strip() and not ln.lstrip().startswith("#")}
+    return {
+        ln.strip() for ln in text.splitlines() if ln.strip() and not ln.lstrip().startswith("#")
+    }
 
 
 def bids_fileset(bids_dir: Path) -> set:

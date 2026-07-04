@@ -26,22 +26,90 @@ class Lev1Pipeline(LocalAnalysisPipeline):
     def add_cli_args(self, parser: ArgumentParser) -> None:
         task_group = parser.add_mutually_exclusive_group(required=True)
         task_group.add_argument("--tasks", nargs="+", help="Task name(s) to run")
-        task_group.add_argument("--all", dest="tasks_flag", action="store_const", const="all", help="Run all tasks")
-        task_group.add_argument("--base-tasks", dest="tasks_flag", action="store_const", const="base", help="Run base tasks")
-        task_group.add_argument("--dual-tasks", dest="tasks_flag", action="store_const", const="dual", help="Run dual tasks")
+        task_group.add_argument(
+            "--all", dest="tasks_flag", action="store_const", const="all", help="Run all tasks"
+        )
+        task_group.add_argument(
+            "--base-tasks",
+            dest="tasks_flag",
+            action="store_const",
+            const="base",
+            help="Run base tasks",
+        )
+        task_group.add_argument(
+            "--dual-tasks",
+            dest="tasks_flag",
+            action="store_const",
+            const="dual",
+            help="Run dual tasks",
+        )
         parser.add_argument("--fmriprep-dir", required=True, help="fMRIPrep derivatives directory")
-        parser.add_argument("--results-dir", default=None, help="Output directory (default: {bids_dir}/derivatives/lev1)")
-        parser.add_argument("--exclusions-file", default=None, help="Path to exclusions JSON file (default: compiled exclusions for dataset)")
-        parser.add_argument("--space", default="MNI", choices=["MNI", "T1w", "surface", "fsaverage6", "fsLR"], help="Analysis space")
-        parser.add_argument("--threshold", type=float, default=1.0, help="Mask intersection threshold (default: 1.0)")
-        parser.add_argument("--smoothing-fwhm", type=float, default=None, help="Spatial smoothing FWHM in mm")
-        parser.add_argument("--residuals", action="store_true", default=False, help="Compute task-regressed residuals")
-        parser.add_argument("--fc-confounds", action="store_true", default=False, help="Regress tissue confounds from residuals")
-        parser.add_argument("--skip-existing", action="store_true", default=False, help="Skip runs where outputs already exist")
-        parser.add_argument("--skip-qc-plots", action="store_true", default=False, help="Skip per-contrast surface QC plots (the .func.gii files are still saved)")
-        parser.add_argument("--nthreads", type=int, default=None, help=f"CPUs per task (default: {self.default_resources['nthreads']})")
-        parser.add_argument("--mem-gb", type=int, default=None, help=f"Memory in GB (default: {self.default_resources['mem_gb']})")
-        parser.add_argument("--time", default=None, help=f"SLURM time limit (default: {self.default_resources['time']})")
+        parser.add_argument(
+            "--results-dir",
+            default=None,
+            help="Output directory (default: {bids_dir}/derivatives/lev1)",
+        )
+        parser.add_argument(
+            "--exclusions-file",
+            default=None,
+            help="Path to exclusions JSON file (default: compiled exclusions for dataset)",
+        )
+        parser.add_argument(
+            "--space",
+            default="MNI",
+            choices=["MNI", "T1w", "surface", "fsaverage6", "fsLR"],
+            help="Analysis space",
+        )
+        parser.add_argument(
+            "--threshold",
+            type=float,
+            default=1.0,
+            help="Mask intersection threshold (default: 1.0)",
+        )
+        parser.add_argument(
+            "--smoothing-fwhm", type=float, default=None, help="Spatial smoothing FWHM in mm"
+        )
+        parser.add_argument(
+            "--residuals",
+            action="store_true",
+            default=False,
+            help="Compute task-regressed residuals",
+        )
+        parser.add_argument(
+            "--fc-confounds",
+            action="store_true",
+            default=False,
+            help="Regress tissue confounds from residuals",
+        )
+        parser.add_argument(
+            "--skip-existing",
+            action="store_true",
+            default=False,
+            help="Skip runs where outputs already exist",
+        )
+        parser.add_argument(
+            "--skip-qc-plots",
+            action="store_true",
+            default=False,
+            help="Skip per-contrast surface QC plots (the .func.gii files are still saved)",
+        )
+        parser.add_argument(
+            "--nthreads",
+            type=int,
+            default=None,
+            help=f"CPUs per task (default: {self.default_resources['nthreads']})",
+        )
+        parser.add_argument(
+            "--mem-gb",
+            type=int,
+            default=None,
+            help=f"Memory in GB (default: {self.default_resources['mem_gb']})",
+        )
+        parser.add_argument(
+            "--time",
+            default=None,
+            help=f"SLURM time limit (default: {self.default_resources['time']})",
+        )
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
         # Resolve tasks

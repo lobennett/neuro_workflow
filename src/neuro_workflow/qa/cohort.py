@@ -1,4 +1,5 @@
 """Cohort-relative outlier detection for FreeSurfer Euler numbers."""
+
 from __future__ import annotations
 
 import numpy as np

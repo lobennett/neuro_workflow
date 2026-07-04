@@ -17,10 +17,14 @@ class FreesurferPipeline(ContainerPipeline):
 
     def add_cli_args(self, parser: ArgumentParser) -> None:
         parser.add_argument("--version", default=None, help="FreeSurfer version tag (e.g. 8.1.0)")
-        parser.add_argument("--subjects-file", default=None, help="CSV file: subject_id,ses_t1,run_t1,ses_t2,run_t2")
+        parser.add_argument(
+            "--subjects-file", default=None, help="CSV file: subject_id,ses_t1,run_t1,ses_t2,run_t2"
+        )
         parser.add_argument("--fs-license", default="~/license.txt", help="FreeSurfer license file")
         parser.add_argument("--nthreads", type=int, default=None, help="CPUs per task (default: 4)")
-        parser.add_argument("--mem-per-cpu-gb", type=int, default=None, help="Memory per CPU in GB (default: 16)")
+        parser.add_argument(
+            "--mem-per-cpu-gb", type=int, default=None, help="Memory per CPU in GB (default: 16)"
+        )
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 4-00:00:00)")
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
@@ -34,7 +38,9 @@ class FreesurferPipeline(ContainerPipeline):
         # the registered subjects_file. Fail loud (instead of an opaque
         # FileNotFoundError) if neither is a real file -- the registered
         # subjects_*.txt was removed in PR1a.
-        fs_subjects_file = getattr(args, "subjects_file", None) or dataset_config.get("subjects_file")
+        fs_subjects_file = getattr(args, "subjects_file", None) or dataset_config.get(
+            "subjects_file"
+        )
         if not fs_subjects_file or not Path(fs_subjects_file).is_file():
             raise ValueError(
                 "freesurfer requires a subjects CSV (subject_id,ses_t1,run_t1,"

@@ -62,6 +62,7 @@ def test_build_context_basic(tmp_path):
 
 def test_build_context_version_required(tmp_path):
     import sys
+
     p = QsiprepPipeline()
     config = make_config(tmp_path)
     args = make_args(version=None)

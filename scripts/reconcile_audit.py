@@ -15,6 +15,7 @@ Outputs: /scratch/users/logben/reconcile_audit_<cohort>.md (report) and
 Usage:
     uv run python scripts/reconcile_audit.py discovery validation
 """
+
 from __future__ import annotations
 
 import json
@@ -104,21 +105,27 @@ def audit(cohort: str) -> dict:
     missing = sorted(keep - fmriprep)
 
     # (c) lev1 affected cells from compiled_exclusions.json
-    compiled_path = Path.home() / ".neuro_workflow" / "exclusions" / cohort / "compiled_exclusions.json"
+    compiled_path = (
+        Path.home() / ".neuro_workflow" / "exclusions" / cohort / "compiled_exclusions.json"
+    )
     compiled = json.loads(compiled_path.read_text()) if compiled_path.exists() else []
-    excl_contrast_cells = sorted({
-        f"{e['subject']}|{_bare(e['task'])}" for e in compiled
-        if e.get("action") == "exclude-contrast"
-    })
-    behavioral_cells = sorted({
-        f"{e['subject']}|{_bare(e['task'])}" for e in compiled
-        if e.get("action") == "exclude" and e.get("source") == "behavioral-qc"
-    })
+    excl_contrast_cells = sorted(
+        {
+            f"{e['subject']}|{_bare(e['task'])}"
+            for e in compiled
+            if e.get("action") == "exclude-contrast"
+        }
+    )
+    behavioral_cells = sorted(
+        {
+            f"{e['subject']}|{_bare(e['task'])}"
+            for e in compiled
+            if e.get("action") == "exclude" and e.get("source") == "behavioral-qc"
+        }
+    )
     # events-changed cells restricted to this cohort's compiled subjects
     cohort_subjects = {e["subject"] for e in compiled}
-    events_cells = sorted({
-        f"{s}|{t}" for (s, _ses, t) in EVENTS_CHANGED if s in cohort_subjects
-    })
+    events_cells = sorted({f"{s}|{t}" for (s, _ses, t) in EVENTS_CHANGED if s in cohort_subjects})
 
     return {
         "cohort": cohort,
@@ -139,23 +146,35 @@ def audit(cohort: str) -> dict:
 
 def _render_md(a: dict) -> str:
     L = [f"# Reconcile divergence audit — {a['cohort']}", ""]
-    L.append(f"- BOLD scans total: {a['n_bold_total']} | keep-set (post-.bidsignore): {a['n_keep']}")
+    L.append(
+        f"- BOLD scans total: {a['n_bold_total']} | keep-set (post-.bidsignore): {a['n_keep']}"
+    )
     L.append(f"- symlink view scans: {a['n_view']} | fMRIPrep outputs: {a['n_fmriprep']}")
     L.append("")
     L.append(f"## Symlink view vs new .bidsignore")
-    L.append(f"- now-excluded-from-view ({len(a['now_excluded_from_view'])}): {a['now_excluded_from_view']}")
-    L.append(f"- **newly-included ({len(a['newly_included'])})**: {a['newly_included']}  "
-             f"<- MUST be empty for 0 fMRIPrep reruns")
+    L.append(
+        f"- now-excluded-from-view ({len(a['now_excluded_from_view'])}): {a['now_excluded_from_view']}"
+    )
+    L.append(
+        f"- **newly-included ({len(a['newly_included'])})**: {a['newly_included']}  "
+        f"<- MUST be empty for 0 fMRIPrep reruns"
+    )
     L.append("")
     L.append("## fMRIPrep vs keep-set")
-    L.append(f"- orphans (fMRIPrep exists, now excluded) ({len(a['fmriprep_orphans'])}): {a['fmriprep_orphans']}")
-    L.append(f"- **missing (keep-set, no fMRIPrep) ({len(a['fmriprep_missing'])})**: {a['fmriprep_missing']}  "
-             f"<- MUST be empty")
+    L.append(
+        f"- orphans (fMRIPrep exists, now excluded) ({len(a['fmriprep_orphans'])}): {a['fmriprep_orphans']}"
+    )
+    L.append(
+        f"- **missing (keep-set, no fMRIPrep) ({len(a['fmriprep_missing'])})**: {a['fmriprep_missing']}  "
+        f"<- MUST be empty"
+    )
     L.append("")
     L.append("## lev1 rerun worklist")
     L.append(f"- events-changed cells: {a['lev1_events_changed']}")
-    L.append(f"- exclusion-changed cells ({len(a['lev1_exclusion_changed_cells'])}): "
-             f"{a['lev1_exclusion_changed_cells']}")
+    L.append(
+        f"- exclusion-changed cells ({len(a['lev1_exclusion_changed_cells'])}): "
+        f"{a['lev1_exclusion_changed_cells']}"
+    )
     return "\n".join(L) + "\n"
 
 
@@ -172,8 +191,10 @@ def main(argv: list[str] | None = None) -> int:
         (SCRATCH / f"reconcile_worklist_{cohort}.json").write_text(json.dumps(a, indent=2))
         print(_render_md(a))
         flag = "OK" if not a["newly_included"] and not a["fmriprep_missing"] else "ATTENTION"
-        print(f"[{cohort}] {flag}: newly_included={len(a['newly_included'])} "
-              f"fmriprep_missing={len(a['fmriprep_missing'])}")
+        print(
+            f"[{cohort}] {flag}: newly_included={len(a['newly_included'])} "
+            f"fmriprep_missing={len(a['fmriprep_missing'])}"
+        )
     return 0
 
 
