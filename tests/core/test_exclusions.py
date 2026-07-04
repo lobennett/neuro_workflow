@@ -23,9 +23,7 @@ def _isolate_lockfile_dir(tmp_path, monkeypatch):
     tests never write `<dataset>_lock.json` into the version-controlled
     data/exclusions/ tree (the source dir is already isolated per-test via the
     EXCLUSIONS_DIR monkeypatch)."""
-    monkeypatch.setattr(
-        "neuro_workflow.core.exclusions.LOCKFILE_DIR", tmp_path / "lock"
-    )
+    monkeypatch.setattr("neuro_workflow.core.exclusions.LOCKFILE_DIR", tmp_path / "lock")
 
 
 def test_validate_entry_valid():
@@ -173,16 +171,19 @@ def test_compile_force_include_removes(tmp_path, monkeypatch):
 def test_compile_force_exclude_adds(tmp_path, monkeypatch):
     monkeypatch.setattr("neuro_workflow.core.exclusions.EXCLUSIONS_DIR", tmp_path)
 
-    save_overrides("test", [
-        {
-            "subject": "sub-s99",
-            "session": "ses-01",
-            "task": "task-rest",
-            "run": "run-1",
-            "action": "force-exclude",
-            "reason": "Manual exclusion",
-        }
-    ])
+    save_overrides(
+        "test",
+        [
+            {
+                "subject": "sub-s99",
+                "session": "ses-01",
+                "task": "task-rest",
+                "run": "run-1",
+                "action": "force-exclude",
+                "reason": "Manual exclusion",
+            }
+        ],
+    )
     # No source files — just overrides
     compiled = compile_exclusions("test")
     assert len(compiled) == 1

@@ -1,4 +1,5 @@
 """Tests for the shared lev1 image-dtype helper."""
+
 import nibabel as nib
 import numpy as np
 

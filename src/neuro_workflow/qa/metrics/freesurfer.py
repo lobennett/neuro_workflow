@@ -1,4 +1,5 @@
 """FreeSurfer surface QC metrics extracted from recon-all output."""
+
 from __future__ import annotations
 
 import re
@@ -71,7 +72,7 @@ def parse_aseg_stats(aseg_stats: Path) -> dict[str, float]:
         "BrainSeg": "brain_vol",
         "TotalGray": "gm_vol",
         "CerebralWhiteMatter": "wm_vol",
-        "VentricleChoroidVol": "csf_vol",   # ventricular CSF (no global CSF in modern FS)
+        "VentricleChoroidVol": "csf_vol",  # ventricular CSF (no global CSF in modern FS)
         "EstimatedTotalIntraCranialVol": "etiv",
     }
     out: dict[str, float] = {}
@@ -105,9 +106,17 @@ def compute_freesurfer(fs_subject_dir: Path) -> FreeSurferMetrics:
         return FreeSurferMetrics(
             status="MISSING",
             elapsed_hours=None,
-            euler_lh=None, euler_rh=None, euler_mean=None,
-            holes_lh=None, holes_rh=None, holes_mean=None,
-            brain_vol=None, gm_vol=None, wm_vol=None, csf_vol=None, etiv=None,
+            euler_lh=None,
+            euler_rh=None,
+            euler_mean=None,
+            holes_lh=None,
+            holes_rh=None,
+            holes_mean=None,
+            brain_vol=None,
+            gm_vol=None,
+            wm_vol=None,
+            csf_vol=None,
+            etiv=None,
         )
 
     status = parse_recon_all_status(fs_subject_dir / "scripts" / "recon-all-status.log")

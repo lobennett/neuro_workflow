@@ -1,5 +1,6 @@
 """fmriprep convention: framewise_displacement and std_dvars are NaN at row 0
 (undefined at t=0). Lev1 must not crash, NaN-out the design matrix, or warn."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -14,22 +15,24 @@ def test_load_and_process_confounds_handles_nan_first_row(tmp_path):
     must handle this without leaving NaN in the output, which would
     contaminate the design matrix.
     """
-    confounds = pd.DataFrame({
-        "framewise_displacement": [np.nan, 0.1, 0.1, 0.2],
-        "std_dvars": [np.nan, 1.0, 1.0, 1.1],
-        "trans_x": [0.0, 0.01, 0.0, 0.0],
-        "trans_y": [0.0, 0.0, 0.01, 0.0],
-        "trans_z": [0.0, 0.0, 0.0, 0.01],
-        "trans_x_derivative1": [np.nan, 0.01, -0.01, 0.0],
-        "trans_y_derivative1": [np.nan, 0.0, 0.01, -0.01],
-        "trans_z_derivative1": [np.nan, 0.0, 0.0, 0.01],
-        "rot_x": [0.0, 0.001, 0.0, 0.0],
-        "rot_y": [0.0, 0.0, 0.001, 0.0],
-        "rot_z": [0.0, 0.0, 0.0, 0.001],
-        "rot_x_derivative1": [np.nan, 0.001, -0.001, 0.0],
-        "rot_y_derivative1": [np.nan, 0.0, 0.001, -0.001],
-        "rot_z_derivative1": [np.nan, 0.0, 0.0, 0.001],
-    })
+    confounds = pd.DataFrame(
+        {
+            "framewise_displacement": [np.nan, 0.1, 0.1, 0.2],
+            "std_dvars": [np.nan, 1.0, 1.0, 1.1],
+            "trans_x": [0.0, 0.01, 0.0, 0.0],
+            "trans_y": [0.0, 0.0, 0.01, 0.0],
+            "trans_z": [0.0, 0.0, 0.0, 0.01],
+            "trans_x_derivative1": [np.nan, 0.01, -0.01, 0.0],
+            "trans_y_derivative1": [np.nan, 0.0, 0.01, -0.01],
+            "trans_z_derivative1": [np.nan, 0.0, 0.0, 0.01],
+            "rot_x": [0.0, 0.001, 0.0, 0.0],
+            "rot_y": [0.0, 0.0, 0.001, 0.0],
+            "rot_z": [0.0, 0.0, 0.0, 0.001],
+            "rot_x_derivative1": [np.nan, 0.001, -0.001, 0.0],
+            "rot_y_derivative1": [np.nan, 0.0, 0.001, -0.001],
+            "rot_z_derivative1": [np.nan, 0.0, 0.0, 0.001],
+        }
+    )
     fp = tmp_path / "confounds.tsv"
     confounds.to_csv(fp, sep="\t", index=False, na_rep="n/a")
 

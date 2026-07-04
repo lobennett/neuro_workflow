@@ -76,9 +76,7 @@ class TestWriteDatasetDescription:
         assert data["BIDSVersion"] == "1.10.0"
         assert data["DatasetType"] == "raw"
         assert data["Authors"] == ["Patrick Bissett", "Russell Poldrack", "Logan Bennett"]
-        assert data["GeneratedBy"] == [
-            {"Name": "neuro-workflow bidsify", "Version": "0.2.0"}
-        ]
+        assert data["GeneratedBy"] == [{"Name": "neuro-workflow bidsify", "Version": "0.2.0"}]
 
 
 class TestDownloadAndPlace:

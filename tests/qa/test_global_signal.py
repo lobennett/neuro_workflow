@@ -24,6 +24,7 @@ def test_qa_attributes():
 
 def test_add_cli_args():
     from argparse import ArgumentParser
+
     qa = GlobalSignalQa()
     parser = ArgumentParser()
     qa.add_cli_args(parser)

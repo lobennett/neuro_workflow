@@ -16,9 +16,7 @@ def test_lev1_build_context_no_exclusions_file_and_no_compiled_exits(tmp_path, m
     # Redirect the exclusions store so _compiled_path points at an empty tmp dir
     # (guarantees no compiled file exists for this dataset; never touches the
     # real ~/.config store).
-    monkeypatch.setattr(
-        "neuro_workflow.core.exclusions.EXCLUSIONS_DIR", tmp_path / "exclusions"
-    )
+    monkeypatch.setattr("neuro_workflow.core.exclusions.EXCLUSIONS_DIR", tmp_path / "exclusions")
     subs = tmp_path / "subs.txt"
     subs.write_text("s03\n")
 

@@ -21,8 +21,8 @@ def surface_residual_filename(base_filename: str, hemisphere: str, surface_space
     apart (which previously defeated --skip-existing for surface residuals).
     """
     return (
-        f'{base_filename}_hemi-{hemisphere}_space-{surface_space}'
-        f'_task-regressed-residuals.func.gii'
+        f"{base_filename}_hemi-{hemisphere}_space-{surface_space}"
+        f"_task-regressed-residuals.func.gii"
     )
 
 
@@ -86,7 +86,7 @@ class ResidualsProcessor:
         raw_residuals = self.get_raw_residuals()
 
         if not raw_residuals:
-            raise ValueError('No residuals available from GLM')
+            raise ValueError("No residuals available from GLM")
 
         self.filtered_residuals = []
 
@@ -105,14 +105,14 @@ class ResidualsProcessor:
                 self.filtered_residuals.append(filtered_img)
 
             except Exception as e:
-                logger.warning('Failed to filter residuals for run %d: %s', i + 1, e)
+                logger.warning("Failed to filter residuals for run %d: %s", i + 1, e)
                 # Use unfiltered residuals as fallback
                 self.filtered_residuals.append(residual_img)
 
         return self.filtered_residuals
 
     def save_residuals(
-        self, output_dir: Path, base_filename: str, residuals_type: str = 'filtered'
+        self, output_dir: Path, base_filename: str, residuals_type: str = "filtered"
     ) -> List[Path]:
         """Save residuals to disk.
 
@@ -132,25 +132,23 @@ class ResidualsProcessor:
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        if residuals_type == 'filtered':
+        if residuals_type == "filtered":
             if self.filtered_residuals is None:
-                raise ValueError(
-                    'Filtered residuals not available. Call apply_filtering() first.'
-                )
+                raise ValueError("Filtered residuals not available. Call apply_filtering() first.")
             residuals_to_save = self.filtered_residuals
-            suffix = 'task-regressed-residuals'
-        elif residuals_type == 'raw':
+            suffix = "task-regressed-residuals"
+        elif residuals_type == "raw":
             residuals_to_save = self.get_raw_residuals()
-            suffix = 'raw-residuals'
+            suffix = "raw-residuals"
         else:
-            raise ValueError(f'Unknown residuals_type: {residuals_type}')
+            raise ValueError(f"Unknown residuals_type: {residuals_type}")
 
         saved_paths = []
 
         for i, residual_img in enumerate(residuals_to_save):
             if len(residuals_to_save) == 1:
                 # Single run
-                filename = f'{base_filename}_{suffix}.nii.gz'
+                filename = f"{base_filename}_{suffix}.nii.gz"
             else:
                 # Multiple residual images from one processor. Use the unpadded
                 # run-N convention used everywhere else in the codebase (BIDS
@@ -158,7 +156,7 @@ class ResidualsProcessor:
                 # run-01). NB: the per-run lev1 flow saves a single residual, so
                 # this branch is not exercised in production; keeping it
                 # convention-consistent avoids a future run-01/run-1 mismatch.
-                filename = f'{base_filename}_run-{i + 1}_{suffix}.nii.gz'
+                filename = f"{base_filename}_run-{i + 1}_{suffix}.nii.gz"
 
             filepath = output_dir / filename
             residual_img.to_filename(filepath)
@@ -176,41 +174,41 @@ class ResidualsProcessor:
             >>> stats = processor.get_residuals_stats()
         """
         stats = {
-            'n_runs': 0,
-            'raw_available': False,
-            'filtered_available': False,
-            'raw_stats': {},
-            'filtered_stats': {},
+            "n_runs": 0,
+            "raw_available": False,
+            "filtered_available": False,
+            "raw_stats": {},
+            "filtered_stats": {},
         }
 
         # Raw residuals stats
         raw_residuals = self.get_raw_residuals()
         if raw_residuals:
-            stats['n_runs'] = len(raw_residuals)
-            stats['raw_available'] = True
+            stats["n_runs"] = len(raw_residuals)
+            stats["raw_available"] = True
 
             for i, residual_img in enumerate(raw_residuals):
                 data = residual_img.get_fdata()
-                stats['raw_stats'][f'run_{i + 1}'] = {
-                    'shape': data.shape,
-                    'mean': float(np.mean(data)),
-                    'std': float(np.std(data)),
-                    'min': float(np.min(data)),
-                    'max': float(np.max(data)),
+                stats["raw_stats"][f"run_{i + 1}"] = {
+                    "shape": data.shape,
+                    "mean": float(np.mean(data)),
+                    "std": float(np.std(data)),
+                    "min": float(np.min(data)),
+                    "max": float(np.max(data)),
                 }
 
         # Filtered residuals stats
         if self.filtered_residuals:
-            stats['filtered_available'] = True
+            stats["filtered_available"] = True
 
             for i, residual_img in enumerate(self.filtered_residuals):
                 data = residual_img.get_fdata()
-                stats['filtered_stats'][f'run_{i + 1}'] = {
-                    'shape': data.shape,
-                    'mean': float(np.mean(data)),
-                    'std': float(np.std(data)),
-                    'min': float(np.min(data)),
-                    'max': float(np.max(data)),
+                stats["filtered_stats"][f"run_{i + 1}"] = {
+                    "shape": data.shape,
+                    "mean": float(np.mean(data)),
+                    "std": float(np.std(data)),
+                    "min": float(np.min(data)),
+                    "max": float(np.max(data)),
                 }
 
         return stats
@@ -259,45 +257,43 @@ def process_run_residuals(
     # clean_signal pass.
     if filtering_params is None:
         filtering_params = {
-            'low_pass': 0.1,
-            'high_pass': 0.01,
+            "low_pass": 0.1,
+            "high_pass": 0.01,
             # -- Correction --
             # FirstLevelModel already removed trends and task confounds.
             # `confounds` here are the FC-specific confounds (CSF, WM,
             # global signal + derivatives) applied to the post-GLM residuals,
             # which is the standard pre-FC denoising step.
-            'standardize': False,
-            'detrend': False,
-            'confounds': fc_confounds,
+            "standardize": False,
+            "detrend": False,
+            "confounds": fc_confounds,
         }
 
     results = {
-        'processor': processor,
-        'saved_paths': {},
-        'stats': {},
-        'success': True,
-        'errors': [],
+        "processor": processor,
+        "saved_paths": {},
+        "stats": {},
+        "success": True,
+        "errors": [],
     }
 
     try:
         # Apply filtering
-        filtered_residuals = processor.apply_filtering(
-            mask_img=mask_img, **filtering_params
-        )
+        filtered_residuals = processor.apply_filtering(mask_img=mask_img, **filtering_params)
 
         # Save filtered residuals
-        saved_paths = processor.save_residuals(output_dir, base_filename, 'filtered')
-        results['saved_paths']['filtered'] = saved_paths
+        saved_paths = processor.save_residuals(output_dir, base_filename, "filtered")
+        results["saved_paths"]["filtered"] = saved_paths
 
         # Get statistics
-        results['stats'] = processor.get_residuals_stats()
+        results["stats"] = processor.get_residuals_stats()
 
-        logger.info('Saved residuals: %s', saved_paths[0])
+        logger.info("Saved residuals: %s", saved_paths[0])
 
     except Exception as e:
-        results['success'] = False
-        results['errors'].append(str(e))
-        logger.error('Failed to process residuals: %s', e)
+        results["success"] = False
+        results["errors"].append(str(e))
+        logger.error("Failed to process residuals: %s", e)
 
     return results
 
@@ -311,7 +307,7 @@ def process_surface_residuals(
     low_pass: Optional[float] = 0.1,
     high_pass: Optional[float] = 0.01,
     fc_confounds: Optional[np.ndarray] = None,
-    surface_space: str = 'fsnative',
+    surface_space: str = "fsnative",
 ) -> dict:
     """Process and save residuals for surface GLM.
 
@@ -336,7 +332,7 @@ def process_surface_residuals(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    result = {'success': True, 'saved_path': None, 'errors': []}
+    result = {"success": True, "saved_path": None, "errors": []}
 
     try:
         residuals = surface_glm.get_residuals()  # (n_timepoints, n_vertices)
@@ -357,23 +353,21 @@ def process_surface_residuals(
         darrays = [
             nib.gifti.GiftiDataArray(
                 data=residuals[t].astype(np.float32),
-                intent='NIFTI_INTENT_NONE',
-                datatype='NIFTI_TYPE_FLOAT32',
+                intent="NIFTI_INTENT_NONE",
+                datatype="NIFTI_TYPE_FLOAT32",
             )
             for t in range(residuals.shape[0])
         ]
         gii_img = nib.GiftiImage(darrays=darrays)
 
-        out_path = output_dir / surface_residual_filename(
-            base_filename, hemisphere, surface_space
-        )
+        out_path = output_dir / surface_residual_filename(base_filename, hemisphere, surface_space)
         nib.save(gii_img, out_path)
-        result['saved_path'] = out_path
-        logger.info('Saved surface residuals: %s', out_path)
+        result["saved_path"] = out_path
+        logger.info("Saved surface residuals: %s", out_path)
 
     except Exception as e:
-        result['success'] = False
-        result['errors'].append(str(e))
-        logger.error('Failed to process surface residuals (hemi-%s): %s', hemisphere, e)
+        result["success"] = False
+        result["errors"].append(str(e))
+        logger.error("Failed to process surface residuals (hemi-%s): %s", hemisphere, e)
 
     return result

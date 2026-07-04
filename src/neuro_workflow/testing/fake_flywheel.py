@@ -210,9 +210,7 @@ class FakeFile:
         elif kind == "bvec":
             _write_bvec(dest, n_dirs=c.get("n_dirs", 6), seed=c.get("seed", 0))
         elif kind == "physio":
-            _write_physio_csv(
-                dest, kind=c.get("physio_kind", "data"), n=c.get("n", 100)
-            )
+            _write_physio_csv(dest, kind=c.get("physio_kind", "data"), n=c.get("n", 100))
         else:  # pragma: no cover - defensive
             raise ValueError(f"unknown fake-file content kind: {kind!r}")
 
@@ -241,9 +239,7 @@ class FakeAcquisition:
             if f.name == name:
                 f.write_to(Path(dest))
                 return
-        raise FileNotFoundError(
-            f"acquisition {self.label!r} has no file named {name!r}"
-        )
+        raise FileNotFoundError(f"acquisition {self.label!r} has no file named {name!r}")
 
 
 @dataclass

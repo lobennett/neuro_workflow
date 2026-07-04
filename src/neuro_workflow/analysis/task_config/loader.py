@@ -23,7 +23,7 @@ from typing import Any, Dict, List
 import yaml
 
 # Path to the task battery YAML (base + dual task lists)
-_BATTERY_YAML = Path(__file__).parent / 'battery.yaml'
+_BATTERY_YAML = Path(__file__).parent / "battery.yaml"
 
 from neuro_workflow.core.acquisition import (
     N_DUMMY as DEFAULT_DUMMY_SCANS,
@@ -37,11 +37,11 @@ logger = logging.getLogger(__name__)
 DEFAULT_MIN_RT = 0.2
 
 # Directory containing per-task YAML files
-_TASKS_DIR = Path(__file__).parent / 'tasks'
+_TASKS_DIR = Path(__file__).parent / "tasks"
 
 # Required fields in each YAML file
-_REQUIRED_FIELDS = {'regressors', 'contrasts'}
-_REQUIRED_REGRESSOR_FIELDS = {'amplitude', 'duration', 'subset'}
+_REQUIRED_FIELDS = {"regressors", "contrasts"}
+_REQUIRED_REGRESSOR_FIELDS = {"amplitude", "duration", "subset"}
 
 
 class TaskNotConfiguredError(ValueError):
@@ -57,7 +57,7 @@ class ContrastFormulaError(ValueError):
 
 # Regex to extract identifier tokens from a contrast formula string.
 # Matches bare Python identifiers (letters/underscores, then alphanumerics).
-_IDENT_RE = re.compile(r'\b([A-Za-z_][A-Za-z0-9_]*)\b')
+_IDENT_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\b")
 
 
 def _validate_contrasts(
@@ -100,47 +100,44 @@ def _load_yaml(task_name: str) -> Dict[str, Any]:
         FileNotFoundError: If the YAML file does not exist.
         ValueError: If required fields are missing.
     """
-    yaml_path = _TASKS_DIR / f'{task_name}.yaml'
+    yaml_path = _TASKS_DIR / f"{task_name}.yaml"
     if not yaml_path.exists():
         available = list_available_tasks()
         raise FileNotFoundError(
-            f"No config file for task '{task_name}'. "
-            f'Available tasks: {available}'
+            f"No config file for task '{task_name}'. " f"Available tasks: {available}"
         )
 
-    with open(yaml_path, encoding='utf-8') as f:
+    with open(yaml_path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
     # Validate top-level fields
     missing = _REQUIRED_FIELDS - set(config.keys())
     if missing:
-        raise ValueError(
-            f"Task config '{task_name}' is missing required fields: {missing}"
-        )
+        raise ValueError(f"Task config '{task_name}' is missing required fields: {missing}")
 
     # Skip per-regressor validation for placeholder YAMLs (regressors: null).
     # get_regressor_config raises TaskNotConfiguredError on these.
-    if config.get('regressors') is None:
+    if config.get("regressors") is None:
         return config
 
     # Validate each regressor has required fields
-    for reg_name, reg_config in config.get('regressors', {}).items():
+    for reg_name, reg_config in config.get("regressors", {}).items():
         if not isinstance(reg_config, dict):
             raise ValueError(
                 f"Regressor '{reg_name}' in task '{task_name}' must be a dict, "
-                f'got {type(reg_config).__name__}'
+                f"got {type(reg_config).__name__}"
             )
         missing_reg = _REQUIRED_REGRESSOR_FIELDS - set(reg_config.keys())
         if missing_reg:
             raise ValueError(
                 f"Regressor '{reg_name}' in task '{task_name}' is missing "
-                f'required fields: {missing_reg}'
+                f"required fields: {missing_reg}"
             )
 
     # Validate contrast formulas reference only declared regressor names.
     # Skip tasks whose contrasts dict is empty or None (e.g. stopSignalWDirectedForgetting).
-    regressors = config.get('regressors') or {}
-    contrasts = config.get('contrasts') or {}
+    regressors = config.get("regressors") or {}
+    contrasts = config.get("contrasts") or {}
     if regressors and contrasts:
         _validate_contrasts(task_name, regressors, contrasts)
 
@@ -173,19 +170,19 @@ def _convert_regressor_config(yaml_regressors: Dict) -> Dict[str, Dict[str, str]
     """
     converted = {}
     for name, cfg in yaml_regressors.items():
-        amp = cfg['amplitude']
-        dur = cfg['duration']
+        amp = cfg["amplitude"]
+        dur = cfg["duration"]
 
         amp_col = _encode_numeric_or_column(amp)
         dur_col = _encode_numeric_or_column(dur)
 
         # subset: null in YAML becomes None in Python
-        subset = cfg.get('subset')
+        subset = cfg.get("subset")
 
         converted[name] = {
-            'amplitude_column': amp_col,
-            'duration_column': dur_col,
-            'subset': subset,
+            "amplitude_column": amp_col,
+            "duration_column": dur_col,
+            "subset": subset,
         }
 
     return converted
@@ -201,11 +198,11 @@ def _encode_numeric_or_column(value) -> str:
     if isinstance(value, bool):
         # Treat bools as numeric — Python's True/False are int subclasses,
         # so explicit guard before the (int, float) check below.
-        return f'constant_{int(value)}_column'
+        return f"constant_{int(value)}_column"
     if isinstance(value, (int, float)):
         if isinstance(value, float) and value.is_integer():
             value = int(value)
-        return f'constant_{value}_column'
+        return f"constant_{value}_column"
     return str(value)
 
 
@@ -215,25 +212,25 @@ def _load_battery() -> Dict[str, List[str]]:
 
     Cached so the YAML is read at most once per process.
     """
-    with open(_BATTERY_YAML, encoding='utf-8') as fh:
+    with open(_BATTERY_YAML, encoding="utf-8") as fh:
         data = yaml.safe_load(fh)
     return data
 
 
 def get_base_tasks() -> List[str]:
     """Return the ordered list of 8 base (single-task) paradigm names."""
-    return list(_load_battery()['base'])
+    return list(_load_battery()["base"])
 
 
 def get_dual_tasks() -> List[str]:
     """Return the ordered list of 10 dual-task paradigm names."""
-    return list(_load_battery()['dual'])
+    return list(_load_battery()["dual"])
 
 
 def get_all_tasks() -> List[str]:
     """Return base + dual tasks in canonical order (18 tasks total)."""
     batt = _load_battery()
-    return list(batt['base']) + list(batt['dual'])
+    return list(batt["base"]) + list(batt["dual"])
 
 
 def list_available_tasks() -> List[str]:
@@ -244,7 +241,7 @@ def list_available_tasks() -> List[str]:
     """
     if not _TASKS_DIR.exists():
         return []
-    return sorted(p.stem for p in _TASKS_DIR.glob('*.yaml'))
+    return sorted(p.stem for p in _TASKS_DIR.glob("*.yaml"))
 
 
 def get_regressor_config(task_name: str) -> Dict[str, Dict[str, str]]:
@@ -262,16 +259,16 @@ def get_regressor_config(task_name: str) -> Dict[str, Dict[str, str]]:
         ValueError: If the regressor config is empty.
     """
     config = _get_task_config(task_name)
-    if config.get('regressors') is None:
+    if config.get("regressors") is None:
         raise TaskNotConfiguredError(
             f"task {task_name!r} has no regressors defined "
             f"(placeholder YAML — fill in regressors: and contrasts: before running lev1)"
         )
-    regressors = config.get('regressors', {})
+    regressors = config.get("regressors", {})
     if not regressors:
         raise ValueError(
             f"Regressor config is empty for task '{task_name}'. "
-            'Define regressors in the YAML file before running.'
+            "Define regressors in the YAML file before running."
         )
     return _convert_regressor_config(regressors)
 
@@ -294,11 +291,11 @@ def get_task_contrasts(task_name: str) -> Dict[str, str]:
         ValueError: If the contrast config is empty.
     """
     config = _get_task_config(task_name)
-    contrasts = config.get('contrasts', {})
+    contrasts = config.get("contrasts", {})
     if not contrasts:
         raise ValueError(
             f"Contrast config is empty for task '{task_name}'. "
-            'Define contrasts in the YAML file before running.'
+            "Define contrasts in the YAML file before running."
         )
     return dict(contrasts)
 
@@ -314,10 +311,10 @@ def get_task_parameters(task_name: str) -> Dict[str, Any]:
     """
     config = _get_task_config(task_name)
     return {
-        'tr': config.get('tr', DEFAULT_TR),
-        'dummy_scans': config.get('dummy_scans', DEFAULT_DUMMY_SCANS),
-        'min_rt': config.get('min_rt', DEFAULT_MIN_RT),
-        'expected_sessions': config.get('expected_sessions', 5),
+        "tr": config.get("tr", DEFAULT_TR),
+        "dummy_scans": config.get("dummy_scans", DEFAULT_DUMMY_SCANS),
+        "min_rt": config.get("min_rt", DEFAULT_MIN_RT),
+        "expected_sessions": config.get("expected_sessions", 5),
     }
 
 

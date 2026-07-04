@@ -3,6 +3,7 @@
 Mocks subprocess.run so tests run without the brm CLI installed.
 The wrapper discovers space variants and runs `brm list` once per space.
 """
+
 import csv
 from pathlib import Path
 from subprocess import CompletedProcess
@@ -53,8 +54,7 @@ def test_renders_one_movie_per_space(tmp_path):
     _make_fixture(deriv)
 
     fake_run, captured = _fake_run_factory(out)
-    with patch("neuro_workflow.qa.reliability_movies.subprocess.run",
-               side_effect=fake_run):
+    with patch("neuro_workflow.qa.reliability_movies.subprocess.run", side_effect=fake_run):
         result = render_reliability_movies(deriv, out, ["sub-s03"])
 
     # Default: skip native — so 3 spaces (T1w + 2 MNI variants)
@@ -78,11 +78,8 @@ def test_include_native_option(tmp_path):
     _make_fixture(deriv)
 
     fake_run, _ = _fake_run_factory(out)
-    with patch("neuro_workflow.qa.reliability_movies.subprocess.run",
-               side_effect=fake_run):
-        result = render_reliability_movies(
-            deriv, out, ["sub-s03"], include_native=True
-        )
+    with patch("neuro_workflow.qa.reliability_movies.subprocess.run", side_effect=fake_run):
+        result = render_reliability_movies(deriv, out, ["sub-s03"], include_native=True)
 
     movies = result["sub-s03"]
     assert len(movies) == 4
@@ -96,8 +93,7 @@ def test_each_manifest_contains_only_its_space(tmp_path):
     _make_fixture(deriv)
 
     fake_run, captured = _fake_run_factory(out)
-    with patch("neuro_workflow.qa.reliability_movies.subprocess.run",
-               side_effect=fake_run):
+    with patch("neuro_workflow.qa.reliability_movies.subprocess.run", side_effect=fake_run):
         render_reliability_movies(deriv, out, ["sub-s03"])
 
     for call in captured:
@@ -129,14 +125,12 @@ def test_brm_failure_is_per_space(tmp_path):
             rows = list(csv.DictReader(f, delimiter="\t"))
         group = rows[0]["group"]
         if "MNI152NLin6Asym" in group:
-            return CompletedProcess(args=cmd, returncode=1, stdout="",
-                                    stderr="ffmpeg crashed")
+            return CompletedProcess(args=cmd, returncode=1, stdout="", stderr="ffmpeg crashed")
         out.mkdir(parents=True, exist_ok=True)
         (out / f"{group}.mp4").write_bytes(b"\x00")
         return _ok_proc()
 
-    with patch("neuro_workflow.qa.reliability_movies.subprocess.run",
-               side_effect=fake_run):
+    with patch("neuro_workflow.qa.reliability_movies.subprocess.run", side_effect=fake_run):
         result = render_reliability_movies(deriv, out, ["sub-s03"])
 
     movies = result["sub-s03"]
@@ -166,8 +160,9 @@ def test_brm_not_found(tmp_path):
     deriv = tmp_path / "fmriprep_25.2.4"
     _make_fixture(deriv, "sub-A")
 
-    with patch("neuro_workflow.qa.reliability_movies.subprocess.run",
-               side_effect=FileNotFoundError):
+    with patch(
+        "neuro_workflow.qa.reliability_movies.subprocess.run", side_effect=FileNotFoundError
+    ):
         result = render_reliability_movies(deriv, out, ["sub-A"])
 
     movies = result["sub-A"]
@@ -181,8 +176,7 @@ def test_silent_no_output(tmp_path):
     deriv = tmp_path / "fmriprep_25.2.4"
     _make_fixture(deriv, "sub-A")
 
-    with patch("neuro_workflow.qa.reliability_movies.subprocess.run",
-               return_value=_ok_proc()):
+    with patch("neuro_workflow.qa.reliability_movies.subprocess.run", return_value=_ok_proc()):
         result = render_reliability_movies(deriv, out, ["sub-A"])
 
     movies = result["sub-A"]

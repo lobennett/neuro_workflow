@@ -12,7 +12,7 @@ from neuro_workflow.analysis.task_config.loader import get_regressor_config
 
 logger = logging.getLogger(__name__)
 
-_CONSTANT_SENTINEL_RE = re.compile(r'^constant_(-?\d+(?:\.\d+)?)_column$')
+_CONSTANT_SENTINEL_RE = re.compile(r"^constant_(-?\d+(?:\.\d+)?)_column$")
 
 
 def _resolve_column_or_constant(events: pd.DataFrame, col_spec: str) -> np.ndarray:
@@ -64,7 +64,7 @@ def create_regressor(
     """
     try:
         # Apply subset filter
-        subset_query = regressor_config['subset']
+        subset_query = regressor_config["subset"]
         subset_events = events_df.query(subset_query) if subset_query else events_df
 
         if subset_events.empty:
@@ -76,11 +76,11 @@ def create_regressor(
             return regressor_df, regressor_3col
 
         # Get amplitude and duration columns
-        amp_col = regressor_config['amplitude_column']
-        dur_col = regressor_config['duration_column']
+        amp_col = regressor_config["amplitude_column"]
+        dur_col = regressor_config["duration_column"]
 
         # Create 3-column format (onset, duration, amplitude)
-        onsets = subset_events['onset'].values
+        onsets = subset_events["onset"].values
         durations = _resolve_column_or_constant(subset_events, dur_col)
         amplitudes = _resolve_column_or_constant(subset_events, amp_col)
 
@@ -92,7 +92,8 @@ def create_regressor(
             n_dropped = (~valid).sum()
             logger.warning(
                 "Dropped %d rows with NaN in onset/duration/amplitude for regressor '%s'",
-                n_dropped, regressor_name,
+                n_dropped,
+                regressor_name,
             )
             onsets = onsets[valid]
             durations = durations[valid]
@@ -111,7 +112,7 @@ def create_regressor(
         frame_times = np.arange(n_scans) * tr + tr / 2
         regressor_values, _ = compute_regressor(
             exp_condition=(onsets, durations, amplitudes),
-            hrf_model='spm',
+            hrf_model="spm",
             frame_times=frame_times,
         )
 
@@ -121,7 +122,7 @@ def create_regressor(
         return regressor_df, regressor_3col
 
     except Exception as e:
-        raise ValueError(f'Failed to create regressor {regressor_name}: {e}') from e
+        raise ValueError(f"Failed to create regressor {regressor_name}: {e}") from e
 
 
 def create_design_matrix(
@@ -180,7 +181,7 @@ def create_design_matrix(
         for col in design_matrix.columns
     )
     if not has_constant:
-        logger.warning('No constant/intercept column detected; adding one')
-        design_matrix['constant'] = 1.0
+        logger.warning("No constant/intercept column detected; adding one")
+        design_matrix["constant"] = 1.0
 
     return design_matrix, regressor_3cols

@@ -1,4 +1,5 @@
 """Symlink real (small) metric inputs into the stub tree for the generators."""
+
 from __future__ import annotations
 from pathlib import Path
 from typing import Optional
@@ -12,8 +13,9 @@ def _link(src: Path, dst: Path) -> Path:
     return dst
 
 
-def stage_metrics(bids_dir: Path, *, fmriprep_src: Path, version: str,
-                  behavioral_src: Optional[Path] = None) -> dict:
+def stage_metrics(
+    bids_dir: Path, *, fmriprep_src: Path, version: str, behavioral_src: Optional[Path] = None
+) -> dict:
     """Symlink the fMRIPrep derivative (+ optional behavioral sourcedata) into the
     stub tree. lev1_outliers.csv is passed to its generator by path, not staged here.
     Returns {kind: linked_path}."""

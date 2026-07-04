@@ -12,6 +12,7 @@ Inputs are the per-subject surface fixed-effects effect maps produced by lev1:
 ``{subj}_hemi-{H}_space-{space}_task-…_contrast-…_rtmodel-…_stat-fixed-effects.func.gii``
 (``_desc-belowMinRuns_`` files are dropped, matching the volume discover).
 """
+
 from __future__ import annotations
 
 import glob
@@ -38,7 +39,10 @@ def discover_surface_inputs(level1_dirs: List[Path], contrast_name: str) -> Dict
     for level1_dir in level1_dirs:
         for h in HEMIS:
             pattern = str(
-                Path(level1_dir) / "sub-*" / "*" / "fixed_effects"
+                Path(level1_dir)
+                / "sub-*"
+                / "*"
+                / "fixed_effects"
                 / f"*_hemi-{h}_*{contrast_name}_rtmodel-*_stat-fixed-effects.func.gii"
             )
             files = [f for f in glob.glob(pattern) if "_desc-belowMinRuns_" not in f]
@@ -70,7 +74,9 @@ def _one_sample_t(data: np.ndarray) -> np.ndarray:
 
 
 def sign_flip_permutation_test(
-    data: np.ndarray, n_perm: int = 5000, seed: int = 0,
+    data: np.ndarray,
+    n_perm: int = 5000,
+    seed: int = 0,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """One-sample sign-flip permutation test with whole-array max-statistic FWE.
 
@@ -153,10 +159,7 @@ def run_surface_level2_analysis(
     subj_l = [_subject_of(f) for f in inputs["L"]]
     subj_r = [_subject_of(f) for f in inputs["R"]]
     if subj_l != subj_r:
-        print(
-            f"Error: L/R subject sets differ for {contrast_name}: "
-            f"L={subj_l} R={subj_r}"
-        )
+        print(f"Error: L/R subject sets differ for {contrast_name}: " f"L={subj_l} R={subj_r}")
         return False
 
     stack_l = load_surface_stack(inputs["L"])  # (N, VL)

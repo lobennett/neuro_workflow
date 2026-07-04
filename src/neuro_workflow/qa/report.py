@@ -7,6 +7,7 @@ Delegates to:
 - reliability_movies.py for brm integration
 - templates/ for Jinja2-rendered HTML output
 """
+
 from __future__ import annotations
 
 import csv
@@ -38,17 +39,27 @@ def _discover_scans(fmriprep_dir: Path, subject: str) -> list[ScanID]:
     for confounds in (fmriprep_dir / subject).rglob("*_desc-confounds_timeseries.tsv"):
         m = _CONFOUNDS_RE.search(confounds.name)
         if m:
-            out.append(ScanID(subject=m.group(1), session=m.group(2),
-                              task=m.group(3), run=m.group(4)))
+            out.append(
+                ScanID(subject=m.group(1), session=m.group(2), task=m.group(3), run=m.group(4))
+            )
     return sorted(out, key=lambda s: (s.session, s.task, s.run))
 
 
 def _missing_fs_metrics() -> FreeSurferMetrics:
     return FreeSurferMetrics(
-        status="MISSING", elapsed_hours=None,
-        euler_lh=None, euler_rh=None, euler_mean=None,
-        holes_lh=None, holes_rh=None, holes_mean=None,
-        brain_vol=None, gm_vol=None, wm_vol=None, csf_vol=None, etiv=None,
+        status="MISSING",
+        elapsed_hours=None,
+        euler_lh=None,
+        euler_rh=None,
+        euler_mean=None,
+        holes_lh=None,
+        holes_rh=None,
+        holes_mean=None,
+        brain_vol=None,
+        gm_vol=None,
+        wm_vol=None,
+        csf_vol=None,
+        etiv=None,
     )
 
 
@@ -82,8 +93,9 @@ def _is_motion_flagged(motion: MotionMetrics, task: str) -> tuple[bool, list[str
     return bool(reasons), reasons
 
 
-def _scan_dict(scan: ScanID, motion: MotionMetrics, outputs: OutputCheckResult,
-               decision: Decision | None) -> dict:
+def _scan_dict(
+    scan: ScanID, motion: MotionMetrics, outputs: OutputCheckResult, decision: Decision | None
+) -> dict:
     flagged_motion, motion_reasons = _is_motion_flagged(motion, scan.task)
     flagged_outputs = not outputs.complete
     flag_reasons = list(motion_reasons)
@@ -91,18 +103,26 @@ def _scan_dict(scan: ScanID, motion: MotionMetrics, outputs: OutputCheckResult,
         flag_reasons.append(f"{len(outputs.missing)} missing output(s)")
     flagged = flagged_motion or flagged_outputs
     return {
-        "session": scan.session, "task": scan.task, "run": scan.run,
+        "session": scan.session,
+        "task": scan.task,
+        "run": scan.run,
         "n_vols": motion.n_vols,
-        "fd_mean": motion.fd_mean, "fd_prop_over_05": motion.fd_prop_over_05,
-        "dvars_mean": motion.dvars_mean, "dvars_prop_over_15": motion.dvars_prop_over_15,
+        "fd_mean": motion.fd_mean,
+        "fd_prop_over_05": motion.fd_prop_over_05,
+        "dvars_mean": motion.dvars_mean,
+        "dvars_prop_over_15": motion.dvars_prop_over_15,
         "n_motion_outliers": motion.n_motion_outliers,
         "outputs_complete": outputs.complete,
         "missing_outputs": outputs.missing,
-        "flagged": flagged, "flag_reasons": flag_reasons,
-        "flagged_motion": flagged_motion, "flagged_outputs": flagged_outputs,
+        "flagged": flagged,
+        "flag_reasons": flag_reasons,
+        "flagged_motion": flagged_motion,
+        "flagged_outputs": flagged_outputs,
         "decision_action": decision.action if decision else "unset",
         "decision_reason": decision.reason if decision else "",
-        "carpetplot_svg": "", "coreg_svg": "", "sdc_svg": "",  # filled below
+        "carpetplot_svg": "",
+        "coreg_svg": "",
+        "sdc_svg": "",  # filled below
     }
 
 
@@ -175,8 +195,13 @@ def build_reports(
         scans = _discover_scans(fmriprep_dir, sub)
         scan_dicts = []
         for scan in scans:
-            confounds = (fmriprep_dir / sub / scan.session / "func"
-                         / f"{sub}_{scan.session}_task-{scan.task}_run-{scan.run}_desc-confounds_timeseries.tsv")
+            confounds = (
+                fmriprep_dir
+                / sub
+                / scan.session
+                / "func"
+                / f"{sub}_{scan.session}_task-{scan.task}_run-{scan.run}_desc-confounds_timeseries.tsv"
+            )
             motion = compute_motion(confounds)
             outputs = check_expected_outputs(fmriprep_dir, scan)
 
@@ -196,11 +221,13 @@ def build_reports(
         # Build a per-space list for the template (label + relpath/error).
         movie_entries = []
         for mr in movies.get(sub, []):
-            movie_entries.append({
-                "label": mr.space_label,
-                "relpath": f"../movies/{mr.path.name}" if mr.path else "",
-                "error": mr.error,
-            })
+            movie_entries.append(
+                {
+                    "label": mr.space_label,
+                    "relpath": f"../movies/{mr.path.name}" if mr.path else "",
+                    "error": mr.error,
+                }
+            )
 
         subject_html = render_subject_html(
             subject=sub,
@@ -214,20 +241,22 @@ def build_reports(
         )
         (output_dir / "subjects" / f"{sub}.html").write_text(subject_html)
 
-        cohort_rows.append({
-            "subject": sub,
-            "sessions": len({s.session for s in scans}),
-            "scans": len(scan_dicts),
-            "fs_euler_mean": fs_metrics[sub].euler_mean,
-            "fs_holes_mean": fs_metrics[sub].holes_mean,
-            "fs_status": fs_metrics[sub].status,
-            "scans_flagged_motion": sum(1 for s in scan_dicts if s["flagged_motion"]),
-            "scans_flagged_outputs": sum(1 for s in scan_dicts if s["flagged_outputs"]),
-            "scan_flags_total": sum(1 for s in scan_dicts if s["flagged"]),
-            "decision_action": sub_action,
-            "decision_reason": sub_reason,
-            "outlier": sub in outliers,
-        })
+        cohort_rows.append(
+            {
+                "subject": sub,
+                "sessions": len({s.session for s in scans}),
+                "scans": len(scan_dicts),
+                "fs_euler_mean": fs_metrics[sub].euler_mean,
+                "fs_holes_mean": fs_metrics[sub].holes_mean,
+                "fs_status": fs_metrics[sub].status,
+                "scans_flagged_motion": sum(1 for s in scan_dicts if s["flagged_motion"]),
+                "scans_flagged_outputs": sum(1 for s in scan_dicts if s["flagged_outputs"]),
+                "scan_flags_total": sum(1 for s in scan_dicts if s["flagged"]),
+                "decision_action": sub_action,
+                "decision_reason": sub_reason,
+                "outlier": sub in outliers,
+            }
+        )
 
     # 5) Render cohort HTML + TSV
     cohort_html = render_cohort_html(

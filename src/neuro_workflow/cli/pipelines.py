@@ -22,7 +22,10 @@ def cmd_show(args, remaining):
 
     pipeline = get_pipeline(args.pipeline)
     if pipeline is None:
-        print(f"Error: unknown pipeline '{args.pipeline}'. Available: {', '.join(list_pipelines())}", file=sys.stderr)
+        print(
+            f"Error: unknown pipeline '{args.pipeline}'. Available: {', '.join(list_pipelines())}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Parse pipeline-specific args
@@ -45,7 +48,10 @@ def cmd_submit(args, remaining):
 
     pipeline = get_pipeline(args.pipeline)
     if pipeline is None:
-        print(f"Error: unknown pipeline '{args.pipeline}'. Available: {', '.join(list_pipelines())}", file=sys.stderr)
+        print(
+            f"Error: unknown pipeline '{args.pipeline}'. Available: {', '.join(list_pipelines())}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Parse pipeline-specific args

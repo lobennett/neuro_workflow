@@ -1,4 +1,5 @@
 """Event processing utilities — ported from discovery_wm/events/utils.py."""
+
 import numpy as np
 import pandas as pd
 
@@ -58,31 +59,96 @@ def find_nonmonotonic_cut(onsets) -> int | None:
 # --- Column selection and trial_type construction ---
 # (Ported directly from discovery_wm/events/utils.py get_cols_list / get_trial_type / add_cols)
 
-_COMMON_COLS = ["trial_id", "time_elapsed", "rt", "stim_duration", "choice_acc", "key_press", "correct_response"]
+_COMMON_COLS = [
+    "trial_id",
+    "time_elapsed",
+    "rt",
+    "stim_duration",
+    "choice_acc",
+    "key_press",
+    "correct_response",
+]
 
 _COLS_LOOKUP = {
-    "stop_signal_single_task_network__fmri": _COMMON_COLS + ["SS_delay", "SS_duration", "stop_signal_condition", "stop_acc", "go_acc", "stim"],
-    "shape_matching_single_task_network__fmri": _COMMON_COLS + ["shape_matching_condition", "probe_id", "target_id", "distractor_id"],
-    "n_back_single_task_network__fmri": _COMMON_COLS + ["n_back_condition", "delay", "probe", "letter_case"],
+    "stop_signal_single_task_network__fmri": _COMMON_COLS
+    + ["SS_delay", "SS_duration", "stop_signal_condition", "stop_acc", "go_acc", "stim"],
+    "shape_matching_single_task_network__fmri": _COMMON_COLS
+    + ["shape_matching_condition", "probe_id", "target_id", "distractor_id"],
+    "n_back_single_task_network__fmri": _COMMON_COLS
+    + ["n_back_condition", "delay", "probe", "letter_case"],
     "go_nogo_single_task_network__fmri": _COMMON_COLS + ["go_nogo_condition"],
-    "spatial_task_switching_single_task_network__fmri": _COMMON_COLS + ["task_switch", "whichQuadrant", "predictable_dimension", "number"],
-    "cued_task_switching_single_task_network__fmri": _COMMON_COLS + ["cue", "task", "task_condition", "cue_condition", "stim_number"],
-    "directed_forgetting_single_task_network__fmri": _COMMON_COLS + ["directed_forgetting_condition", "cue", "top_stim", "bottom_stim"],
+    "spatial_task_switching_single_task_network__fmri": _COMMON_COLS
+    + ["task_switch", "whichQuadrant", "predictable_dimension", "number"],
+    "cued_task_switching_single_task_network__fmri": _COMMON_COLS
+    + ["cue", "task", "task_condition", "cue_condition", "stim_number"],
+    "directed_forgetting_single_task_network__fmri": _COMMON_COLS
+    + ["directed_forgetting_condition", "cue", "top_stim", "bottom_stim"],
     "flanker_single_task_network__fmri": _COMMON_COLS + ["flanker_condition", "center_letter"],
-    "directed_forgetting_with_flanker__fmri": _COMMON_COLS + ["flanker_condition", "directed_forgetting_condition"],
-    "stop_signal_with_directed_forgetting__fmri": _COMMON_COLS + ["SS_delay", "SS_duration", "stop_signal_condition", "directed_forgetting_condition", "stop_acc"],
-    "stop_signal_with_flanker__fmri": _COMMON_COLS + ["SS_delay", "SS_duration", "stop_signal_condition", "flanker_condition", "SSD_congruent", "SSD_incongruent", "stop_acc"],
-    "cued_task_switching_with_directed_forgetting__fmri": _COMMON_COLS + ["task_condition", "cue_condition", "task_cue", "directed_forgetting_condition"],
-    "spatial_task_switching_with_cued_task_switching__fmri": _COMMON_COLS + ["task_switch", "whichQuadrant", "left_number", "right_number", "curr_cue"],
-    "flanker_with_shape_matching__fmri": _COMMON_COLS + ["flanker_condition", "shape_matching_condition", "flankers", "probe", "target", "distractor"],
-    "flanker_with_cued_task_switching__fmri": _COMMON_COLS + ["flanker_condition", "cue", "task_condition", "cue_condition", "flanking_number"],
-    "flanker_with_cued_task_switching": _COMMON_COLS + ["flanker_condition", "cue", "task_condition", "cue_condition", "flanking_number"],
-    "n_back_with_shape_matching__fmri": _COMMON_COLS + ["n_back_condition", "shape_matching_condition", "probe", "distractor", "delay"],
-    "shape_matching_with_spatial_task_switching__fmri": _COMMON_COLS + ["shape_matching_condition", "task_switch", "probe", "target", "distractor", "whichQuadrant"],
-    "shape_matching_with_spatial_task_switching": _COMMON_COLS + ["shape_matching_condition", "task_switch", "probe", "target", "distractor", "whichQuadrant"],
-    "shape_matching_with_cued_task_switching__fmri": _COMMON_COLS + ["cue", "task_condition", "cue_condition", "shape_matching_condition", "probe", "target", "distractor"],
-    "shape_matching_with_cued_task_switching": _COMMON_COLS + ["cue", "task_condition", "cue_condition", "shape_matching_condition", "probe", "target", "distractor"],
-    "n_back_with_spatial_task_switching__fmri": _COMMON_COLS + ["n_back_condition", "task", "probe", "whichQuadrant"],
+    "directed_forgetting_with_flanker__fmri": _COMMON_COLS
+    + ["flanker_condition", "directed_forgetting_condition"],
+    "stop_signal_with_directed_forgetting__fmri": _COMMON_COLS
+    + [
+        "SS_delay",
+        "SS_duration",
+        "stop_signal_condition",
+        "directed_forgetting_condition",
+        "stop_acc",
+    ],
+    "stop_signal_with_flanker__fmri": _COMMON_COLS
+    + [
+        "SS_delay",
+        "SS_duration",
+        "stop_signal_condition",
+        "flanker_condition",
+        "SSD_congruent",
+        "SSD_incongruent",
+        "stop_acc",
+    ],
+    "cued_task_switching_with_directed_forgetting__fmri": _COMMON_COLS
+    + ["task_condition", "cue_condition", "task_cue", "directed_forgetting_condition"],
+    "spatial_task_switching_with_cued_task_switching__fmri": _COMMON_COLS
+    + ["task_switch", "whichQuadrant", "left_number", "right_number", "curr_cue"],
+    "flanker_with_shape_matching__fmri": _COMMON_COLS
+    + [
+        "flanker_condition",
+        "shape_matching_condition",
+        "flankers",
+        "probe",
+        "target",
+        "distractor",
+    ],
+    "flanker_with_cued_task_switching__fmri": _COMMON_COLS
+    + ["flanker_condition", "cue", "task_condition", "cue_condition", "flanking_number"],
+    "flanker_with_cued_task_switching": _COMMON_COLS
+    + ["flanker_condition", "cue", "task_condition", "cue_condition", "flanking_number"],
+    "n_back_with_shape_matching__fmri": _COMMON_COLS
+    + ["n_back_condition", "shape_matching_condition", "probe", "distractor", "delay"],
+    "shape_matching_with_spatial_task_switching__fmri": _COMMON_COLS
+    + ["shape_matching_condition", "task_switch", "probe", "target", "distractor", "whichQuadrant"],
+    "shape_matching_with_spatial_task_switching": _COMMON_COLS
+    + ["shape_matching_condition", "task_switch", "probe", "target", "distractor", "whichQuadrant"],
+    "shape_matching_with_cued_task_switching__fmri": _COMMON_COLS
+    + [
+        "cue",
+        "task_condition",
+        "cue_condition",
+        "shape_matching_condition",
+        "probe",
+        "target",
+        "distractor",
+    ],
+    "shape_matching_with_cued_task_switching": _COMMON_COLS
+    + [
+        "cue",
+        "task_condition",
+        "cue_condition",
+        "shape_matching_condition",
+        "probe",
+        "target",
+        "distractor",
+    ],
+    "n_back_with_spatial_task_switching__fmri": _COMMON_COLS
+    + ["n_back_condition", "task", "probe", "whichQuadrant"],
 }
 
 _TRIAL_TYPE_LOOKUP = {
@@ -94,18 +160,42 @@ _TRIAL_TYPE_LOOKUP = {
     "cued_task_switching_single_task_network__fmri": ["task_condition", "cue_condition"],
     "directed_forgetting_single_task_network__fmri": ["directed_forgetting_condition"],
     "flanker_single_task_network__fmri": ["flanker_condition"],
-    "directed_forgetting_with_flanker__fmri": ["flanker_condition", "directed_forgetting_condition"],
-    "stop_signal_with_directed_forgetting__fmri": ["stop_signal_condition", "directed_forgetting_condition"],
+    "directed_forgetting_with_flanker__fmri": [
+        "flanker_condition",
+        "directed_forgetting_condition",
+    ],
+    "stop_signal_with_directed_forgetting__fmri": [
+        "stop_signal_condition",
+        "directed_forgetting_condition",
+    ],
     "stop_signal_with_flanker__fmri": ["stop_signal_condition", "flanker_condition"],
-    "cued_task_switching_with_directed_forgetting__fmri": ["directed_forgetting_condition", "task_condition", "cue_condition"],
+    "cued_task_switching_with_directed_forgetting__fmri": [
+        "directed_forgetting_condition",
+        "task_condition",
+        "cue_condition",
+    ],
     "spatial_task_switching_with_cued_task_switching__fmri": ["task_switch"],
     "flanker_with_shape_matching__fmri": ["flanker_condition", "shape_matching_condition"],
-    "flanker_with_cued_task_switching__fmri": ["cue_condition", "task_condition", "flanker_condition"],
+    "flanker_with_cued_task_switching__fmri": [
+        "cue_condition",
+        "task_condition",
+        "flanker_condition",
+    ],
     "flanker_with_cued_task_switching": ["cue_condition", "task_condition", "flanker_condition"],
     "n_back_with_shape_matching__fmri": ["n_back_condition", "shape_matching_condition", "delay"],
-    "shape_matching_with_spatial_task_switching__fmri": ["predictable_condition", "shape_matching_condition"],
-    "shape_matching_with_spatial_task_switching": ["predictable_condition", "shape_matching_condition"],
-    "shape_matching_with_cued_task_switching__fmri": ["task_condition", "cue_condition", "shape_matching_condition"],
+    "shape_matching_with_spatial_task_switching__fmri": [
+        "predictable_condition",
+        "shape_matching_condition",
+    ],
+    "shape_matching_with_spatial_task_switching": [
+        "predictable_condition",
+        "shape_matching_condition",
+    ],
+    "shape_matching_with_cued_task_switching__fmri": [
+        "task_condition",
+        "cue_condition",
+        "shape_matching_condition",
+    ],
     "n_back_with_spatial_task_switching__fmri": ["n_back_condition", "task_switch_condition"],
 }
 
@@ -129,13 +219,24 @@ def add_cols(df: pd.DataFrame, exp_id: str) -> pd.DataFrame:
         if exp_id == "cued_task_switching_single_task_network__fmri":
             df2["trial_type"] = "t" + df[trial_types[0]] + "_c" + df[trial_types[1]]
         elif exp_id == "cued_task_switching_with_directed_forgetting__fmri":
-            df2["trial_type"] = df[trial_types[0]] + "_t" + df[trial_types[1]] + "_c" + df[trial_types[2]]
+            df2["trial_type"] = (
+                df[trial_types[0]] + "_t" + df[trial_types[1]] + "_c" + df[trial_types[2]]
+            )
         elif exp_id == "shape_matching_with_cued_task_switching__fmri":
             df2["trial_type"] = "t" + df[trial_types[0]] + "_c" + df[trial_types[1]]
         elif exp_id == "flanker_with_cued_task_switching__fmri":
-            df2["trial_type"] = "c" + df[trial_types[0]] + "_t" + df[trial_types[1]] + "_" + df[trial_types[2]]
+            df2["trial_type"] = (
+                "c" + df[trial_types[0]] + "_t" + df[trial_types[1]] + "_" + df[trial_types[2]]
+            )
         elif exp_id == "n_back_with_shape_matching__fmri":
-            df2["trial_type"] = df[trial_types[0]] + "_" + df[trial_types[1]] + "_" + df[trial_types[2]].astype(str) + "back"
+            df2["trial_type"] = (
+                df[trial_types[0]]
+                + "_"
+                + df[trial_types[1]]
+                + "_"
+                + df[trial_types[2]].astype(str)
+                + "back"
+            )
             df2["trial_type"] = df2["trial_type"].str.replace(".0back", "back")
         else:
             df2["trial_type"] = df[trial_types[0]] + "_" + df[trial_types[1]]
@@ -156,6 +257,7 @@ def add_cols(df: pd.DataFrame, exp_id: str) -> pd.DataFrame:
 
 
 # --- Task-specific cleanup (trial_type relabeling) ---
+
 
 def _cleanup_stop_signal(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
@@ -192,18 +294,44 @@ def _cleanup_stop_signal_w_directed_forgetting(df: pd.DataFrame) -> pd.DataFrame
     mask = df["trial_id"] == "test_trial"
     trial_rows = df[mask]
     conditions = [
-        (trial_rows["stop_signal_condition"] == "go") & (trial_rows["directed_forgetting_condition"] == "con"),
-        (trial_rows["stop_signal_condition"] == "go") & (trial_rows["directed_forgetting_condition"] == "pos"),
-        (trial_rows["stop_signal_condition"] == "go") & (trial_rows["directed_forgetting_condition"] == "neg"),
-        (trial_rows["stop_signal_condition"] == "stop") & (trial_rows["directed_forgetting_condition"] == "con") & (trial_rows["stop_acc"] == 1),
-        (trial_rows["stop_signal_condition"] == "stop") & (trial_rows["directed_forgetting_condition"] == "pos") & (trial_rows["stop_acc"] == 1),
-        (trial_rows["stop_signal_condition"] == "stop") & (trial_rows["directed_forgetting_condition"] == "neg") & (trial_rows["stop_acc"] == 1),
-        (trial_rows["stop_signal_condition"] == "stop") & (trial_rows["directed_forgetting_condition"] == "con") & (trial_rows["stop_acc"] == 0),
-        (trial_rows["stop_signal_condition"] == "stop") & (trial_rows["directed_forgetting_condition"] == "pos") & (trial_rows["stop_acc"] == 0),
-        (trial_rows["stop_signal_condition"] == "stop") & (trial_rows["directed_forgetting_condition"] == "neg") & (trial_rows["stop_acc"] == 0),
+        (trial_rows["stop_signal_condition"] == "go")
+        & (trial_rows["directed_forgetting_condition"] == "con"),
+        (trial_rows["stop_signal_condition"] == "go")
+        & (trial_rows["directed_forgetting_condition"] == "pos"),
+        (trial_rows["stop_signal_condition"] == "go")
+        & (trial_rows["directed_forgetting_condition"] == "neg"),
+        (trial_rows["stop_signal_condition"] == "stop")
+        & (trial_rows["directed_forgetting_condition"] == "con")
+        & (trial_rows["stop_acc"] == 1),
+        (trial_rows["stop_signal_condition"] == "stop")
+        & (trial_rows["directed_forgetting_condition"] == "pos")
+        & (trial_rows["stop_acc"] == 1),
+        (trial_rows["stop_signal_condition"] == "stop")
+        & (trial_rows["directed_forgetting_condition"] == "neg")
+        & (trial_rows["stop_acc"] == 1),
+        (trial_rows["stop_signal_condition"] == "stop")
+        & (trial_rows["directed_forgetting_condition"] == "con")
+        & (trial_rows["stop_acc"] == 0),
+        (trial_rows["stop_signal_condition"] == "stop")
+        & (trial_rows["directed_forgetting_condition"] == "pos")
+        & (trial_rows["stop_acc"] == 0),
+        (trial_rows["stop_signal_condition"] == "stop")
+        & (trial_rows["directed_forgetting_condition"] == "neg")
+        & (trial_rows["stop_acc"] == 0),
         (trial_rows["trial_type"] == "memory_cue"),
     ]
-    values = ["go_con", "go_pos", "go_neg", "stop_success_con", "stop_success_pos", "stop_success_neg", "stop_failure_con", "stop_failure_pos", "stop_failure_neg", "memory_cue"]
+    values = [
+        "go_con",
+        "go_pos",
+        "go_neg",
+        "stop_success_con",
+        "stop_success_pos",
+        "stop_success_neg",
+        "stop_failure_con",
+        "stop_failure_pos",
+        "stop_failure_neg",
+        "memory_cue",
+    ]
     result = np.select(conditions, values, default="unknown")
     df.loc[mask, "trial_type"] = result
     fixation_mask = df["trial_id"] == "test_fixation"
@@ -215,14 +343,31 @@ def _cleanup_stop_signal_w_flanker(df: pd.DataFrame) -> pd.DataFrame:
     mask = df["trial_id"] == "test_trial"
     trial_rows = df[mask]
     conditions = [
-        (trial_rows["stop_signal_condition"] == "go") & (trial_rows["flanker_condition"] == "congruent"),
-        (trial_rows["stop_signal_condition"] == "go") & (trial_rows["flanker_condition"] == "incongruent"),
-        (trial_rows["stop_signal_condition"] == "stop") & (trial_rows["flanker_condition"] == "congruent") & (trial_rows["stop_acc"] == 1),
-        (trial_rows["stop_signal_condition"] == "stop") & (trial_rows["flanker_condition"] == "incongruent") & (trial_rows["stop_acc"] == 1),
-        (trial_rows["stop_signal_condition"] == "stop") & (trial_rows["flanker_condition"] == "congruent") & (trial_rows["stop_acc"] == 0),
-        (trial_rows["stop_signal_condition"] == "stop") & (trial_rows["flanker_condition"] == "incongruent") & (trial_rows["stop_acc"] == 0),
+        (trial_rows["stop_signal_condition"] == "go")
+        & (trial_rows["flanker_condition"] == "congruent"),
+        (trial_rows["stop_signal_condition"] == "go")
+        & (trial_rows["flanker_condition"] == "incongruent"),
+        (trial_rows["stop_signal_condition"] == "stop")
+        & (trial_rows["flanker_condition"] == "congruent")
+        & (trial_rows["stop_acc"] == 1),
+        (trial_rows["stop_signal_condition"] == "stop")
+        & (trial_rows["flanker_condition"] == "incongruent")
+        & (trial_rows["stop_acc"] == 1),
+        (trial_rows["stop_signal_condition"] == "stop")
+        & (trial_rows["flanker_condition"] == "congruent")
+        & (trial_rows["stop_acc"] == 0),
+        (trial_rows["stop_signal_condition"] == "stop")
+        & (trial_rows["flanker_condition"] == "incongruent")
+        & (trial_rows["stop_acc"] == 0),
     ]
-    values = ["go_congruent", "go_incongruent", "stop_success_congruent", "stop_success_incongruent", "stop_failure_congruent", "stop_failure_incongruent"]
+    values = [
+        "go_congruent",
+        "go_incongruent",
+        "stop_success_congruent",
+        "stop_success_incongruent",
+        "stop_failure_congruent",
+        "stop_failure_incongruent",
+    ]
     result = np.select(conditions, values, default="unknown")
     df.loc[mask, "trial_type"] = result
     fixation_mask = df["trial_id"] == "test_fixation"

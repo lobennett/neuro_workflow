@@ -407,9 +407,7 @@ def _write_cifti_dtseries(path: Path, n_trs: int, n_grayordinates: int) -> Path:
     explicitly.
     """
     rng = np.random.default_rng(0)
-    data = rng.normal(
-        0.0, 1.0, size=(1, 1, 1, 1, n_trs, n_grayordinates)
-    ).astype(np.float32)
+    data = rng.normal(0.0, 1.0, size=(1, 1, 1, 1, n_trs, n_grayordinates)).astype(np.float32)
     img = nib.Nifti2Image(data, affine=np.eye(4))
     nib.save(img, str(path))
     return path
@@ -494,23 +492,26 @@ def write_fmriprep_bold(
         written["mni_brain_mask"] = _mask(f"{prefix}_{tag}_desc-brain_mask.nii.gz")
     elif space == "T1w":
         written["t1w_data"] = _vol(f"{prefix}_space-T1w_desc-preproc_bold.nii.gz")
-        written["t1w_brain_mask"] = _mask(
-            f"{prefix}_space-T1w_desc-brain_mask.nii.gz"
-        )
+        written["t1w_brain_mask"] = _mask(f"{prefix}_space-T1w_desc-brain_mask.nii.gz")
     elif space in ("surface", "fsnative", "fsaverage6"):
         surf_space = "fsnative" if space in ("surface", "fsnative") else "fsaverage6"
         written["left_surface"] = _write_surface_gifti(
             func_dir / f"{prefix}_hemi-L_space-{surf_space}_bold.func.gii",
-            n_trs, n_vertices, seed,
+            n_trs,
+            n_vertices,
+            seed,
         )
         written["right_surface"] = _write_surface_gifti(
             func_dir / f"{prefix}_hemi-R_space-{surf_space}_bold.func.gii",
-            n_trs, n_vertices, seed + 1,
+            n_trs,
+            n_vertices,
+            seed + 1,
         )
     elif space == "fsLR":
         written["cifti_bold"] = _write_cifti_dtseries(
             func_dir / f"{prefix}_space-fsLR_den-91k_bold.dtseries.nii",
-            n_trs, n_grayordinates,
+            n_trs,
+            n_grayordinates,
         )
     else:
         raise ValueError(
@@ -586,9 +587,7 @@ def make_fmriprep_run(
     if motion not in ("clean", "high"):
         raise ValueError(f"motion must be 'clean' or 'high', got {motion!r}")
 
-    func_dir = (
-        Path(fmriprep_dir) / f"sub-{subject}" / f"ses-{session}" / "func"
-    )
+    func_dir = Path(fmriprep_dir) / f"sub-{subject}" / f"ses-{session}" / "func"
     prefix = f"sub-{subject}_ses-{session}_task-{task}_run-{run}"
 
     if motion == "high":

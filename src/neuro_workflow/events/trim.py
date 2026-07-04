@@ -1,4 +1,5 @@
 """Trim NIfTIs to match behavioral cutoff."""
+
 import json
 import logging
 import math

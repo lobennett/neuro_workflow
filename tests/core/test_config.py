@@ -56,6 +56,7 @@ def test_get_dataset_merges_defaults(tmp_path, monkeypatch):
 def test_get_dataset_raises_on_missing(tmp_path, monkeypatch):
     monkeypatch.setattr("neuro_workflow.core.config.CONFIG_FILE", tmp_path / "datasets.json")
     from neuro_workflow.core.config import DatasetNotFoundError
+
     try:
         get_dataset("nonexistent")
         assert False, "Should have raised DatasetNotFoundError"

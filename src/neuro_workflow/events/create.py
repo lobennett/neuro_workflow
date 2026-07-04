@@ -1,4 +1,5 @@
 """Generate BIDS _events.tsv files from behavioral CSVs."""
+
 import logging
 import re
 from pathlib import Path
@@ -21,27 +22,78 @@ log = logging.getLogger(__name__)
 # --- Rename cells (trial_id label standardization) ---
 
 _RENAME_CELLS_LOOKUP = {
-    "stop_signal_single_task_network__fmri": {"fixation": "test_fixation", "practice-no-stop-feedback": "break"},
-    "shape_matching_single_task_network__fmri": {"fixation": "test_fixation", "mask": "test_mask", "practice-no-stop-feedback": "break"},
-    "n_back_single_task_network__fmri": {"practice-no-stop-feedback": "break", "fixation": "test_fixation"},
-    "go_nogo_single_task_network__fmri": {"update_correct_response": "test_fixation", "feedback_block": "break"},
-    "spatial_task_switching_single_task_network__fmri": {"feedback_block": "break", "practice_cue": "blank_screen"},
+    "stop_signal_single_task_network__fmri": {
+        "fixation": "test_fixation",
+        "practice-no-stop-feedback": "break",
+    },
+    "shape_matching_single_task_network__fmri": {
+        "fixation": "test_fixation",
+        "mask": "test_mask",
+        "practice-no-stop-feedback": "break",
+    },
+    "n_back_single_task_network__fmri": {
+        "practice-no-stop-feedback": "break",
+        "fixation": "test_fixation",
+    },
+    "go_nogo_single_task_network__fmri": {
+        "update_correct_response": "test_fixation",
+        "feedback_block": "break",
+    },
+    "spatial_task_switching_single_task_network__fmri": {
+        "feedback_block": "break",
+        "practice_cue": "blank_screen",
+    },
     "cued_task_switching_single_task_network__fmri": {"practice-stop-feedback": "break"},
-    "directed_forgetting_single_task_network__fmri": {"fixation": "test_fixation", "stim": "test_stim", "cue": "test_cue", "test_feedback": "break"},
+    "directed_forgetting_single_task_network__fmri": {
+        "fixation": "test_fixation",
+        "stim": "test_stim",
+        "cue": "test_cue",
+        "test_feedback": "break",
+    },
     "flanker_single_task_network__fmri": {"practice-no-stop-feedback": "break"},
-    "directed_forgetting_with_flanker__fmri": {"test_start_fixation": "test_fixation", "test_feedback": "break"},
-    "stop_signal_with_directed_forgetting__fmri": {"ITI_fixation": "test_fixation", "stim": "test_stim", "cue": "test_cue", "fixation": "test_fixation", "feedback_block": "break"},
+    "directed_forgetting_with_flanker__fmri": {
+        "test_start_fixation": "test_fixation",
+        "test_feedback": "break",
+    },
+    "stop_signal_with_directed_forgetting__fmri": {
+        "ITI_fixation": "test_fixation",
+        "stim": "test_stim",
+        "cue": "test_cue",
+        "fixation": "test_fixation",
+        "feedback_block": "break",
+    },
     "stop_signal_with_flanker__fmri": {"feedback_block": "break", "fixation": "test_fixation"},
-    "cued_task_switching_with_directed_forgetting__fmri": {"test_start_fixation": "test_fixation", "test_feedback": "break"},
-    "spatial_task_switching_with_cued_task_switching__fmri": {"test_cue_block": "test_cue", "fixation": "test_fixation", "feedback_block": "break"},
+    "cued_task_switching_with_directed_forgetting__fmri": {
+        "test_start_fixation": "test_fixation",
+        "test_feedback": "break",
+    },
+    "spatial_task_switching_with_cued_task_switching__fmri": {
+        "test_cue_block": "test_cue",
+        "fixation": "test_fixation",
+        "feedback_block": "break",
+    },
     "flanker_with_shape_matching__fmri": {"feedback_block": "break"},
     "flanker_with_cued_task_switching__fmri": {"practice-stop-feedback": "break"},
     "flanker_with_cued_task_switching": {"practice-stop-feedback": "break"},
     "n_back_with_shape_matching__fmri": {"feedback_block": "break", "fixation": "test_fixation"},
-    "shape_matching_with_spatial_task_switching__fmri": {"feedback_block": "break", "fixation": "test_fixation"},
-    "shape_matching_with_cued_task_switching__fmri": {"fixation": "test_fixation", "cue": "test_cue", "feedback_block": "break"},
-    "shape_matching_with_cued_task_switching": {"fixation": "test_fixation", "cue": "test_cue", "feedback_block": "break"},
-    "n_back_with_spatial_task_switching__fmri": {"feedback_block": "break", "fixation": "test_fixation"},
+    "shape_matching_with_spatial_task_switching__fmri": {
+        "feedback_block": "break",
+        "fixation": "test_fixation",
+    },
+    "shape_matching_with_cued_task_switching__fmri": {
+        "fixation": "test_fixation",
+        "cue": "test_cue",
+        "feedback_block": "break",
+    },
+    "shape_matching_with_cued_task_switching": {
+        "fixation": "test_fixation",
+        "cue": "test_cue",
+        "feedback_block": "break",
+    },
+    "n_back_with_spatial_task_switching__fmri": {
+        "feedback_block": "break",
+        "fixation": "test_fixation",
+    },
 }
 
 
@@ -63,7 +115,14 @@ DUMMY_OFFSET_S = N_DUMMY * TR_SECONDS  # 10.43s (N_DUMMY/TR_SECONDS from core.ac
 
 def _set_default_event_cols(df: pd.DataFrame) -> pd.DataFrame:
     df = df[df.time_elapsed > 0]
-    df = df.rename(columns={"time_elapsed": "onset", "choice_acc": "acc", "stim_duration": "duration", "rt": "response_time"})
+    df = df.rename(
+        columns={
+            "time_elapsed": "onset",
+            "choice_acc": "acc",
+            "stim_duration": "duration",
+            "rt": "response_time",
+        }
+    )
     df["onset"] = df["onset"] / 1000
     df["duration"] = df["duration"] / 1000
     df["response_time"] = df["response_time"] / 1000
@@ -72,7 +131,15 @@ def _set_default_event_cols(df: pd.DataFrame) -> pd.DataFrame:
     # Adjust onsets for trimmed dummy volumes (7 * 1.49s = 10.43s)
     df["onset"] = df["onset"] - DUMMY_OFFSET_S
     df = df[df["onset"] >= 0]
-    first_columns = ["onset", "duration", "response_time", "trial_id", "trial_type", "key_press", "correct_response"]
+    first_columns = [
+        "onset",
+        "duration",
+        "response_time",
+        "trial_id",
+        "trial_type",
+        "key_press",
+        "correct_response",
+    ]
     new_column_order = first_columns + [col for col in df.columns if col not in first_columns]
     df = df[new_column_order]
     return df
@@ -85,15 +152,17 @@ def _flagged_feedback(text_content: str) -> bool:
 
 def create_empty_events_df() -> pd.DataFrame:
     """Create empty events DataFrame with required BIDS columns."""
-    return pd.DataFrame(columns=[
-        "onset",
-        "duration",
-        "trial_id",
-        "trial_type",
-        "response_time",
-        "key_press",
-        "correct_response",
-    ])
+    return pd.DataFrame(
+        columns=[
+            "onset",
+            "duration",
+            "trial_id",
+            "trial_type",
+            "response_time",
+            "key_press",
+            "correct_response",
+        ]
+    )
 
 
 def _get_rows_with_feedback(df: pd.DataFrame, original_df: pd.DataFrame):
@@ -134,8 +203,12 @@ def _build_events_df(filename: Path, short_name: str) -> pd.DataFrame:
 
     # Fix spatialTS "na" trial_type
     if "spatial_task_switching" in exp_id:
-        df.loc[(df["trial_id"] == "test_trial") & (df["trial_type"] == "na"), "trial_type"] = "tn/a_cn/a"
-        df.loc[(df["trial_id"] == "test_trial") & (df["trial_type"] == "tn/a_cn/a"), "task_switch"] = "tn/a_cn/a"
+        df.loc[(df["trial_id"] == "test_trial") & (df["trial_type"] == "na"), "trial_type"] = (
+            "tn/a_cn/a"
+        )
+        df.loc[
+            (df["trial_id"] == "test_trial") & (df["trial_type"] == "tn/a_cn/a"), "task_switch"
+        ] = "tn/a_cn/a"
 
     # Detect performance feedback blocks (only for rows still in df after filtering)
     feedback_block_rows, indices_to_change = _get_rows_with_feedback(df, original_df)
@@ -174,7 +247,11 @@ def create_events_df(filename: Path, short_name: str) -> pd.DataFrame:
         log.warning(
             "Non-monotonic onset in %s at row %d — truncating %d trailing rows "
             "(%d/%d test trials dropped)",
-            short_name, cut, len(df) - cut, n_dropped, n_total,
+            short_name,
+            cut,
+            len(df) - cut,
+            n_dropped,
+            n_total,
         )
         df = df.iloc[:cut].reset_index(drop=True)
     return df
@@ -216,9 +293,7 @@ def discover_nifti_tasks(func_dir: Path) -> set[str]:
     return tasks
 
 
-def group_csvs_by_task(
-    beh_dir: Path, allowed_tasks: set[str]
-) -> list[tuple[str, int, Path]]:
+def group_csvs_by_task(beh_dir: Path, allowed_tasks: set[str]) -> list[tuple[str, int, Path]]:
     """Group behavioral CSVs by ``(task, run)``, keeping only ``allowed_tasks``.
 
     Run number is read from a ``run-<n>`` token in the filename, defaulting to 1.
@@ -280,7 +355,8 @@ def run_create_events(
                 except Exception as e:
                     log.warning(
                         "Failed to process %s: %s. Writing empty events.tsv.",
-                        csv_file, e,
+                        csv_file,
+                        e,
                     )
                     df = create_empty_events_df()
 

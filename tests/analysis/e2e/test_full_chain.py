@@ -116,13 +116,16 @@ def _full_spec() -> FlywheelCohortSpec:
                             FlywheelAcqSpec(
                                 label="task-flanker_bold",
                                 timestamp="2021-01-01T09:10:00+00:00",
-                                echoes=3, n_trs=N_TRS,
-                                outcome="keep", plant_contrast=True,
+                                echoes=3,
+                                n_trs=N_TRS,
+                                outcome="keep",
+                                plant_contrast=True,
                             ),
                             FlywheelAcqSpec(
                                 label="task-stopSignal_bold",
                                 timestamp="2021-01-01T09:20:00+00:00",
-                                echoes=3, n_trs=N_TRS,
+                                echoes=3,
+                                n_trs=N_TRS,
                                 outcome="exclude:behavioral",
                             ),
                         ],
@@ -134,7 +137,8 @@ def _full_spec() -> FlywheelCohortSpec:
                             FlywheelAcqSpec(
                                 label="task-flanker_bold",
                                 timestamp="2021-02-01T09:10:00+00:00",
-                                echoes=3, n_trs=N_TRS,
+                                echoes=3,
+                                n_trs=N_TRS,
                                 outcome="exclude:motion",
                             ),
                         ],
@@ -151,13 +155,15 @@ def _full_spec() -> FlywheelCohortSpec:
                             FlywheelAcqSpec(
                                 label="task-goNogo_bold",
                                 timestamp="2021-03-01T09:10:00+00:00",
-                                echoes=3, n_trs=N_TRS,
+                                echoes=3,
+                                n_trs=N_TRS,
                                 outcome="exclude:collection",
                             ),
                             FlywheelAcqSpec(
                                 label="task-flanker_bold",
                                 timestamp="2021-03-01T09:20:00+00:00",
-                                echoes=3, n_trs=N_TRS,
+                                echoes=3,
+                                n_trs=N_TRS,
                                 outcome="keep",
                             ),
                         ],
@@ -173,7 +179,10 @@ def chain(tmp_path, patch_flywheel):
     """Drive the WHOLE chain once; return (root, result)."""
     root = tmp_path / "chain"
     result = simulate_full_pipeline(
-        _full_spec(), root, dataset="sim", install_flywheel=patch_flywheel,
+        _full_spec(),
+        root,
+        dataset="sim",
+        install_flywheel=patch_flywheel,
     )
     return root, result
 
@@ -197,9 +206,7 @@ class TestBidsProduced:
         bids_dir = result.manifest["bids_dir"]
         assert result.manifest["scans"], "no scans produced"
         for scan in result.manifest["scans"]:
-            func = (
-                f"{bids_dir}/{scan['subject']}/{scan['session']}/func"
-            )
+            func = f"{bids_dir}/{scan['subject']}/{scan['session']}/func"
             from pathlib import Path
 
             bolds = list(
@@ -235,9 +242,7 @@ class TestEventsValidForLev1:
 
         root, result = chain
         bids_dir = result.manifest["bids_dir"]
-        flanker_scans = [
-            s for s in result.manifest["scans"] if s["task"] == "flanker"
-        ]
+        flanker_scans = [s for s in result.manifest["scans"] if s["task"] == "flanker"]
         assert flanker_scans
         for scan in flanker_scans:
             ev_path = Path(
@@ -285,9 +290,10 @@ class TestExactExclusionSet:
                 expected.add((*key, "motion"))
 
         sources = {src for *_r, src in expected}
-        assert sources == {"behavioral-qc", "motion"}, (
-            f"plant should contain behavioral + motion; got {sources}"
-        )
+        assert sources == {
+            "behavioral-qc",
+            "motion",
+        }, f"plant should contain behavioral + motion; got {sources}"
 
         compiled_set = result.exclusions.excluded_keys_with_source()
         assert compiled_set == expected, (
@@ -300,10 +306,7 @@ class TestExactExclusionSet:
         """The exclude:collection scan is covered by a rendered .bidsignore glob
         and is NOT a compiled QC entry."""
         _, result = chain
-        coll = [
-            s for s in result.manifest["scans"]
-            if s["outcome"] == "exclude:collection"
-        ]
+        coll = [s for s in result.manifest["scans"] if s["outcome"] == "exclude:collection"]
         assert len(coll) == 1
         scan = coll[0]
         assert result.exclusions.bidsignore is not None
@@ -312,9 +315,9 @@ class TestExactExclusionSet:
             f"{scan['subject']}_{scan['session']}_task-{scan['task']}_{scan['run']}_"
         )
         lines = result.exclusions.bidsignore.splitlines()
-        assert any(run_prefix in ln for ln in lines), (
-            f"collection glob for {run_prefix!r} not in rendered .bidsignore"
-        )
+        assert any(
+            run_prefix in ln for ln in lines
+        ), f"collection glob for {run_prefix!r} not in rendered .bidsignore"
         key = (scan["subject"], scan["session"], f"task-{scan['task']}", scan["run"])
         assert key not in result.exclusions.excluded_keys()
 
@@ -340,16 +343,17 @@ class TestLev1Recovery:
 
         finder = FileFinder(result.manifest["bids_dir"], result.manifest["fmriprep_dir"])
         files = finder.get_files(
-            subject, TASK,
+            subject,
+            TASK,
             required_files=FileFinder.get_required_files_for_space("MNI"),
         )
         assert files, f"FileFinder found no complete runs for {subject}/{TASK}"
         # The keep scan's own (session, run).
         session = keep["session"]
         run = keep["run"]
-        assert session in files and run in files[session], (
-            f"keep scan {session}/{run} not discovered; got {files}"
-        )
+        assert (
+            session in files and run in files[session]
+        ), f"keep scan {session}/{run} not discovered; got {files}"
         run_files = files[session][run]
 
         tr = get_task_parameters(TASK)["tr"]
@@ -363,13 +367,17 @@ class TestLev1Recovery:
         # The driver planted the contrast into this BOLD already. Refit + recover.
         reloaded = nib.load(str(run_files["mni_data"]))
         fitted = fit_run_glm(
-            reloaded, design, analysis_type="task", tr=tr,
+            reloaded,
+            design,
+            analysis_type="task",
+            tr=tr,
             mask_img=make_mask(reloaded),
         )
         formula = get_task_contrasts(TASK)["incongruent-congruent"]
         assert formula == "incongruent - congruent"
         saved = compute_run_contrasts(
-            fitted_glm=fitted, task_name=TASK,
+            fitted_glm=fitted,
+            task_name=TASK,
             output_dir=root / "lev1_out",
             base_filename=f"{subject}_{session}_task-{TASK}_{run}",
             contrasts={"incongruent-congruent": formula},
@@ -377,9 +385,9 @@ class TestLev1Recovery:
         effect_path = saved["incongruent-congruent"]["effect_size"]
         recovered = float(np.mean(nib.load(str(effect_path)).get_fdata()))
         assert recovered > 0, f"expected positive contrast, got {recovered}"
-        assert recovered == pytest.approx(PLANTED_EFFECT, abs=1.0), (
-            f"recovered {recovered:.3f} not within 1.0 of planted {PLANTED_EFFECT}"
-        )
+        assert recovered == pytest.approx(
+            PLANTED_EFFECT, abs=1.0
+        ), f"recovered {recovered:.3f} not within 1.0 of planted {PLANTED_EFFECT}"
         # The driver also reports the recovered value in its manifest.
         assert result.recovered_contrast == pytest.approx(recovered, abs=1e-6)
 
@@ -392,9 +400,7 @@ class TestExcludedHonored:
         """load_exclusions over the compiled file + the runner's per-run key:
         excluded scans hit the set; keep scans do not."""
         _, result = chain
-        compiled_file = (
-            result.exclusions.exclusions_dir / "sim" / "compiled_exclusions.json"
-        )
+        compiled_file = result.exclusions.exclusions_dir / "sim" / "compiled_exclusions.json"
         keys = load_exclusions(compiled_file)
 
         def runner_key(scan):
@@ -404,13 +410,13 @@ class TestExcludedHonored:
         for scan in _excluded_scans(result.manifest):
             if scan["outcome"] == "exclude:collection":
                 continue  # collection is a static glob layer, not a QC key
-            assert runner_key(scan) in keys, (
-                f"{scan['outcome']} scan {runner_key(scan)!r} not honored by lev1"
-            )
+            assert (
+                runner_key(scan) in keys
+            ), f"{scan['outcome']} scan {runner_key(scan)!r} not honored by lev1"
         for scan in _keep_scans(result.manifest):
-            assert runner_key(scan) not in keys, (
-                f"keep scan {runner_key(scan)!r} wrongly in lev1 exclusion set"
-            )
+            assert (
+                runner_key(scan) not in keys
+            ), f"keep scan {runner_key(scan)!r} wrongly in lev1 exclusion set"
 
 
 # --------------------------------------------------------------------------- #
@@ -419,9 +425,7 @@ class TestExcludedHonored:
 # --------------------------------------------------------------------------- #
 def test_compiled_artifacts_are_hermetic(chain):
     _, result = chain
-    compiled_json = (
-        result.exclusions.exclusions_dir / "sim" / "compiled_exclusions.json"
-    )
+    compiled_json = result.exclusions.exclusions_dir / "sim" / "compiled_exclusions.json"
     assert compiled_json.is_file()
     on_disk = json.loads(compiled_json.read_text())
     assert {

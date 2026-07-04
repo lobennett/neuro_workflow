@@ -17,8 +17,8 @@ def _write_gifti(path: Path, data: np.ndarray) -> None:
     """Write a 1D array to a single-darray GIFTI file."""
     darray = nib.gifti.GiftiDataArray(
         data=data.astype(np.float32),
-        intent='NIFTI_INTENT_NONE',
-        datatype='NIFTI_TYPE_FLOAT32',
+        intent="NIFTI_INTENT_NONE",
+        datatype="NIFTI_TYPE_FLOAT32",
     )
     nib.save(nib.GiftiImage(darrays=[darray]), str(path))
 
@@ -33,8 +33,8 @@ class TestComputeSurfaceFixedEffects:
 
         eff_files, var_files = [], []
         for i, (e, v) in enumerate(zip(effects, variances)):
-            ep = tmp_path / f'eff_{i}.func.gii'
-            vp = tmp_path / f'var_{i}.func.gii'
+            ep = tmp_path / f"eff_{i}.func.gii"
+            vp = tmp_path / f"var_{i}.func.gii"
             _write_gifti(ep, e)
             _write_gifti(vp, v)
             eff_files.append(ep)
@@ -53,8 +53,8 @@ class TestComputeSurfaceFixedEffects:
 
         eff_files, var_files = [], []
         for i, (e, v) in enumerate(zip(effects, variances)):
-            ep = tmp_path / f'eff_{i}.func.gii'
-            vp = tmp_path / f'var_{i}.func.gii'
+            ep = tmp_path / f"eff_{i}.func.gii"
+            vp = tmp_path / f"var_{i}.func.gii"
             _write_gifti(ep, e)
             _write_gifti(vp, v)
             eff_files.append(ep)
@@ -82,8 +82,8 @@ class TestComputeSurfaceFixedEffects:
 
         eff_files, var_files = [], []
         for i, (e, v) in enumerate(zip(effects, variances)):
-            ep = tmp_path / f'eff_{i}.func.gii'
-            vp = tmp_path / f'var_{i}.func.gii'
+            ep = tmp_path / f"eff_{i}.func.gii"
+            vp = tmp_path / f"var_{i}.func.gii"
             _write_gifti(ep, e)
             _write_gifti(vp, v)
             eff_files.append(ep)
@@ -104,16 +104,14 @@ class TestComputeSurfaceFixedEffects:
 
         eff_files, var_files = [], []
         for i, (e, v) in enumerate(zip(effects, variances)):
-            ep = tmp_path / f'eff_{i}.func.gii'
-            vp = tmp_path / f'var_{i}.func.gii'
+            ep = tmp_path / f"eff_{i}.func.gii"
+            vp = tmp_path / f"var_{i}.func.gii"
             _write_gifti(ep, e)
             _write_gifti(vp, v)
             eff_files.append(ep)
             var_files.append(vp)
 
-        fe, fv, fs = compute_surface_fixed_effects(
-            eff_files, var_files, precision_weighted=True
-        )
+        fe, fv, fs = compute_surface_fixed_effects(eff_files, var_files, precision_weighted=True)
 
         # Vertex 1: only run 2 contributes (weight=1/1=1), so effect=6.0
         np.testing.assert_allclose(fe.data[1], 6.0)
@@ -135,8 +133,8 @@ class TestComputeSurfaceFixedEffects:
 
         eff_files, var_files = [], []
         for i, (e, v) in enumerate(zip(effects, variances)):
-            ep = tmp_path / f'eff_{i}.func.gii'
-            vp = tmp_path / f'var_{i}.func.gii'
+            ep = tmp_path / f"eff_{i}.func.gii"
+            vp = tmp_path / f"var_{i}.func.gii"
             _write_gifti(ep, e)
             _write_gifti(vp, v)
             eff_files.append(ep)
@@ -146,8 +144,14 @@ class TestComputeSurfaceFixedEffects:
 
         # Volume reference: nilearn on tiny Niftis built from the same numbers.
         affine = np.eye(4)
-        eff_imgs = [nib_nifti.Nifti1Image(e.reshape(n_vox, 1, 1).astype(np.float64), affine) for e in effects]
-        var_imgs = [nib_nifti.Nifti1Image(v.reshape(n_vox, 1, 1).astype(np.float64), affine) for v in variances]
+        eff_imgs = [
+            nib_nifti.Nifti1Image(e.reshape(n_vox, 1, 1).astype(np.float64), affine)
+            for e in effects
+        ]
+        var_imgs = [
+            nib_nifti.Nifti1Image(v.reshape(n_vox, 1, 1).astype(np.float64), affine)
+            for v in variances
+        ]
         mask = nib_nifti.Nifti1Image(np.ones((n_vox, 1, 1), dtype=np.int8), affine)
         z_vol = compute_fixed_effects(eff_imgs, var_imgs, mask=mask)[3].get_fdata().ravel()
 
