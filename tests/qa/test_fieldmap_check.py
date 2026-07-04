@@ -1,6 +1,5 @@
 import json
 from argparse import Namespace
-from pathlib import Path
 
 from neuro_workflow.qa.fieldmap_check import (
     FieldmapCheckQa,

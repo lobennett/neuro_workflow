@@ -18,10 +18,9 @@ from __future__ import annotations
 import glob
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple
 
-import numpy as np
 import nibabel as nib
+import numpy as np
 
 from neuro_workflow.analysis.lev1.processing.surface_data import load_surface_stat_map
 
@@ -29,13 +28,13 @@ HEMIS = ("L", "R")
 _SUBJECT_RE = re.compile(r"(sub-[A-Za-z0-9]+)_")
 
 
-def discover_surface_inputs(level1_dirs: List[Path], contrast_name: str) -> Dict[str, List[str]]:
+def discover_surface_inputs(level1_dirs: list[Path], contrast_name: str) -> dict[str, list[str]]:
     """Return ``{hemi: sorted[effect .func.gii files]}`` for a contrast.
 
     Drops ``_desc-belowMinRuns_`` files (subjects with too few retained runs),
     exactly like the volumetric :func:`.run.discover_input_files`.
     """
-    out: Dict[str, List[str]] = {h: [] for h in HEMIS}
+    out: dict[str, list[str]] = {h: [] for h in HEMIS}
     for level1_dir in level1_dirs:
         for h in HEMIS:
             pattern = str(
@@ -59,7 +58,7 @@ def _subject_of(path: str) -> str:
     return m.group(1)
 
 
-def load_surface_stack(files: List[str]) -> np.ndarray:
+def load_surface_stack(files: list[str]) -> np.ndarray:
     """Stack per-subject 1-D vertex maps into a ``(n_subjects, n_vertices)`` array."""
     return np.stack([np.asarray(load_surface_stat_map(f), dtype=float) for f in files], axis=0)
 
@@ -77,7 +76,7 @@ def sign_flip_permutation_test(
     data: np.ndarray,
     n_perm: int = 5000,
     seed: int = 0,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """One-sample sign-flip permutation test with whole-array max-statistic FWE.
 
     Parameters
@@ -134,7 +133,7 @@ def _save_gifti(vec: np.ndarray, path: Path) -> None:
 
 def run_surface_level2_analysis(
     contrast_name: str,
-    level1_dirs: List[Path],
+    level1_dirs: list[Path],
     output_dir: Path,
     n_perm: int = 5000,
     seed: int = 0,

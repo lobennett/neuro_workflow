@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import List, Union
 
 from nilearn.image import load_img
 from nilearn.masking import intersect_masks
@@ -14,7 +13,7 @@ class MaskProcessor:
     """Process and combine brain masks."""
 
     @staticmethod
-    def combine_masks_with_threshold(mask_files: List[Path], threshold: float = 1.0):
+    def combine_masks_with_threshold(mask_files: list[Path], threshold: float = 1.0):
         """Combine masks using specified threshold.
 
         Args:
@@ -37,7 +36,7 @@ class MaskProcessor:
         return intersect_masks(mask_files, threshold=threshold, connected=True)
 
     @staticmethod
-    def extract_mask_files(files: dict, analysis_space: str = "MNI") -> List[Path]:
+    def extract_mask_files(files: dict, analysis_space: str = "MNI") -> list[Path]:
         """Extract mask files from files dictionary for specified space.
 
         Args:
@@ -67,7 +66,7 @@ class MaskProcessor:
         files: dict,
         analysis_space: str = "MNI",
         threshold: float = 1.0,
-        output_path: Union[Path, str, None] = None,
+        output_path: Path | str | None = None,
     ):
         """Create and optionally save combined mask.
 
@@ -100,7 +99,7 @@ class MaskProcessor:
         return combined_mask
 
     @staticmethod
-    def validate_masks(mask_files: List[Path]) -> bool:
+    def validate_masks(mask_files: list[Path]) -> bool:
         """Validate that mask files exist and can be loaded.
 
         Args:

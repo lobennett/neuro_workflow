@@ -10,7 +10,6 @@ from subprocess import CompletedProcess
 from unittest.mock import patch
 
 from neuro_workflow.qa.reliability_movies import (
-    MovieResult,
     render_reliability_movies,
 )
 

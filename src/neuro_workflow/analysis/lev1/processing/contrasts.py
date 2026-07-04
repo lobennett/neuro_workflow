@@ -3,9 +3,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
-import numpy as np
 from nilearn.glm.first_level import FirstLevelModel
 
 from neuro_workflow.analysis.lev1.processing.imaging import cast_nifti_to_float32
@@ -15,9 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 def filter_contrasts_for_dropped_columns(
-    contrasts: Dict[str, str],
-    dropped_columns: List[str],
-) -> Tuple[Dict[str, str], Dict[str, str]]:
+    contrasts: dict[str, str],
+    dropped_columns: list[str],
+) -> tuple[dict[str, str], dict[str, str]]:
     """Filter contrasts to exclude those referencing dropped columns.
 
     When zero-variance columns are dropped from the design matrix,
@@ -85,9 +83,9 @@ def compute_run_contrasts(
     task_name: str,
     output_dir: Path,
     base_filename: str,
-    contrasts: Optional[Dict[str, str]] = None,
-    hemisphere: Optional[str] = None,
-) -> Dict[str, Dict[str, Path]]:
+    contrasts: dict[str, str] | None = None,
+    hemisphere: str | None = None,
+) -> dict[str, dict[str, Path]]:
     """Compute and save all contrasts for a run.
 
     Args:

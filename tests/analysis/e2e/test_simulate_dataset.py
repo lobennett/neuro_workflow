@@ -59,7 +59,6 @@ pytest.importorskip("nilearn")
 import numpy as np  # noqa: E402
 
 from neuro_workflow.analysis.core.utils import (  # noqa: E402
-    create_exclusion_key,
     load_exclusions,
     normalize_subject_id,
 )

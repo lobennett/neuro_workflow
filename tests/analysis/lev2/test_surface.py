@@ -2,14 +2,13 @@
 
 from pathlib import Path
 
-import numpy as np
 import nibabel as nib
-import pytest
+import numpy as np
 
 from neuro_workflow.analysis.lev2.surface import (
     discover_surface_inputs,
-    sign_flip_permutation_test,
     run_surface_level2_analysis,
+    sign_flip_permutation_test,
 )
 
 CONTRAST = "task-flanker_contrast-cong"
@@ -36,7 +35,7 @@ def _make_lev1(tmp_path, subjects, n_vert=6, signal_vertex=0, signal=3.0, seed=1
     A strong positive group effect is planted at signal_vertex."""
     rng = np.random.RandomState(seed)
     lev1 = tmp_path / "lev1"
-    for i, sub in enumerate(subjects):
+    for _i, sub in enumerate(subjects):
         for hemi in ("L", "R"):
             vec = rng.randn(n_vert) * 0.3
             vec[signal_vertex] += signal

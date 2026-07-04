@@ -1,4 +1,3 @@
-from pathlib import Path
 from neuro_workflow.core.slurm import count_subjects, load_subjects, render_template
 
 

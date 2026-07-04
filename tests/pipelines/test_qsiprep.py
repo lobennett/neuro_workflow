@@ -1,6 +1,4 @@
-import os
 from argparse import Namespace
-from pathlib import Path
 from unittest.mock import patch
 
 from neuro_workflow.pipelines.qsiprep import QsiprepPipeline

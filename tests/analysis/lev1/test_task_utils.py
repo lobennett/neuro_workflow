@@ -53,5 +53,5 @@ class TestGetExpectedSessions:
 
     def test_unknown_task_raises(self):
         """Test that unknown task names raise an error."""
-        with pytest.raises(Exception):
+        with pytest.raises(FileNotFoundError):
             get_expected_sessions("nonexistentTask")

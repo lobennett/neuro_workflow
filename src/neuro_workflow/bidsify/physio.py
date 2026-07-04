@@ -114,7 +114,7 @@ def convert_physio_to_bids(
     tsv_path = output_dir / f"{stem}.tsv.gz"
     with gzip.open(tsv_path, "wt") as f:
         f.write(f"{channel}\ttrigger\n")
-        for amp, trig in zip(amplitudes, triggers):
+        for amp, trig in zip(amplitudes, triggers, strict=False):
             f.write(f"{amp}\t{trig}\n")
 
     # Write JSON sidecar

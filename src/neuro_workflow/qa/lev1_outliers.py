@@ -21,6 +21,10 @@ import csv
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import numpy as np
 
 # BIDS-style entity parser for our lev1 output filenames.
 # The contrast field may contain underscores (e.g. "stop_success-go"),
@@ -85,7 +89,7 @@ class OutlierResult:
     n_voxels: int  # total voxels in the volume
 
 
-def _load_volume(path: Path) -> "np.ndarray":
+def _load_volume(path: Path) -> np.ndarray:
     import nibabel as nib  # local import keeps top-level cheap
 
     return nib.load(str(path)).get_fdata()
@@ -111,7 +115,7 @@ def compute_cohort_outliers(
         groups.setdefault((sc.task, sc.contrast), []).append(sc)
 
     results: list[OutlierResult] = []
-    for (task, contrast), members in groups.items():
+    for (_task, _contrast), members in groups.items():
         # Stack volumes: shape (n_subjects, X, Y, Z)
         stacked = np.stack([_load_volume(m.path) for m in members], axis=0)
         cohort_mean = stacked.mean(axis=0)
@@ -275,8 +279,8 @@ def render_outlier_pdf(
     Layout ported from Jeanette Mumford's fmri-outlier-detector/plotting_functions.py.
     """
     import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_pdf import PdfPages
     import numpy as np
+    from matplotlib.backends.backend_pdf import PdfPages
     from nilearn.plotting import plot_stat_map
 
     # Group results by (task, contrast)
@@ -293,7 +297,7 @@ def render_outlier_pdf(
             nrows = (n + ncols - 1) // ncols
             fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 3 * nrows))
             axes = np.atleast_1d(axes).flatten()
-            for ax, r in zip(axes, members):
+            for ax, r in zip(axes, members, strict=False):
                 key = (r.scan.subject, r.scan.session, r.scan.run, r.scan.task, r.scan.contrast)
                 vif = vif_table.get(key)
                 vif_label = f"vif={vif:.2f}" if vif is not None else "vif=?"

@@ -4,7 +4,6 @@ from pathlib import Path
 
 from scripts.fmriprep_preflight import parse_bidsignore
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -125,7 +124,7 @@ def test_build_view_excludes_bidsignored_files(tmp_path):
     bids = _make_fake_bids(tmp_path)
     view = bids / "derivatives" / "fmriprep_25.2.4_input"
 
-    summary = build_view(bids, view)
+    build_view(bids, view)
 
     # MPRAGEPromo files NOT in view
     assert not (

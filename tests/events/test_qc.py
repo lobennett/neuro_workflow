@@ -1,7 +1,4 @@
 import pandas as pd
-import numpy as np
-import pytest
-from pathlib import Path
 
 
 def _make_stop_signal_events():

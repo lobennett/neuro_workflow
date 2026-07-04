@@ -1,8 +1,9 @@
 """Provenance-stripped canonical sets for reproduction diffs."""
 
 from __future__ import annotations
+
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 # Scan-level gating (removes the BOLD) + per-contrast gating (drops one contrast's
 # fixed-effects contribution). exclude-contrast entries carry a `contrast`.

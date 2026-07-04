@@ -8,8 +8,9 @@ def cmd_bidsify(args, remaining):
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    from neuro_workflow.bidsify.run import run_bidsify
     from pathlib import Path
+
+    from neuro_workflow.bidsify.run import run_bidsify
 
     subjects = args.subjects if args.subjects else None
     output_dir = Path(args.output_dir)

@@ -38,6 +38,8 @@ nib = pytest.importorskip("nibabel")
 from neuro_workflow.analysis.io.file_discovery import FileFinder  # noqa: E402
 from neuro_workflow.core.thresholds import (  # noqa: E402
     behavioral_qc as behavioral_qc_thresholds,
+)
+from neuro_workflow.core.thresholds import (
     motion as motion_thresholds,
 )
 from neuro_workflow.events.qc import (  # noqa: E402

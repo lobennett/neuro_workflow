@@ -5,9 +5,9 @@ import pytest
 from neuro_workflow.qa.metrics.freesurfer import (
     FreeSurferMetrics,
     compute_freesurfer,
+    parse_aseg_stats,
     parse_euler_from_log,
     parse_recon_all_status,
-    parse_aseg_stats,
 )
 
 
@@ -25,11 +25,11 @@ def _make_fs_dir(
     if status == "OK":
         (fs / "scripts" / "recon-all-status.log").write_text(
             "Started\n"
-            f"recon-all -s sub-X_ses-01 finished without error at Wed Apr 29 19:05:44 PDT 2026\n"
+            "recon-all -s sub-X_ses-01 finished without error at Wed Apr 29 19:05:44 PDT 2026\n"
         )
     elif status == "FAILED":
         (fs / "scripts" / "recon-all-status.log").write_text(
-            f"recon-all -s sub-X_ses-01 exited with ERRORS at Wed Apr 29 12:00:00 PDT 2026\n"
+            "recon-all -s sub-X_ses-01 exited with ERRORS at Wed Apr 29 12:00:00 PDT 2026\n"
         )
     elif status == "INCOMPLETE":
         (fs / "scripts" / "recon-all-status.log").write_text("Started\n#@# Tessellate\n")

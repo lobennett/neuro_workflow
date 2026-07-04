@@ -7,15 +7,15 @@
 # helpers like discover_input_files. Lazy import surfaces a clear
 # ModuleNotFoundError when randomise actually gets called in production.
 
-from pathlib import Path
-from nilearn.masking import intersect_masks
-from nilearn.image import math_img
-from typing import List
-import json
-import sys
 import argparse
-import subprocess
 import glob
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+from nilearn.image import math_img
+from nilearn.masking import intersect_masks
 
 from neuro_workflow.core import provenance
 
@@ -60,7 +60,7 @@ def compute_mask(input_files, threshold=0.9, connected=False):
     return group_mask
 
 
-def discover_input_files(level1_dirs: List[Path], contrast_name: str) -> List[str]:
+def discover_input_files(level1_dirs: list[Path], contrast_name: str) -> list[str]:
     """
     Discover input files for a specific contrast from multiple level1 output directories.
 
@@ -76,7 +76,7 @@ def discover_input_files(level1_dirs: List[Path], contrast_name: str) -> List[st
         List of paths to fixed effects files for this contrast (excluding
         _desc-belowMinRuns_ files).
     """
-    all_files: List[str] = []
+    all_files: list[str] = []
     n_dropped = 0
 
     for level1_dir in level1_dirs:
@@ -115,7 +115,7 @@ def _input_manifest_path(input_file: str | Path) -> Path:
     return Path(input_file).parent.parent / "run-manifest.json"
 
 
-def _read_input_provenance(input_files: List[str]) -> dict:
+def _read_input_provenance(input_files: list[str]) -> dict:
     """Summarize the provenance chain of lev2's selected lev1 inputs.
 
     For each input fixed-effects file, locate and read its PR4b lev1
@@ -190,7 +190,7 @@ def _read_input_provenance(input_files: List[str]) -> dict:
 
 def run_level2_analysis(
     contrast_name: str,
-    input_files: List[str],
+    input_files: list[str],
     output_dir: Path,
     mask_threshold: float = 0.9,
     num_permutations: int = 5000,
@@ -255,7 +255,7 @@ def run_level2_analysis(
 
     print("Running FSL randomise...")
     try:
-        result = subprocess.run(["bash", script_path], capture_output=True, text=True, check=True)
+        subprocess.run(["bash", script_path], capture_output=True, text=True, check=True)
         print("✓ FSL randomise completed successfully")
         print(f"Results saved to: {contrast_output_dir}")
     except subprocess.CalledProcessError as e:

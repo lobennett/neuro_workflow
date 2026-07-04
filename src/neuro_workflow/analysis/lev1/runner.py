@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from neuro_workflow.analysis.core.utils import load_contrast_exclusions
 from neuro_workflow.analysis.lev1.processing.confounds import (
     get_fc_confounds,
     load_and_process_confounds,
@@ -52,7 +53,6 @@ from neuro_workflow.analysis.lev1.processing.surface_data import (
 )
 from neuro_workflow.analysis.lev1.spaces import is_surface_space, resolve_surface_space
 from neuro_workflow.analysis.task_config.loader import get_task_contrasts
-from neuro_workflow.analysis.core.utils import load_contrast_exclusions
 
 logger = logging.getLogger(__name__)
 
@@ -309,7 +309,6 @@ def process_single_run(session, run, run_files, args, sample_type, dirs, task_pa
             raise ValueError(f"Missing surface files for {session}/{run}")
         n_scans_total, _ = get_surface_scan_info(run_files["left_surface"])
         # BOLD is already trimmed by trim_bold.py; do not remove dummy scans again
-        dummy_scans = 0
         n_scans = n_scans_total
     else:
         mask_key = f"{args.space.lower()}_brain_mask"

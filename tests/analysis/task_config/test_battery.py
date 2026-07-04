@@ -6,9 +6,9 @@ constants in lev1.py.
 """
 
 from neuro_workflow.analysis.task_config.loader import (
+    get_all_tasks,
     get_base_tasks,
     get_dual_tasks,
-    get_all_tasks,
 )
 
 _EXPECTED_BASE = [

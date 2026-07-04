@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -54,14 +53,14 @@ def est_contrast_vifs(desmat, contrasts):
 
 def run_quality_control(
     design_matrix: pd.DataFrame,
-    contrasts: Dict[str, str],
+    contrasts: dict[str, str],
     percent_junk: float,
     output_dir: Path,
     subject_id: str,
     session: str,
     run: str,
     task_name: str,
-) -> Tuple[Dict[str, float], bool]:
+) -> tuple[dict[str, float], bool]:
     """Run quality control analysis.
 
     Computes per-contrast VIFs and writes them to a CSV alongside the design
@@ -114,7 +113,7 @@ def run_quality_control(
     # Check for regressors used in contrasts that have all zeros
     design_column_names = design_matrix.columns.tolist()
     contrast_matrix = []
-    for key, values in contrasts.items():
+    for _key, values in contrasts.items():
         contrast_def = expression_to_contrast_vector(values, design_column_names)
         contrast_matrix.append(np.array(contrast_def))
 

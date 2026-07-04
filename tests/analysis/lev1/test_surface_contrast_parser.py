@@ -40,7 +40,6 @@ from neuro_workflow.analysis.task_config.loader import (
     get_task_contrasts,
 )
 
-
 BASE_TASKS = [
     "cuedTS",
     "directedForgetting",
@@ -372,7 +371,7 @@ def test_unknown_regressor_raises_rather_than_silently_zeroing():
     a ``ValueError`` — we want that behavior preserved.
     """
     glm = _make_fitted_glm(["go", "stop_success"])
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         glm._parse_contrast("go - nonexistent_regressor")
 
 

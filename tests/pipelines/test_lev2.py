@@ -1,9 +1,9 @@
 from argparse import Namespace
 from pathlib import Path
 
-from neuro_workflow.pipelines.lev2 import Lev2Pipeline, _discover_contrasts_from_lev1_dirs
-from neuro_workflow.pipelines.base import get_pipeline, TEMPLATE_DIR
 from neuro_workflow.core.slurm import render_template
+from neuro_workflow.pipelines.base import TEMPLATE_DIR, get_pipeline
+from neuro_workflow.pipelines.lev2 import Lev2Pipeline, _discover_contrasts_from_lev1_dirs
 
 
 def test_lev2_pipeline_is_registered():

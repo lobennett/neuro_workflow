@@ -151,7 +151,7 @@ def _render_md(a: dict) -> str:
     )
     L.append(f"- symlink view scans: {a['n_view']} | fMRIPrep outputs: {a['n_fmriprep']}")
     L.append("")
-    L.append(f"## Symlink view vs new .bidsignore")
+    L.append("## Symlink view vs new .bidsignore")
     L.append(
         f"- now-excluded-from-view ({len(a['now_excluded_from_view'])}): {a['now_excluded_from_view']}"
     )

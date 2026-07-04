@@ -1,7 +1,6 @@
 """Tests for src/neuro_workflow/qa/metrics/outputs.py."""
 
 from neuro_workflow.qa.metrics.outputs import (
-    OutputCheckResult,
     ScanID,
     check_expected_outputs,
 )

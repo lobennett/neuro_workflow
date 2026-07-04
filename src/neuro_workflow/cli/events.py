@@ -6,8 +6,9 @@ from neuro_workflow.core.exclusions import save_source_entries
 
 
 def cmd_events_create(args, remaining):
-    import neuro_workflow.cli as cli
     import logging
+
+    import neuro_workflow.cli as cli
 
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -21,8 +22,9 @@ def cmd_events_create(args, remaining):
 
 
 def cmd_events_qc(args, remaining):
-    import neuro_workflow.cli as cli
     import logging
+
+    import neuro_workflow.cli as cli
 
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -40,8 +42,9 @@ def cmd_events_qc(args, remaining):
 
 
 def cmd_events_trim(args, remaining):
-    import neuro_workflow.cli as cli
     import logging
+
+    import neuro_workflow.cli as cli
 
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"

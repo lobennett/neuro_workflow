@@ -7,8 +7,12 @@ One scan == one (sub,ses,task,run) (echoes collapsed). Reports raw (all BOLD in
 BIDS) — .bidsignore'd scans included, flagged separately via the .bidsignore.
 """
 
-import glob, json, os, re, sys
+import glob
+import json
+import os
+import re
 from collections import defaultdict
+
 import nibabel as nib
 
 TR = 1.49
@@ -53,7 +57,7 @@ def analyze(bids, label):
     task_runs = defaultdict(int)
     task_min = defaultdict(float)
     echo_hist = defaultdict(int)
-    for (sub, ses, task, run), rec in scans.items():
+    for (sub, ses, task, _run), rec in scans.items():
         mins = (rec["nvols"] or 0) * TR / 60.0
         per_sub[sub]["ses"].add(ses)
         echo_hist[len(rec["echoes"])] += 1

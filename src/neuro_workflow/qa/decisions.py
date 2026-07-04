@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-
 Action = Literal["pass", "exclude", "review"]
 _VALID_ACTIONS = {"pass", "exclude", "review"}
 

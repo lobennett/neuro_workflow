@@ -60,7 +60,6 @@ production imports from here.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -85,7 +84,7 @@ _KEY_F = 71.0
 
 # BIDS task name -> jsPsych ``exp_id`` for the supported tasks. The exp_id keys
 # the production column-selection / trial-type tables in events/utils.py.
-EXP_ID: Dict[str, str] = {
+EXP_ID: dict[str, str] = {
     "flanker": "flanker_single_task_network__fmri",
     "stopSignal": "stop_signal_single_task_network__fmri",
 }

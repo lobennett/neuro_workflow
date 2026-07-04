@@ -22,7 +22,6 @@ from argparse import Namespace
 
 import numpy as np
 import pandas as pd
-import pytest
 
 
 def test_pipeline_propagates_skip_qc_plots_flag(tmp_path):
@@ -114,6 +113,7 @@ def test_surface_smoothing_uses_fsaverage6_when_bold_is_fsaverage6(tmp_path, mon
     lev1 production submission.
     """
     from argparse import Namespace
+
     import numpy as np
     import pandas as pd
 

@@ -53,9 +53,9 @@ production imports from here.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 __all__ = [
     "FakeFile",
@@ -76,10 +76,10 @@ __all__ = [
 
 
 # Base time for synthesizing ``created`` timestamps when a spec omits them.
-_EPOCH = datetime(2021, 1, 1, tzinfo=timezone.utc)
+_EPOCH = datetime(2021, 1, 1, tzinfo=UTC)
 
 
-def _parse_ts(ts: Any) -> Optional[datetime]:
+def _parse_ts(ts: Any) -> datetime | None:
     """Coerce a spec timestamp to a timezone-aware ``datetime`` (or None).
 
     Accepts an ISO-8601 string (the shape stored in Flywheel) or an existing
@@ -119,7 +119,7 @@ def _write_anat_nifti(dest: Path, *, seed: int) -> None:
     nib.save(nib.Nifti1Image(data, affine=np.eye(4)), str(dest))
 
 
-def _write_json_sidecar(dest: Path, fields: Dict[str, Any]) -> None:
+def _write_json_sidecar(dest: Path, fields: dict[str, Any]) -> None:
     """Write a minimal BIDS JSON sidecar carrying the fields patching expects."""
     import json
 
@@ -182,11 +182,11 @@ class FakeFile:
     name: str
     type: str
     size: int = 1024
-    created: Optional[datetime] = None
+    created: datetime | None = None
     # How to synthesize this file's content on download. Shape:
     #   {"kind": "nifti"|"anat"|"json"|"bval"|"bvec"|"physio",
     #    plus kind-specific keys}
-    _content: Dict[str, Any] = field(default_factory=dict)
+    _content: dict[str, Any] = field(default_factory=dict)
 
     def write_to(self, dest: Path) -> None:
         """Materialize this file's synthetic content at ``dest``."""
@@ -226,11 +226,11 @@ class FakeAcquisition:
     """
 
     label: str
-    timestamp: Optional[str] = None
+    timestamp: str | None = None
     id: str = ""
-    files: List[FakeFile] = field(default_factory=list)
+    files: list[FakeFile] = field(default_factory=list)
 
-    def reload(self) -> "FakeAcquisition":
+    def reload(self) -> FakeAcquisition:
         return self
 
     def download_file(self, name: str, dest: str) -> None:
@@ -246,7 +246,7 @@ class FakeAcquisition:
 class FakeAnalysisInput:
     """A fake analysis input record. Only ``_parents`` is read (physio_query)."""
 
-    _parents: Dict[str, Any] = field(default_factory=dict)
+    _parents: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -259,12 +259,12 @@ class FakeAnalysis:
     (datetime), ``download_file(name, dest)``.
     """
 
-    gear_info: Dict[str, Any] = field(default_factory=dict)
-    files: List[FakeFile] = field(default_factory=list)
-    inputs: List[FakeAnalysisInput] = field(default_factory=list)
-    created: Optional[datetime] = None
+    gear_info: dict[str, Any] = field(default_factory=dict)
+    files: list[FakeFile] = field(default_factory=list)
+    inputs: list[FakeAnalysisInput] = field(default_factory=list)
+    created: datetime | None = None
 
-    def reload(self) -> "FakeAnalysis":
+    def reload(self) -> FakeAnalysis:
         return self
 
     def download_file(self, name: str, dest: str) -> None:
@@ -285,14 +285,14 @@ class FakeSession:
     """
 
     label: str
-    timestamp: Optional[datetime] = None
-    _acquisitions: List[FakeAcquisition] = field(default_factory=list)
-    analyses: List[FakeAnalysis] = field(default_factory=list)
+    timestamp: datetime | None = None
+    _acquisitions: list[FakeAcquisition] = field(default_factory=list)
+    analyses: list[FakeAnalysis] = field(default_factory=list)
 
-    def acquisitions(self) -> List[FakeAcquisition]:
+    def acquisitions(self) -> list[FakeAcquisition]:
         return list(self._acquisitions)
 
-    def reload(self) -> "FakeSession":
+    def reload(self) -> FakeSession:
         return self
 
 
@@ -301,30 +301,30 @@ class FakeSubject:
     """A fake Flywheel subject. Surface used: ``label``, ``sessions()``."""
 
     label: str
-    _sessions: List[FakeSession] = field(default_factory=list)
+    _sessions: list[FakeSession] = field(default_factory=list)
 
-    def sessions(self) -> List[FakeSession]:
+    def sessions(self) -> list[FakeSession]:
         return list(self._sessions)
 
 
 class FakeProject:
     """A fake Flywheel project. Surface used: ``label``, ``subjects()``."""
 
-    def __init__(self, label: str, subjects: List[FakeSubject]) -> None:
+    def __init__(self, label: str, subjects: list[FakeSubject]) -> None:
         self.label = label
         self._subjects = subjects
 
-    def subjects(self) -> List[FakeSubject]:
+    def subjects(self) -> list[FakeSubject]:
         return list(self._subjects)
 
 
 class FakeProjects:
     """The fake ``client.projects`` finder. Surface used: ``find_first(query)``."""
 
-    def __init__(self, projects: List[FakeProject]) -> None:
+    def __init__(self, projects: list[FakeProject]) -> None:
         self._projects = projects
 
-    def find_first(self, query: str) -> Optional[FakeProject]:
+    def find_first(self, query: str) -> FakeProject | None:
         """Resolve a ``label="..."`` query to a project (or None).
 
         Mirrors ``flywheel_query.query_project_subjects`` which calls
@@ -337,7 +337,7 @@ class FakeProjects:
         return None
 
 
-def _extract_label(query: str) -> Optional[str]:
+def _extract_label(query: str) -> str | None:
     """Pull the value out of a ``label="<value>"`` Flywheel query string."""
     marker = 'label="'
     if marker in query:
@@ -354,7 +354,7 @@ class FakeFlywheelClient:
     :func:`make_fake_flywheel`.
     """
 
-    def __init__(self, projects: List[FakeProject]) -> None:
+    def __init__(self, projects: list[FakeProject]) -> None:
         self.projects = FakeProjects(projects)
 
 
@@ -397,7 +397,7 @@ class FlywheelAcqSpec:
     """
 
     label: str
-    timestamp: Optional[str] = None
+    timestamp: str | None = None
     echoes: int = 3
     n_trs: int = 10
     with_physio: bool = False
@@ -410,8 +410,8 @@ class FlywheelSessionSpec:
     """One session: a label, timestamp, and its acquisitions."""
 
     label: str
-    timestamp: Optional[str] = None
-    acquisitions: List[FlywheelAcqSpec] = field(default_factory=list)
+    timestamp: str | None = None
+    acquisitions: list[FlywheelAcqSpec] = field(default_factory=list)
 
 
 @dataclass
@@ -419,7 +419,7 @@ class FlywheelSubjectSpec:
     """One Flywheel subject (canonical OR an alias label)."""
 
     label: str
-    sessions: List[FlywheelSessionSpec] = field(default_factory=list)
+    sessions: list[FlywheelSessionSpec] = field(default_factory=list)
 
 
 @dataclass
@@ -436,7 +436,7 @@ class FlywheelCohortSpec:
     """
 
     project: str = "r01network"
-    subjects: List[FlywheelSubjectSpec] = field(default_factory=list)
+    subjects: list[FlywheelSubjectSpec] = field(default_factory=list)
 
 
 # --------------------------------------------------------------------------- #
@@ -469,14 +469,14 @@ _DWI_SIDECAR = {
 }
 
 
-def _bold_files(acq_label: str, echoes: int, n_trs: int, seed: int) -> List[FakeFile]:
+def _bold_files(acq_label: str, echoes: int, n_trs: int, seed: int) -> list[FakeFile]:
     """Build the multi-echo BOLD file list (``*_eN.nii.gz`` + ``*_eN.json``).
 
     Filenames carry the ``_eN`` echo marker that
     ``file_selector._echo_number`` parses. Each echo's NIfTI gets a distinct
     seed so the echoes carry distinct signal.
     """
-    files: List[FakeFile] = []
+    files: list[FakeFile] = []
     for echo in range(1, echoes + 1):
         base = f"{acq_label}_e{echo}"
         files.append(
@@ -500,7 +500,7 @@ def _bold_files(acq_label: str, echoes: int, n_trs: int, seed: int) -> List[Fake
     return files
 
 
-def _anat_files(acq_label: str, seed: int) -> List[FakeFile]:
+def _anat_files(acq_label: str, seed: int) -> list[FakeFile]:
     base = acq_label.replace(" ", "_")
     return [
         FakeFile(
@@ -520,7 +520,7 @@ def _anat_files(acq_label: str, seed: int) -> List[FakeFile]:
     ]
 
 
-def _fmap_files(seed: int) -> List[FakeFile]:
+def _fmap_files(seed: int) -> list[FakeFile]:
     """Fieldmap + magnitude pair. ``file_selector`` keys the fieldmap on the
     ``_fieldmap`` substring in the NIfTI/JSON name; the other NIfTI is treated
     as magnitude."""
@@ -549,7 +549,7 @@ def _fmap_files(seed: int) -> List[FakeFile]:
     ]
 
 
-def _dwi_files(acq_label: str, seed: int) -> List[FakeFile]:
+def _dwi_files(acq_label: str, seed: int) -> list[FakeFile]:
     base = acq_label
     n_dirs = 6
     return [
@@ -587,14 +587,14 @@ def _dwi_files(acq_label: str, seed: int) -> List[FakeFile]:
 # Acquisition-label classification, kept in lock-step with bidsify/config.py's
 # ACQUISITION_MAP modality. We import the production mapper so the fake never
 # drifts from the real label set.
-def _modality_for(label: str) -> Optional[str]:
+def _modality_for(label: str) -> str | None:
     from neuro_workflow.bidsify.config import map_acquisition
 
     mapping = map_acquisition(label)
     return mapping["modality"] if mapping else None
 
 
-def _files_for_acquisition(spec: FlywheelAcqSpec, seed: int) -> List[FakeFile]:
+def _files_for_acquisition(spec: FlywheelAcqSpec, seed: int) -> list[FakeFile]:
     """Build the synthetic file list appropriate to this acquisition's modality."""
     modality = _modality_for(spec.label)
     if modality == "func":
@@ -633,13 +633,13 @@ def make_fake_flywheel(spec: FlywheelCohortSpec) -> FakeFlywheelClient:
     """
     acq_counter = 0
     seed_counter = 0
-    subjects: List[FakeSubject] = []
+    subjects: list[FakeSubject] = []
 
     for subj_spec in spec.subjects:
-        sessions: List[FakeSession] = []
+        sessions: list[FakeSession] = []
         for sess_spec in subj_spec.sessions:
-            acqs: List[FakeAcquisition] = []
-            analyses: List[FakeAnalysis] = []
+            acqs: list[FakeAcquisition] = []
+            analyses: list[FakeAnalysis] = []
             for acq_spec in sess_spec.acquisitions:
                 acq_counter += 1
                 seed_counter += 1

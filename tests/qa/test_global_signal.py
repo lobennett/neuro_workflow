@@ -1,8 +1,3 @@
-from argparse import Namespace
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-import numpy as np
-
 from neuro_workflow.qa.global_signal import GlobalSignalQa, parse_bids_meta
 
 

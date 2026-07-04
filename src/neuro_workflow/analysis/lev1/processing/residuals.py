@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import List, Optional, Union
 
 import nibabel as nib
 import numpy as np
@@ -44,7 +43,7 @@ class ResidualsProcessor:
         self.raw_residuals = None
         self.filtered_residuals = None
 
-    def get_raw_residuals(self) -> List:
+    def get_raw_residuals(self) -> list:
         """Get raw residuals from fitted GLM.
 
         Returns:
@@ -60,13 +59,13 @@ class ResidualsProcessor:
 
     def apply_filtering(
         self,
-        low_pass: Optional[float] = 0.1,
-        high_pass: Optional[float] = 0.01,
+        low_pass: float | None = 0.1,
+        high_pass: float | None = 0.01,
         standardize: bool = False,
         detrend: bool = False,
-        confounds: Optional[Union[str, np.ndarray]] = None,
-        mask_img: Optional[Union[str, Path]] = None,
-    ) -> List:
+        confounds: str | np.ndarray | None = None,
+        mask_img: str | Path | None = None,
+    ) -> list:
         """Apply filtering to residuals.
 
         Args:
@@ -113,7 +112,7 @@ class ResidualsProcessor:
 
     def save_residuals(
         self, output_dir: Path, base_filename: str, residuals_type: str = "filtered"
-    ) -> List[Path]:
+    ) -> list[Path]:
         """Save residuals to disk.
 
         Args:
@@ -219,9 +218,9 @@ def process_run_residuals(
     output_dir: Path,
     base_filename: str,
     tr: float = 1.49,
-    filtering_params: Optional[dict] = None,
-    mask_img: Optional[Union[str, Path]] = None,
-    fc_confounds: Optional[np.ndarray] = None,
+    filtering_params: dict | None = None,
+    mask_img: str | Path | None = None,
+    fc_confounds: np.ndarray | None = None,
 ) -> dict:
     """Process and save residuals for a single run.
 
@@ -279,7 +278,7 @@ def process_run_residuals(
 
     try:
         # Apply filtering
-        filtered_residuals = processor.apply_filtering(mask_img=mask_img, **filtering_params)
+        processor.apply_filtering(mask_img=mask_img, **filtering_params)
 
         # Save filtered residuals
         saved_paths = processor.save_residuals(output_dir, base_filename, "filtered")
@@ -304,9 +303,9 @@ def process_surface_residuals(
     base_filename: str,
     hemisphere: str,
     tr: float = 1.49,
-    low_pass: Optional[float] = 0.1,
-    high_pass: Optional[float] = 0.01,
-    fc_confounds: Optional[np.ndarray] = None,
+    low_pass: float | None = 0.1,
+    high_pass: float | None = 0.01,
+    fc_confounds: np.ndarray | None = None,
     surface_space: str = "fsnative",
 ) -> dict:
     """Process and save residuals for surface GLM.

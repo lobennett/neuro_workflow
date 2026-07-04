@@ -10,7 +10,6 @@ space (``setup_masks``).
 import logging
 from pathlib import Path
 
-from neuro_workflow.analysis.lev1.subject_config import Config
 from neuro_workflow.analysis.core.task_utils import detect_sample_type, get_expected_sessions
 from neuro_workflow.analysis.core.utils import (
     load_exclusions,
@@ -20,6 +19,7 @@ from neuro_workflow.analysis.core.utils import (
 from neuro_workflow.analysis.io.file_discovery import FileFinder
 from neuro_workflow.analysis.lev1.processing.masks import MaskProcessor
 from neuro_workflow.analysis.lev1.spaces import is_surface_space, resolve_surface_space
+from neuro_workflow.analysis.lev1.subject_config import Config
 
 logger = logging.getLogger(__name__)
 

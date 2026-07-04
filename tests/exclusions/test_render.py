@@ -7,8 +7,8 @@ All fixtures are synthetic; this file NEVER touches:
 
 from __future__ import annotations
 
-import subprocess
 import os
+import subprocess
 from argparse import Namespace
 
 import pytest
@@ -169,7 +169,7 @@ def test_render_bidsignore_glob_form_func():
 
     out = render_bidsignore(SAMPLE_ENTRIES)
     # Check at least one func glob line is present and has the right structure.
-    func_lines = [l for l in out.splitlines() if "/func/" in l and not l.startswith("#")]
+    func_lines = [ln for ln in out.splitlines() if "/func/" in ln and not ln.startswith("#")]
     assert len(func_lines) > 0, "No func/ glob lines found"
     for line in func_lines:
         # Must have: sub-X/ses-Y/func/sub-X_ses-Y_task-T_run-R_echo-*_bold.*
@@ -183,8 +183,8 @@ def test_render_bidsignore_wildcard_run_preserved():
     from neuro_workflow.core.exclusions_render import render_bidsignore
 
     out = render_bidsignore(ENTRIES_WITH_WILDCARD_RUN)
-    func_lines = [l for l in out.splitlines() if "/func/" in l and not l.startswith("#")]
-    assert any("run-*" in l for l in func_lines), f"run-* not found in lines: {func_lines}"
+    func_lines = [ln for ln in out.splitlines() if "/func/" in ln and not ln.startswith("#")]
+    assert any("run-*" in ln for ln in func_lines), f"run-* not found in lines: {func_lines}"
 
 
 def test_render_bidsignore_include_trim_and_exclude():
@@ -221,7 +221,7 @@ def test_render_bidsignore_sorted_lines():
     from neuro_workflow.core.exclusions_render import render_bidsignore
 
     out = render_bidsignore(SAMPLE_ENTRIES)
-    glob_lines = [l for l in out.splitlines() if l and not l.startswith("#")]
+    glob_lines = [ln for ln in out.splitlines() if ln and not ln.startswith("#")]
     assert glob_lines == sorted(glob_lines)
 
 
@@ -372,7 +372,7 @@ def test_exclusions_help_lists_both_render_commands():
 def test_drift_detection_no_drift_passes(compiled_dataset):
     """When 'committed' artifact matches rendered output, check detects no drift."""
     from neuro_workflow.core import exclusions as core_excl
-    from neuro_workflow.core.exclusions_render import render_md, check_md_drift
+    from neuro_workflow.core.exclusions_render import check_md_drift, render_md
 
     dataset, tmp_path = compiled_dataset
     monkeypatched_entries = core_excl.load_compiled_exclusions(dataset)
@@ -390,7 +390,7 @@ def test_drift_detection_no_drift_passes(compiled_dataset):
 def test_drift_detection_hand_edit_fails_loud(compiled_dataset):
     """When 'committed' artifact has been hand-edited, check_md_drift returns True with details."""
     from neuro_workflow.core import exclusions as core_excl
-    from neuro_workflow.core.exclusions_render import render_md, check_md_drift
+    from neuro_workflow.core.exclusions_render import check_md_drift, render_md
 
     dataset, tmp_path = compiled_dataset
     entries = core_excl.load_compiled_exclusions(dataset)
@@ -407,7 +407,7 @@ def test_drift_detection_hand_edit_fails_loud(compiled_dataset):
 def test_drift_detection_bidsignore_no_drift(compiled_dataset):
     """check_bidsignore_drift: identical content → no drift."""
     from neuro_workflow.core import exclusions as core_excl
-    from neuro_workflow.core.exclusions_render import render_bidsignore, check_bidsignore_drift
+    from neuro_workflow.core.exclusions_render import check_bidsignore_drift, render_bidsignore
 
     dataset, tmp_path = compiled_dataset
     entries = core_excl.load_compiled_exclusions(dataset)
@@ -421,7 +421,7 @@ def test_drift_detection_bidsignore_no_drift(compiled_dataset):
 def test_drift_detection_bidsignore_hand_edit_fails_loud(compiled_dataset):
     """check_bidsignore_drift: hand-edited content → drifted=True with details."""
     from neuro_workflow.core import exclusions as core_excl
-    from neuro_workflow.core.exclusions_render import render_bidsignore, check_bidsignore_drift
+    from neuro_workflow.core.exclusions_render import check_bidsignore_drift, render_bidsignore
 
     dataset, tmp_path = compiled_dataset
     entries = core_excl.load_compiled_exclusions(dataset)

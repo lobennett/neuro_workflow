@@ -9,18 +9,16 @@ coverage.
 from __future__ import annotations
 
 import re
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import pytest
 
 # Importing neuro_workflow.cli triggers all pipeline auto-registrations.
 import neuro_workflow.cli  # noqa: F401
-
-from neuro_workflow.pipelines.base import TEMPLATE_DIR, list_pipelines
 from neuro_workflow.core.slurm import render_template
-
+from neuro_workflow.pipelines.base import TEMPLATE_DIR, list_pipelines
 
 # ---------------------------------------------------------------------------
 # Helper
