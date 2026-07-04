@@ -2,6 +2,7 @@
 producing a stub BIDS tree (tiny valid NIfTIs)."""
 
 from __future__ import annotations
+
 import importlib.util as _ilu
 from pathlib import Path
 

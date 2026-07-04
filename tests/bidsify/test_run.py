@@ -1,9 +1,6 @@
-import json
-import pytest
-from pathlib import Path
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch, call
-import tempfile
+from datetime import UTC, datetime
+from unittest.mock import MagicMock, patch
+
 from neuro_workflow.bidsify.run import build_reconciliation, process_subject_session
 
 
@@ -21,14 +18,14 @@ def test_build_reconciliation():
         {
             "fw_subject": _mock_obj("s43-2"),
             "fw_session": _mock_obj("20201112"),
-            "timestamp": datetime(2020, 11, 12, tzinfo=timezone.utc),
+            "timestamp": datetime(2020, 11, 12, tzinfo=UTC),
             "bids_session": "ses-01",
             "acquisitions": acq1,
         },
         {
             "fw_subject": _mock_obj("s43"),
             "fw_session": _mock_obj("22473"),
-            "timestamp": datetime(2020, 11, 19, tzinfo=timezone.utc),
+            "timestamp": datetime(2020, 11, 19, tzinfo=UTC),
             "bids_session": "ses-02",
             "acquisitions": acq2,
         },
@@ -139,12 +136,12 @@ def test_duplicate_anat_gets_run_number(tmp_path):
     nifti1.name = "t1w_1.nii.gz"
     nifti1.type = "nifti"
     nifti1.size = 100
-    nifti1.created = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    nifti1.created = datetime(2025, 1, 1, tzinfo=UTC)
     json1 = MagicMock()
     json1.name = "t1w_1.json"
     json1.type = "source code"
     json1.size = 50
-    json1.created = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    json1.created = datetime(2025, 1, 1, tzinfo=UTC)
     acq1.files = [nifti1, json1]
 
     acq2 = MagicMock()
@@ -156,12 +153,12 @@ def test_duplicate_anat_gets_run_number(tmp_path):
     nifti2.name = "t1w_2.nii.gz"
     nifti2.type = "nifti"
     nifti2.size = 100
-    nifti2.created = datetime(2025, 1, 1, 1, tzinfo=timezone.utc)
+    nifti2.created = datetime(2025, 1, 1, 1, tzinfo=UTC)
     json2 = MagicMock()
     json2.name = "t1w_2.json"
     json2.type = "source code"
     json2.size = 50
-    json2.created = datetime(2025, 1, 1, 1, tzinfo=timezone.utc)
+    json2.created = datetime(2025, 1, 1, 1, tzinfo=UTC)
     acq2.files = [nifti2, json2]
 
     log_entries = []
@@ -178,7 +175,7 @@ def test_duplicate_anat_gets_run_number(tmp_path):
             "created": None,
         }
 
-        warnings = process_subject_session(
+        process_subject_session(
             "s19",
             session_info,
             [acq1, acq2],

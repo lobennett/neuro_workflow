@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
-from neuro_workflow.testing.reproduce.snapshot import load_inventory, dump_inventory
+
 from neuro_workflow.testing.fake_flywheel import FlywheelCohortSpec
+from neuro_workflow.testing.reproduce.snapshot import dump_inventory, load_inventory
 
 
 def _sample_inventory():
@@ -61,13 +61,12 @@ def test_inventory_roundtrip(tmp_path):
 import sys
 import types
 
-from neuro_workflow.testing.reproduce.replay import replay_to_bids
 from neuro_workflow.testing.fake_flywheel import (
-    FlywheelCohortSpec,
-    FlywheelSubjectSpec,
-    FlywheelSessionSpec,
     FlywheelAcqSpec,
+    FlywheelSessionSpec,
+    FlywheelSubjectSpec,
 )
+from neuro_workflow.testing.reproduce.replay import replay_to_bids
 
 
 def _mini_spec():
@@ -127,9 +126,9 @@ def test_stage_metrics_symlinks(tmp_path):
 # Task 5 — canonical set extractors
 # ---------------------------------------------------------------------------
 from neuro_workflow.testing.reproduce.canonical import (
-    compiled_to_keyset,
-    bidsignore_lineset,
     bids_fileset,
+    bidsignore_lineset,
+    compiled_to_keyset,
 )
 
 
@@ -334,7 +333,10 @@ def test_strip_filename_boundaries_classes():
         "sub-s03/ses-01/fmap/sub-s03_ses-01_run-1_magnitude.json",  # fmap sidecar
         "sub-s10/ses-01/func/sub-s10_ses-01_task-goNogo_run-1_events.tsv",  # orphan (excluded)
     }
-    inert = lambda f: f.endswith("sub-s10_ses-01_task-goNogo_run-1_events.tsv")
+
+    def inert(f):
+        return f.endswith("sub-s10_ses-01_task-goNogo_run-1_events.tsv")
+
     pf, rf, dropped = rc._strip_filename_boundaries(produced, reference, inert_events=inert)
 
     assert dropped["rescan_subject"] == {
@@ -391,7 +393,7 @@ def test_lev2_eligible_set_skips_dual_tasks_without_contrasts(monkeypatch):
 # ---------------------------------------------------------------------------
 # Task 7 — diff_sets + build_report
 # ---------------------------------------------------------------------------
-from neuro_workflow.testing.reproduce.report import diff_sets, build_report
+from neuro_workflow.testing.reproduce.report import build_report, diff_sets
 
 
 def test_diff_sets_partitions():

@@ -24,9 +24,9 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
 
 import pandas as pd
 
@@ -202,7 +202,7 @@ def render_markdown(audits: list[TaskAudit]) -> str:
             for cohort, stats in by_cohort.items():
                 yaml_dur = stats["duration_yaml"]
                 obs_med = stats["duration_median"]
-                if not isinstance(yaml_dur, (int, float)):
+                if not isinstance(yaml_dur, int | float):
                     continue  # 'duration: duration' uses events column — no mismatch
                 if stats["total_matches"] == 0 or obs_med is None:
                     continue

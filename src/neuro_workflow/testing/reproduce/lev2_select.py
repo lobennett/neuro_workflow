@@ -1,9 +1,10 @@
 """Model the lev2-eligible {(subject,task,contrast)} set + the on-disk reference."""
 
 from __future__ import annotations
+
 import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 _FE_RE = re.compile(
     r"(?P<sub>sub-[^_/]+)_(?:hemi-[^_]+_)?(?:space-[^_]+_)?task-(?P<task>[^_]+)"

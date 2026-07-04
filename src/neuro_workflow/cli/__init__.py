@@ -17,76 +17,77 @@ through this package namespace at call time.
 import argparse
 import sys
 
-# Shared collaborators re-exported on the package namespace (patch targets).
-from neuro_workflow.cli._common import (  # noqa: F401
-    DatasetNotFoundError,
-    save_dataset,
-    get_dataset,
-    load_datasets,
-    ensure_image,
-    render_template,
-    submit_sbatch,
-    save_source_entries,
-    save_overrides,
-    load_overrides,
-    compile_exclusions,
-    load_compiled_exclusions,
-    get_pipeline,
-    list_pipelines,
-    TEMPLATE_DIR,
-    get_qa_command,
-    list_qa_commands,
-    get_generator,
-    list_generators,
-)
-
-# Per-subsystem handlers + parser-builders.
-from neuro_workflow.cli.dataset import cmd_add_dataset, add_dataset_parser  # noqa: F401
-from neuro_workflow.cli.pipelines import (  # noqa: F401
-    cmd_show,
-    cmd_submit,
-    add_show_parser,
-    add_submit_parser,
-)
-from neuro_workflow.cli.qa import cmd_qa, add_qa_parser  # noqa: F401
-from neuro_workflow.cli.exclusions import (  # noqa: F401
-    cmd_exclusions_generate,
-    cmd_exclusions_compile,
-    cmd_exclusions_show,
-    cmd_exclusions_import,
-    cmd_exclusions_query,
-    cmd_exclusions_render_md,
-    cmd_exclusions_render_bidsignore,
-    add_exclusions_parser,
-)
-from neuro_workflow.cli.bidsify import cmd_bidsify, add_bidsify_parser  # noqa: F401
-from neuro_workflow.cli.events import (  # noqa: F401
-    cmd_events_create,
-    cmd_events_qc,
-    cmd_events_trim,
-    add_events_parser,
-)
-
-# Import pipeline modules to trigger auto-registration
-import neuro_workflow.pipelines.fmriprep  # noqa: F401
-import neuro_workflow.pipelines.qsiprep  # noqa: F401
-import neuro_workflow.pipelines.fsqc  # noqa: F401
-import neuro_workflow.pipelines.freesurfer  # noqa: F401
-import neuro_workflow.pipelines.happy  # noqa: F401
-import neuro_workflow.pipelines.lev1  # noqa: F401
-import neuro_workflow.pipelines.lev2  # noqa: F401
-import neuro_workflow.pipelines.bidsify  # noqa: F401
-
-# Import QA modules to trigger auto-registration
-import neuro_workflow.qa.global_signal  # noqa: F401
-import neuro_workflow.qa.fieldmap_check  # noqa: F401
+import neuro_workflow.exclusions.behavioral  # noqa: F401
+import neuro_workflow.exclusions.collection  # noqa: F401
+import neuro_workflow.exclusions.lev1_outlier  # noqa: F401
 
 # Import exclusion generators to trigger auto-registration
 import neuro_workflow.exclusions.motion  # noqa: F401
-import neuro_workflow.exclusions.behavioral  # noqa: F401
-import neuro_workflow.exclusions.lev1_outlier  # noqa: F401
 import neuro_workflow.exclusions.qa_decisions  # noqa: F401
-import neuro_workflow.exclusions.collection  # noqa: F401
+import neuro_workflow.pipelines.bidsify  # noqa: F401
+
+# Import pipeline modules to trigger auto-registration
+import neuro_workflow.pipelines.fmriprep  # noqa: F401
+import neuro_workflow.pipelines.freesurfer  # noqa: F401
+import neuro_workflow.pipelines.fsqc  # noqa: F401
+import neuro_workflow.pipelines.happy  # noqa: F401
+import neuro_workflow.pipelines.lev1  # noqa: F401
+import neuro_workflow.pipelines.lev2  # noqa: F401
+import neuro_workflow.pipelines.qsiprep  # noqa: F401
+import neuro_workflow.qa.fieldmap_check  # noqa: F401
+
+# Import QA modules to trigger auto-registration
+import neuro_workflow.qa.global_signal  # noqa: F401
+
+# Shared collaborators re-exported on the package namespace (patch targets).
+from neuro_workflow.cli._common import (  # noqa: F401
+    TEMPLATE_DIR,
+    DatasetNotFoundError,
+    compile_exclusions,
+    ensure_image,
+    get_dataset,
+    get_generator,
+    get_pipeline,
+    get_qa_command,
+    list_generators,
+    list_pipelines,
+    list_qa_commands,
+    load_compiled_exclusions,
+    load_datasets,
+    load_overrides,
+    render_template,
+    save_dataset,
+    save_overrides,
+    save_source_entries,
+    submit_sbatch,
+)
+from neuro_workflow.cli.bidsify import add_bidsify_parser, cmd_bidsify  # noqa: F401
+
+# Per-subsystem handlers + parser-builders.
+from neuro_workflow.cli.dataset import add_dataset_parser, cmd_add_dataset  # noqa: F401
+from neuro_workflow.cli.events import (  # noqa: F401
+    add_events_parser,
+    cmd_events_create,
+    cmd_events_qc,
+    cmd_events_trim,
+)
+from neuro_workflow.cli.exclusions import (  # noqa: F401
+    add_exclusions_parser,
+    cmd_exclusions_compile,
+    cmd_exclusions_generate,
+    cmd_exclusions_import,
+    cmd_exclusions_query,
+    cmd_exclusions_render_bidsignore,
+    cmd_exclusions_render_md,
+    cmd_exclusions_show,
+)
+from neuro_workflow.cli.pipelines import (  # noqa: F401
+    add_show_parser,
+    add_submit_parser,
+    cmd_show,
+    cmd_submit,
+)
+from neuro_workflow.cli.qa import add_qa_parser, cmd_qa  # noqa: F401
 
 
 def main():

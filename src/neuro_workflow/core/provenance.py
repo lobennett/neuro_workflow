@@ -23,7 +23,7 @@ from __future__ import annotations
 import hashlib
 import os
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib import metadata as _ilmd
 from pathlib import Path
 from typing import Any
@@ -44,7 +44,7 @@ _DEFAULT_TOOLS = ["neuro-workflow", "numpy", "nibabel", "nilearn", "pandas", "sc
 
 def _now_iso() -> str:
     """UTC timestamp in the same format as the exclusions lockfile."""
-    return datetime.now(timezone.utc).strftime(_ISO_FMT)
+    return datetime.now(UTC).strftime(_ISO_FMT)
 
 
 def git_sha() -> str:
@@ -196,7 +196,7 @@ def write_run_manifest(
     output_dir: str | Path,
     *,
     stage: str,
-    args: "Any",
+    args: Any,
     inputs: list[Path] | None = None,
     exclusions_source: str | Path | None = None,
     tools: list[str] | None = None,

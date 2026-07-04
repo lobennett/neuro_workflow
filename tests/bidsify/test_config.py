@@ -1,10 +1,6 @@
-import json
-from pathlib import Path
-
 import pytest
 
 from neuro_workflow.bidsify.config import (
-    ACQUISITION_MAP,
     SKIP_ACQUISITIONS,
     load_pipeline_config,
     map_acquisition,
@@ -139,7 +135,7 @@ class TestMapAcquisitionUnknown:
 
 class TestSkipAcquisitions:
     def test_is_a_set(self):
-        assert isinstance(SKIP_ACQUISITIONS, (set, frozenset))
+        assert isinstance(SKIP_ACQUISITIONS, set | frozenset)
 
     def test_contains_all_skip_labels(self):
         expected = {"3Plane Loc SSFSE", "GE HOS FOV28", "GE HOS FOV28_1", "GE HOS FOV28_2"}

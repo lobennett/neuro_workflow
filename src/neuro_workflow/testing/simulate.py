@@ -47,7 +47,6 @@ from __future__ import annotations
 import contextlib
 from argparse import Namespace
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from neuro_workflow.core import exclusions as _exclusions
 from neuro_workflow.core import exclusions_render as _render
@@ -88,10 +87,10 @@ class SimulationResult:
     def __init__(
         self,
         *,
-        compiled: List[dict],
-        bidsignore: Optional[str],
-        behavioral_entries: List[dict],
-        motion_entries: List[dict],
+        compiled: list[dict],
+        bidsignore: str | None,
+        behavioral_entries: list[dict],
+        motion_entries: list[dict],
         exclusions_dir: Path,
     ) -> None:
         self.compiled = compiled
@@ -152,10 +151,10 @@ def _redirect_exclusion_paths(exclusions_dir: Path, lockfile_dir: Path, collecti
 
 def simulate_exclusions(
     cohort_root: Path,
-    manifest: Dict,
+    manifest: dict,
     *,
     dataset: str = "sim",
-    work_dir: Optional[Path] = None,
+    work_dir: Path | None = None,
 ) -> SimulationResult:
     """Run the REAL exclusion pipeline over a synthetic cohort.
 
@@ -285,10 +284,10 @@ class FullPipelineResult:
     def __init__(
         self,
         *,
-        manifest: Dict,
+        manifest: dict,
         exclusions: SimulationResult,
-        recovery_scan: Optional[dict],
-        recovered_contrast: Optional[float],
+        recovery_scan: dict | None,
+        recovered_contrast: float | None,
     ) -> None:
         self.manifest = manifest
         self.exclusions = exclusions
@@ -302,7 +301,7 @@ _PLANTED_BETAS = {"incongruent": 10.0, "congruent": 5.0, "constant": 100.0}
 _PLANTED_EFFECT = _PLANTED_BETAS["incongruent"] - _PLANTED_BETAS["congruent"]
 
 
-def _map_spec_to_bids_scans(spec) -> List[dict]:
+def _map_spec_to_bids_scans(spec) -> list[dict]:
     """Compute each func acquisition's produced BIDS (sub, ses, task, run).
 
     Reproduces ``bidsify/run.py``'s numbering WITHOUT running it: sessions are
@@ -317,7 +316,7 @@ def _map_spec_to_bids_scans(spec) -> List[dict]:
     """
     from neuro_workflow.bidsify.config import map_acquisition
 
-    records: List[dict] = []
+    records: list[dict] = []
     for subj in spec.subjects:
         sub = f"sub-{subj.label}"
         sessions_sorted = sorted(subj.sessions, key=lambda s: (s.timestamp or "", s.label))
@@ -332,7 +331,7 @@ def _map_spec_to_bids_scans(spec) -> List[dict]:
                 func_acqs.append((acq, mapping["task"]))
 
             # Per-task run numbering by ascending acq timestamp.
-            by_task: Dict[str, list] = {}
+            by_task: dict[str, list] = {}
             for acq, task in func_acqs:
                 by_task.setdefault(task, []).append(acq)
             for task, acqs in by_task.items():
@@ -464,7 +463,7 @@ def simulate_full_pipeline(
         raise ValueError(f"at most one plant_contrast scan supported; got {len(plant_scans)}")
 
     # --- 2. sourcedata raw-jsPsych CSVs + REAL events.create --------------
-    collection_lines: List[str] = []
+    collection_lines: list[str] = []
     scan_seed = seed
     for scan in scans:
         scan_seed += 1
@@ -616,7 +615,7 @@ _FULL_COLLECTION_HEADER = (
 )
 
 
-def _write_full_collection_block(root: Path, dataset: str, lines: List[str]) -> Optional[Path]:
+def _write_full_collection_block(root: Path, dataset: str, lines: list[str]) -> Path | None:
     """Write the full-chain collection ``.bidsignore`` block, if any lines.
 
     Mirrors ``cohort._write_collection_block`` but keyed on ``dataset`` so the

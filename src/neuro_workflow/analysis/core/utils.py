@@ -1,12 +1,11 @@
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
 
-def create_exclusion_key(exclusion: Dict[str, str]) -> str:
+def create_exclusion_key(exclusion: dict[str, str]) -> str:
     """Create a standardized exclusion key from exclusion data.
 
     Args:
@@ -41,14 +40,14 @@ def _is_flat_list_format(data) -> bool:
 
 
 def _load_exclusions_flat(
-    data: list, exclusion_types: Optional[List[str]] = None
-) -> Dict[str, Set[str]]:
+    data: list, exclusion_types: list[str] | None = None
+) -> dict[str, set[str]]:
     """Parse neuro_workflow compiled exclusions (flat list) into the keyed-dict format.
 
     Entries with action 'exclude' or 'trim' are included. Entries with
     action 'force-include' are skipped. The 'source' field becomes the key.
     """
-    result: Dict[str, Set[str]] = {}
+    result: dict[str, set[str]] = {}
     for entry in data:
         action = entry.get("action", "")
         if action not in ("exclude", "trim"):
@@ -67,8 +66,8 @@ def _load_exclusions_flat(
 
 
 def load_exclusions_by_type(
-    exclusions_file: Union[str, Path], exclusion_types: Optional[List[str]] = None
-) -> Dict[str, Set[str]]:
+    exclusions_file: str | Path, exclusion_types: list[str] | None = None
+) -> dict[str, set[str]]:
     """Load exclusions by type from JSON file.
 
     Accepts both the legacy keyed-dict format (``{"motion_exclusions": [...], ...}``)
@@ -92,9 +91,9 @@ def load_exclusions_by_type(
         return {}
 
     try:
-        with open(exclusions_file, "r") as f:
+        with open(exclusions_file) as f:
             exclusions_data = json.load(f)
-    except (json.JSONDecodeError, IOError) as e:
+    except (OSError, json.JSONDecodeError) as e:
         logger.warning("Failed to load exclusions from %s: %s", exclusions_file, e)
         return {}
 
@@ -137,8 +136,8 @@ def load_exclusions_by_type(
 
 
 def load_exclusions(
-    exclusions_file: Union[str, Path], exclusion_types: Optional[List[str]] = None
-) -> Set[str]:
+    exclusions_file: str | Path, exclusion_types: list[str] | None = None
+) -> set[str]:
     """Load all exclusions from JSON file and return a combined set of exclusion keys.
 
     Args:
@@ -171,8 +170,8 @@ def load_exclusions(
 
 
 def load_contrast_exclusions(
-    exclusions_file: Union[str, Path],
-) -> Set[Tuple[str, str]]:
+    exclusions_file: str | Path,
+) -> set[tuple[str, str]]:
     """Load per-contrast exclusions (action 'exclude-contrast') from the compiled file.
 
     Returns a set of ``(scan_key, contrast)`` pairs, where ``scan_key`` matches
@@ -185,14 +184,14 @@ def load_contrast_exclusions(
     if not exclusions_file.exists():
         return set()
     try:
-        with open(exclusions_file, "r") as f:
+        with open(exclusions_file) as f:
             data = json.load(f)
-    except (json.JSONDecodeError, IOError) as e:
+    except (OSError, json.JSONDecodeError) as e:
         logger.warning("Failed to load contrast exclusions from %s: %s", exclusions_file, e)
         return set()
     if not isinstance(data, list):
         return set()  # only the neuro_workflow flat-list format carries exclude-contrast
-    out: Set[Tuple[str, str]] = set()
+    out: set[tuple[str, str]] = set()
     for entry in data:
         if entry.get("action") != "exclude-contrast":
             continue

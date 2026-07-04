@@ -1,6 +1,6 @@
 """Tests for src/neuro_workflow/qa/decisions.py."""
 
-from neuro_workflow.qa.decisions import Decision, ScanKey, load_decisions
+from neuro_workflow.qa.decisions import ScanKey, load_decisions
 
 
 def _write_tsv(tmp_path, content):

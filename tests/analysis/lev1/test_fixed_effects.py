@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import logging
 
-import pytest
-
 
 def _touch_contrast_run(contrast_dir, sub, ses, task, run, contrast):
     """Create effect-size + variance stubs for one (run, contrast)."""
@@ -52,6 +50,7 @@ def test_load_contrast_exclusions_parses_only_exclude_contrast(tmp_path):
     """load_contrast_exclusions returns (scan_key, contrast) for exclude-contrast
     entries and ignores scan-level exclude/trim entries."""
     import json
+
     from neuro_workflow.analysis.core.utils import load_contrast_exclusions
 
     p = tmp_path / "compiled.json"
@@ -343,6 +342,7 @@ def test_lev1_cli_min_runs_default_is_2():
 def test_lev1_cli_min_runs_must_be_positive():
     """`--min-runs 0` aborts via SystemExit."""
     import pytest as _pytest
+
     from neuro_workflow.analysis.lev1.run import get_parser
 
     parser = get_parser()

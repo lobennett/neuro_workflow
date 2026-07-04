@@ -3,7 +3,6 @@
 import logging
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ class FileFinder:
     }
 
     @staticmethod
-    def get_required_files_for_space(space: str) -> List[str]:
+    def get_required_files_for_space(space: str) -> list[str]:
         """Get list of required file types for a given analysis space.
 
         Args:
@@ -88,9 +87,9 @@ class FileFinder:
         self,
         subject_id: str,
         task_name: str,
-        required_files: Optional[List[str]] = None,
-        surface_space: Optional[str] = None,
-    ) -> Dict[str, Dict[str, Dict[str, Path]]]:
+        required_files: list[str] | None = None,
+        surface_space: str | None = None,
+    ) -> dict[str, dict[str, dict[str, Path]]]:
         """Parse BIDS and fMRIPrep directories for required files.
 
         Args:
@@ -148,7 +147,7 @@ class FileFinder:
         # Filter to complete runs only
         return self._filter_complete_runs(files, required_files)
 
-    def _discover_events_files(self, files: Dict, subject_id: str, task_name: str) -> None:
+    def _discover_events_files(self, files: dict, subject_id: str, task_name: str) -> None:
         """Discover BIDS events files."""
         bids_subj_dir = self.bids_dir / subject_id
         pattern = f"ses-*/func/*task-{task_name}_*events.tsv"
@@ -162,7 +161,7 @@ class FileFinder:
                 files.setdefault(session, {}).setdefault(run, {})["events"] = events_file
 
     def _discover_fmriprep_files(
-        self, files: Dict, subject_id: str, task_name: str, patterns: Dict[str, str]
+        self, files: dict, subject_id: str, task_name: str, patterns: dict[str, str]
     ) -> None:
         """Discover fMRIPrep derivative files."""
         fmriprep_subj_dir = self.fmriprep_dir / subject_id
@@ -184,8 +183,8 @@ class FileFinder:
                     files[session][run][file_type] = file_path
 
     def _filter_complete_runs(
-        self, files: Dict, required_files: List[str]
-    ) -> Dict[str, Dict[str, Dict[str, Path]]]:
+        self, files: dict, required_files: list[str]
+    ) -> dict[str, dict[str, dict[str, Path]]]:
         """Filter to only include runs with all required files.
 
         A run is dropped when it's missing any required file type. To make
@@ -213,8 +212,8 @@ class FileFinder:
         return filtered_files
 
     def validate_file_completeness(
-        self, files: Dict[str, Dict[str, Dict[str, Path]]], task_name: str
-    ) -> Dict[str, int]:
+        self, files: dict[str, dict[str, dict[str, Path]]], task_name: str
+    ) -> dict[str, int]:
         """Validate file completeness and return summary.
 
         Args:

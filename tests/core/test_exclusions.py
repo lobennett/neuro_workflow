@@ -1,19 +1,16 @@
 import json
-from pathlib import Path
 
 import pytest
 
 from neuro_workflow.core.exclusions import (
-    EXCLUSIONS_DIR,
-    validate_entry,
-    save_source_entries,
+    compile_exclusions,
+    get_trim_info,
+    is_excluded,
+    load_overrides,
     load_source_entries,
     save_overrides,
-    load_overrides,
-    compile_exclusions,
-    load_compiled_exclusions,
-    is_excluded,
-    get_trim_info,
+    save_source_entries,
+    validate_entry,
 )
 
 

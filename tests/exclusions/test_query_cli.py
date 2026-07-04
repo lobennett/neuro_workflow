@@ -4,13 +4,11 @@ from __future__ import annotations
 
 import json
 from argparse import Namespace
-from pathlib import Path
 
 import pytest
 
 import neuro_workflow.cli as cli_mod
 from neuro_workflow.core import exclusions as core_excl
-
 
 # ---------------------------------------------------------------------------
 # Shared fixture: isolated compiled exclusions in tmp_path
@@ -137,7 +135,7 @@ def test_cmd_exclusions_query_is_exported_on_cli_namespace():
 
 def test_exclusions_query_subparser_registered(tmp_path):
     """'exclusions query --help' exit code 0 (subparser exists)."""
-    import subprocess, sys
+    import subprocess
 
     result = subprocess.run(
         ["uv", "run", "neuro-run", "exclusions", "query", "--help"],

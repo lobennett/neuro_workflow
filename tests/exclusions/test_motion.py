@@ -1,5 +1,4 @@
 from argparse import Namespace
-from pathlib import Path
 
 from neuro_workflow.exclusions.motion import MotionGenerator
 
@@ -8,7 +7,7 @@ def _make_confounds_tsv(func_dir, subject, session, task, run, fd_values, dvars_
     """Create a minimal confounds TSV with framewise_displacement and dvars columns."""
     filename = f"{subject}_{session}_task-{task}_run-{run}_desc-confounds_timeseries.tsv"
     lines = ["framewise_displacement\tdvars"]
-    for fd, dv in zip(fd_values, dvars_values):
+    for fd, dv in zip(fd_values, dvars_values, strict=False):
         lines.append(f"{fd}\t{dv}")
     (func_dir / filename).write_text("\n".join(lines))
 

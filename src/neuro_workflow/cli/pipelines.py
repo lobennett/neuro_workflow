@@ -2,10 +2,9 @@
 
 import argparse
 import sys
-from pathlib import Path
 
-from neuro_workflow.pipelines.base import get_pipeline, list_pipelines, TEMPLATE_DIR
 from neuro_workflow.core.slurm import render_template
+from neuro_workflow.pipelines.base import TEMPLATE_DIR, get_pipeline, list_pipelines
 
 
 def cmd_show(args, remaining):

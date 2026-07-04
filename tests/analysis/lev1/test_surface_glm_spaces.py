@@ -2,7 +2,6 @@
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from neuro_workflow.analysis.io.file_discovery import FileFinder
 from neuro_workflow.analysis.lev1.processing.confounds import get_fc_confounds

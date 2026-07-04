@@ -5,8 +5,6 @@ from __future__ import annotations
 from argparse import Namespace
 from pathlib import Path
 
-import pytest
-
 
 def test_make_meta_shape():
     """make_meta returns a dict with all expected keys."""
@@ -54,6 +52,7 @@ def test_make_meta_strips_callable_from_args():
     set_defaults). The audit-trail args dict must drop it so json.dumps
     succeeds on the saved sources file."""
     import json
+
     from neuro_workflow.exclusions.base import make_meta
 
     def _stub_callback(args, remaining):
@@ -77,6 +76,7 @@ def test_save_source_entries_wraps_with_meta(tmp_path, monkeypatch):
     """save_source_entries writes {_meta, entries} on disk, not a bare list."""
     import json
     from argparse import Namespace
+
     from neuro_workflow.core import exclusions as core_excl
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
@@ -109,6 +109,7 @@ def test_save_source_entries_wraps_with_meta(tmp_path, monkeypatch):
 def test_save_source_entries_args_none_records_null(tmp_path, monkeypatch):
     """save_source_entries with args=None still works; _meta.args is null."""
     import json
+
     from neuro_workflow.core import exclusions as core_excl
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
@@ -136,6 +137,7 @@ def test_save_source_entries_args_none_records_null(tmp_path, monkeypatch):
 def test_load_source_entries_handles_wrapped_format(tmp_path, monkeypatch):
     """load_source_entries returns the entries list when the file is wrapped."""
     import json
+
     from neuro_workflow.core import exclusions as core_excl
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
@@ -172,6 +174,7 @@ def test_load_source_entries_handles_wrapped_format(tmp_path, monkeypatch):
 def test_load_source_entries_handles_bare_list(tmp_path, monkeypatch):
     """Legacy bare-list source files still load (back-compat)."""
     import json
+
     from neuro_workflow.core import exclusions as core_excl
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
@@ -199,6 +202,7 @@ def test_load_source_entries_handles_bare_list(tmp_path, monkeypatch):
 def test_compile_handles_mixed_wrapped_and_bare_sources(tmp_path, monkeypatch):
     """compile_exclusions tolerates a mix of wrapped + legacy bare files."""
     import json
+
     from neuro_workflow.core import exclusions as core_excl
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
@@ -251,6 +255,7 @@ def test_compile_writes_lockfile(tmp_path, monkeypatch):
     """compile_exclusions writes data/exclusions/<ds>_lock.json with the right schema."""
     import json
     from argparse import Namespace
+
     from neuro_workflow.core import exclusions as core_excl
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "home" / "exclusions")
@@ -296,6 +301,7 @@ def test_compile_writes_lockfile(tmp_path, monkeypatch):
 def test_compile_no_sources_writes_empty_lockfile(tmp_path, monkeypatch):
     """No sources/*.json files -> lockfile with sources: [], n_total_entries: 0."""
     import json
+
     from neuro_workflow.core import exclusions as core_excl
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "home" / "exclusions")
@@ -313,6 +319,7 @@ def test_compile_no_sources_writes_empty_lockfile(tmp_path, monkeypatch):
 def test_compile_with_bare_list_sources_records_null_meta(tmp_path, monkeypatch):
     """Legacy bare-list source files appear in the lockfile with null fields."""
     import json
+
     from neuro_workflow.core import exclusions as core_excl
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "home" / "exclusions")
@@ -353,6 +360,7 @@ def test_cmd_exclusions_generate_passes_args_through(tmp_path, monkeypatch):
     so the saved _meta records the CLI args."""
     import json
     from argparse import Namespace
+
     from neuro_workflow.core import exclusions as core_excl
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
@@ -410,10 +418,10 @@ def test_cmd_exclusions_show_prints_provenance_when_lockfile_exists(
     capsys,
 ):
     """cmd_exclusions_show prints lockfile-based provenance when available."""
-    import json
     from argparse import Namespace
-    from neuro_workflow.core import exclusions as core_excl
+
     import neuro_workflow.cli as cli_mod
+    from neuro_workflow.core import exclusions as core_excl
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "home" / "exclusions")
     monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")

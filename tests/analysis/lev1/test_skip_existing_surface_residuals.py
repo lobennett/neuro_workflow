@@ -9,14 +9,13 @@ import types
 
 import numpy as np
 import pandas as pd
-import pytest
 
+from neuro_workflow.analysis.lev1 import runner
 from neuro_workflow.analysis.lev1.processing.residuals import (
-    surface_residual_filename,
     process_surface_residuals,
+    surface_residual_filename,
 )
 from neuro_workflow.analysis.lev1.processing.surface_data import SurfaceGLM
-from neuro_workflow.analysis.lev1 import runner
 
 
 def test_surface_residual_filename_includes_space_segment():

@@ -4,15 +4,14 @@ import sys
 from pathlib import Path
 
 from neuro_workflow.core.exclusions import (
-    save_source_entries,
     compile_exclusions,
     load_compiled_exclusions,
     query_exclusions,
+    save_source_entries,
 )
 from neuro_workflow.core.exclusions_render import (
-    render_md,
-    render_bidsignore,
     render_bidsignore_with_collection,
+    render_md,
 )
 from neuro_workflow.exclusions.base import get_generator, list_generators
 
@@ -49,6 +48,7 @@ def cmd_exclusions_compile(args, remaining):
 def cmd_exclusions_show(args, remaining):
     import json
     from collections import Counter
+
     from neuro_workflow.core.exclusions import _lockfile_path
 
     compiled = load_compiled_exclusions(args.dataset)

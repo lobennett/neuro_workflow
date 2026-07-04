@@ -1,7 +1,6 @@
 """Unit tests for query_exclusions — written RED-first before implementation."""
 
-import pytest
-from neuro_workflow.core.exclusions import query_exclusions, _normalise_bids_field
+from neuro_workflow.core.exclusions import _normalise_bids_field, query_exclusions
 
 # ---------------------------------------------------------------------------
 # Fixture data

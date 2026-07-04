@@ -2,7 +2,6 @@
 
 import logging
 import re
-from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -37,11 +36,11 @@ def _resolve_column_or_constant(events: pd.DataFrame, col_spec: str) -> np.ndarr
 
 def create_regressor(
     events_df: pd.DataFrame,
-    regressor_config: Dict[str, str],
+    regressor_config: dict[str, str],
     n_scans: int,
     regressor_name: str,
     tr: float = 1.49,
-) -> Tuple[pd.DataFrame, Tuple]:
+) -> tuple[pd.DataFrame, tuple]:
     """Create a single regressor from events data.
 
     Args:
@@ -131,7 +130,7 @@ def create_design_matrix(
     task_name: str,
     n_scans: int,
     tr: float = 1.49,
-) -> Tuple[pd.DataFrame, List[Tuple]]:
+) -> tuple[pd.DataFrame, list[tuple]]:
     """Create complete design matrix from events and confounds.
 
     Args:

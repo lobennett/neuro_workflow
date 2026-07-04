@@ -34,7 +34,6 @@ from neuro_workflow.analysis.lev1.processing.events import (
     preprocess_events,
 )
 
-
 TR = 1.49
 N_TR = 100  # ~149 s wall time
 WALL_TIME = N_TR * TR

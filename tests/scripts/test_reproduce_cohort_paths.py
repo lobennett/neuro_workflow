@@ -1,5 +1,5 @@
-from pathlib import Path
 import importlib.util
+from pathlib import Path
 
 _spec = importlib.util.spec_from_file_location(
     "reproduce_cohort", Path(__file__).resolve().parents[2] / "scripts" / "reproduce_cohort.py"

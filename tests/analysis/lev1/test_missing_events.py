@@ -24,8 +24,6 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-import pytest
-
 from neuro_workflow.analysis.io.file_discovery import FileFinder
 
 

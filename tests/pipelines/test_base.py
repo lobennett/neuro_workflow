@@ -1,9 +1,9 @@
 from neuro_workflow.pipelines.base import (
-    Pipeline,
     TEMPLATE_DIR,
+    Pipeline,
+    build_mail_line,
     get_pipeline,
     list_pipelines,
-    build_mail_line,
     resolve_resources,
 )
 
@@ -14,7 +14,6 @@ def test_template_dir_exists():
 
 def test_pipeline_protocol_has_required_attributes():
     """Verify the protocol defines the expected interface."""
-    import inspect
 
     annotations = Pipeline.__protocol_attrs__
     assert "name" in annotations

@@ -10,7 +10,7 @@ checked-in `data/exclusions/<ds>_overrides.json` would be), so it fails if
 import json
 
 import neuro_workflow.core.exclusions as exc
-from neuro_workflow.core.exclusions import save_source_entries, compile_exclusions
+from neuro_workflow.core.exclusions import compile_exclusions, save_source_entries
 
 
 def _isolate(tmp_path, monkeypatch):

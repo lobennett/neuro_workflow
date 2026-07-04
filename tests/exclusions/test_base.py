@@ -1,7 +1,7 @@
 from neuro_workflow.exclusions.base import (
-    register_generator,
     get_generator,
     list_generators,
+    register_generator,
 )
 
 

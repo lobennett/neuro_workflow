@@ -1,5 +1,6 @@
 from pathlib import Path
-from neuro_workflow.core.image import get_image_path, ensure_image
+
+from neuro_workflow.core.image import ensure_image, get_image_path
 
 
 def test_get_image_path():
@@ -42,6 +43,6 @@ def test_ensure_image_exits_on_pull_failure(tmp_path, monkeypatch):
     monkeypatch.setattr("subprocess.run", mock_run)
     try:
         ensure_image(str(tmp_path), "fmriprep", "1.0.0", "docker://nipreps/fmriprep")
-        assert False, "Should have raised SystemExit"
+        raise AssertionError("Should have raised SystemExit")
     except SystemExit:
         pass

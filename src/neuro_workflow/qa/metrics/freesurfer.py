@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-
 _EULER_RE = re.compile(r"orig\.nofix\s+lheno\s*=\s*(-?\d+)\s*,\s*rheno\s*=\s*(-?\d+)")
 _ELAPSED_RE = re.compile(r"recon-all-run-time-hours\s+([\d.]+)")
 _ASEG_RE = re.compile(r"#\s*Measure\s+(\w+),.*?,\s*([\d.]+),\s*mm")

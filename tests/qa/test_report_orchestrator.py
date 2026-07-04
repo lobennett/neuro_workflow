@@ -1,11 +1,12 @@
 """Integration tests for src/neuro_workflow/qa/report.py orchestrator."""
 
-import pandas as pd
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
-from neuro_workflow.qa.report import build_reports
+import pandas as pd
+
 from neuro_workflow.qa.reliability_movies import MovieResult
+from neuro_workflow.qa.report import build_reports
 
 
 def _build_fixture(tmp_path: Path) -> Path:

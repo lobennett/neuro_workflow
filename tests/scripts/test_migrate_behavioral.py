@@ -1,8 +1,5 @@
 """Tests for scripts/migrate_behavioral.py"""
 
-import json
-from pathlib import Path
-
 
 def _write_manifest(tmp_path, rows):
     """Write a TSV manifest file."""
@@ -88,6 +85,7 @@ def test_migrate_skips_pending(tmp_path):
 
 def test_migrate_fails_on_unresolved_pending(tmp_path):
     import pytest
+
     from scripts.migrate_behavioral import migrate_from_manifest
 
     output_dir = tmp_path / "sourcedata"

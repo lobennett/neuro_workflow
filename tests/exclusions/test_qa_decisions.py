@@ -26,7 +26,7 @@ def _write_tsv(path: Path, rows: list[dict]) -> None:
             w.writerow(r)
 
 
-def _make_args(tsv_path: Path) -> "object":
+def _make_args(tsv_path: Path) -> object:
     """Minimal Namespace stand-in for args (only attributes the generator reads)."""
     from argparse import Namespace
 
@@ -36,6 +36,7 @@ def _make_args(tsv_path: Path) -> "object":
 def test_generator_has_cli_arg_for_decisions_tsv():
     """The generator declares --decisions-tsv on its parser."""
     from argparse import ArgumentParser
+
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
 
     parser = ArgumentParser()
@@ -317,6 +318,7 @@ def test_subject_filter_drops_subject_level_before_glob(tmp_path):
 def test_unknown_dataset_fails_loud(tmp_path):
     """An unknown dataset name fails loud (no silent no-filter / None path)."""
     import pytest
+
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
 
     tsv = tmp_path / "decisions.tsv"
@@ -380,8 +382,8 @@ def test_invalid_action_propagates_value_error(tmp_path):
 
 def test_generator_output_flows_through_compile(tmp_path, monkeypatch):
     """Entries from QADecisionsGenerator appear in compile_exclusions output."""
-    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
     from neuro_workflow.core import exclusions as core_excl
+    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
     monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")

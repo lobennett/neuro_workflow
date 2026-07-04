@@ -18,17 +18,19 @@ import logging
 import re
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import yaml
 
-# Path to the task battery YAML (base + dual task lists)
-_BATTERY_YAML = Path(__file__).parent / "battery.yaml"
-
 from neuro_workflow.core.acquisition import (
     N_DUMMY as DEFAULT_DUMMY_SCANS,
+)
+from neuro_workflow.core.acquisition import (
     TR_SECONDS as DEFAULT_TR,
 )
+
+# Path to the task battery YAML (base + dual task lists)
+_BATTERY_YAML = Path(__file__).parent / "battery.yaml"
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +64,8 @@ _IDENT_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\b")
 
 def _validate_contrasts(
     task_name: str,
-    regressors: Dict[str, Any],
-    contrasts: Dict[str, str],
+    regressors: dict[str, Any],
+    contrasts: dict[str, str],
 ) -> None:
     """Validate that every contrast formula only references declared regressor names.
 
@@ -87,7 +89,7 @@ def _validate_contrasts(
             )
 
 
-def _load_yaml(task_name: str) -> Dict[str, Any]:
+def _load_yaml(task_name: str) -> dict[str, Any]:
     """Load a single task YAML file.
 
     Args:
@@ -145,12 +147,12 @@ def _load_yaml(task_name: str) -> Dict[str, Any]:
 
 
 @lru_cache(maxsize=32)
-def _get_task_config(task_name: str) -> Dict[str, Any]:
+def _get_task_config(task_name: str) -> dict[str, Any]:
     """Cached wrapper around _load_yaml."""
     return _load_yaml(task_name)
 
 
-def _convert_regressor_config(yaml_regressors: Dict) -> Dict[str, Dict[str, str]]:
+def _convert_regressor_config(yaml_regressors: dict) -> dict[str, dict[str, str]]:
     """Convert YAML regressor format to the internal format used by design.py.
 
     YAML format:
@@ -199,7 +201,7 @@ def _encode_numeric_or_column(value) -> str:
         # Treat bools as numeric — Python's True/False are int subclasses,
         # so explicit guard before the (int, float) check below.
         return f"constant_{int(value)}_column"
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         if isinstance(value, float) and value.is_integer():
             value = int(value)
         return f"constant_{value}_column"
@@ -207,7 +209,7 @@ def _encode_numeric_or_column(value) -> str:
 
 
 @lru_cache(maxsize=1)
-def _load_battery() -> Dict[str, List[str]]:
+def _load_battery() -> dict[str, list[str]]:
     """Load battery.yaml and return {'base': [...], 'dual': [...]}.
 
     Cached so the YAML is read at most once per process.
@@ -217,23 +219,23 @@ def _load_battery() -> Dict[str, List[str]]:
     return data
 
 
-def get_base_tasks() -> List[str]:
+def get_base_tasks() -> list[str]:
     """Return the ordered list of 8 base (single-task) paradigm names."""
     return list(_load_battery()["base"])
 
 
-def get_dual_tasks() -> List[str]:
+def get_dual_tasks() -> list[str]:
     """Return the ordered list of 10 dual-task paradigm names."""
     return list(_load_battery()["dual"])
 
 
-def get_all_tasks() -> List[str]:
+def get_all_tasks() -> list[str]:
     """Return base + dual tasks in canonical order (18 tasks total)."""
     batt = _load_battery()
     return list(batt["base"]) + list(batt["dual"])
 
 
-def list_available_tasks() -> List[str]:
+def list_available_tasks() -> list[str]:
     """List all tasks with YAML config files.
 
     Returns:
@@ -244,7 +246,7 @@ def list_available_tasks() -> List[str]:
     return sorted(p.stem for p in _TASKS_DIR.glob("*.yaml"))
 
 
-def get_regressor_config(task_name: str) -> Dict[str, Dict[str, str]]:
+def get_regressor_config(task_name: str) -> dict[str, dict[str, str]]:
     """Get regressor configuration for a task.
 
     Args:
@@ -277,7 +279,7 @@ def get_regressor_config(task_name: str) -> Dict[str, Dict[str, str]]:
 get_task_regressors = get_regressor_config
 
 
-def get_task_contrasts(task_name: str) -> Dict[str, str]:
+def get_task_contrasts(task_name: str) -> dict[str, str]:
     """Get contrast definitions for a task.
 
     Args:
@@ -300,7 +302,7 @@ def get_task_contrasts(task_name: str) -> Dict[str, str]:
     return dict(contrasts)
 
 
-def get_task_parameters(task_name: str) -> Dict[str, Any]:
+def get_task_parameters(task_name: str) -> dict[str, Any]:
     """Get general parameters for a task.
 
     Args:
@@ -318,7 +320,7 @@ def get_task_parameters(task_name: str) -> Dict[str, Any]:
     }
 
 
-def get_raw_yaml_config(task_name: str) -> Dict[str, Any]:
+def get_raw_yaml_config(task_name: str) -> dict[str, Any]:
     """Get the raw YAML config for inspection/debugging.
 
     Args:

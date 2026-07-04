@@ -9,12 +9,12 @@ import pandas as pd
 
 from neuro_workflow.core.acquisition import N_DUMMY, TR_SECONDS
 from neuro_workflow.events.utils import (
-    get_neg_rt_correction,
-    cal_time_elapsed,
     add_choice_acc,
     add_cols,
-    response_time_and_junk,
+    cal_time_elapsed,
     find_nonmonotonic_cut,
+    get_neg_rt_correction,
+    response_time_and_junk,
 )
 
 log = logging.getLogger(__name__)

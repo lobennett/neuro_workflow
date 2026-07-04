@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 def handle_zero_variance_columns(
     design_matrix: pd.DataFrame,
-    exclude_columns: Optional[List[str]] = None,
-) -> Tuple[pd.DataFrame, List[str]]:
+    exclude_columns: list[str] | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
     """Detect and remove zero-variance columns from design matrix.
 
     Zero-variance columns (constant values across all timepoints) cause
@@ -69,13 +69,13 @@ def handle_zero_variance_columns(
 
 
 def fit_run_glm(
-    data_img: Union[str, Path],
+    data_img: str | Path,
     design_matrix: pd.DataFrame,
     analysis_type: str = "task",
-    subject_label: Optional[str] = None,
+    subject_label: str | None = None,
     tr: float = TR,
-    smoothing_fwhm: Optional[float] = None,
-    mask_img: Optional[Union[str, Path]] = None,
+    smoothing_fwhm: float | None = None,
+    mask_img: str | Path | None = None,
 ) -> FirstLevelModel:
     """Fit GLM for a single run.
 
@@ -101,7 +101,7 @@ def fit_run_glm(
     # Handle different input types
     # For paths (including GIFTI), FirstLevelModel will load them
     # For NIfTI images already loaded, pass them directly
-    if not isinstance(data_img, (str, Path)):
+    if not isinstance(data_img, str | Path):
         # Assume it's an already-loaded image (NIfTI)
         pass
 
@@ -177,7 +177,7 @@ def check_design_matrix_health(design_matrix: pd.DataFrame) -> None:
 def validate_design_matrix(
     design_matrix: pd.DataFrame,
     n_scans: int,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Validate a design matrix independently of the BOLD-data container.
 
     Used by both the volumetric path (which inlines this inside
@@ -201,7 +201,7 @@ def validate_design_matrix(
     Returns:
         Dict with ``is_valid`` flag, ``errors`` list, ``warnings`` list.
     """
-    validation: Dict[str, Any] = {
+    validation: dict[str, Any] = {
         "is_valid": True,
         "warnings": [],
         "errors": [],
@@ -257,10 +257,10 @@ def validate_design_matrix(
 
 
 def validate_glm_inputs(
-    data_img: Union[str, Path],
+    data_img: str | Path,
     design_matrix: pd.DataFrame,
-    mask_img: Optional[Union[str, Path]] = None,
-) -> Dict[str, Any]:
+    mask_img: str | Path | None = None,
+) -> dict[str, Any]:
     """Validate inputs for GLM analysis.
 
     Args:
@@ -284,7 +284,7 @@ def validate_glm_inputs(
 
     # Check data image
     try:
-        if isinstance(data_img, (str, Path)):
+        if isinstance(data_img, str | Path):
             data_path = Path(data_img)
             if not data_path.exists():
                 validation["errors"].append(f"Data image not found: {data_path}")
@@ -314,7 +314,7 @@ def validate_glm_inputs(
     # Check mask image
     if mask_img:
         try:
-            if isinstance(mask_img, (str, Path)):
+            if isinstance(mask_img, str | Path):
                 mask_path = Path(mask_img)
                 if not mask_path.exists():
                     validation["warnings"].append(f"Mask image not found: {mask_path}")

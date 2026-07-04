@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
 
 from neuro_workflow.testing.reproduce.canonical import compiled_to_keyset

@@ -16,8 +16,8 @@ generated data is deterministic and tests are reproducible.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Dict, Mapping, Optional, Sequence, Tuple
 
 import nibabel as nib
 import numpy as np
@@ -151,7 +151,7 @@ def as_4d_nifti(
     timeseries: np.ndarray,
     *,
     n_voxels: int = 8,
-    affine: Optional[np.ndarray] = None,
+    affine: np.ndarray | None = None,
 ) -> nib.Nifti1Image:
     """Wrap a 1-D BOLD timeseries into a small 4D NIfTI image.
 
@@ -179,7 +179,7 @@ def as_4d_nifti(
 def make_mask(
     img: nib.Nifti1Image,
     *,
-    affine: Optional[np.ndarray] = None,
+    affine: np.ndarray | None = None,
 ) -> nib.Nifti1Image:
     """Build an all-ones 3D brain mask matching a 4D BOLD image's geometry.
 
@@ -210,7 +210,7 @@ def make_synthetic_run(
     noise_sd: float = 1.0,
     seed: int = 0,
     n_voxels: int = 8,
-) -> Tuple[nib.Nifti1Image, Dict[str, float]]:
+) -> tuple[nib.Nifti1Image, dict[str, float]]:
     """Convenience: plant a timeseries and wrap it as a 4D NIfTI in one call.
 
     Args:
@@ -343,7 +343,7 @@ def write_confounds_tsv(
     # MotionGenerator ignores these; they exist so the file resembles fmriprep
     # output and so a wrong reader (raw `dvars`) would behave differently.
     raw_dvars = 15.0 + rng.normal(0.0, 0.5, size=n_trs)
-    columns: Dict[str, list] = {
+    columns: dict[str, list] = {
         "framewise_displacement": _format_with_na(fd),
         "std_dvars": _format_with_na(dvars_std),
         "dvars": _format_with_na(raw_dvars),
@@ -423,7 +423,7 @@ def write_fmriprep_bold(
     n_vertices: int = 32,
     n_grayordinates: int = 64,
     seed: int = 0,
-) -> Dict[str, Path]:
+) -> dict[str, Path]:
     """Write the BOLD (and brain mask) derivative file(s) for one space.
 
     Suffixes reproduce ``FileFinder``'s globs EXACTLY:
@@ -484,7 +484,7 @@ def write_fmriprep_bold(
         nib.save(make_mask(ref), str(path))
         return path
 
-    written: Dict[str, Path] = {}
+    written: dict[str, Path] = {}
 
     if space == "MNI":
         tag = f"space-{_MNI_TEMPLATE}_res-{_MNI_RES}"
@@ -535,7 +535,7 @@ def make_fmriprep_run(
     motion: str = "clean",
     n_voxels: int = 4,
     seed: int = 0,
-) -> Dict[str, Path]:
+) -> dict[str, Path]:
     """Synthesize a full fMRIPrep derivative set for ONE scan.
 
     Creates ``<fmriprep_dir>/sub-{subject}/ses-{session}/func/`` and writes a
@@ -602,7 +602,7 @@ def make_fmriprep_run(
         fd_spikes = 0
         dvars_spikes = 0
 
-    written: Dict[str, Path] = {}
+    written: dict[str, Path] = {}
     written["confounds"] = write_confounds_tsv(
         func_dir,
         prefix=prefix,
