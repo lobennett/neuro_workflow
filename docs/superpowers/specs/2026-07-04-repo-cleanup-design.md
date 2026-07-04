@@ -58,17 +58,30 @@ Taxonomy: branches `fix|feat|refactor|docs|chore|test/<slug>`; PR titles `FIX:`/
   PROVENANCE-AND-EXCLUSIONS, DATASETS, PIPELINE-WALKTHROUGH, the doc consolidation
   commit) into `main` so the stack bases on current truth. (Gated on the git-sync hold /
   iProc campaign — see Risks.)
-- **PR1 — `docs/consolidate`** (DOCS:): fold WORKFLOW+PROVENANCE into their supersets and
+- **PR1 — `chore/ci-and-standards`** (CHORE:): the engineering substrate. **Front of the
+  stack so every later PR is CI-gated.** Today the only CI is `codespell.yml` while ~570
+  tests go unrun and there is no LICENSE/ruff/pre-commit — that gap is the real blocker to
+  "a real SWE project."
+  - `.github/workflows/ci.yml`: on PRs to `main`, `uv sync` → `uv run pytest tests/
+    --ignore=tests/analysis` (the ~570-test **core suite**; `tests/analysis` needs heavy
+    deps / HPC data → **out of CI scope**) → `ruff check` + `ruff format --check`.
+  - `[tool.ruff]` in `pyproject.toml` (lint + format rules) + `.pre-commit-config.yaml`
+    (ruff, codespell, trailing-whitespace/EOF) so standards are enforced locally too.
+  - `LICENSE` (BSD-3-Clause or MIT — confirm with PI) and `CITATION.cff` (citable RSE).
+  - `CONTRIBUTING.md` (branch/PR taxonomy, commit trailer, review flow) +
+    `.github/PULL_REQUEST_TEMPLATE.md`.
+  - Delete the ~35 untracked root scratch files + extend `.gitignore` (`*.out`, ad-hoc
+    `*.sbatch`/scratch `.py`).
+- **PR2 — `docs/consolidate`** (DOCS:): fold WORKFLOW+PROVENANCE into their supersets and
   delete them; move PARCELLATION-COMPARISON to network_analysis; delete `docs/archive/`
-  + `docs/audits/`; repoint all doc-links; update CLAUDE.md doc list + `ARCHITECTURE.md`.
-- **PR2 — `docs/run-instructions`** (DOCS:): fix stale `RUNBOOK.md` §2.3/2.6/2.7/2.9
+  + `docs/audits/`; **make `README.md` the navigational hub** (install → per-stage run →
+  docs map, linking the 8 essential docs); repoint all doc-links; update CLAUDE.md doc
+  list + `ARCHITECTURE.md`.
+- **PR3 — `docs/run-instructions`** (DOCS:): fix stale `RUNBOOK.md` §2.3/2.6/2.7/2.9
   (XCP-D/prep-mshbm/mshbm/prevalence reference deleted templates) → replace bodies with
   one-line pointers to `network_analysis`; add an XCP-D run pointer; verify every stage
   (bidsify→trim→reconcile/migrate→events→fMRIPrep→XCP-D→lev1→lev1-outlier→lev2→QA) has a
   current runnable command in PIPELINE-WALKTHROUGH + RUNBOOK.
-- **PR3 — `chore/repo-conventions`** (CHORE:): add `CONTRIBUTING.md` (branch/PR taxonomy,
-  commit trailer, review flow), `.github/PULL_REQUEST_TEMPLATE.md`; delete untracked
-  scratch files + extend `.gitignore` (`*.out` scratch, ad-hoc sbatch).
 - **PR4 — `chore/scripts-tidy`** (CHORE:, AFTER Oak finalize): archive/remove the retired
   one-off scripts; keep the documented pipeline scripts.
 
@@ -77,7 +90,9 @@ Taxonomy: branches `fix|feat|refactor|docs|chore|test/<slug>`; PR titles `FIX:`/
   `iproc_parallel_run.py`, `iproc_ingest_fmriprep_fs.sh`) — **zero coupling** to
   neuro_workflow (stdlib only); the cleanest extraction candidate → a future
   `iproc-scatter` uv-installable tool. **Deferred to a follow-up** (the tedana controller
-  is running now and must stay byte-identical; extract when idle). Recorded here; not in
+  is running now and must stay byte-identical; extract when idle). **Pre-condition for the
+  later extraction:** add a minimal smoke test + pin the CLI interface for these
+  stdlib-only drivers (currently untested) so the split is safe. Recorded here; not in
   this stack.
 - **QA report** — leave in core (reverse-coupled: `exclusions/*` import `qa.decisions`,
   `qa.metrics`). Revisit only if that edge is severed first.
@@ -94,12 +109,21 @@ iProc extraction; `network_analysis`'s own stale back-imports (that repo's probl
 - **Public API:** do not remove/rename `core.slurm` or `pipelines.base` (network_analysis
   depends on them).
 - **`docs/superpowers/` in-flight specs** stay until Oak re-execution finalizes.
+- **This spec's own fate:** it lives in `docs/superpowers/specs/`, which PR2 un-ships from
+  `main`. When `docs/superpowers/` is removed (post-Oak-finalize), this spec moves to the
+  `docs-archive` branch and remains in git history.
 
 ## Success criteria
-- `docs/` reduced to the 8 essential files; no dangling doc-links; RUNBOOK has a current
-  command for every stage (in-repo or a pointer to network_analysis).
-- `CONTRIBUTING.md` + PR template define the branch/PR taxonomy; repo root free of
-  untracked scratch.
-- No `src/` behavior change; test suite still green; `network_analysis` still imports
-  cleanly from `neuro_workflow`.
-- Delivered as the small conventional PR stack above.
+- **CI gate (measurable):** `.github/workflows/ci.yml` runs on every PR to `main` and
+  passes — the core suite `uv run pytest tests/ --ignore=tests/analysis` (~570 tests) is
+  green **and** `ruff check` + `ruff format --check` are clean. `tests/analysis`
+  (extra-deps/HPC data) is explicitly out of CI scope and documented as such.
+- **Standards present:** `LICENSE`, `CITATION.cff`, `CONTRIBUTING.md`, PR template,
+  `[tool.ruff]` config, and `.pre-commit-config.yaml` all in place; branch/PR taxonomy
+  documented in CONTRIBUTING.
+- **Docs:** reduced to the 8 essentials; `README.md` is the navigational hub; no dangling
+  doc-links; RUNBOOK has a current command (or a network_analysis pointer) for every stage.
+- **No behavior change:** `src/` unchanged; `network_analysis` still imports
+  `neuro_workflow.core.slurm` + `pipelines.base` cleanly; repo root free of untracked scratch.
+- Delivered as the conventional PR stack above, **CI/standards (PR1) first** so later PRs
+  are gated.
