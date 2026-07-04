@@ -24,7 +24,7 @@ uv run python scripts/trim_bold.py /scratch/users/logben/discovery_bids
 
 ### Authoritative Documentation
 1. **`docs/WORKFLOW.md`** - Reproducible pipeline: Flywheel to lev2 (Steps 1-14)
-2. **`docs/EXCLUSIONS.md`** - Every .bidsignore entry with reason and cross-references
+2. **`docs/PROVENANCE-AND-EXCLUSIONS.md`** - Flywheel→models provenance + the exclusion framework (5 sources, compilation, lockfile, gate, reproduction). Per-cohort exclusion catalogs are *rendered* to each dataset's `EXCLUSIONS.md`.
 3. **`docs/SCAN-NOTES.md`** - Raw data collection notes per subject
 4. **`docs/ARCHITECTURE.md`** - Package structure and module reference
 5. **`docs/PROVENANCE.md`** - Run-manifest schema, dataset_description, clean-tree policy
@@ -71,7 +71,7 @@ uv run python scripts/reconcile_sessions.py \
   --output config/manifests/reconciliation_discovery.tsv
 
 # 4. Review manifest (resolve pending rows)
-# 5. Update .bidsignore (document in docs/EXCLUSIONS.md)
+# 5. Update .bidsignore (rendered from the compiled lockfile; see docs/PROVENANCE-AND-EXCLUSIONS.md)
 #    Generate: uv run neuro-run exclusions render-bidsignore discovery --output <bids_dir>/.bidsignore
 
 # 6. Migrate behavioral data
