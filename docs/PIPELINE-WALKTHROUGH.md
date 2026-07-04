@@ -14,7 +14,7 @@ This is the *narrated walkthrough*. Related docs, and when to use each:
 | **this file** | The full ordered recipe, start to finish, with explanations |
 | `docs/WORKFLOW.md` | Terse stage reference (Steps 1–14) |
 | `docs/RUNBOOK.md` | How each SLURM job is launched (partitions, resources, binds) |
-| `docs/EXCLUSIONS-FLOW.md` | How the 5 exclusion sources compile into the lockfile |
+| `docs/PROVENANCE-AND-EXCLUSIONS.md` | How the 5 exclusion sources compile into the lockfile (+ full provenance) |
 | `docs/PROVENANCE.md` | Run-manifest schema + clean-tree policy |
 | `docs/CONFIG.md` | `pipeline_config.json`, `thresholds.yaml`, `battery.yaml` schemas |
 | `docs/superpowers/specs/2026-06-30-flywheel-to-lev2-oak-reexecution-design.md` | Design + rationale for the Oak re-execution |

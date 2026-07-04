@@ -171,3 +171,29 @@ constant and compares **only the assignment algorithm** — which is what the ex
   and `/scratch/users/logben/mshbm_output_*_s10/...`
 - **Comparison design docs:** `neuro_workflow/docs/superpowers/specs/2026-06-02-mshbm-pipeline-comparison-design.md`
   (+ `2026-05-08-rest-only-mshbm-design.md`, `2026-05-26-mshbm-from-xcpd-design.md`)
+
+---
+
+## iProc vs fMRIPrep — clean N=1 empirical result (2026-07-04, s10, matched sm0)
+
+Smoothing-matched (both sm0), **prior-independent** metrics on the input fsaverage6
+surfaces (upstream of MS-HBM, so the borrowed DU15NET prior does not contaminate them):
+
+| Arm | within-parcel homogeneity (DU15NET) | split-half FC reliability |
+|---|--:|--:|
+| **iProc** (tedana) | **0.475** | 0.960 |
+| **fMRIPrep** (du2025 18P + GSR) | 0.364 | **0.978** |
+
+- **Homogeneity favors iProc, but is confounded by GSR:** fMRIPrep's arm regresses global
+  signal (18P+GSR), which legitimately lowers within-parcel correlation; iProc's tedana
+  path does not regress GSR, so it retains more shared signal → higher homogeneity. This is
+  a denoising-strategy difference, **not** evidence of iProc superiority.
+- **Split-half FC reliability is essentially tied** (both 0.96–0.98), marginally favoring
+  fMRIPrep. At N=1 iProc is not more reproducible here.
+- **Conclusion:** with smoothing matched, the two pipelines are very close on the
+  prior-independent reproducibility metric; the one large-looking gap (homogeneity) is a
+  GSR artifact. A definitive verdict needs the multi-subject + FS-matched + reliability run
+  (Track B, in progress). Metrics archived: `/scratch/users/logben/oak_reexec/trackA_metrics.tsv`.
+- **Caveats:** N=1 (s10); iProc FS 6.0.0 vs fMRIPrep FS 7.3.2 (uncontrolled, second-order
+  after fsaverage6 projection); tSNR omitted (inputs are bandpassed → mean removed → tSNR
+  undefined).
