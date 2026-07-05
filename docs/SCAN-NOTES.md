@@ -187,7 +187,7 @@ Flywheel session 22424 (Scan 0, 2020-11-11) was a fmap-only test session and is 
 
 A systematic correspondence check was performed on all behavioral CSV files vs. BOLD scans across discovery (5 subjects) and validation (41 subjects) datasets. 11 total discrepancies were identified.
 
-**See also**: 
+**See also**:
 - `docs/BEHAVIORAL_BOLD_DISCREPANCIES.md` (detailed analysis)
 - `/oak/.../sourcedata/BEHAVIORAL_DISCREPANCIES_NOTES.md` (implementation notes)
 
