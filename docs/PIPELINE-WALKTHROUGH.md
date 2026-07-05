@@ -15,8 +15,6 @@ This is the *narrated walkthrough*. Related docs, and when to use each:
 | `docs/RUNBOOK.md` | How each SLURM job is launched (partitions, resources, binds) |
 | `docs/PROVENANCE-AND-EXCLUSIONS.md` | How the 5 exclusion sources compile into the lockfile, the run-manifest schema, and clean-tree policy (full provenance) |
 | `docs/CONFIG.md` | `pipeline_config.json`, `thresholds.yaml`, `battery.yaml` schemas |
-| `docs/superpowers/specs/2026-06-30-flywheel-to-lev2-oak-reexecution-design.md` | Design + rationale for the Oak re-execution |
-| `docs/superpowers/plans/2026-06-30-flywheel-to-lev2-oak-reexecution.md` | Task-by-task implementation plan |
 
 ---
 
