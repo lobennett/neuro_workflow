@@ -1,17 +1,19 @@
 """Behavioral exclusion generator — runs behavioral QC and produces exclusion entries.
 
-Scoping note: dataset-scoped by construction — reads only the dataset's own
-``{bids_dir}/sourcedata`` behavioral CSVs, so its output cannot contain
-out-of-roster subjects. Hence no ``load_dataset_subjects`` roster filter (that is
-for pooled-input generators like ``qa_decisions`` / ``lev1_outlier``). See the
-scoping note in ``exclusions/motion.py``.
+Scoping note: the behavioral CSVs live in a SHARED sourcedata tree
+(``in_scanner_behavior`` holds all cohorts' subjects), so this generator filters
+its output to the dataset's canonical roster via ``load_dataset_subjects``,
+exactly like ``qa_decisions`` / ``lev1_outlier``. (The earlier "dataset-scoped by
+construction" assumption — that ``{bids_dir}/sourcedata`` holds only the cohort's
+behavioral — does not hold for this layout and silently cross-contaminated
+cohorts; this filter closes that.)
 """
 from __future__ import annotations
 
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from neuro_workflow.exclusions.base import register_generator
+from neuro_workflow.exclusions.base import load_dataset_subjects, register_generator
 
 
 class BehavioralGenerator:
@@ -36,16 +38,22 @@ class BehavioralGenerator:
         bids_dir = Path(dataset_config["bids_dir"])
         behavioral_dir = Path(args.behavioral_dir) if getattr(args, "behavioral_dir", None) else bids_dir / "sourcedata"
 
+        # Scope to the dataset roster: the shared behavioral tree holds all
+        # cohorts' subjects, so restrict QC to this dataset's subjects (fail-loud
+        # on an unknown dataset, via load_dataset_subjects).
+        roster = load_dataset_subjects(dataset_name)
         exclusion_entries, trim_entries = run_qc(
             behavioral_dir=behavioral_dir,
             bids_dir=bids_dir,
+            subjects=sorted(roster),
         )
 
         # Source field is set by the exclusions system when saving, but include for clarity
         for entry in exclusion_entries:
             entry["source"] = "behavioral-qc"
 
-        print(f"Behavioral QC: {len(exclusion_entries)} exclusions, {len(trim_entries)} trim entries")
+        print(f"Behavioral QC: {len(exclusion_entries)} exclusions, {len(trim_entries)} trim entries "
+              f"(roster-scoped to {len(roster)} subjects of dataset '{dataset_name}')")
         return exclusion_entries
 
 
