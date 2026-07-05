@@ -9,15 +9,16 @@ source, exactly how it is computed, how the sources compile into a per-cohort
 
 This is the "understand and trust the exclusion set" reference. For orientation to the
 data itself see `docs/DATASETS.md`; for copy-pasteable commands see
-`docs/PIPELINE-WALKTHROUGH.md` and `docs/WORKFLOW.md`; for per-`.bidsignore`-entry
+`docs/PIPELINE-WALKTHROUGH.md`; for per-`.bidsignore`-entry
 rationale, the per-cohort catalog is *rendered* to each dataset's `EXCLUSIONS.md`; for the
-run-manifest schema see `docs/PROVENANCE.md`.
+run-manifest schema see [§11 below](#run-manifest-schema--clean-tree-policy).
 
 > **Note.** This document is the single authoritative reference for the exclusion
-> framework and supersedes the former `docs/EXCLUSIONS-FLOW.md` and `docs/EXCLUSIONS.md`
-> (both removed 2026-07-04). It reflects the current code; §10 records current-vs-legacy
-> behavior worth knowing (notably: `lev1_outlier` is **active** and **per-contrast**, not
-> archived).
+> framework and supersedes the former `EXCLUSIONS-FLOW.md`, `EXCLUSIONS.md`
+> (both removed 2026-07-04), and `PROVENANCE.md` / `WORKFLOW.md` (folded in
+> 2026-07-04; see §11 and `docs/PIPELINE-WALKTHROUGH.md` respectively). It reflects the
+> current code; §10 records current-vs-legacy behavior worth knowing (notably:
+> `lev1_outlier` is **active** and **per-contrast**, not archived).
 
 ---
 
@@ -40,6 +41,7 @@ run-manifest schema see `docs/PROVENANCE.md`.
 8. [The Oak artifact](#8-the-oak-artifact)
 9. [Code & file-path index](#9-code--file-path-index)
 10. [Where code and existing docs disagree](#10-where-code-and-existing-docs-disagree)
+11. [Run-manifest schema & clean-tree policy](#run-manifest-schema--clean-tree-policy)
 
 ---
 
@@ -86,7 +88,7 @@ appears (pre-fMRIPrep, post-fMRIPrep, post-lev1).
 
 Every lev1/lev2 run writes a `run-manifest.json` (code SHA, `uv.lock` hash,
 `config_version`, tool versions, and the `{path, sha256}` of the compiled exclusions it
-consumed) — see `docs/PROVENANCE.md`.
+consumed) — see [§11 below](#run-manifest-schema--clean-tree-policy).
 
 ---
 
@@ -540,25 +542,125 @@ The canonical, backed-up, version-controlled datasets live at:
 
 Points to reconcile in the other docs (this document follows the code):
 
-1. **`docs/EXCLUSIONS-FLOW.md` — `lev1_outlier` is described as archived/"do not use"
+1. **`EXCLUSIONS-FLOW.md` — `lev1_outlier` is described as archived/"do not use"
    with whole-scan (`strict_vif=15`) granularity.** Stale. The generator is **active** and
    emits **per-contrast** `exclude-contrast` entries with the `exempt_contrasts`
    (`task-baseline`, `response_time`) carve-out; the committed discovery lockfile shows it
    contributing 22 entries. `docs/DATASETS.md` §6 already reflects the current behavior.
-2. **`docs/EXCLUSIONS-FLOW.md` roster filter** references a dataset `subjects_file` /
+2. **`EXCLUSIONS-FLOW.md` roster filter** references a dataset `subjects_file` /
    `~/.neuro_workflow/datasets.json`. Current code resolves the roster from
    `config/pipeline_config.json` `samples` via `load_dataset_subjects` /
    `resolve_dataset_subjects`; the removed `subjects_*.txt` files are gone.
-3. **`docs/EXCLUSIONS-FLOW.md` CLI path** points at `src/neuro_workflow/cli.py`; the
+3. **`EXCLUSIONS-FLOW.md` CLI path** points at `src/neuro_workflow/cli.py`; the
    handlers now live in `src/neuro_workflow/cli/exclusions.py`.
-4. **`docs/EXCLUSIONS-FLOW.md` "operator playbook"** says there is *no automated path* from
+4. **`EXCLUSIONS-FLOW.md` "operator playbook"** says there is *no automated path* from
    cohort QC to the registry (act only via `qa_decisions`/overrides). The automated path
    now exists — the `lev1_outlier` generator — as long as it is understood to be
    per-contrast, not scan-level.
-5. **`docs/EXCLUSIONS.md`** (last updated 2026-04-14) predates the compiled-source model:
+5. **`EXCLUSIONS.md`** (last updated 2026-04-14) predates the compiled-source model:
    it describes `.bidsignore` as the authoritative store. The authoritative store is now
    the compiled set / lockfile; `.bidsignore` and `EXCLUSIONS.md` are **rendered** from it.
 6. **Two behavioral source files in the lockfile** (`behavioral-qc` with 3 entries and a
    stale `behavioral` with 0) — a harmless provenance artifact of the source-file naming
    (`BehavioralGenerator.name = "behavioral"` but entries stamp `source="behavioral-qc"`),
    worth cleaning up on the next full recompile so the source list is unambiguous.
+
+---
+
+## Run-manifest schema & clean-tree policy
+
+> Folded in from the former `PROVENANCE.md` (2026-07-04). Every lev1 and lev2 run
+> automatically records its provenance; this section describes what is captured, where it
+> lands, and how the clean-tree policy works. (§4 above covers the compiled-**exclusions**
+> lockfile and its own, separate provenance fields — `compiled_at`, `compiled_at_code_sha`,
+> per-source `_meta` — including `config_version`'s role there; not repeated here.)
+
+### run-manifest.json
+
+Written to `<output_dir>/run-manifest.json` at the end of each lev1 or lev2 run. Fields:
+
+| Field | Description |
+|-------|-------------|
+| `stage` | `"lev1"` or `"lev2"` |
+| `code_sha` | Short git HEAD SHA, with `+dirty` suffix if working tree has uncommitted changes |
+| `code_dirty` | Boolean — `true` if working tree is dirty |
+| `uv_lock_hash` | First 12 hex chars of sha256(`uv.lock`) — pins the exact resolved dependency graph |
+| `config_version` | 12-char sha256 over `config/thresholds.yaml` + `battery.yaml` — changes whenever a study threshold or task list changes |
+| `tool_versions` | Dict of `package → installed version` for key analysis tools |
+| `exclusions_source` | `{path, sha256}` of the compiled exclusions JSON consumed by this run (lev1 only) |
+| `args` | The parsed CLI arguments (JSON-safe) |
+| `created_at` | UTC ISO timestamp |
+| `host` | `{nodename, sysname, release, machine, user}` |
+| `slurm_job_id` | SLURM job ID, or `null` if run outside SLURM |
+| `inputs` | Per-file manifest: `[{path, size_bytes, sha256}, …]` for key input files |
+
+Lev2 additionally includes an `input_provenance` block that summarises the `run-manifest.json` from each lev1 subject directory it consumed.
+
+### dataset_description.json
+
+Written to `<output_dir>/dataset_description.json`. Minimal valid BIDS derivative file:
+
+```json
+{
+  "Name": "lev1",
+  "BIDSVersion": "1.10.0",
+  "DatasetType": "derivative",
+  "GeneratedBy": [{
+    "Name": "neuro-workflow",
+    "Version": "<installed version>",
+    "CodeURL": "git:<short SHA>"
+  }],
+  "SourceDatasets": [{"URL": "<bids_dir>"}, {"URL": "<fmriprep_dir>"}]
+}
+```
+
+### Where outputs land
+
+```
+<output_dir>/
+├── run-manifest.json
+└── dataset_description.json
+```
+
+For lev1, `<output_dir>` is the per-subject results directory (e.g., `derivatives/lev1/sub-s10/`). For lev2, it is the group-level output directory.
+
+### Clean-tree policy
+
+By default, a lev1 or lev2 run warns loudly to stderr if the working tree has uncommitted changes, but the run still proceeds. The manifest records `code_dirty: true` in that case.
+
+To suppress the warning (e.g., during active development):
+```bash
+uv run neuro-run submit lev1 discovery --allow-dirty
+```
+
+To enforce a hard failure on a dirty tree (stricter reproducibility enforcement), use `require_clean_tree(allow_dirty=False)` programmatically from `core/provenance`.
+
+### Python API
+
+```python
+from neuro_workflow.core import provenance
+
+# Write a run manifest
+provenance.write_run_manifest(
+    output_dir,
+    stage="lev1",
+    args=parsed_args,
+    inputs=[Path("sub-s10_task-flanker_bold.nii.gz")],
+    exclusions_source="data/exclusions/discovery_lock.json",
+    allow_dirty=True,
+)
+
+# Write BIDS dataset_description.json
+provenance.write_dataset_description(
+    output_dir,
+    name="lev1",
+    source_datasets=[{"URL": "/scratch/users/logben/discovery_bids"}],
+)
+
+# Get the current config version hash
+version = provenance.config_version()
+
+# Check for dirty working tree
+if provenance.git_is_dirty():
+    print("Working tree has uncommitted changes")
+```

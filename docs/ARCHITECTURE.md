@@ -184,7 +184,7 @@ Study-level thresholds that previously lived as hardcoded literals are now in `c
 `analysis/task_config/loader.py` validates that every contrast formula in a task YAML only references declared regressor names. Invalid formulas raise `ContrastFormulaError` (a `ValueError` subclass) at config-load time, not at GLM-fit time.
 
 ### Provenance
-`core/provenance.py` provides `write_run_manifest`, `write_dataset_description`, and `require_clean_tree`. Lev1 and lev2 call these automatically: every run emits `<output_dir>/run-manifest.json` and a BIDS-valid `dataset_description.json`. Both accept `--allow-dirty` to permit running against an uncommitted working tree (a warning is printed; `code_dirty` is set to `true` in the manifest). See `docs/PROVENANCE.md` for the full schema.
+`core/provenance.py` provides `write_run_manifest`, `write_dataset_description`, and `require_clean_tree`. Lev1 and lev2 call these automatically: every run emits `<output_dir>/run-manifest.json` and a BIDS-valid `dataset_description.json`. Both accept `--allow-dirty` to permit running against an uncommitted working tree (a warning is printed; `code_dirty` is set to `true` in the manifest). See `docs/PROVENANCE-AND-EXCLUSIONS.md#run-manifest-schema--clean-tree-policy` for the full schema.
 
 ### Exclusions commands
 `neuro-run exclusions query` reports why a specific scan is excluded or trimmed. `render-md` and `render-bidsignore` regenerate `EXCLUSIONS.md` and `.bidsignore` from the compiled exclusions JSON (outputs carry a DO-NOT-EDIT stamp and support drift detection). Ingestion of the static collection-exclusion tables into the single compiled source is tracked separately (PR5c, pending).
