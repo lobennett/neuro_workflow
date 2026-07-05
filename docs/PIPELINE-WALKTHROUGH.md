@@ -11,14 +11,37 @@ This is the *narrated walkthrough*. Related docs, and when to use each:
 
 | Doc | Use it for |
 |-----|-----------|
-| **this file** | The full ordered recipe, start to finish, with explanations |
-| `docs/WORKFLOW.md` | Terse stage reference (Steps 1–14) |
+| **this file** | The full ordered recipe, start to finish, with explanations (§ Quick reference below for the terse version) |
 | `docs/RUNBOOK.md` | How each SLURM job is launched (partitions, resources, binds) |
-| `docs/PROVENANCE-AND-EXCLUSIONS.md` | How the 5 exclusion sources compile into the lockfile (+ full provenance) |
-| `docs/PROVENANCE.md` | Run-manifest schema + clean-tree policy |
+| `docs/PROVENANCE-AND-EXCLUSIONS.md` | How the 5 exclusion sources compile into the lockfile, the run-manifest schema, and clean-tree policy (full provenance) |
 | `docs/CONFIG.md` | `pipeline_config.json`, `thresholds.yaml`, `battery.yaml` schemas |
 | `docs/superpowers/specs/2026-06-30-flywheel-to-lev2-oak-reexecution-design.md` | Design + rationale for the Oak re-execution |
 | `docs/superpowers/plans/2026-06-30-flywheel-to-lev2-oak-reexecution.md` | Task-by-task implementation plan |
+
+---
+
+## Quick reference (Steps 1–14)
+
+Terse stage list, one line per stage with the command that runs it. This is the short
+form of the full narrated recipe below (Parts A–G); use it as a lookup table, not a
+substitute for reading the reasoning in each Part when running for real.
+
+| # | Stage | Command |
+|--:|---|---|
+| 1 | Pull from Flywheel (bidsify) | `uv run neuro-run submit bidsify <cohort> --output-dir <bids> --overwrite` |
+| 2 | Trim 7 dummy BOLD volumes (idempotent) | `uv run python scripts/trim_bold.py <bids>` |
+| 3 | Reconcile behavioral ↔ BOLD (read-only) | `uv run python scripts/reconcile_sessions.py --raw-dir <raw> --bids-dir <bids> --scan-notes docs/SCAN-NOTES.md --output <manifest>.tsv` |
+| 4 | Review manifest | resolve every `action=pending` row (`copy` / `skip` / `irreconcilable`); cross-reference `docs/SCAN-NOTES.md` and `docs/PROVENANCE-AND-EXCLUSIONS.md` |
+| 5 | Update `.bidsignore` | `uv run neuro-run exclusions render-bidsignore <cohort> --output <bids>/.bidsignore` |
+| 6 | Migrate behavioral data | `uv run python scripts/migrate_behavioral.py --manifest <manifest>.tsv --raw-dir <raw> --output-dir <sourcedata> --sample <cohort> --strict` |
+| 7 | Validate | `apptainer run … bids-validator_1.14.6.simg <bids>` (expect 0 errors) |
+| 8 | Generate event files | `uv run neuro-run events create <cohort>` + `uv run neuro-run events qc <cohort>` |
+| 9 | Compile exclusions | `uv run neuro-run exclusions generate behavioral <cohort>` + `uv run neuro-run exclusions compile <cohort>` |
+| 10 | Preprocessing (fMRIPrep) | `uv run neuro-run submit fmriprep <cohort> --version 25.2.4 …` |
+| 11 | Post-processing (FreeSurfer, QSIPrep, Happy, fsqc) | `uv run neuro-run submit {freesurfer,qsiprep,happy,fsqc} <cohort>` |
+| 12 | Motion exclusions | `uv run neuro-run exclusions generate motion <cohort> --fmriprep-version 25.2.4` + `compile` |
+| 13 | First-level GLM (lev1) | `uv run neuro-run submit lev1 <cohort> --base-tasks --space fsaverage6 --residuals --min-runs 2` |
+| 14 | Second-level group stats (lev2) | `uv run neuro-run submit lev2 <cohort> --space surface\|volume --num-permutations 5000` |
 
 ---
 
