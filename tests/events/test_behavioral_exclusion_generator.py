@@ -23,7 +23,10 @@ class TestBehavioralGenerator:
 
         args = Namespace(behavioral_dir=str(tmp_path / "sourcedata"))
         config = {"bids_dir": str(tmp_path)}
-        result = gen.generate("test", config, args)
+        # Use a real sample name; the generator validates the sample against
+        # config/pipeline_config.json. The tmp bids/sourcedata dirs contain no
+        # matching scans, so the result is an empty list.
+        result = gen.generate("discovery", config, args)
         assert isinstance(result, list)
 
     def test_exclusion_entry_format(self):
