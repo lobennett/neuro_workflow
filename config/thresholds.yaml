@@ -63,6 +63,14 @@ lev1_outlier:
   combined_outlier_pct: 10.0
   strict_vif: 15.0
   strict_outlier_pct: 15.0
+  # Contrasts exempt from the VIF rules (combined, strict_vif): structurally
+  # high-VIF, not data-quality signals. task-baseline (sum-of-all-conditions vs
+  # implicit baseline) collides with the constant + cosine-drift terms; response_time
+  # is a nuisance regressor collinear with task timing. ~2/3 of all VIF>=15 flags
+  # are task-baseline. The outlier-only rule (strict_outliers) still applies to these.
+  exempt_contrasts:
+    - task-baseline
+    - response_time
 
 # --- Lev1 confound selection ---
 # Consumed by analysis/lev1/processing/confounds.py.

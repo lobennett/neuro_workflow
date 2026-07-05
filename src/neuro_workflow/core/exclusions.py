@@ -16,7 +16,10 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 LOCKFILE_DIR = _REPO_ROOT / "data" / "exclusions"
 
 REQUIRED_FIELDS = {"subject", "session", "task", "run", "action", "reason"}
-VALID_ACTIONS = {"exclude", "trim", "force-include", "force-exclude"}
+# "exclude-contrast" drops a single contrast's fixed-effects contribution (lev1_outlier),
+# NOT the whole scan — it carries a `contrast` field, produces no .bidsignore glob, and
+# does not make lev1 skip the run (see is_excluded). All other actions are scan-level.
+VALID_ACTIONS = {"exclude", "trim", "force-include", "force-exclude", "exclude-contrast"}
 
 
 def _scan_key(entry: dict) -> tuple:
@@ -28,6 +31,9 @@ def validate_entry(entry: dict) -> bool:
     if not REQUIRED_FIELDS.issubset(entry.keys()):
         return False
     if entry["action"] not in VALID_ACTIONS:
+        return False
+    # Contrast-level exclusions must name the contrast they drop.
+    if entry["action"] == "exclude-contrast" and not entry.get("contrast"):
         return False
     return True
 

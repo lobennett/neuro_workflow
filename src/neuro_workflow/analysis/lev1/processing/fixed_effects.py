@@ -57,13 +57,17 @@ class FixedEffectsAnalyzer:
         contrast_dir: Path,
         contrast_name: str,
         exclusions: Optional[Set[str]] = None,
+        contrast_exclusions: Optional[Set[Tuple[str, str]]] = None,
     ) -> Tuple[List[Path], List[Path]]:
         """Find effect size and variance files for a contrast.
 
         Args:
             contrast_dir: Directory containing contrast files
             contrast_name: Name of the contrast
-            exclusions: Set of exclusion keys to skip
+            exclusions: Scan-level exclusion keys to skip (drops the whole run).
+            contrast_exclusions: ``(scan_key, contrast)`` pairs to skip — drops a
+                single run's contribution to THIS contrast only (lev1_outlier
+                per-contrast VIF exclusions), leaving the run's other contrasts.
 
         Returns:
             Tuple of (effect_files, variance_files)
@@ -75,6 +79,8 @@ class FixedEffectsAnalyzer:
         """
         if exclusions is None:
             exclusions = set()
+        if contrast_exclusions is None:
+            contrast_exclusions = set()
 
         # Determine file extension based on hemisphere (surface vs volumetric)
         if self.hemisphere is not None:
@@ -95,21 +101,28 @@ class FixedEffectsAnalyzer:
         all_effect_files = list(contrast_dir.glob(effect_pattern))
         all_variance_files = list(contrast_dir.glob(variance_pattern))
 
-        # Filter out excluded runs
+        # Filter out excluded runs (scan-level) and excluded (run, contrast) pairs.
         for effect_file in all_effect_files:
             # Parse filename to check for exclusions
             exclusion_key = self._parse_exclusion_key(effect_file)
-            if exclusion_key not in exclusions:
-                effect_files.append(effect_file)
-
-                # Find corresponding variance file
-                variance_file = effect_file.with_name(
-                    effect_file.name.replace('stat-effect-size', 'stat-variance')
+            if exclusion_key in exclusions:
+                continue
+            if (exclusion_key, contrast_name) in contrast_exclusions:
+                logger.info(
+                    'Dropping %s contrast %s for run %s (per-contrast VIF exclusion)',
+                    self.subject_id, contrast_name, exclusion_key,
                 )
-                if variance_file in all_variance_files:
-                    variance_files.append(variance_file)
-                else:
-                    logger.warning('Missing variance file for %s', effect_file)
+                continue
+
+            effect_files.append(effect_file)
+            # Find corresponding variance file
+            variance_file = effect_file.with_name(
+                effect_file.name.replace('stat-effect-size', 'stat-variance')
+            )
+            if variance_file in all_variance_files:
+                variance_files.append(variance_file)
+            else:
+                logger.warning('Missing variance file for %s', effect_file)
 
         # Sort files to ensure consistent ordering
         effect_files.sort()
@@ -344,6 +357,7 @@ class FixedEffectsAnalyzer:
         output_dir: Path,
         exclusions: Optional[Set[str]] = None,
         contrasts: Optional[Dict[str, str]] = None,
+        contrast_exclusions: Optional[Set[Tuple[str, str]]] = None,
     ) -> Dict[str, Dict[str, Path]]:
         """Compute fixed effects for all task contrasts.
 
@@ -369,7 +383,7 @@ class FixedEffectsAnalyzer:
         for contrast_name in contrasts.keys():
             # Find files for this contrast
             effect_files, variance_files = self.find_contrast_files(
-                contrast_dir, contrast_name, exclusions
+                contrast_dir, contrast_name, exclusions, contrast_exclusions
             )
 
             if effect_files and variance_files:
@@ -447,6 +461,7 @@ def compute_subject_fixed_effects(
     min_runs: int = 2,
     hemisphere: Optional[str] = None,
     surface_space: str = 'fsnative',
+    contrast_exclusions: Optional[Set[Tuple[str, str]]] = None,
 ) -> Dict[str, Dict[str, Path]]:
     """Compute fixed effects for all contrasts for a subject.
 
@@ -479,4 +494,6 @@ def compute_subject_fixed_effects(
         surface_space=surface_space,
     )
 
-    return analyzer.compute_all_task_fixed_effects(contrast_dir, output_dir, exclusions)
+    return analyzer.compute_all_task_fixed_effects(
+        contrast_dir, output_dir, exclusions, contrast_exclusions=contrast_exclusions
+    )

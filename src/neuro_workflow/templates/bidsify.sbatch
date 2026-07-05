@@ -15,7 +15,7 @@ mkdir -p "{log_dir}"
 
 CONTAINER="{container}"
 
-apptainer run "$CONTAINER" bidsify {sample} \
+apptainer run -B /oak:/oak "$CONTAINER" bidsify {sample} \
     --output-dir {output_dir} \
     {extra_args}
 

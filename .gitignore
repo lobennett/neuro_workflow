@@ -39,4 +39,4 @@ docs/*.pdf
 
 # Generated audit figures and auto-generated markdown reports (untracked)
 docs/audits/figures/
-docs/EVENTS-TASK-CONFIG-AUDIT.md
+docs/EVENTS-TASK-CONFIG-AUDIT.md.repro_test_*.out

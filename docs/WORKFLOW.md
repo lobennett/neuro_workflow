@@ -2,6 +2,8 @@
 
 **Last updated:** 2026-06-09
 
+Terse stage reference (Steps 1–14). For the full narrated recipe — every command in order, with what each does and why, reflecting the current Oak re-execution (Drift Gate, exclusion diff-gates, reproduce certification, read-only finalize) — see **`docs/PIPELINE-WALKTHROUGH.md`**.
+
 Exact commands to reproduce the BIDS datasets and run the analysis pipeline from Flywheel. Each stage depends on the previous one.
 
 ---
@@ -97,7 +99,7 @@ Open the TSV manifests. Every row with `action=pending` must be resolved:
 - `skip` — rest scans, behavioral without BOLD, session offset artifacts
 - `irreconcilable` — BOLD exists but no behavioral data; add to `.bidsignore`
 
-Cross-reference `docs/SCAN-NOTES.md` and `docs/EXCLUSIONS.md` for context.
+Cross-reference `docs/SCAN-NOTES.md` and `docs/PROVENANCE-AND-EXCLUSIONS.md` for context.
 
 For subjects with split/skipped BIDS sessions (s321, s1445, s1326, s1391, s1258), apply +1 session offset from the split point onward.
 
@@ -118,7 +120,7 @@ Use `scripts/check_tr.sh` to identify scans with unexpected TR counts:
 bash scripts/check_tr.sh /scratch/users/logben/discovery_bids /scratch/users/logben/validation_bids
 ```
 
-Document all exclusions in `docs/EXCLUSIONS.md`.
+Exclusions are captured by the 5 generators and compiled to the per-cohort lockfile; see `docs/PROVENANCE-AND-EXCLUSIONS.md`.
 
 To regenerate `.bidsignore` from the compiled exclusions source:
 ```bash
@@ -128,7 +130,7 @@ uv run neuro-run exclusions render-bidsignore validation --output /scratch/users
 
 To regenerate the Markdown exclusions table:
 ```bash
-uv run neuro-run exclusions render-md discovery --output docs/EXCLUSIONS.md
+uv run neuro-run exclusions render-md discovery --output /scratch/users/logben/discovery_bids/EXCLUSIONS.md
 ```
 
 Note: ingestion of the static collection-exclusion tables into the compiled single source is in progress (see PR5c).
@@ -284,7 +286,7 @@ Both write provenance into the **per-contrast** output dir (`{results_dir}/{cont
 | `config/pipeline_config.json` | Subject lists, session overrides, Flywheel aliases |
 | `config/thresholds.yaml` | Study-level QC/motion/VIF thresholds (config-as-code) |
 | `config/manifests/reconciliation_*.tsv` | Reviewed behavioral-BOLD matching manifests |
-| `docs/EXCLUSIONS.md` | Why every scan is in .bidsignore |
+| `docs/PROVENANCE-AND-EXCLUSIONS.md` | Exclusion framework + why scans are excluded (per-cohort catalog rendered to each dataset's `EXCLUSIONS.md`) |
 | `docs/SCAN-NOTES.md` | Raw data collection notes per subject |
 | `docs/CONFIG.md` | Schema and usage for thresholds.yaml and battery.yaml |
 | `docs/PROVENANCE.md` | Run-manifest schema and clean-tree policy |
