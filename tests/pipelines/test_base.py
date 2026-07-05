@@ -13,15 +13,22 @@ def test_template_dir_exists():
 
 
 def test_pipeline_protocol_has_required_attributes():
-    """Verify the protocol defines the expected interface."""
+    """Verify the protocol defines the expected interface.
 
-    annotations = Pipeline.__protocol_attrs__
-    assert "name" in annotations
-    assert "docker_uri" in annotations
-    assert "template_name" in annotations
-    assert "default_resources" in annotations
-    assert "add_cli_args" in annotations
-    assert "build_context" in annotations
+    ``__protocol_attrs__`` is a CPython 3.12+ typing internal; derive the
+    member set portably (annotated attrs + public methods) so the test runs
+    on 3.11 too.
+    """
+
+    members = set(getattr(Pipeline, "__annotations__", {})) | {
+        n for n in dir(Pipeline) if not n.startswith("_")
+    }
+    assert "name" in members
+    assert "docker_uri" in members
+    assert "template_name" in members
+    assert "default_resources" in members
+    assert "add_cli_args" in members
+    assert "build_context" in members
 
 
 def test_get_pipeline_returns_none_for_unknown():

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from argparse import Namespace
+from pathlib import Path
 
 import pytest
 
@@ -141,8 +142,7 @@ def test_exclusions_query_subparser_registered(tmp_path):
         ["uv", "run", "neuro-run", "exclusions", "query", "--help"],
         capture_output=True,
         text=True,
-        cwd="/scratch/users/logben/neuro_workflow_refactor",
-        env={**__import__("os").environ, "UV_CACHE_DIR": "/scratch/users/logben/.uv-cache"},
+        cwd=Path(__file__).resolve().parents[2],
     )
     assert result.returncode == 0, result.stderr
     assert "--subject" in result.stdout
