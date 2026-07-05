@@ -1,4 +1,5 @@
 """provenance.fsl_version() — best-effort FSL version capture for the lev2 manifest."""
+
 from neuro_workflow.core import provenance
 
 

@@ -13,6 +13,7 @@ dependency — install it in your personal environment before running).  The
 ``fw_project_to_inventory`` transform itself has no SDK import and is unit-tested
 on duck-typed fakes.
 """
+
 from __future__ import annotations
 
 import argparse

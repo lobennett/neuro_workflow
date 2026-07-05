@@ -1,4 +1,5 @@
 """Behavioral QC: compute metrics, flag exclusions, detect trimming needs."""
+
 import json
 import logging
 import re
@@ -7,24 +8,24 @@ from pathlib import Path
 import pandas as pd
 
 from neuro_workflow.events.qc_globals import (
-    STOP_SUCCESS_ACC_LOW_THRESHOLD,
-    STOP_SUCCESS_ACC_HIGH_THRESHOLD,
+    ACC_THRESHOLD,
     GO_RT_THRESHOLD_FMRI,
     GONOGO_GO_ACC_THRESHOLD_1,
-    GONOGO_NOGO_ACC_THRESHOLD_1,
     GONOGO_GO_ACC_THRESHOLD_2,
+    GONOGO_NOGO_ACC_THRESHOLD_1,
     GONOGO_NOGO_ACC_THRESHOLD_2,
+    LAST_N_TEST_TRIALS,
     NBACK_1BACK_MATCH_ACC_COMBINED_THRESHOLD_1,
-    NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1,
     NBACK_1BACK_MATCH_ACC_COMBINED_THRESHOLD_2,
+    NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1,
     NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_2,
     NBACK_2BACK_MATCH_ACC_COMBINED_THRESHOLD_1,
-    NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1,
     NBACK_2BACK_MATCH_ACC_COMBINED_THRESHOLD_2,
+    NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1,
     NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_2,
-    ACC_THRESHOLD,
     OMISSION_RATE_THRESHOLD,
-    LAST_N_TEST_TRIALS,
+    STOP_SUCCESS_ACC_HIGH_THRESHOLD,
+    STOP_SUCCESS_ACC_LOW_THRESHOLD,
 )
 
 log = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ NONMONOTONIC_EXCLUDE_FRACTION = 0.5
 
 
 # --- RT tail cutoff detection ---
+
 
 def detect_rt_tail_cutoff(df: pd.DataFrame, last_n: int = LAST_N_TEST_TRIALS) -> dict | None:
     """Detect if participant stopped responding at the end of a run.
@@ -91,6 +93,7 @@ def detect_rt_tail_cutoff(df: pd.DataFrame, last_n: int = LAST_N_TEST_TRIALS) ->
 
 # --- Per-task exclusion checks ---
 
+
 def check_stop_signal_exclusion(metrics: dict) -> dict | None:
     """Check stop signal exclusion criteria. Returns reason dict or None."""
     reasons = []
@@ -115,7 +118,9 @@ def check_go_nogo_exclusion(metrics: dict) -> dict | None:
     rule1 = (go_acc <= GONOGO_GO_ACC_THRESHOLD_1) or (nogo_acc <= GONOGO_NOGO_ACC_THRESHOLD_1)
     rule2 = (go_acc <= GONOGO_GO_ACC_THRESHOLD_2) or (nogo_acc <= GONOGO_NOGO_ACC_THRESHOLD_2)
     if rule1 and rule2:
-        return {"reason": f"go_acc={go_acc:.2f}, nogo_acc={nogo_acc:.2f} — both exclusion rules triggered"}
+        return {
+            "reason": f"go_acc={go_acc:.2f}, nogo_acc={nogo_acc:.2f} — both exclusion rules triggered"
+        }
     return None
 
 
@@ -128,15 +133,29 @@ def check_nback_exclusion(metrics: dict, load: int) -> dict | None:
     if match_acc is None or mismatch_acc is None:
         return None
     if load == 1:
-        t1_match, t1_mismatch = NBACK_1BACK_MATCH_ACC_COMBINED_THRESHOLD_1, NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1
-        t2_match, t2_mismatch = NBACK_1BACK_MATCH_ACC_COMBINED_THRESHOLD_2, NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_2
+        t1_match, t1_mismatch = (
+            NBACK_1BACK_MATCH_ACC_COMBINED_THRESHOLD_1,
+            NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1,
+        )
+        t2_match, t2_mismatch = (
+            NBACK_1BACK_MATCH_ACC_COMBINED_THRESHOLD_2,
+            NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_2,
+        )
     else:
-        t1_match, t1_mismatch = NBACK_2BACK_MATCH_ACC_COMBINED_THRESHOLD_1, NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1
-        t2_match, t2_mismatch = NBACK_2BACK_MATCH_ACC_COMBINED_THRESHOLD_2, NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_2
+        t1_match, t1_mismatch = (
+            NBACK_2BACK_MATCH_ACC_COMBINED_THRESHOLD_1,
+            NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1,
+        )
+        t2_match, t2_mismatch = (
+            NBACK_2BACK_MATCH_ACC_COMBINED_THRESHOLD_2,
+            NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_2,
+        )
     rule1 = (match_acc <= t1_match) or (mismatch_acc <= t1_mismatch)
     rule2 = (match_acc <= t2_match) or (mismatch_acc <= t2_mismatch)
     if rule1 and rule2:
-        return {"reason": f"{load}-back match={match_acc:.2f}, mismatch={mismatch_acc:.2f} — exclusion rules triggered"}
+        return {
+            "reason": f"{load}-back match={match_acc:.2f}, mismatch={mismatch_acc:.2f} — exclusion rules triggered"
+        }
     return None
 
 
@@ -153,6 +172,7 @@ def check_other_exclusion(metrics: dict) -> dict | None:
 
 
 # --- Metric computation from sourcedata CSV ---
+
 
 def compute_metrics_from_csv(csv_path: Path, task_name: str) -> dict:
     """Compute behavioral QC metrics from a sourcedata CSV.
@@ -185,7 +205,9 @@ def compute_metrics_from_csv(csv_path: Path, task_name: str) -> dict:
         if len(go_trials) > 0:
             valid_go = go_trials[go_trials["rt"] != -1]
             metrics["go_rt"] = float(valid_go["rt"].mean()) if len(valid_go) > 0 else None
-            metrics["go_acc"] = float((go_trials["key_press"] == go_trials["correct_response"]).mean())
+            metrics["go_acc"] = float(
+                (go_trials["key_press"] == go_trials["correct_response"]).mean()
+            )
         if len(stop_trials) > 0 and "stop_acc" in stop_trials.columns:
             metrics["stop_success_rate"] = float((stop_trials["stop_acc"] == 1).mean())
 
@@ -196,7 +218,9 @@ def compute_metrics_from_csv(csv_path: Path, task_name: str) -> dict:
         go_trials = test_rows[test_rows["go_nogo_condition"] == "go"]
         nogo_trials = test_rows[test_rows["go_nogo_condition"] == "nogo"]
         if len(go_trials) > 0:
-            metrics["go_acc"] = float((go_trials["key_press"] == go_trials["correct_response"]).mean())
+            metrics["go_acc"] = float(
+                (go_trials["key_press"] == go_trials["correct_response"]).mean()
+            )
         if len(nogo_trials) > 0:
             metrics["nogo_acc"] = float((nogo_trials["rt"] == -1).mean())
 
@@ -212,19 +236,27 @@ def compute_metrics_from_csv(csv_path: Path, task_name: str) -> dict:
             if len(load_trials) == 0:
                 continue
             load_cond = load_trials["n_back_condition"].astype(str)
-            match_mask = load_cond.str.contains("match", na=False) & ~load_cond.str.contains("mismatch", na=False)
+            match_mask = load_cond.str.contains("match", na=False) & ~load_cond.str.contains(
+                "mismatch", na=False
+            )
             match_trials = load_trials[match_mask]
             mismatch_trials = load_trials[load_cond.str.contains("mismatch", na=False)]
             if len(match_trials) > 0:
-                metrics[f"match_{load}back_acc"] = float((match_trials["key_press"] == match_trials["correct_response"]).mean())
+                metrics[f"match_{load}back_acc"] = float(
+                    (match_trials["key_press"] == match_trials["correct_response"]).mean()
+                )
             if len(mismatch_trials) > 0:
-                metrics[f"mismatch_{load}back_acc"] = float((mismatch_trials["key_press"] == mismatch_trials["correct_response"]).mean())
+                metrics[f"mismatch_{load}back_acc"] = float(
+                    (mismatch_trials["key_press"] == mismatch_trials["correct_response"]).mean()
+                )
 
     else:
         # Generic task: accuracy and omission rate
         valid_trials = test_rows[test_rows["rt"] != -1]
         if len(valid_trials) > 0:
-            metrics["acc"] = float((valid_trials["key_press"] == valid_trials["correct_response"]).mean())
+            metrics["acc"] = float(
+                (valid_trials["key_press"] == valid_trials["correct_response"]).mean()
+            )
         metrics["omission_rate"] = float((test_rows["rt"] == -1).sum() / len(test_rows))
 
     return metrics
@@ -285,62 +317,74 @@ def run_qc(
 
                 if cutoff_info is not None:
                     if cutoff_info["cutoff_before_halfway"]:
-                        exclusion_entries.append({
+                        exclusion_entries.append(
+                            {
+                                "subject": sub_dir.name,
+                                "session": ses_dir.name,
+                                "task": f"task-{task_name}",
+                                "run": run_label,
+                                "action": "exclude",
+                                "source": "behavioral-qc",
+                                "reason": f"RT tail cutoff before halfway (proportion_blank={cutoff_info['proportion_blank']:.2f})",
+                            }
+                        )
+                    else:
+                        trim_entries.append(
+                            {
+                                "subject": sub_dir.name,
+                                "session": ses_dir.name,
+                                "task": task_name,
+                                "cutoff_onset_ms": cutoff_info["cutoff_onset_ms"],
+                                "proportion_blank": cutoff_info["proportion_blank"],
+                            }
+                        )
+
+                # Check exclusion criteria
+                excl = determine_exclusion(task_name, metrics)
+                if excl is not None:
+                    exclusion_entries.append(
+                        {
                             "subject": sub_dir.name,
                             "session": ses_dir.name,
                             "task": f"task-{task_name}",
                             "run": run_label,
                             "action": "exclude",
                             "source": "behavioral-qc",
-                            "reason": f"RT tail cutoff before halfway (proportion_blank={cutoff_info['proportion_blank']:.2f})",
-                        })
-                    else:
-                        trim_entries.append({
-                            "subject": sub_dir.name,
-                            "session": ses_dir.name,
-                            "task": task_name,
-                            "cutoff_onset_ms": cutoff_info["cutoff_onset_ms"],
-                            "proportion_blank": cutoff_info["proportion_blank"],
-                        })
-
-                # Check exclusion criteria
-                excl = determine_exclusion(task_name, metrics)
-                if excl is not None:
-                    exclusion_entries.append({
-                        "subject": sub_dir.name,
-                        "session": ses_dir.name,
-                        "task": f"task-{task_name}",
-                        "run": run_label,
-                        "action": "exclude",
-                        "source": "behavioral-qc",
-                        "reason": excl["reason"],
-                    })
+                            "reason": excl["reason"],
+                        }
+                    )
 
                 # Non-monotonic onset truncation: create_events_df truncates a
                 # backward-clock-glitch tail; if that drops > half the test
                 # trials, exclude the scan rather than keep a gutted run.
                 try:
                     from neuro_workflow.events.create import events_truncation_stats
+
                     tstats = events_truncation_stats(csv_file, task_name)
                 except Exception as e:  # unknown exp_id / placeholder CSV / parse error
                     log.warning("truncation-stats skipped for %s: %s", csv_file, e)
                     tstats = None
-                if (tstats and tstats["cut"] is not None
-                        and tstats["n_test_total"] > 0
-                        and tstats["fraction_test_dropped"] > NONMONOTONIC_EXCLUDE_FRACTION):
-                    exclusion_entries.append({
-                        "subject": sub_dir.name,
-                        "session": ses_dir.name,
-                        "task": f"task-{task_name}",
-                        "run": run_label,
-                        "action": "exclude",
-                        "source": "behavioral-qc",
-                        "reason": (
-                            "non-monotonic onset truncation drops "
-                            f"{tstats['n_test_dropped']}/{tstats['n_test_total']} "
-                            f"test trials (>{int(NONMONOTONIC_EXCLUDE_FRACTION*100)}%)"
-                        ),
-                    })
+                if (
+                    tstats
+                    and tstats["cut"] is not None
+                    and tstats["n_test_total"] > 0
+                    and tstats["fraction_test_dropped"] > NONMONOTONIC_EXCLUDE_FRACTION
+                ):
+                    exclusion_entries.append(
+                        {
+                            "subject": sub_dir.name,
+                            "session": ses_dir.name,
+                            "task": f"task-{task_name}",
+                            "run": run_label,
+                            "action": "exclude",
+                            "source": "behavioral-qc",
+                            "reason": (
+                                "non-monotonic onset truncation drops "
+                                f"{tstats['n_test_dropped']}/{tstats['n_test_total']} "
+                                f"test trials (>{int(NONMONOTONIC_EXCLUDE_FRACTION*100)}%)"
+                            ),
+                        }
+                    )
 
     # Write trim list
     trim_path = qc_output_dir / "trim_list.json"

@@ -12,7 +12,10 @@ def cmd_qa(args, remaining):
     command = get_qa_command(args.qa_command)
     if command is None:
         available = ", ".join(list_qa_commands()) or "(none registered)"
-        print(f"Error: unknown QA command '{args.qa_command}'. Available: {available}", file=sys.stderr)
+        print(
+            f"Error: unknown QA command '{args.qa_command}'. Available: {available}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Parse QA-command-specific args

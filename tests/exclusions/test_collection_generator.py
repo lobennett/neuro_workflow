@@ -2,6 +2,7 @@
 func-BOLD exclusions into the compiled set (expanded per scan via BIDS glob),
 skipping anat/wildcard lines and deduping echoes.
 """
+
 from argparse import Namespace
 
 import neuro_workflow.core.exclusions_render as render_mod
@@ -37,9 +38,7 @@ def test_collection_generator_expands_func_skips_anat_dedups_echoes(tmp_path, mo
     _mk_multiecho(bids, "sub-s10", "ses-01", "goNogo", "1")
     _mk_multiecho(bids, "sub-s10", "ses-01", "goNogo", "2")  # run-1 line must NOT catch this
 
-    entries = coll.CollectionGenerator().generate(
-        "testds", {"bids_dir": str(bids)}, Namespace()
-    )
+    entries = coll.CollectionGenerator().generate("testds", {"bids_dir": str(bids)}, Namespace())
     keys = {(e["subject"], e["session"], e["task"], e["run"]) for e in entries}
 
     assert ("sub-s03", "ses-01", "task-nBack", "run-1") in keys
@@ -64,8 +63,13 @@ def test_render_bidsignore_does_not_duplicate_collection_entries(tmp_path, monke
     monkeypatch.setattr(render_mod, "_COLLECTION_DIR", coll_dir)
 
     collection_entry = {
-        "subject": "sub-s03", "session": "ses-01", "task": "nBack", "run": "run-1",
-        "source": "collection", "action": "exclude", "reason": "collection: x",
+        "subject": "sub-s03",
+        "session": "ses-01",
+        "task": "nBack",
+        "run": "run-1",
+        "source": "collection",
+        "action": "exclude",
+        "reason": "collection: x",
     }
     out = render_mod.render_bidsignore_with_collection("testds", [collection_entry])
     # The human line appears once; the generated section must not re-emit a

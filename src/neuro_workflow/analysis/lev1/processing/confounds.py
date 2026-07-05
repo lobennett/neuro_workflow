@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
@@ -34,9 +33,9 @@ def _get_base_confound_pattern(task_name: str, sample_type: str) -> str:
     # exceed FD>0.5 mm) handles whole-scan motion; the spike regressors
     # catch the residual within-scan high-motion frames.
     base_pattern = (
-        'cosine|trans_[xyz]$|trans_[xyz]_derivative1$|trans_[xyz]_power2$|'
-        'trans_[xyz]_derivative1_power2$|rot_[xyz]$|rot_[xyz]_derivative1$|'
-        'rot_[xyz]_power2$|rot_[xyz]_derivative1_power2$|motion_outlier\\d+'
+        "cosine|trans_[xyz]$|trans_[xyz]_derivative1$|trans_[xyz]_power2$|"
+        "trans_[xyz]_derivative1_power2$|rot_[xyz]$|rot_[xyz]_derivative1$|"
+        "rot_[xyz]_power2$|rot_[xyz]_derivative1_power2$|motion_outlier\\d+"
     )
 
     # Cap DCT cosine high-pass regressors for (sample, task) combinations whose
@@ -49,16 +48,16 @@ def _get_base_confound_pattern(task_name: str, sample_type: str) -> str:
 
     max_idx = confounds_cosine_caps().get(sample_type, {}).get(task_name)
     if max_idx is not None:
-        return base_pattern.replace('cosine', f'cosine0[0-{int(max_idx)}]')
+        return base_pattern.replace("cosine", f"cosine0[0-{int(max_idx)}]")
     return base_pattern
 
 
 def load_and_process_confounds(
-    confounds_file: Union[str, Path],
+    confounds_file: str | Path,
     task_name: str,
-    sample_type: str = 'validation',
+    sample_type: str = "validation",
     dummy_scans: int = 0,
-    additional_patterns: Optional[List[str]] = None,
+    additional_patterns: list[str] | None = None,
 ) -> pd.DataFrame:
     """Load and process confounds with task-specific selection.
 
@@ -78,7 +77,7 @@ def load_and_process_confounds(
         ... )
     """
     # Load confounds
-    confounds_df = pd.read_csv(confounds_file, sep='\t', na_values=['n/a']).fillna(0)
+    confounds_df = pd.read_csv(confounds_file, sep="\t", na_values=["n/a"]).fillna(0)
 
     # Remove dummy scans
     if dummy_scans > 0:
@@ -89,7 +88,7 @@ def load_and_process_confounds(
 
     # Add additional patterns if provided
     if additional_patterns:
-        pattern = '|'.join([pattern] + additional_patterns)
+        pattern = "|".join([pattern] + additional_patterns)
 
     # Filter and return confounds
     selected_confounds = confounds_df.filter(regex=pattern).reset_index(drop=True)
@@ -109,15 +108,15 @@ def get_fc_confounds(confounds_df: pd.DataFrame) -> pd.DataFrame:
         DataFrame with available FC confound columns. Empty if none found.
     """
     fc_columns = [
-        'global_signal',
-        'global_signal_derivative1',
-        'csf',
-        'csf_derivative1',
-        'white_matter',
-        'white_matter_derivative1',
+        "global_signal",
+        "global_signal_derivative1",
+        "csf",
+        "csf_derivative1",
+        "white_matter",
+        "white_matter_derivative1",
     ]
     available = [c for c in fc_columns if c in confounds_df.columns]
     if not available:
-        logger.warning('No tissue confound columns found in confounds TSV')
+        logger.warning("No tissue confound columns found in confounds TSV")
         return pd.DataFrame()
     return confounds_df[available].copy()

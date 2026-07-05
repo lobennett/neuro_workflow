@@ -12,6 +12,7 @@ consumed by the provenance work in PR4.
 Fail-loud policy: a missing or empty config file raises immediately. There is
 no silent fallback to baked-in defaults — the YAML is the source of truth.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -30,12 +31,7 @@ THRESHOLDS_PATH = _REPO_ROOT / "config" / "thresholds.yaml"
 
 # Task battery config (de-hardcoded in PR3b). Folded into config_version so the
 # provenance hash also tracks the canonical task list.
-_BATTERY_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "analysis"
-    / "task_config"
-    / "battery.yaml"
-)
+_BATTERY_PATH = Path(__file__).resolve().parents[1] / "analysis" / "task_config" / "battery.yaml"
 
 
 def load_thresholds(path: Path | None = None) -> dict[str, Any]:
@@ -61,9 +57,7 @@ def load_thresholds(path: Path | None = None) -> dict[str, Any]:
     with cfg_path.open(encoding="utf-8") as fh:
         data = yaml.safe_load(fh)
     if not isinstance(data, dict) or not data:
-        raise ValueError(
-            f"thresholds config is empty or not a mapping: {cfg_path}"
-        )
+        raise ValueError(f"thresholds config is empty or not a mapping: {cfg_path}")
     return data
 
 

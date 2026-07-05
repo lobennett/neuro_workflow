@@ -1,17 +1,21 @@
 """Model the lev2-eligible {(subject,task,contrast)} set + the on-disk reference."""
+
 from __future__ import annotations
+
 import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 _FE_RE = re.compile(
     r"(?P<sub>sub-[^_/]+)_(?:hemi-[^_]+_)?(?:space-[^_]+_)?task-(?P<task>[^_]+)"
-    r"_contrast-(?P<contrast>.+?)_rtmodel-[^_]+(?:_desc-belowMinRuns)?_stat-fixed-effects")
+    r"_contrast-(?P<contrast>.+?)_rtmodel-[^_]+(?:_desc-belowMinRuns)?_stat-fixed-effects"
+)
 
 # per-run indiv-contrast filename: sub-X_ses-Y_task-T_run-N_hemi-.._contrast-C_rtmodel-.._stat-effect-size
 _INDIV_RE = re.compile(
     r"(?P<sub>sub-[^_/]+)_(?P<ses>ses-[^_/]+)_task-(?P<task>[^_]+)_run-(?P<run>\d+)"
-    r"_(?:hemi-[^_]+_)?(?:space-[^_]+_)?contrast-(?P<contrast>.+?)_rtmodel-[^_]+_stat-effect-size")
+    r"_(?:hemi-[^_]+_)?(?:space-[^_]+_)?contrast-(?P<contrast>.+?)_rtmodel-[^_]+_stat-effect-size"
+)
 
 
 def lev1_indiv_run_counts(level1_dirs: Iterable[Path]) -> dict:
@@ -25,10 +29,13 @@ def lev1_indiv_run_counts(level1_dirs: Iterable[Path]) -> dict:
     derivable from the exclusion set, so the exclusion-based ``lev2_eligible_set``
     cannot predict it; the reproduce harness treats it as a documented boundary."""
     from collections import defaultdict
+
     runs: dict = defaultdict(set)
     for d in level1_dirs:
-        for pat in ("sub-*/*/indiv_contrasts/*_stat-effect-size.nii.gz",
-                    "sub-*/*/indiv_contrasts/*_stat-effect-size.func.gii"):
+        for pat in (
+            "sub-*/*/indiv_contrasts/*_stat-effect-size.nii.gz",
+            "sub-*/*/indiv_contrasts/*_stat-effect-size.func.gii",
+        ):
             for f in Path(d).glob(pat):
                 m = _INDIV_RE.search(f.name)
                 if m:
@@ -47,8 +54,10 @@ def lev2_reference_set(level1_dirs: Iterable[Path]) -> set:
     ``(subject, task, contrast)`` tuple."""
     out = set()
     for d in level1_dirs:
-        for pat in ("sub-*/*/fixed_effects/*_stat-fixed-effects.nii.gz",
-                    "sub-*/*/fixed_effects/*_stat-fixed-effects.func.gii"):
+        for pat in (
+            "sub-*/*/fixed_effects/*_stat-fixed-effects.nii.gz",
+            "sub-*/*/fixed_effects/*_stat-fixed-effects.func.gii",
+        ):
             for f in Path(d).glob(pat):
                 if "_desc-belowMinRuns" in f.name:
                     continue
@@ -58,9 +67,16 @@ def lev2_reference_set(level1_dirs: Iterable[Path]) -> set:
     return out
 
 
-def lev2_eligible_set(bids_dir: Path, fmriprep_dir: Path, subjects, tasks,
-                      excluded_keys: set, *, contrast_excluded: set | None = None,
-                      min_runs: int = 2) -> set:
+def lev2_eligible_set(
+    bids_dir: Path,
+    fmriprep_dir: Path,
+    subjects,
+    tasks,
+    excluded_keys: set,
+    *,
+    contrast_excluded: set | None = None,
+    min_runs: int = 2,
+) -> set:
     """Deterministic model of the lev2-eligible {(subject, task, contrast)} set.
 
     A (subject, task, contrast) is eligible iff the number of BIDS runs that
@@ -94,7 +110,8 @@ def lev2_eligible_set(bids_dir: Path, fmriprep_dir: Path, subjects, tasks,
             except ValueError:
                 continue
             files = finder.get_files(
-                sub, task, required_files=FileFinder.get_required_files_for_space("MNI"))
+                sub, task, required_files=FileFinder.get_required_files_for_space("MNI")
+            )
             # Runs surviving scan-level exclusion (shared across all contrasts).
             scan_runs = [
                 (ses, run)
@@ -104,7 +121,8 @@ def lev2_eligible_set(bids_dir: Path, fmriprep_dir: Path, subjects, tasks,
             ]
             for contrast in contrasts:
                 n = sum(
-                    1 for (ses, run) in scan_runs
+                    1
+                    for (ses, run) in scan_runs
                     if (sub, ses, task, run, contrast) not in contrast_excluded
                 )
                 if n >= min_runs:

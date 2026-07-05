@@ -1,9 +1,6 @@
-import json
-import pytest
-from pathlib import Path
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch, call
-import tempfile
+from datetime import UTC, datetime
+from unittest.mock import MagicMock, patch
+
 from neuro_workflow.bidsify.run import build_reconciliation, process_subject_session
 
 
@@ -21,14 +18,14 @@ def test_build_reconciliation():
         {
             "fw_subject": _mock_obj("s43-2"),
             "fw_session": _mock_obj("20201112"),
-            "timestamp": datetime(2020, 11, 12, tzinfo=timezone.utc),
+            "timestamp": datetime(2020, 11, 12, tzinfo=UTC),
             "bids_session": "ses-01",
             "acquisitions": acq1,
         },
         {
             "fw_subject": _mock_obj("s43"),
             "fw_session": _mock_obj("22473"),
-            "timestamp": datetime(2020, 11, 19, tzinfo=timezone.utc),
+            "timestamp": datetime(2020, 11, 19, tzinfo=UTC),
             "bids_session": "ses-02",
             "acquisitions": acq2,
         },
@@ -81,13 +78,14 @@ def test_process_subject_session_downloads_physio(tmp_path):
 
     log_entries = []
 
-    with patch("neuro_workflow.bidsify.run.find_gephysio_analyses") as mock_find, \
-         patch("neuro_workflow.bidsify.run.match_analyses_to_acquisitions") as mock_match, \
-         patch("neuro_workflow.bidsify.run.download_physio_analysis") as mock_dl, \
-         patch("neuro_workflow.bidsify.run.convert_physio_to_bids") as mock_convert, \
-         patch("neuro_workflow.bidsify.run.patch_sidecar"), \
-         patch("neuro_workflow.bidsify.run.download_and_place") as mock_download:
-
+    with (
+        patch("neuro_workflow.bidsify.run.find_gephysio_analyses") as mock_find,
+        patch("neuro_workflow.bidsify.run.match_analyses_to_acquisitions") as mock_match,
+        patch("neuro_workflow.bidsify.run.download_physio_analysis") as mock_dl,
+        patch("neuro_workflow.bidsify.run.convert_physio_to_bids") as mock_convert,
+        patch("neuro_workflow.bidsify.run.patch_sidecar"),
+        patch("neuro_workflow.bidsify.run.download_and_place") as mock_download,
+    ):
         mock_download.return_value = {
             "fw_filename": "bold_e1.nii.gz",
             "bids_path": str(tmp_path / "bold_e1.nii.gz"),
@@ -96,13 +94,15 @@ def test_process_subject_session_downloads_physio(tmp_path):
         }
 
         mock_find.return_value = [physio_analysis]
-        mock_match.return_value = [
-            {"task": "rest", "run": 1, "analysis": physio_analysis}
-        ]
+        mock_match.return_value = [{"task": "rest", "run": 1, "analysis": physio_analysis}]
         mock_dl.return_value = tmp_path / "physio_tmp"
 
         process_subject_session(
-            "s1175", session_info, [acq], tmp_path, log_entries,
+            "s1175",
+            session_info,
+            [acq],
+            tmp_path,
+            log_entries,
         )
 
         mock_find.assert_called_once()
@@ -113,6 +113,7 @@ def test_process_subject_session_downloads_physio(tmp_path):
 def test_process_subject_session_no_bidsignore_param():
     """process_subject_session signature must not accept bidsignore_entries."""
     import inspect
+
     sig = inspect.signature(process_subject_session)
     assert "bidsignore_entries" not in sig.parameters
 
@@ -131,10 +132,16 @@ def test_duplicate_anat_gets_run_number(tmp_path):
     acq1.id = "acq1_id"
     acq1.timestamp = "2025-01-01T09:00:00"
     acq1.reload.return_value = acq1
-    nifti1 = MagicMock(); nifti1.name = "t1w_1.nii.gz"; nifti1.type = "nifti"
-    nifti1.size = 100; nifti1.created = datetime(2025, 1, 1, tzinfo=timezone.utc)
-    json1 = MagicMock(); json1.name = "t1w_1.json"; json1.type = "source code"
-    json1.size = 50; json1.created = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    nifti1 = MagicMock()
+    nifti1.name = "t1w_1.nii.gz"
+    nifti1.type = "nifti"
+    nifti1.size = 100
+    nifti1.created = datetime(2025, 1, 1, tzinfo=UTC)
+    json1 = MagicMock()
+    json1.name = "t1w_1.json"
+    json1.type = "source code"
+    json1.size = 50
+    json1.created = datetime(2025, 1, 1, tzinfo=UTC)
     acq1.files = [nifti1, json1]
 
     acq2 = MagicMock()
@@ -142,21 +149,38 @@ def test_duplicate_anat_gets_run_number(tmp_path):
     acq2.id = "acq2_id"
     acq2.timestamp = "2025-01-01T10:00:00"
     acq2.reload.return_value = acq2
-    nifti2 = MagicMock(); nifti2.name = "t1w_2.nii.gz"; nifti2.type = "nifti"
-    nifti2.size = 100; nifti2.created = datetime(2025, 1, 1, 1, tzinfo=timezone.utc)
-    json2 = MagicMock(); json2.name = "t1w_2.json"; json2.type = "source code"
-    json2.size = 50; json2.created = datetime(2025, 1, 1, 1, tzinfo=timezone.utc)
+    nifti2 = MagicMock()
+    nifti2.name = "t1w_2.nii.gz"
+    nifti2.type = "nifti"
+    nifti2.size = 100
+    nifti2.created = datetime(2025, 1, 1, 1, tzinfo=UTC)
+    json2 = MagicMock()
+    json2.name = "t1w_2.json"
+    json2.type = "source code"
+    json2.size = 50
+    json2.created = datetime(2025, 1, 1, 1, tzinfo=UTC)
     acq2.files = [nifti2, json2]
 
     log_entries = []
 
-    with patch("neuro_workflow.bidsify.run.download_and_place") as mock_dl, \
-         patch("neuro_workflow.bidsify.run.patch_sidecar"), \
-         patch("neuro_workflow.bidsify.run.find_gephysio_analyses", return_value=[]):
-        mock_dl.return_value = {"fw_filename": "t1.nii.gz", "bids_path": "/tmp/t1.nii.gz", "size": 100, "created": None}
+    with (
+        patch("neuro_workflow.bidsify.run.download_and_place") as mock_dl,
+        patch("neuro_workflow.bidsify.run.patch_sidecar"),
+        patch("neuro_workflow.bidsify.run.find_gephysio_analyses", return_value=[]),
+    ):
+        mock_dl.return_value = {
+            "fw_filename": "t1.nii.gz",
+            "bids_path": "/tmp/t1.nii.gz",
+            "size": 100,
+            "created": None,
+        }
 
-        warnings = process_subject_session(
-            "s19", session_info, [acq1, acq2], tmp_path, log_entries,
+        process_subject_session(
+            "s19",
+            session_info,
+            [acq1, acq2],
+            tmp_path,
+            log_entries,
         )
 
     # Check that download_and_place was called with run-1 and run-2 paths
@@ -173,8 +197,18 @@ def test_write_session_timestamps(tmp_path):
     from neuro_workflow.bidsify.run import write_session_timestamps
 
     rows = [
-        {"subject": "s03", "bids_session": "ses-01", "flywheel_session_label": "22751", "flywheel_timestamp": "2020-10-28T14:32:00+00:00"},
-        {"subject": "s03", "bids_session": "ses-02", "flywheel_session_label": "22942", "flywheel_timestamp": "2020-11-18T09:15:00+00:00"},
+        {
+            "subject": "s03",
+            "bids_session": "ses-01",
+            "flywheel_session_label": "22751",
+            "flywheel_timestamp": "2020-10-28T14:32:00+00:00",
+        },
+        {
+            "subject": "s03",
+            "bids_session": "ses-02",
+            "flywheel_session_label": "22942",
+            "flywheel_timestamp": "2020-11-18T09:15:00+00:00",
+        },
     ]
     sourcedata = tmp_path / "sourcedata"
     sourcedata.mkdir()

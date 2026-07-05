@@ -9,14 +9,14 @@ other.
 
 def is_surface_space(space: str) -> bool:
     """Check if the analysis space is a surface space."""
-    return space in ('surface', 'fsaverage6', 'fsLR')
+    return space in ("surface", "fsaverage6", "fsLR")
 
 
 def resolve_surface_space(space: str) -> str | None:
     """Return the surface template name, or None for volumetric."""
     mapping = {
-        'surface': 'fsnative',
-        'fsaverage6': 'fsaverage6',
-        'fsLR': 'fsLR',
+        "surface": "fsnative",
+        "fsaverage6": "fsaverage6",
+        "fsLR": "fsLR",
     }
     return mapping.get(space)

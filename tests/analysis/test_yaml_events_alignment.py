@@ -1,4 +1,5 @@
 """Verify each base task YAML's regressor subset queries align with real events.tsv columns."""
+
 from __future__ import annotations
 
 import re
@@ -12,12 +13,20 @@ BIDS_DIRS = [
     Path("/scratch/users/logben/discovery_bids"),
     Path("/scratch/users/logben/validation_bids"),
 ]
-TASK_CONFIG_DIR = Path(__file__).resolve().parents[2] / "src/neuro_workflow/analysis/task_config/tasks"
+TASK_CONFIG_DIR = (
+    Path(__file__).resolve().parents[2] / "src/neuro_workflow/analysis/task_config/tasks"
+)
 
 # Tasks in scope (8 base tasks)
 BASE_TASKS = [
-    "cuedTS", "directedForgetting", "flanker", "goNogo",
-    "nBack", "shapeMatching", "spatialTS", "stopSignal",
+    "cuedTS",
+    "directedForgetting",
+    "flanker",
+    "goNogo",
+    "nBack",
+    "shapeMatching",
+    "spatialTS",
+    "stopSignal",
 ]
 
 # Token regex for column references in pandas queries — handles `name`, `name.method`, etc.
@@ -27,8 +36,18 @@ _IDENT_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\b")
 # before identifier extraction (otherwise tokens inside literals look like columns).
 _STRING_LITERAL_RE = re.compile(r"'[^']*'|\"[^\"]*\"")
 _PYTHON_KEYWORDS = {
-    "and", "or", "not", "in", "is", "True", "False", "None",
-    "if", "else", "for", "lambda",
+    "and",
+    "or",
+    "not",
+    "in",
+    "is",
+    "True",
+    "False",
+    "None",
+    "if",
+    "else",
+    "for",
+    "lambda",
 }
 
 
@@ -77,7 +96,9 @@ def test_regressor_columns_exist_in_events(task: str) -> None:
             # filter out values that look like string literals or numbers
             missing = {c for c in missing if not c.replace(".", "").isdigit()}
             if missing:
-                failures.append(f"{fp.name} regressor {reg_name!r}: missing columns {sorted(missing)}")
+                failures.append(
+                    f"{fp.name} regressor {reg_name!r}: missing columns {sorted(missing)}"
+                )
 
     assert not failures, "\n".join(failures[:20])
 

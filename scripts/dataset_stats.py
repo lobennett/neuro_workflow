@@ -6,15 +6,30 @@ header), durations (vols*TR), rest-vs-task minutes per subject, echoes, TR.
 One scan == one (sub,ses,task,run) (echoes collapsed). Reports raw (all BOLD in
 BIDS) — .bidsignore'd scans included, flagged separately via the .bidsignore.
 """
-import glob, json, os, re, sys
+
+import glob
+import json
+import os
+import re
 from collections import defaultdict
+
 import nibabel as nib
 
 TR = 1.49
-BASE = {"cuedTS", "directedForgetting", "flanker", "goNogo", "nBack",
-        "shapeMatching", "spatialTS", "stopSignal"}
-_RE = re.compile(r"(sub-[^_/]+)_(ses-[^_/]+)_task-([^_]+)_(?:acq-[^_]+_)?"
-                 r"(?:dir-[^_]+_)?run-(\d+)(?:_echo-(\d+))?")
+BASE = {
+    "cuedTS",
+    "directedForgetting",
+    "flanker",
+    "goNogo",
+    "nBack",
+    "shapeMatching",
+    "spatialTS",
+    "stopSignal",
+}
+_RE = re.compile(
+    r"(sub-[^_/]+)_(ses-[^_/]+)_task-([^_]+)_(?:acq-[^_]+_)?"
+    r"(?:dir-[^_]+_)?run-(\d+)(?:_echo-(\d+))?"
+)
 
 
 def analyze(bids, label):
@@ -36,12 +51,13 @@ def analyze(bids, label):
 
     subs = sorted({k[0] for k in scans})
     sessions_all = sorted({(k[0], k[1]) for k in scans})
-    per_sub = defaultdict(lambda: {"ses": set(), "rest_min": 0.0, "task_min": 0.0,
-                                   "n_rest": 0, "n_task": 0})
+    per_sub = defaultdict(
+        lambda: {"ses": set(), "rest_min": 0.0, "task_min": 0.0, "n_rest": 0, "n_task": 0}
+    )
     task_runs = defaultdict(int)
     task_min = defaultdict(float)
     echo_hist = defaultdict(int)
-    for (sub, ses, task, run), rec in scans.items():
+    for (sub, ses, task, _run), rec in scans.items():
         mins = (rec["nvols"] or 0) * TR / 60.0
         per_sub[sub]["ses"].add(ses)
         echo_hist[len(rec["echoes"])] += 1
@@ -56,13 +72,16 @@ def analyze(bids, label):
 
     def agg(vals):
         vals = list(vals)
-        return {"mean": round(sum(vals) / len(vals), 1) if vals else 0,
-                "min": round(min(vals), 1) if vals else 0,
-                "max": round(max(vals), 1) if vals else 0}
+        return {
+            "mean": round(sum(vals) / len(vals), 1) if vals else 0,
+            "min": round(min(vals), 1) if vals else 0,
+            "max": round(max(vals), 1) if vals else 0,
+        }
 
     n_ses_per_sub = [len(v["ses"]) for v in per_sub.values()]
     return {
-        "cohort": label, "bids": bids,
+        "cohort": label,
+        "bids": bids,
         "n_subjects": len(subs),
         "n_sessions_total": len(sessions_all),
         "sessions_per_subject": agg(n_ses_per_sub),
@@ -75,18 +94,25 @@ def analyze(bids, label):
         "cohort_rest_min_total": round(sum(v["rest_min"] for v in per_sub.values()), 1),
         "cohort_task_min_total": round(sum(v["task_min"] for v in per_sub.values()), 1),
         "echoes_per_scan_hist": dict(echo_hist),
-        "per_task": {t: {"n_runs": task_runs[t], "total_min": round(task_min[t], 1),
-                         "mean_min_per_run": round(task_min[t] / task_runs[t], 1) if task_runs[t] else 0,
-                         "is_base": t in BASE}
-                     for t in sorted(task_runs)},
+        "per_task": {
+            t: {
+                "n_runs": task_runs[t],
+                "total_min": round(task_min[t], 1),
+                "mean_min_per_run": round(task_min[t] / task_runs[t], 1) if task_runs[t] else 0,
+                "is_base": t in BASE,
+            }
+            for t in sorted(task_runs)
+        },
     }
 
 
 if __name__ == "__main__":
     out = {}
-    for label, bids in [("discovery", "/scratch/users/logben/discovery_bids"),
-                        ("validation", "/scratch/users/logben/validation_bids"),
-                        ("excluded", "/scratch/users/logben/excluded_bids")]:
+    for label, bids in [
+        ("discovery", "/scratch/users/logben/discovery_bids"),
+        ("validation", "/scratch/users/logben/validation_bids"),
+        ("excluded", "/scratch/users/logben/excluded_bids"),
+    ]:
         if os.path.isdir(bids):
             print(f"analyzing {label}...", flush=True)
             out[label] = analyze(bids, label)

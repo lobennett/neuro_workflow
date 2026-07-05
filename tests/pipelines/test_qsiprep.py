@@ -1,6 +1,4 @@
-import os
 from argparse import Namespace
-from pathlib import Path
 from unittest.mock import patch
 
 from neuro_workflow.pipelines.qsiprep import QsiprepPipeline
@@ -62,6 +60,7 @@ def test_build_context_basic(tmp_path):
 
 def test_build_context_version_required(tmp_path):
     import sys
+
     p = QsiprepPipeline()
     config = make_config(tmp_path)
     args = make_args(version=None)

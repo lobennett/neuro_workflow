@@ -1,6 +1,6 @@
 """Unit tests for query_exclusions — written RED-first before implementation."""
-import pytest
-from neuro_workflow.core.exclusions import query_exclusions, _normalise_bids_field
+
+from neuro_workflow.core.exclusions import _normalise_bids_field, query_exclusions
 
 # ---------------------------------------------------------------------------
 # Fixture data
@@ -138,7 +138,7 @@ COMPILED_BARE = [
     {
         "subject": "sub-s10",
         "session": "ses-05",
-        "task": "goNogo",        # BARE — no "task-" prefix, as written by qc.py
+        "task": "goNogo",  # BARE — no "task-" prefix, as written by qc.py
         "run": "1",
         "action": "exclude",
         "source": "behavioral-qc",
@@ -147,7 +147,7 @@ COMPILED_BARE = [
     {
         "subject": "sub-s10",
         "session": "ses-07",
-        "task": "rest",           # BARE
+        "task": "rest",  # BARE
         "run": "1",
         "action": "exclude",
         "source": "motion",
@@ -159,17 +159,17 @@ COMPILED_BARE = [
 def test_bare_task_entry_bare_task_query():
     """Bare task in entry + bare task in query → 1 match (the original bug case)."""
     result = query_exclusions(COMPILED_BARE, "sub-s10", task="goNogo")
-    assert len(result) == 1, (
-        f"Expected 1 match for bare-task query against bare-task entry, got {len(result)}"
-    )
+    assert (
+        len(result) == 1
+    ), f"Expected 1 match for bare-task query against bare-task entry, got {len(result)}"
 
 
 def test_bare_task_entry_prefixed_task_query():
     """'task-goNogo' query should also match a bare 'goNogo' stored entry."""
     result = query_exclusions(COMPILED_BARE, "sub-s10", task="task-goNogo")
-    assert len(result) == 1, (
-        f"Expected 1 match for prefixed-task query against bare-task entry, got {len(result)}"
-    )
+    assert (
+        len(result) == 1
+    ), f"Expected 1 match for prefixed-task query against bare-task entry, got {len(result)}"
 
 
 def test_bare_task_entry_bare_session_query():
@@ -188,6 +188,7 @@ def test_bare_task_entry_subject_only():
 # ---------------------------------------------------------------------------
 # Tests for _normalise_bids_field new contract: STRIP prefix (not add)
 # ---------------------------------------------------------------------------
+
 
 def test_normalise_strips_prefix_when_present():
     """Prefixed value → bare (strip prefix)."""

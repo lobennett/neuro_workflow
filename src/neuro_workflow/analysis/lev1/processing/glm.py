@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 def handle_zero_variance_columns(
     design_matrix: pd.DataFrame,
-    exclude_columns: Optional[List[str]] = None,
-) -> Tuple[pd.DataFrame, List[str]]:
+    exclude_columns: list[str] | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
     """Detect and remove zero-variance columns from design matrix.
 
     Zero-variance columns (constant values across all timepoints) cause
@@ -39,7 +39,7 @@ def handle_zero_variance_columns(
         ['zero_col']
     """
     if exclude_columns is None:
-        exclude_columns = ['constant']
+        exclude_columns = ["constant"]
 
     # Calculate variance for each column
     variances = design_matrix.var()
@@ -53,29 +53,29 @@ def handle_zero_variance_columns(
             zero_var_cols.append(col)
 
     if not zero_var_cols:
-        logger.debug('Design matrix check: no zero-variance columns')
+        logger.debug("Design matrix check: no zero-variance columns")
         return design_matrix, []
 
-    logger.warning('Dropping %d zero-variance column(s): %s', len(zero_var_cols), zero_var_cols)
+    logger.warning("Dropping %d zero-variance column(s): %s", len(zero_var_cols), zero_var_cols)
 
     # Drop the zero-variance columns
     cleaned_dm = design_matrix.drop(columns=zero_var_cols)
 
     # Verify the cleaned design matrix is still valid
     if cleaned_dm.shape[1] == 0:
-        raise ValueError('All non-constant columns were zero-variance! Cannot fit GLM.')
+        raise ValueError("All non-constant columns were zero-variance! Cannot fit GLM.")
 
     return cleaned_dm, zero_var_cols
 
 
 def fit_run_glm(
-    data_img: Union[str, Path],
+    data_img: str | Path,
     design_matrix: pd.DataFrame,
-    analysis_type: str = 'task',
-    subject_label: Optional[str] = None,
+    analysis_type: str = "task",
+    subject_label: str | None = None,
     tr: float = TR,
-    smoothing_fwhm: Optional[float] = None,
-    mask_img: Optional[Union[str, Path]] = None,
+    smoothing_fwhm: float | None = None,
+    mask_img: str | Path | None = None,
 ) -> FirstLevelModel:
     """Fit GLM for a single run.
 
@@ -101,37 +101,37 @@ def fit_run_glm(
     # Handle different input types
     # For paths (including GIFTI), FirstLevelModel will load them
     # For NIfTI images already loaded, pass them directly
-    if not isinstance(data_img, (str, Path)):
+    if not isinstance(data_img, str | Path):
         # Assume it's an already-loaded image (NIfTI)
         pass
 
     # Set GLM parameters
-    if analysis_type == 'task':
+    if analysis_type == "task":
         glm_params = {
-            'mask_img': mask_img,
-            'noise_model': 'ar1',
-            'standardize': False,
-            'smoothing_fwhm': smoothing_fwhm,
-            'minimize_memory': True,
+            "mask_img": mask_img,
+            "noise_model": "ar1",
+            "standardize": False,
+            "smoothing_fwhm": smoothing_fwhm,
+            "minimize_memory": True,
         }
-    elif analysis_type == 'residual':
+    elif analysis_type == "residual":
         glm_params = {
-            'mask_img': mask_img,
-            'noise_model': 'ar1',
-            'standardize': False,
-            'smoothing_fwhm': smoothing_fwhm,
-            'minimize_memory': False,
+            "mask_img": mask_img,
+            "noise_model": "ar1",
+            "standardize": False,
+            "smoothing_fwhm": smoothing_fwhm,
+            "minimize_memory": False,
         }
     else:
-        raise ValueError(f'Unknown analysis_type: {analysis_type}')
+        raise ValueError(f"Unknown analysis_type: {analysis_type}")
 
     # Add subject label if provided
     if subject_label:
-        glm_params['subject_label'] = subject_label
+        glm_params["subject_label"] = subject_label
 
-    mask_str = 'fMRIPrep mask' if mask_img else 'auto-masking'
-    smoothing_str = f'{smoothing_fwhm}mm smoothing' if smoothing_fwhm else 'no smoothing'
-    logger.info('Fitting GLM: %s, %s, %s', mask_str, analysis_type, smoothing_str)
+    mask_str = "fMRIPrep mask" if mask_img else "auto-masking"
+    smoothing_str = f"{smoothing_fwhm}mm smoothing" if smoothing_fwhm else "no smoothing"
+    logger.info("Fitting GLM: %s, %s, %s", mask_str, analysis_type, smoothing_str)
 
     # Initialize and fit model
     model = FirstLevelModel(**glm_params)
@@ -177,7 +177,7 @@ def check_design_matrix_health(design_matrix: pd.DataFrame) -> None:
 def validate_design_matrix(
     design_matrix: pd.DataFrame,
     n_scans: int,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Validate a design matrix independently of the BOLD-data container.
 
     Used by both the volumetric path (which inlines this inside
@@ -201,74 +201,66 @@ def validate_design_matrix(
     Returns:
         Dict with ``is_valid`` flag, ``errors`` list, ``warnings`` list.
     """
-    validation: Dict[str, Any] = {
-        'is_valid': True,
-        'warnings': [],
-        'errors': [],
+    validation: dict[str, Any] = {
+        "is_valid": True,
+        "warnings": [],
+        "errors": [],
     }
 
     if design_matrix.empty:
-        validation['errors'].append('Design matrix is empty')
-        validation['is_valid'] = False
+        validation["errors"].append("Design matrix is empty")
+        validation["is_valid"] = False
         return validation
 
     if design_matrix.shape[0] != n_scans:
-        validation['errors'].append(
-            f'Design matrix rows ({design_matrix.shape[0]}) != '
-            f'BOLD timepoints ({n_scans})'
+        validation["errors"].append(
+            f"Design matrix rows ({design_matrix.shape[0]}) != " f"BOLD timepoints ({n_scans})"
         )
-        validation['is_valid'] = False
+        validation["is_valid"] = False
 
     if design_matrix.isnull().any().any():
         bad_cols = design_matrix.columns[design_matrix.isnull().any()].tolist()
-        validation['errors'].append(
-            f'Design matrix contains NaN values in columns: {bad_cols}'
-        )
-        validation['is_valid'] = False
+        validation["errors"].append(f"Design matrix contains NaN values in columns: {bad_cols}")
+        validation["is_valid"] = False
 
     if np.isinf(design_matrix.values).any():
-        bad_cols = design_matrix.columns[
-            np.isinf(design_matrix.values).any(axis=0)
-        ].tolist()
-        validation['errors'].append(
-            f'Design matrix contains infinite values in columns: {bad_cols}'
+        bad_cols = design_matrix.columns[np.isinf(design_matrix.values).any(axis=0)].tolist()
+        validation["errors"].append(
+            f"Design matrix contains infinite values in columns: {bad_cols}"
         )
-        validation['is_valid'] = False
+        validation["is_valid"] = False
 
     # If the matrix has fundamental data integrity issues (NaN / Inf), skip
     # the rank check — LAPACK SVD will raise an opaque DLASCL error on
     # such matrices, which would mask the real (already-reported) cause.
-    if not validation['is_valid']:
+    if not validation["is_valid"]:
         return validation
 
-    if 'constant' not in design_matrix.columns:
+    if "constant" not in design_matrix.columns:
         # Look for any column that's a constant-vector intercept under a
         # different name (e.g. cosine00 from the DCT drift basis is often
         # constant when n_scans is small).
         has_constant = any(
-            design_matrix[col].nunique() == 1
-            and design_matrix[col].iloc[0] != 0
+            design_matrix[col].nunique() == 1 and design_matrix[col].iloc[0] != 0
             for col in design_matrix.columns
         )
         if not has_constant:
-            validation['warnings'].append(
-                'No constant/intercept term found in design matrix'
-            )
+            validation["warnings"].append("No constant/intercept term found in design matrix")
 
     try:
         check_design_matrix_health(design_matrix)
     except RankDeficientDesignError as exc:
-        validation['errors'].append(str(exc))
-        validation['is_valid'] = False
+        validation["errors"].append(str(exc))
+        validation["is_valid"] = False
 
     return validation
 
 
 def validate_glm_inputs(
-    data_img: Union[str, Path],
+    data_img: str | Path,
     design_matrix: pd.DataFrame,
-    mask_img: Optional[Union[str, Path]] = None,
-) -> Dict[str, Any]:
+    mask_img: str | Path | None = None,
+) -> dict[str, Any]:
     """Validate inputs for GLM analysis.
 
     Args:
@@ -285,84 +277,80 @@ def validate_glm_inputs(
         True
     """
     validation = {
-        'is_valid': True,
-        'warnings': [],
-        'errors': [],
+        "is_valid": True,
+        "warnings": [],
+        "errors": [],
     }
 
     # Check data image
     try:
-        if isinstance(data_img, (str, Path)):
+        if isinstance(data_img, str | Path):
             data_path = Path(data_img)
             if not data_path.exists():
-                validation['errors'].append(f'Data image not found: {data_path}')
-                validation['is_valid'] = False
+                validation["errors"].append(f"Data image not found: {data_path}")
+                validation["is_valid"] = False
             else:
                 # Load and check data
                 img = load_img(data_img)
                 if len(img.shape) != 4:
-                    validation['errors'].append(
-                        f'Expected 4D image, got {len(img.shape)}D'
-                    )
-                    validation['is_valid'] = False
+                    validation["errors"].append(f"Expected 4D image, got {len(img.shape)}D")
+                    validation["is_valid"] = False
                 else:
                     n_scans = img.shape[-1]
-                    validation['n_scans'] = n_scans
+                    validation["n_scans"] = n_scans
 
                     # Check design matrix dimensions
                     if design_matrix.shape[0] != n_scans:
-                        validation['errors'].append(
-                            f'Design matrix length ({design_matrix.shape[0]}) != '
-                            f'number of scans ({n_scans})'
+                        validation["errors"].append(
+                            f"Design matrix length ({design_matrix.shape[0]}) != "
+                            f"number of scans ({n_scans})"
                         )
-                        validation['is_valid'] = False
+                        validation["is_valid"] = False
 
     except Exception as e:
-        validation['errors'].append(f'Error loading data image: {e}')
-        validation['is_valid'] = False
+        validation["errors"].append(f"Error loading data image: {e}")
+        validation["is_valid"] = False
 
     # Check mask image
     if mask_img:
         try:
-            if isinstance(mask_img, (str, Path)):
+            if isinstance(mask_img, str | Path):
                 mask_path = Path(mask_img)
                 if not mask_path.exists():
-                    validation['warnings'].append(f'Mask image not found: {mask_path}')
+                    validation["warnings"].append(f"Mask image not found: {mask_path}")
                 else:
                     mask_img_loaded = load_img(mask_img)
                     if len(mask_img_loaded.shape) != 3:
-                        validation['warnings'].append(
-                            f'Expected 3D mask, got {len(mask_img_loaded.shape)}D'
+                        validation["warnings"].append(
+                            f"Expected 3D mask, got {len(mask_img_loaded.shape)}D"
                         )
 
         except Exception as e:
-            validation['warnings'].append(f'Error loading mask image: {e}')
+            validation["warnings"].append(f"Error loading mask image: {e}")
 
     # Check design matrix
     if design_matrix.empty:
-        validation['errors'].append('Design matrix is empty')
-        validation['is_valid'] = False
+        validation["errors"].append("Design matrix is empty")
+        validation["is_valid"] = False
 
     if design_matrix.isnull().any().any():
-        validation['errors'].append('Design matrix contains NaN values')
-        validation['is_valid'] = False
+        validation["errors"].append("Design matrix contains NaN values")
+        validation["is_valid"] = False
 
     if np.isinf(design_matrix.values).any():
-        validation['errors'].append('Design matrix contains infinite values')
-        validation['is_valid'] = False
+        validation["errors"].append("Design matrix contains infinite values")
+        validation["is_valid"] = False
 
     # Check for constant regressor (intercept)
-    if 'constant' not in design_matrix.columns:
-        validation['warnings'].append(
-            'No constant/intercept term found in design matrix'
-        )
+    if "constant" not in design_matrix.columns:
+        validation["warnings"].append("No constant/intercept term found in design matrix")
 
     # Inline design-matrix sanity (rank only — contrast VIFs are research-level
     # and live in run_quality_control, saved per-run for cohort-QC review).
     try:
         check_design_matrix_health(design_matrix)
     except RankDeficientDesignError as exc:
-        validation['errors'].append(str(exc))
-        validation['is_valid'] = False
+        validation["errors"].append(str(exc))
+        validation["is_valid"] = False
 
     return validation

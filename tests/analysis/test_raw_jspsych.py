@@ -73,9 +73,7 @@ class TestFlankerRawToEvents:
     def test_create_events_df_produces_valid_events_tsv(self, tmp_path):
         """REAL create_events_df turns the raw flanker CSV into an events.tsv
         with monotonic onsets and congruent/incongruent trial_types."""
-        raw = make_raw_jspsych_csv(
-            tmp_path / "raw_flanker.csv", "flanker", n_trials=24, seed=0
-        )
+        raw = make_raw_jspsych_csv(tmp_path / "raw_flanker.csv", "flanker", n_trials=24, seed=0)
         events = create_events_df(raw, "flanker")
 
         # Onsets present, numeric, strictly increasing.
@@ -89,15 +87,26 @@ class TestFlankerRawToEvents:
         assert {"congruent", "incongruent"} <= ttypes
 
         # The columns the flanker design references at the events level.
-        for col in ("onset", "duration", "response_time", "trial_id",
-                    "trial_type", "key_press", "correct_response"):
+        for col in (
+            "onset",
+            "duration",
+            "response_time",
+            "trial_id",
+            "trial_type",
+            "key_press",
+            "correct_response",
+        ):
             assert col in events.columns, f"events.tsv missing {col}"
 
     def test_planted_onsets_land_where_requested(self, tmp_path):
         """First onset / ITI are honored exactly through the real pipeline."""
         raw = make_raw_jspsych_csv(
-            tmp_path / "raw.csv", "flanker", n_trials=10, seed=1,
-            first_onset=5.0, iti=3.0,
+            tmp_path / "raw.csv",
+            "flanker",
+            n_trials=10,
+            seed=1,
+            first_onset=5.0,
+            iti=3.0,
         )
         events = create_events_df(raw, "flanker")
         onsets = pd.to_numeric(events["onset"]).tolist()
@@ -115,31 +124,23 @@ class TestFlankerEventsSatisfyYaml:
         """The design built from the synthetic events.tsv has the flanker YAML's
         event-driven regressors (congruent / incongruent / response_time) and
         they are non-degenerate (non-zero)."""
-        raw = make_raw_jspsych_csv(
-            tmp_path / "raw.csv", "flanker", n_trials=40, seed=2
-        )
+        raw = make_raw_jspsych_csv(tmp_path / "raw.csv", "flanker", n_trials=40, seed=2)
         events_tsv = tmp_path / "flanker_events.tsv"
-        create_events_df(raw, "flanker").to_csv(
-            events_tsv, sep="\t", index=False, na_rep="n/a"
-        )
+        create_events_df(raw, "flanker").to_csv(events_tsv, sep="\t", index=False, na_rep="n/a")
         design = _build_design(events_tsv, "flanker")
 
         for reg in ("congruent", "incongruent", "response_time"):
             assert reg in design.columns, f"design missing regressor {reg}"
-            assert np.abs(design[reg].to_numpy()).sum() > 0, (
-                f"regressor {reg} is all-zero (degenerate)"
-            )
+            assert (
+                np.abs(design[reg].to_numpy()).sum() > 0
+            ), f"regressor {reg} is all-zero (degenerate)"
 
     def test_contrast_formula_regressors_present(self, tmp_path):
         """Every regressor named in the flanker contrast formulas is a design
         column (cross-checked against get_task_contrasts / regressor config)."""
-        raw = make_raw_jspsych_csv(
-            tmp_path / "raw.csv", "flanker", n_trials=40, seed=3
-        )
+        raw = make_raw_jspsych_csv(tmp_path / "raw.csv", "flanker", n_trials=40, seed=3)
         events_tsv = tmp_path / "ev.tsv"
-        create_events_df(raw, "flanker").to_csv(
-            events_tsv, sep="\t", index=False, na_rep="n/a"
-        )
+        create_events_df(raw, "flanker").to_csv(events_tsv, sep="\t", index=False, na_rep="n/a")
         design = _build_design(events_tsv, "flanker")
 
         # The headline contrast must be computable: its tokens are design cols.
@@ -150,9 +151,9 @@ class TestFlankerEventsSatisfyYaml:
 
         # Every declared regressor in the YAML is realized as a design column.
         declared = set(get_regressor_config("flanker").keys())
-        assert declared <= set(design.columns), (
-            f"YAML regressors missing from design: {declared - set(design.columns)}"
-        )
+        assert declared <= set(
+            design.columns
+        ), f"YAML regressors missing from design: {declared - set(design.columns)}"
 
 
 # --------------------------------------------------------------------------- #
@@ -161,8 +162,12 @@ class TestFlankerEventsSatisfyYaml:
 class TestRawCsvDrivesBehavioralQC:
     def test_clean_raw_csv_not_flagged(self, tmp_path):
         raw = make_raw_jspsych_csv(
-            tmp_path / "clean.csv", "flanker", n_trials=40, seed=4,
-            omission_rate=0.0, accuracy=1.0,
+            tmp_path / "clean.csv",
+            "flanker",
+            n_trials=40,
+            seed=4,
+            omission_rate=0.0,
+            accuracy=1.0,
         )
         metrics = compute_metrics_from_csv(raw, "flanker")
         assert metrics.get("omission_rate") == pytest.approx(0.0)
@@ -173,7 +178,10 @@ class TestRawCsvDrivesBehavioralQC:
         """A high-omission raw flanker CSV both parses to events AND trips the
         REAL behavioral omission exclusion (>0.25)."""
         raw = make_raw_jspsych_csv(
-            tmp_path / "bad.csv", "flanker", n_trials=40, seed=5,
+            tmp_path / "bad.csv",
+            "flanker",
+            n_trials=40,
+            seed=5,
             omission_rate=0.5,
         )
         # It still produces a (valid) events.tsv ...
@@ -190,19 +198,21 @@ class TestRawCsvDrivesBehavioralQC:
         """At exactly the 0.25 threshold (strict >) the scan is NOT flagged;
         just over it is — pins the boundary the way the cohort tests do."""
         at = make_raw_jspsych_csv(
-            tmp_path / "at.csv", "flanker", n_trials=40, seed=6,
+            tmp_path / "at.csv",
+            "flanker",
+            n_trials=40,
+            seed=6,
             omission_rate=0.25,  # 10/40 — AT threshold
         )
         over = make_raw_jspsych_csv(
-            tmp_path / "over.csv", "flanker", n_trials=40, seed=7,
+            tmp_path / "over.csv",
+            "flanker",
+            n_trials=40,
+            seed=7,
             omission_rate=0.275,  # 11/40 — over threshold
         )
-        assert determine_exclusion(
-            "flanker", compute_metrics_from_csv(at, "flanker")
-        ) is None
-        assert determine_exclusion(
-            "flanker", compute_metrics_from_csv(over, "flanker")
-        ) is not None
+        assert determine_exclusion("flanker", compute_metrics_from_csv(at, "flanker")) is None
+        assert determine_exclusion("flanker", compute_metrics_from_csv(over, "flanker")) is not None
 
 
 # --------------------------------------------------------------------------- #
@@ -212,9 +222,7 @@ class TestStopSignalRaw:
     def test_stop_signal_events_have_go_and_stop_trial_types(self, tmp_path):
         """REAL create_events_df on a raw stopSignal CSV yields go /
         stop_success / stop_failure trial_types (the stopSignal YAML's)."""
-        raw = make_raw_jspsych_csv(
-            tmp_path / "ss.csv", "stopSignal", n_trials=40, seed=8
-        )
+        raw = make_raw_jspsych_csv(tmp_path / "ss.csv", "stopSignal", n_trials=40, seed=8)
         events = create_events_df(raw, "stopSignal")
         onsets = pd.to_numeric(events["onset"])
         assert onsets.is_monotonic_increasing
@@ -226,7 +234,10 @@ class TestStopSignalRaw:
     def test_stop_signal_slow_go_rt_is_flagged(self, tmp_path):
         """A slow-go-RT stopSignal raw CSV trips the REAL go_rt > 1000ms rule."""
         raw = make_raw_jspsych_csv(
-            tmp_path / "slow.csv", "stopSignal", n_trials=40, seed=9,
+            tmp_path / "slow.csv",
+            "stopSignal",
+            n_trials=40,
+            seed=9,
             go_rt_ms=1200.0,
         )
         metrics = compute_metrics_from_csv(raw, "stopSignal")
@@ -237,7 +248,10 @@ class TestStopSignalRaw:
 
     def test_stop_signal_clean_not_flagged(self, tmp_path):
         raw = make_raw_jspsych_csv(
-            tmp_path / "ok.csv", "stopSignal", n_trials=40, seed=10,
+            tmp_path / "ok.csv",
+            "stopSignal",
+            n_trials=40,
+            seed=10,
             go_rt_ms=500.0,
         )
         metrics = compute_metrics_from_csv(raw, "stopSignal")

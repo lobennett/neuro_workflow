@@ -11,7 +11,9 @@ from neuro_workflow.pipelines.base import LocalAnalysisPipeline, register
 
 
 def _discover_contrasts_from_lev1_dirs(
-    lev1_dirs: list[str], task_filter: list[str] | None = None, space: str = "volume",
+    lev1_dirs: list[str],
+    task_filter: list[str] | None = None,
+    space: str = "volume",
 ) -> list[str]:
     """Glob fixed-effects files and extract contrast names.
 
@@ -37,13 +39,13 @@ def _discover_contrasts_from_lev1_dirs(
             # Capture task-TASK_contrast-NAME up to the next BIDS entity
             # (rtmodel- if present; stat- as fallback). Non-greedy so multi-
             # underscore contrast names are preserved end-to-end.
-            m = re.search(r'(task-[^_]+_contrast-.+?)_(?:rtmodel-|stat-)', fname)
+            m = re.search(r"(task-[^_]+_contrast-.+?)_(?:rtmodel-|stat-)", fname)
             if m:
                 contrast_id = m.group(1)
                 if task_filter is None:
                     contrasts.add(contrast_id)
                 else:
-                    task_m = re.search(r'task-([^_]+)', contrast_id)
+                    task_m = re.search(r"task-([^_]+)", contrast_id)
                     if task_m and task_m.group(1) in task_filter:
                         contrasts.add(contrast_id)
     return sorted(contrasts)
@@ -56,20 +58,74 @@ class Lev2Pipeline(LocalAnalysisPipeline):
     default_resources = {"nthreads": 2, "mem_gb": 4, "time": "04:00:00"}
 
     def add_cli_args(self, parser: ArgumentParser) -> None:
-        parser.add_argument("--lev1-dirs", nargs="+", required=True, help="Level-1 results directories")
+        parser.add_argument(
+            "--lev1-dirs", nargs="+", required=True, help="Level-1 results directories"
+        )
         parser.add_argument("--results-dir", required=True, help="Level-2 output directory")
         contrast_group = parser.add_mutually_exclusive_group(required=True)
         contrast_group.add_argument("--contrasts", nargs="+", help="Specific contrast names")
-        contrast_group.add_argument("--all", dest="contrasts_flag", action="store_const", const="all", help="All contrasts from lev1 dirs")
-        contrast_group.add_argument("--base-tasks", dest="contrasts_flag", action="store_const", const="base", help="Contrasts from base tasks")
-        contrast_group.add_argument("--dual-tasks", dest="contrasts_flag", action="store_const", const="dual", help="Contrasts from dual tasks")
-        parser.add_argument("--space", choices=["volume", "surface"], default="volume", help="volume: FSL randomise on NIfTI fixed-effects (default). surface: sign-flip permutation on GIFTI surface fixed-effects.")
-        parser.add_argument("--mask-threshold", type=float, default=0.9, help="Group mask intersection threshold, volume only (default: 0.9)")
-        parser.add_argument("--num-permutations", type=int, default=5000, help="Permutations (randomise for volume; sign-flip for surface) (default: 5000)")
-        parser.add_argument("--seed", type=int, default=0, help="RNG seed for the surface sign-flip permutation (default: 0)")
-        parser.add_argument("--nthreads", type=int, default=None, help=f"CPUs per task (default: {self.default_resources['nthreads']})")
-        parser.add_argument("--mem-gb", type=int, default=None, help=f"Memory in GB (default: {self.default_resources['mem_gb']})")
-        parser.add_argument("--time", default=None, help=f"SLURM time limit (default: {self.default_resources['time']})")
+        contrast_group.add_argument(
+            "--all",
+            dest="contrasts_flag",
+            action="store_const",
+            const="all",
+            help="All contrasts from lev1 dirs",
+        )
+        contrast_group.add_argument(
+            "--base-tasks",
+            dest="contrasts_flag",
+            action="store_const",
+            const="base",
+            help="Contrasts from base tasks",
+        )
+        contrast_group.add_argument(
+            "--dual-tasks",
+            dest="contrasts_flag",
+            action="store_const",
+            const="dual",
+            help="Contrasts from dual tasks",
+        )
+        parser.add_argument(
+            "--space",
+            choices=["volume", "surface"],
+            default="volume",
+            help="volume: FSL randomise on NIfTI fixed-effects (default). surface: sign-flip permutation on GIFTI surface fixed-effects.",
+        )
+        parser.add_argument(
+            "--mask-threshold",
+            type=float,
+            default=0.9,
+            help="Group mask intersection threshold, volume only (default: 0.9)",
+        )
+        parser.add_argument(
+            "--num-permutations",
+            type=int,
+            default=5000,
+            help="Permutations (randomise for volume; sign-flip for surface) (default: 5000)",
+        )
+        parser.add_argument(
+            "--seed",
+            type=int,
+            default=0,
+            help="RNG seed for the surface sign-flip permutation (default: 0)",
+        )
+        parser.add_argument(
+            "--nthreads",
+            type=int,
+            default=None,
+            help=f"CPUs per task (default: {self.default_resources['nthreads']})",
+        )
+        parser.add_argument(
+            "--mem-gb",
+            type=int,
+            default=None,
+            help=f"Memory in GB (default: {self.default_resources['mem_gb']})",
+        )
+        parser.add_argument(
+            "--time",
+            default=None,
+            help=f"SLURM time limit (default: {self.default_resources['time']})",
+        )
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
         space = getattr(args, "space", "volume")
@@ -77,9 +133,13 @@ class Lev2Pipeline(LocalAnalysisPipeline):
         if contrasts_flag == "all":
             contrasts = _discover_contrasts_from_lev1_dirs(args.lev1_dirs, space=space)
         elif contrasts_flag == "base":
-            contrasts = _discover_contrasts_from_lev1_dirs(args.lev1_dirs, task_filter=get_base_tasks(), space=space)
+            contrasts = _discover_contrasts_from_lev1_dirs(
+                args.lev1_dirs, task_filter=get_base_tasks(), space=space
+            )
         elif contrasts_flag == "dual":
-            contrasts = _discover_contrasts_from_lev1_dirs(args.lev1_dirs, task_filter=get_dual_tasks(), space=space)
+            contrasts = _discover_contrasts_from_lev1_dirs(
+                args.lev1_dirs, task_filter=get_dual_tasks(), space=space
+            )
         else:
             contrasts = args.contrasts
 
@@ -96,8 +156,7 @@ class Lev2Pipeline(LocalAnalysisPipeline):
         # Surface uses the self-contained numpy sign-flip test (no FSL); volume
         # uses FSL randomise.
         module_loads = (
-            "module load uv" if space == "surface"
-            else "module load biology fsl\nmodule load uv"
+            "module load uv" if space == "surface" else "module load biology fsl\nmodule load uv"
         )
 
         return {

@@ -40,16 +40,15 @@ from neuro_workflow.analysis.task_config.loader import (
     get_task_contrasts,
 )
 
-
 BASE_TASKS = [
-    'cuedTS',
-    'directedForgetting',
-    'flanker',
-    'goNogo',
-    'nBack',
-    'shapeMatching',
-    'spatialTS',
-    'stopSignal',
+    "cuedTS",
+    "directedForgetting",
+    "flanker",
+    "goNogo",
+    "nBack",
+    "shapeMatching",
+    "spatialTS",
+    "stopSignal",
 ]
 
 
@@ -67,7 +66,7 @@ def _make_fitted_glm(regressor_names: list[str]) -> SurfaceGLM:
         columns=regressor_names,
     )
     Y = np.random.randn(n_tp, n_verts)
-    glm = SurfaceGLM(t_r=1.5, noise_model='ols')
+    glm = SurfaceGLM(t_r=1.5, noise_model="ols")
     glm.fit(Y, X)
     return glm
 
@@ -77,7 +76,7 @@ def _make_fitted_glm(regressor_names: list[str]) -> SurfaceGLM:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize('task_name', BASE_TASKS)
+@pytest.mark.parametrize("task_name", BASE_TASKS)
 def test_surface_contrast_vector_matches_volumetric_for_all_yaml_contrasts(task_name):
     """Surface ``_parse_contrast`` output must equal the volumetric path's
     contrast vector for every YAML contrast in every base task.
@@ -90,17 +89,16 @@ def test_surface_contrast_vector_matches_volumetric_for_all_yaml_contrasts(task_
     glm = _make_fitted_glm(regressors)
     for contrast_name, formula in contrasts.items():
         surface_vec = glm._parse_contrast(formula)
-        volumetric_vec = np.asarray(
-            expression_to_contrast_vector(formula, regressors)
-        )
-        assert surface_vec.shape == volumetric_vec.shape, (
-            f'{task_name}/{contrast_name}: shape mismatch'
-        )
+        volumetric_vec = np.asarray(expression_to_contrast_vector(formula, regressors))
+        assert (
+            surface_vec.shape == volumetric_vec.shape
+        ), f"{task_name}/{contrast_name}: shape mismatch"
         np.testing.assert_array_equal(
-            surface_vec, volumetric_vec,
+            surface_vec,
+            volumetric_vec,
             err_msg=(
-                f'{task_name}/{contrast_name}: surface vector does not match '
-                f'volumetric vector for formula {formula!r}'
+                f"{task_name}/{contrast_name}: surface vector does not match "
+                f"volumetric vector for formula {formula!r}"
             ),
         )
 
@@ -116,10 +114,8 @@ def test_fractional_coefficient_in_task_baseline_pattern():
     The old parser produced a zero vector here because the regex captured ``1``
     as the coefficient and ``/3 * a`` as the regressor name.
     """
-    glm = _make_fitted_glm(['go', 'stop_failure', 'stop_success'])
-    vec = glm._parse_contrast(
-        '1/3 * go + 1/3 * stop_failure + 1/3 * stop_success'
-    )
+    glm = _make_fitted_glm(["go", "stop_failure", "stop_success"])
+    vec = glm._parse_contrast("1/3 * go + 1/3 * stop_failure + 1/3 * stop_success")
     np.testing.assert_allclose(vec, [1 / 3, 1 / 3, 1 / 3])
 
 
@@ -129,11 +125,9 @@ def test_parenthesized_expression_with_mixed_signs():
     The old parser dropped the first and last terms (they had ``(`` and ``)``
     glued to the regressor names) and produced ``[0, +1.0, -1.0, 0]``.
     """
-    names = ['mismatch_2back', 'match_2back', 'mismatch_1back', 'match_1back']
+    names = ["mismatch_2back", "match_2back", "mismatch_1back", "match_1back"]
     glm = _make_fitted_glm(names)
-    vec = glm._parse_contrast(
-        '0.5 * (mismatch_2back + match_2back - mismatch_1back - match_1back)'
-    )
+    vec = glm._parse_contrast("0.5 * (mismatch_2back + match_2back - mismatch_1back - match_1back)")
     np.testing.assert_allclose(vec, [0.5, 0.5, -0.5, -0.5])
 
 
@@ -143,15 +137,15 @@ def test_decimal_coefficient_pair():
     Sanity check that the new parser also handles it. Should produce
     ``[0.5, 0.5]`` against the regressors in declaration order.
     """
-    glm = _make_fitted_glm(['go', 'nogo_success'])
-    vec = glm._parse_contrast('0.5 * go + 0.5 * nogo_success')
+    glm = _make_fitted_glm(["go", "nogo_success"])
+    vec = glm._parse_contrast("0.5 * go + 0.5 * nogo_success")
     np.testing.assert_allclose(vec, [0.5, 0.5])
 
 
 def test_simple_minus_contrast():
     """``stop_success - go`` produces ``[+1, -1]`` with go listed first."""
-    glm = _make_fitted_glm(['go', 'stop_success'])
-    vec = glm._parse_contrast('stop_success - go')
+    glm = _make_fitted_glm(["go", "stop_success"])
+    vec = glm._parse_contrast("stop_success - go")
     np.testing.assert_allclose(vec, [-1.0, 1.0])
 
 
@@ -163,11 +157,19 @@ def test_simple_minus_contrast():
 # Tasks that include a pooled `response_time` (RTDur) regressor per Mumford 2023.
 # Add tasks here when their YAML gains a response_time regressor — the invariant
 # test below auto-extends to enforce the Mumford correction for them.
-TASKS_WITH_RTDUR = ['nBack', 'cuedTS', 'directedForgetting', 'flanker',
-                    'shapeMatching', 'spatialTS', 'stopSignal', 'goNogo']
+TASKS_WITH_RTDUR = [
+    "nBack",
+    "cuedTS",
+    "directedForgetting",
+    "flanker",
+    "shapeMatching",
+    "spatialTS",
+    "stopSignal",
+    "goNogo",
+]
 
 
-@pytest.mark.parametrize('task_name', TASKS_WITH_RTDUR)
+@pytest.mark.parametrize("task_name", TASKS_WITH_RTDUR)
 def test_cognitive_contrasts_do_not_weight_pooled_rtdur_regressor(task_name):
     """Cognitive (non-RT) contrasts must have zero weight on the pooled
     ``response_time`` (RTDur) regressor.
@@ -190,29 +192,29 @@ def test_cognitive_contrasts_do_not_weight_pooled_rtdur_regressor(task_name):
     stopSignal.yaml / goNogo.yaml configs.
     """
     regressors = list(get_regressor_config(task_name).keys())
-    assert 'response_time' in regressors, (
-        f'{task_name} regressors must include the pooled RTDur '
-        f'(response_time) regressor for this test to be meaningful. If '
-        f'this task is intentionally without RT modeling, remove it from '
-        f'TASKS_WITH_RTDUR.'
+    assert "response_time" in regressors, (
+        f"{task_name} regressors must include the pooled RTDur "
+        f"(response_time) regressor for this test to be meaningful. If "
+        f"this task is intentionally without RT modeling, remove it from "
+        f"TASKS_WITH_RTDUR."
     )
     glm = _make_fitted_glm(regressors)
-    rt_idx = regressors.index('response_time')
+    rt_idx = regressors.index("response_time")
     contrasts = get_task_contrasts(task_name)
 
     for contrast_name, formula in contrasts.items():
-        if contrast_name == 'response_time':
+        if contrast_name == "response_time":
             continue  # explicit RT-effect contrast is exempt
         vec = glm._parse_contrast(formula)
         assert vec[rt_idx] == 0.0, (
-            f'{task_name}/{contrast_name}: contrast weights the pooled '
-            f'response_time RTDur regressor at {vec[rt_idx]}; this leaks '
-            f'RT variance into a cognitive contrast and undoes the '
-            f'Mumford ConstDurRTDur correction (formula={formula!r})'
+            f"{task_name}/{contrast_name}: contrast weights the pooled "
+            f"response_time RTDur regressor at {vec[rt_idx]}; this leaks "
+            f"RT variance into a cognitive contrast and undoes the "
+            f"Mumford ConstDurRTDur correction (formula={formula!r})"
         )
 
 
-@pytest.mark.parametrize('task_name', BASE_TASKS)
+@pytest.mark.parametrize("task_name", BASE_TASKS)
 def test_break_regressor_duration_matches_canonical_task_design(task_name):
     """Every base-task YAML must model `break_with_performance_feedback` as
     a 10-second epoch (the canonical break-with-feedback window).
@@ -228,29 +230,30 @@ def test_break_regressor_duration_matches_canonical_task_design(task_name):
     AND re-run the audit before launching production.
     """
     cfg = get_regressor_config(task_name)
-    assert 'break_with_performance_feedback' in cfg, (
-        f'{task_name} regressors must include break_with_performance_feedback '
-        f'so feedback-block variance is regressed out of the task-baseline.'
+    assert "break_with_performance_feedback" in cfg, (
+        f"{task_name} regressors must include break_with_performance_feedback "
+        f"so feedback-block variance is regressed out of the task-baseline."
     )
-    duration_col = cfg['break_with_performance_feedback']['duration_column']
-    assert duration_col == 'constant_10_column', (
-        f'{task_name}/break_with_performance_feedback: expected duration=10 '
-        f'(canonical break-with-feedback window per events.tsv audit) but '
-        f'YAML produced duration_column={duration_col!r}. If this is a '
-        f'deliberate change, update this test AND re-run '
-        f'scripts/audit_events_vs_task_configs.py to confirm the new value.'
+    duration_col = cfg["break_with_performance_feedback"]["duration_column"]
+    assert duration_col == "constant_10_column", (
+        f"{task_name}/break_with_performance_feedback: expected duration=10 "
+        f"(canonical break-with-feedback window per events.tsv audit) but "
+        f"YAML produced duration_column={duration_col!r}. If this is a "
+        f"deliberate change, update this test AND re-run "
+        f"scripts/audit_events_vs_task_configs.py to confirm the new value."
     )
 
 
 @pytest.mark.parametrize(
-    'task_name,primary_trial_types',
+    "task_name,primary_trial_types",
     [
-        ('stopSignal', ['go', 'stop_success', 'stop_failure']),
-        ('goNogo', ['go', 'nogo_success', 'nogo_failure']),
+        ("stopSignal", ["go", "stop_success", "stop_failure"]),
+        ("goNogo", ["go", "nogo_success", "nogo_failure"]),
     ],
 )
 def test_inhibition_task_baseline_weights_all_primary_trial_types_equally(
-    task_name, primary_trial_types,
+    task_name,
+    primary_trial_types,
 ):
     """For the inhibition tasks, ``task-baseline`` must weight every primary
     trial-type regressor (the *correct response*, the *successful inhibition*,
@@ -268,16 +271,16 @@ def test_inhibition_task_baseline_weights_all_primary_trial_types_equally(
     symmetry so that drift in either direction fails fast.
     """
     regressors = list(get_regressor_config(task_name).keys())
-    formula = get_task_contrasts(task_name)['task-baseline']
+    formula = get_task_contrasts(task_name)["task-baseline"]
     glm = _make_fitted_glm(regressors)
     vec = glm._parse_contrast(formula)
 
     weights = {}
     for trial_type in primary_trial_types:
         assert trial_type in regressors, (
-            f'{task_name}: primary trial-type regressor {trial_type!r} is '
-            f'missing from the YAML.  Update the YAML or remove it from this '
-            f'test\'s primary_trial_types list.'
+            f"{task_name}: primary trial-type regressor {trial_type!r} is "
+            f"missing from the YAML.  Update the YAML or remove it from this "
+            f"test's primary_trial_types list."
         )
         idx = regressors.index(trial_type)
         weights[trial_type] = vec[idx]
@@ -285,19 +288,19 @@ def test_inhibition_task_baseline_weights_all_primary_trial_types_equally(
     # Every primary trial type must have a strictly positive weight.
     for trial_type, w in weights.items():
         assert w > 0, (
-            f'{task_name}/task-baseline: trial type {trial_type!r} has weight '
-            f'{w}.  task-baseline must include every primary trial-type '
-            f'regressor with a strictly positive weight (formula={formula!r}).'
+            f"{task_name}/task-baseline: trial type {trial_type!r} has weight "
+            f"{w}.  task-baseline must include every primary trial-type "
+            f"regressor with a strictly positive weight (formula={formula!r})."
         )
 
     # All primary weights must be approximately equal.
     values = list(weights.values())
     spread = max(values) - min(values)
     assert spread < 1e-9, (
-        f'{task_name}/task-baseline: primary trial-type weights are not '
-        f'equal: {weights}.  task-baseline must average uniformly across '
-        f'go, success, and failure to keep its meaning symmetric across the '
-        f'inhibition tasks (formula={formula!r}).'
+        f"{task_name}/task-baseline: primary trial-type weights are not "
+        f"equal: {weights}.  task-baseline must average uniformly across "
+        f"go, success, and failure to keep its meaning symmetric across the "
+        f"inhibition tasks (formula={formula!r})."
     )
 
 
@@ -311,16 +314,16 @@ def test_inhibition_rtdur_subset_excludes_failure_trials():
     Mumford correction. This invariant is enforced at the YAML config
     level via the subset filter.
     """
-    for task_name in ('stopSignal', 'goNogo'):
+    for task_name in ("stopSignal", "goNogo"):
         config = get_regressor_config(task_name)
-        rt_subset = config['response_time']['subset']
+        rt_subset = config["response_time"]["subset"]
         # The subset must restrict to trial_type == 'go'. The most common
         # ways to express this are explicit equality to 'go' or filtering
         # against the failure trial types.
         assert "trial_type == 'go'" in rt_subset, (
-            f'{task_name}: response_time subset must restrict to '
+            f"{task_name}: response_time subset must restrict to "
             f"trial_type == 'go' so RTDur excludes commission-error trials. "
-            f'Current subset: {rt_subset!r}'
+            f"Current subset: {rt_subset!r}"
         )
 
 
@@ -348,16 +351,14 @@ def test_surface_compute_contrast_runs_end_to_end_on_synthetic_data():
     X = np.random.randn(n_tp, 3)
     Y = X @ np.random.randn(3, n_verts) + np.random.randn(n_tp, n_verts) * 0.5
 
-    dm = pd.DataFrame(X, columns=['cond_a', 'cond_b', 'constant'])
-    glm = SurfaceGLM(t_r=1.5, noise_model='ols')
+    dm = pd.DataFrame(X, columns=["cond_a", "cond_b", "constant"])
+    glm = SurfaceGLM(t_r=1.5, noise_model="ols")
     glm.fit(Y, dm)
 
-    result = glm.compute_contrast('cond_a - cond_b', output_type='all')
-    for key in ('effect_size', 'effect_variance', 'z_score'):
-        assert key in result, f'compute_contrast must return {key!r}'
-        assert hasattr(result[key], 'data'), (
-            f'{key} should be a SurfaceResult with a .data array'
-        )
+    result = glm.compute_contrast("cond_a - cond_b", output_type="all")
+    for key in ("effect_size", "effect_variance", "z_score"):
+        assert key in result, f"compute_contrast must return {key!r}"
+        assert hasattr(result[key], "data"), f"{key} should be a SurfaceResult with a .data array"
         assert result[key].data.shape == (n_verts,)
 
 
@@ -369,9 +370,9 @@ def test_unknown_regressor_raises_rather_than_silently_zeroing():
     corrupt contrasts. nilearn's ``expression_to_contrast_vector`` raises
     a ``ValueError`` — we want that behavior preserved.
     """
-    glm = _make_fitted_glm(['go', 'stop_success'])
-    with pytest.raises(Exception):
-        glm._parse_contrast('go - nonexistent_regressor')
+    glm = _make_fitted_glm(["go", "stop_success"])
+    with pytest.raises(ValueError):
+        glm._parse_contrast("go - nonexistent_regressor")
 
 
 # ---------------------------------------------------------------------------
@@ -379,7 +380,7 @@ def test_unknown_regressor_raises_rather_than_silently_zeroing():
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize('task_name', BASE_TASKS)
+@pytest.mark.parametrize("task_name", BASE_TASKS)
 def test_all_yaml_contrasts_have_at_least_one_nonzero_weight(task_name):
     """Every contrast in every YAML must produce at least one nonzero weight.
 
@@ -394,6 +395,6 @@ def test_all_yaml_contrasts_have_at_least_one_nonzero_weight(task_name):
     for contrast_name, formula in contrasts.items():
         vec = glm._parse_contrast(formula)
         assert np.any(vec != 0), (
-            f'{task_name}/{contrast_name}: all-zero contrast vector for '
-            f'formula {formula!r}; regressors available: {regressors}'
+            f"{task_name}/{contrast_name}: all-zero contrast vector for "
+            f"formula {formula!r}; regressors available: {regressors}"
         )

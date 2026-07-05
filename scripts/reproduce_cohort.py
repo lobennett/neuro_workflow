@@ -48,54 +48,43 @@ _OAK_BEHAVIORAL = Path(
 
 _COHORT_PATHS: dict[str, dict] = {
     "discovery": {
-        "bids":               Path("/scratch/users/logben/discovery_bids"),
-        "fmriprep_version":   _FMRIPREP_VERSION,
-        "fmriprep_src":       Path(
-            "/scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4"
-        ),
-        "behavioral":         _OAK_BEHAVIORAL,
-        "lev1_outliers_csv":  Path(
-            "/scratch/users/logben/qa_lev1_discovery/lev1_outliers.csv"
-        ),
-        "decisions_tsv":      _REPO_ROOT / "config" / "manifests" / "qc_decisions.tsv",
+        "bids": Path("/scratch/users/logben/discovery_bids"),
+        "fmriprep_version": _FMRIPREP_VERSION,
+        "fmriprep_src": Path("/scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4"),
+        "behavioral": _OAK_BEHAVIORAL,
+        "lev1_outliers_csv": Path("/scratch/users/logben/qa_lev1_discovery/lev1_outliers.csv"),
+        "decisions_tsv": _REPO_ROOT / "config" / "manifests" / "qc_decisions.tsv",
         # Reference the SURFACE lev1 (the reconciled science output that feeds
         # lev2/network analysis), not the older volumetric QC scaffold
         # /scratch/users/logben/lev1_discovery (May-2026, pre per-contrast +
         # pre response_time-exemption — stale).
-        "lev1_fe_dir":        Path(
-            "/scratch/users/logben/discovery_bids/derivatives/lev1_surface"
-        ),
+        "lev1_fe_dir": Path("/scratch/users/logben/discovery_bids/derivatives/lev1_surface"),
         # Flywheel snapshot — must be captured first with scripts/capture_fw_inventory.py
-        "snapshot":           _REPO_ROOT / "data" / "repro" / "fw_inventory_discovery.json",
+        "snapshot": _REPO_ROOT / "data" / "repro" / "fw_inventory_discovery.json",
         # Reference is the full rendered .bidsignore (collection + QC lines) at
         # the real BIDS root.  If not yet available (git-annex content absent or
         # file missing), the prereq guard in main() will catch it and exit 2.
         "committed_bidsignore": Path("/scratch/users/logben/discovery_bids/.bidsignore"),
     },
     "validation": {
-        "bids":               Path("/scratch/users/logben/validation_bids"),
-        "fmriprep_version":   _FMRIPREP_VERSION,
-        "fmriprep_src":       Path(
-            "/scratch/users/logben/validation_bids/derivatives/fmriprep_25.2.4"
-        ),
-        "behavioral":         _OAK_BEHAVIORAL,
-        "lev1_outliers_csv":  Path(
-            "/scratch/users/logben/qa_lev1_validation/lev1_outliers.csv"
-        ),
-        "decisions_tsv":      _REPO_ROOT / "config" / "manifests" / "qc_decisions.tsv",
+        "bids": Path("/scratch/users/logben/validation_bids"),
+        "fmriprep_version": _FMRIPREP_VERSION,
+        "fmriprep_src": Path("/scratch/users/logben/validation_bids/derivatives/fmriprep_25.2.4"),
+        "behavioral": _OAK_BEHAVIORAL,
+        "lev1_outliers_csv": Path("/scratch/users/logben/qa_lev1_validation/lev1_outliers.csv"),
+        "decisions_tsv": _REPO_ROOT / "config" / "manifests" / "qc_decisions.tsv",
         # SURFACE lev1 science output (see discovery note above).
-        "lev1_fe_dir":        Path(
-            "/scratch/users/logben/validation_bids/derivatives/lev1_surface"
-        ),
-        "snapshot":           _REPO_ROOT / "data" / "repro" / "fw_inventory_validation.json",
+        "lev1_fe_dir": Path("/scratch/users/logben/validation_bids/derivatives/lev1_surface"),
+        "snapshot": _REPO_ROOT / "data" / "repro" / "fw_inventory_validation.json",
         # Reference is the full rendered .bidsignore at the real BIDS root.
         "committed_bidsignore": Path("/scratch/users/logben/validation_bids/.bidsignore"),
     },
 }
 
 
-def _resolve_cohort_paths(cohort: str, *, bids_root: Path | None = None,
-                          lev1_outliers_csv: Path | None = None) -> dict:
+def _resolve_cohort_paths(
+    cohort: str, *, bids_root: Path | None = None, lev1_outliers_csv: Path | None = None
+) -> dict:
     """Return the cohort path dict, optionally retargeted to a new BIDS root.
 
     When ``bids_root`` is given, the four BIDS-derived paths (bids, fmriprep_src,
@@ -165,12 +154,14 @@ def _hermetic_exclusion_paths(work_dir: Path):
 # Flywheel install seam (matches tests/bidsify/test_fake_flywheel_e2e.py)
 # ---------------------------------------------------------------------------
 
+
 def _make_install_flywheel():
     """Return an install_flywheel callable that stubs ``flywheel.Client``.
 
     Uses ``sys.modules`` injection (same pattern as the bidsify e2e tests),
     so the real flywheel SDK is NOT required on the SLURM node.
     """
+
     def _install(fake_client):
         stub = types.ModuleType("flywheel")
         stub.Client = lambda *a, **k: fake_client  # type: ignore[attr-defined]
@@ -182,6 +173,7 @@ def _make_install_flywheel():
 # ---------------------------------------------------------------------------
 # All-5-generators exclusion run
 # ---------------------------------------------------------------------------
+
 
 def _run_all_generators(
     cohort: str,
@@ -277,6 +269,7 @@ def _run_all_generators(
     committed_overrides = _REPO_ROOT / "data" / "exclusions" / f"{cohort}_overrides.json"
     if committed_overrides.is_file():
         from neuro_workflow.core.exclusions import _overrides_path as _op
+
         shutil.copy2(committed_overrides, _op(cohort))
     # else: no overrides file committed — fine, compile_exclusions will see none.
 
@@ -297,6 +290,7 @@ def _run_all_generators(
 # Main reproduction logic
 # ---------------------------------------------------------------------------
 
+
 def _subjects_from_spec(spec) -> list[str]:
     """Return ``sub-{label}`` subject strings from a FlywheelCohortSpec."""
     return [f"sub-{s.label}" for s in spec.subjects]
@@ -308,8 +302,7 @@ _RESCAN_SUBJECT = re.compile(r"^sub-[^/]+-\d+/")
 _EVENTS_SK = re.compile(r"(sub-[^_/]+)_(ses-[^_/]+)_task-([^_]+)_run-(\d+)")
 
 
-def _strip_filename_boundaries(produced: set, reference: set, *,
-                               inert_events=None):
+def _strip_filename_boundaries(produced: set, reference: set, *, inert_events=None):
     """Remove documented snapshot/replay boundaries from BOTH filesets so the
     filename diff reflects reproducible *content*, not known harness limitations.
 
@@ -334,6 +327,7 @@ def _strip_filename_boundaries(produced: set, reference: set, *,
         ``relpath -> bool`` (needs the cohort's exclusion + task config).
     Residual differences remain in the diff and will (correctly) fail the check.
     """
+
     def _func_sessions(fileset: set) -> set:
         out = set()
         for f in fileset:
@@ -346,10 +340,18 @@ def _strip_filename_boundaries(produced: set, reference: set, *,
 
     def is_fmap_sidecar(f: str) -> bool:
         b = f.rsplit("/", 1)[-1]
-        return any(b.endswith(s) for s in (
-            "_magnitude.json", "_magnitude.nii.gz",
-            "_fieldmap.json", "_fieldmap.nii.gz", "_magnitude1.json",
-            "_magnitude2.json", "_phasediff.json"))
+        return any(
+            b.endswith(s)
+            for s in (
+                "_magnitude.json",
+                "_magnitude.nii.gz",
+                "_fieldmap.json",
+                "_fieldmap.nii.gz",
+                "_magnitude1.json",
+                "_magnitude2.json",
+                "_phasediff.json",
+            )
+        )
 
     def is_anat_only_session(f: str) -> bool:
         parts = f.split("/")
@@ -357,8 +359,12 @@ def _strip_filename_boundaries(produced: set, reference: set, *,
             return (parts[0], parts[1]) not in func_sessions
         return False
 
-    dropped = {"rescan_subject": set(), "fmap_sidecar": set(),
-               "anat_only_session": set(), "orphan_events": set()}
+    dropped = {
+        "rescan_subject": set(),
+        "fmap_sidecar": set(),
+        "anat_only_session": set(),
+        "orphan_events": set(),
+    }
 
     def filt(fileset: set) -> set:
         keep = set()
@@ -401,9 +407,9 @@ def _tasks_from_bids(bids_dir: Path) -> list[str]:
     return sorted(found)
 
 
-def main(cohort: str, out: Path, *,
-         bids_root: Path | None = None,
-         lev1_outliers_csv: Path | None = None) -> None:
+def main(
+    cohort: str, out: Path, *, bids_root: Path | None = None, lev1_outliers_csv: Path | None = None
+) -> None:
     """Reproduce the given cohort and write a diff report to ``out``.
 
     Orchestration only — every load-bearing step calls production code.
@@ -432,8 +438,7 @@ def main(cohort: str, out: Path, *,
     from neuro_workflow.testing.reproduce.snapshot import load_inventory
     from neuro_workflow.testing.reproduce.stage_metrics import stage_metrics
 
-    paths = _resolve_cohort_paths(cohort, bids_root=bids_root,
-                                  lev1_outliers_csv=lev1_outliers_csv)
+    paths = _resolve_cohort_paths(cohort, bids_root=bids_root, lev1_outliers_csv=lev1_outliers_csv)
 
     # --- a. Replay FW snapshot -> stub BIDS ---------------------------------
     print(f"[reproduce_cohort] loading inventory: {paths['snapshot']}")
@@ -470,7 +475,10 @@ def main(cohort: str, out: Path, *,
 
     with _hermetic_exclusion_paths(work_dir) as coll_dir:
         compiled, bidsignore_text = _run_all_generators(
-            cohort, stub_bids, paths, coll_dir,
+            cohort,
+            stub_bids,
+            paths,
+            coll_dir,
         )
 
     print(f"  compiled: {len(compiled)} entries")
@@ -484,9 +492,7 @@ def main(cohort: str, out: Path, *,
     # per-contrast exclusions (5-tuple; the exclude-contrast action).
     keyset_7 = compiled_to_keyset(compiled)
     excluded_keys = {
-        (s, ses, t, r)
-        for (s, ses, t, r, act, _src, _c) in keyset_7
-        if act != "exclude-contrast"
+        (s, ses, t, r) for (s, ses, t, r, act, _src, _c) in keyset_7 if act != "exclude-contrast"
     }
     contrast_excluded = {
         (s, ses, t, r, c)
@@ -519,6 +525,7 @@ def main(cohort: str, out: Path, *,
     # above from the compiled keyset) rather than re-importing a sibling script
     # module ('scripts' is not importable when run as a path).
     from neuro_workflow.analysis.task_config.loader import get_base_tasks
+
     _base_tasks = set(get_base_tasks())
 
     # Multi-run scans: run-1 is the short/aborted acquisition, the behavioral CSV
@@ -538,19 +545,23 @@ def main(cohort: str, out: Path, *,
         key4 = (m.group(1), m.group(2), m.group(3), f"run-{m.group(4)}")
         st = (m.group(1), m.group(2), m.group(3))
         # excluded scan, dual task (no lev1 contrasts), or a multi-run run-1 orphan
-        return (key4 in excluded_keys or m.group(3) not in _base_tasks
-                or (m.group(4) == "1" and st in _multirun))
+        return (
+            key4 in excluded_keys
+            or m.group(3) not in _base_tasks
+            or (m.group(4) == "1" and st in _multirun)
+        )
 
     pf, rf, dropped = _strip_filename_boundaries(
-        produced_files, real_files, inert_events=_inert_events)
+        produced_files, real_files, inert_events=_inert_events
+    )
     for cls, items in dropped.items():
         if items:
-            print(f"  [filename-boundary] dropped {len(items)} '{cls}' "
-                  f"(e.g. {sorted(items)[0]})")
+            print(
+                f"  [filename-boundary] dropped {len(items)} '{cls}' " f"(e.g. {sorted(items)[0]})"
+            )
     (out.parent if out.parent.exists() else Path(".")).joinpath(
         f"reproduce_filename_boundaries_{cohort}.json"
-    ).write_text(json.dumps(
-        {k: sorted(v) for k, v in dropped.items()}, indent=2))
+    ).write_text(json.dumps({k: sorted(v) for k, v in dropped.items()}, indent=2))
     diff_files = diff_sets(pf, rf)
 
     produced_bidsignore = bidsignore_lineset(bidsignore_text)
@@ -591,14 +602,15 @@ def main(cohort: str, out: Path, *,
     # exclusion set, so remove model-only cells that lev1 under-produced (logged).
     _run_counts = lev1_indiv_run_counts([paths["lev1_fe_dir"]])
     _runtime_dropped = {
-        cell for cell in (produced_lev2 - reference_lev2)
-        if _run_counts.get(cell, 0) < 2
+        cell for cell in (produced_lev2 - reference_lev2) if _run_counts.get(cell, 0) < 2
     }
     if _runtime_dropped:
         produced_lev2 = produced_lev2 - _runtime_dropped
-        print(f"  [lev2-boundary] dropped {len(_runtime_dropped)} model-only cells "
-              f"lev1 under-produced at runtime (belowMinRuns/absent): "
-              f"{sorted(_runtime_dropped)}")
+        print(
+            f"  [lev2-boundary] dropped {len(_runtime_dropped)} model-only cells "
+            f"lev1 under-produced at runtime (belowMinRuns/absent): "
+            f"{sorted(_runtime_dropped)}"
+        )
     diff_lev2 = diff_sets(produced_lev2, reference_lev2)
 
     # --- f. Report ----------------------------------------------------------
@@ -625,6 +637,7 @@ def main(cohort: str, out: Path, *,
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
 
 def _parse_args(argv=None):
     parser = argparse.ArgumentParser(
@@ -661,8 +674,6 @@ def _parse_args(argv=None):
 
 if __name__ == "__main__":
     args = _parse_args()
-    main(args.cohort, args.out,
-         bids_root=args.bids_root,
-         lev1_outliers_csv=args.lev1_outliers_csv)
+    main(args.cohort, args.out, bids_root=args.bids_root, lev1_outliers_csv=args.lev1_outliers_csv)
     report_text = args.out.read_text()
     sys.exit(0 if "PASS" in report_text.splitlines()[0] else 1)

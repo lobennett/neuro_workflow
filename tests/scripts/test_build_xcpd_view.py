@@ -1,4 +1,5 @@
 """Tests for scripts/build_xcpd_view.py plan_links logic."""
+
 from pathlib import Path
 
 
@@ -35,11 +36,15 @@ def test_plan_links_drops_excluded_scan_keeps_others(tmp_path):
     targets = {p.relative_to(view).as_posix() for p in links}
 
     # excluded rest func file dropped; kept flanker func file present
-    assert "sub-s10/ses-01/func/sub-s10_ses-01_task-flanker_run-1_desc-preproc_bold.nii.gz" in targets
+    assert (
+        "sub-s10/ses-01/func/sub-s10_ses-01_task-flanker_run-1_desc-preproc_bold.nii.gz" in targets
+    )
     assert not any("task-rest_run-1" in t for t in targets)
     # anat is whole-dir (the dir itself is linked, not its files)
     assert "sub-s10/ses-01/anat" in targets
-    assert "sub-s10/ses-01/func/sub-s10_ses-01_task-rest_run-1_desc-preproc_bold.nii.gz" not in targets
+    assert (
+        "sub-s10/ses-01/func/sub-s10_ses-01_task-rest_run-1_desc-preproc_bold.nii.gz" not in targets
+    )
     # log whole-dir + subject-level figures + fmap file + top-level metadata
     assert "sub-s10/ses-multi-abcd/log" in targets
     assert "sub-s10/figures" in targets

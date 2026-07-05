@@ -22,11 +22,18 @@ class QsiprepPipeline(ContainerPipeline):
 
     def add_cli_args(self, parser: ArgumentParser) -> None:
         parser.add_argument("--version", default=None, help="QSIPrep version tag (e.g. 1.1.1)")
-        parser.add_argument("--output-resolution", type=float, default=1.5, help="Output resolution in mm (default: 1.5)")
+        parser.add_argument(
+            "--output-resolution",
+            type=float,
+            default=1.5,
+            help="Output resolution in mm (default: 1.5)",
+        )
         parser.add_argument("--qsiprep-args", default="", help="Additional QSIPrep arguments")
         parser.add_argument("--fs-license", default="~/license.txt", help="FreeSurfer license file")
         parser.add_argument("--nthreads", type=int, default=None, help="CPUs per task (default: 8)")
-        parser.add_argument("--mem-per-cpu-gb", type=int, default=None, help="Memory per CPU in GB (default: 8)")
+        parser.add_argument(
+            "--mem-per-cpu-gb", type=int, default=None, help="Memory per CPU in GB (default: 8)"
+        )
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 24:00:00)")
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
@@ -40,9 +47,7 @@ class QsiprepPipeline(ContainerPipeline):
 
         scratch = os.environ.get("SCRATCH", "/tmp")
         work_dir = f"{scratch}/work/qsiprep_{dataset_name}_{args.version}"
-        subjects_file = str(
-            write_subjects_file(subjects, work_dir, "subjects.txt")
-        )
+        subjects_file = str(write_subjects_file(subjects, work_dir, "subjects.txt"))
 
         return {
             **self._base_context(

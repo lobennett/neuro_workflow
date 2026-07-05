@@ -5,6 +5,7 @@ Exercises ``_write_lev2_provenance``, which writes a BIDS
 plus a ``run-manifest.json`` (stage='lev2', recording the discovered lev1
 input files) at the run's output dir. Written red-first.
 """
+
 from __future__ import annotations
 
 import json
@@ -45,9 +46,7 @@ def test_write_lev2_provenance_writes_both_files(tmp_path, monkeypatch):
         allow_dirty=False,
     )
 
-    lev2_run._write_lev2_provenance(
-        output_dir, args, [lev1_a, lev1_b], [str(f1), str(f2)]
-    )
+    lev2_run._write_lev2_provenance(output_dir, args, [lev1_a, lev1_b], [str(f1), str(f2)])
 
     dd = output_dir / "dataset_description.json"
     rm = output_dir / "run-manifest.json"
@@ -81,8 +80,10 @@ def test_write_lev2_provenance_respects_allow_dirty_false(tmp_path, monkeypatch)
     lev1_a.mkdir()
 
     args = SimpleNamespace(
-        contrast="c", level1_dirs=[str(lev1_a)],
-        output_dir=str(output_dir), allow_dirty=False,
+        contrast="c",
+        level1_dirs=[str(lev1_a)],
+        output_dir=str(output_dir),
+        allow_dirty=False,
     )
 
     with pytest.raises(RuntimeError):
@@ -94,13 +95,25 @@ def test_lev2_parser_has_allow_dirty_default_false():
     from neuro_workflow.analysis.lev2.run import get_parser
 
     parser = get_parser()
-    ns = parser.parse_args([
-        "--contrast", "c", "--level1-dirs", "/a", "/b",
-    ])
+    ns = parser.parse_args(
+        [
+            "--contrast",
+            "c",
+            "--level1-dirs",
+            "/a",
+            "/b",
+        ]
+    )
     assert hasattr(ns, "allow_dirty")
     assert ns.allow_dirty is False
 
-    ns2 = parser.parse_args([
-        "--contrast", "c", "--level1-dirs", "/a", "--allow-dirty",
-    ])
+    ns2 = parser.parse_args(
+        [
+            "--contrast",
+            "c",
+            "--level1-dirs",
+            "/a",
+            "--allow-dirty",
+        ]
+    )
     assert ns2.allow_dirty is True

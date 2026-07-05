@@ -11,12 +11,11 @@ Selection is UNCHANGED by PR4c: ``discover_input_files`` still drops
 ``_desc-belowMinRuns_`` files via substring; that behavior is pinned in
 ``test_run.py`` and re-pinned here.
 """
+
 from __future__ import annotations
 
 import json
 from pathlib import Path
-
-import pytest
 
 
 def _write_manifest(
@@ -156,6 +155,7 @@ def test_write_lev2_provenance_warns_on_inconsistent_inputs(tmp_path, monkeypatc
     f2 = _fe_file(base2, "sub-s10_fe.nii.gz")
 
     from types import SimpleNamespace
+
     args = SimpleNamespace(
         contrast="task-flanker_contrast-incongruent-congruent",
         level1_dirs=[str(lev1)],
@@ -195,6 +195,7 @@ def test_write_lev2_provenance_no_warning_when_consistent(tmp_path, monkeypatch,
     f2 = _fe_file(base2, "sub-s10_fe.nii.gz")
 
     from types import SimpleNamespace
+
     args = SimpleNamespace(
         contrast="task-flanker_contrast-incongruent-congruent",
         level1_dirs=[str(lev1)],

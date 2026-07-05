@@ -2,8 +2,9 @@
 unpadded run-N convention (run-1, run-2), not zero-padded run-01, matching
 BIDS filenames / exclusion keys / .bidsignore globs everywhere else.
 """
-import numpy as np
+
 import nibabel as nib
+import numpy as np
 
 from neuro_workflow.analysis.lev1.processing.residuals import ResidualsProcessor
 

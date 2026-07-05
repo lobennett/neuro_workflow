@@ -1,0 +1,30 @@
+# Exclude paths where whitespace-normalizing hooks would otherwise churn
+# content that isn't ours to reformat:
+#   - data/**            reviewed exclusion lockfiles + provenance JSON (see
+#                         data/exclusions/*_lock.json); byte-for-byte stability
+#                         matters for the provenance audit trail.
+#   - config/manifests/*.tsv  reviewed behavioral-BOLD manifests that use CRLF
+#                         line endings; trailing-whitespace strips the `\r` and
+#                         rewrites the entire file for no content change.
+#   - vendored DataTables CSS/JS in qa/templates/static — kept byte-identical
+#                         to upstream so future vendor updates diff cleanly.
+exclude: '^(data/|config/manifests/.*\.tsv$|src/neuro_workflow/qa/templates/static/.*\.min\.(js|css)$)'
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+      - id: codespell
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files

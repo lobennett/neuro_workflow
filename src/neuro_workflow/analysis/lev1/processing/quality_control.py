@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -28,14 +27,10 @@ def est_contrast_vifs(desmat, contrasts):
     desmat_copy = desmat_copy.loc[:, desmat_copy.nunique() > 1]
     # Scaling stabilizes the matrix inversion
     nsamp = desmat_copy.shape[0]
-    desmat_copy = (desmat_copy - desmat_copy.mean()) / (
-        (nsamp - 1) ** 0.5 * desmat_copy.std()
-    )
+    desmat_copy = (desmat_copy - desmat_copy.mean()) / ((nsamp - 1) ** 0.5 * desmat_copy.std())
     vifs_contrasts = {}
     for contrast_name, contrast_string in contrasts.items():
-        contrast_cvec = expression_to_contrast_vector(
-            contrast_string, desmat_copy.columns
-        )
+        contrast_cvec = expression_to_contrast_vector(contrast_string, desmat_copy.columns)
         true_var_contrast = (
             contrast_cvec
             @ np.linalg.inv(desmat_copy.transpose() @ desmat_copy)
@@ -58,14 +53,14 @@ def est_contrast_vifs(desmat, contrasts):
 
 def run_quality_control(
     design_matrix: pd.DataFrame,
-    contrasts: Dict[str, str],
+    contrasts: dict[str, str],
     percent_junk: float,
     output_dir: Path,
     subject_id: str,
     session: str,
     run: str,
     task_name: str,
-) -> Tuple[Dict[str, float], bool]:
+) -> tuple[dict[str, float], bool]:
     """Run quality control analysis.
 
     Computes per-contrast VIFs and writes them to a CSV alongside the design
@@ -98,29 +93,27 @@ def run_quality_control(
 
     # Check that required identifiers are provided
     required_params = {
-        'subject_id': subject_id,
-        'session': session,
-        'run': run,
-        'task_name': task_name,
+        "subject_id": subject_id,
+        "session": session,
+        "run": run,
+        "task_name": task_name,
     }
 
     for param_name, param_value in required_params.items():
-        if param_value is None or param_value == '':
-            raise ValueError(
-                f"Required parameter '{param_name}' cannot be None or empty"
-            )
+        if param_value is None or param_value == "":
+            raise ValueError(f"Required parameter '{param_name}' cannot be None or empty")
 
     any_fail = False
 
     # Check if design matrix has fewer than 100 rows
     if design_matrix.shape[0] < 100:
         any_fail = True
-        logger.warning('QA FAIL: Design matrix has only %d rows (< 100)', design_matrix.shape[0])
+        logger.warning("QA FAIL: Design matrix has only %d rows (< 100)", design_matrix.shape[0])
 
     # Check for regressors used in contrasts that have all zeros
     design_column_names = design_matrix.columns.tolist()
     contrast_matrix = []
-    for key, values in contrasts.items():
+    for _key, values in contrasts.items():
         contrast_def = expression_to_contrast_vector(values, design_column_names)
         contrast_matrix.append(np.array(contrast_def))
 
@@ -133,43 +126,39 @@ def run_quality_control(
         if any_column_fail:
             any_fail = True
             bad_columns = list(checked_columns_fail.index[checked_columns_fail.values])
-            logger.warning('QA FAIL: Regressors with all zeros used in contrasts: %s', bad_columns)
+            logger.warning("QA FAIL: Regressors with all zeros used in contrasts: %s", bad_columns)
 
     # Check if percent junk is greater than 30%
     if percent_junk > 0.30:
         any_fail = True
-        logger.warning('QA FAIL: High junk percentage: %.1f%% (> 30%%)', percent_junk * 100)
+        logger.warning("QA FAIL: High junk percentage: %.1f%% (> 30%%)", percent_junk * 100)
 
     # Calculate contrast VIFs (saved to CSV; not used to fail QA — cohort QC
     # at neuro_workflow.qa.lev1_outliers handles thresholding for review).
     try:
         vifs = est_contrast_vifs(design_matrix, contrasts)
     except Exception as e:
-        logger.warning('VIF calculation failed: %s', e)
+        logger.warning("VIF calculation failed: %s", e)
         vifs = {name: 0.0 for name in contrasts.keys()}
 
     # Save design matrix to quality control directory
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    design_matrix_filename = (
-        f'{subject_id}_{session}_task-{task_name}_{run}_desc-designMatrix.csv'
-    )
+    design_matrix_filename = f"{subject_id}_{session}_task-{task_name}_{run}_desc-designMatrix.csv"
     design_matrix_file = output_dir / design_matrix_filename
     design_matrix.to_csv(design_matrix_file, index=False)
-    logger.debug('Design matrix saved: %s', design_matrix_file)
+    logger.debug("Design matrix saved: %s", design_matrix_file)
 
-    vifs_filename = (
-        f'{subject_id}_{session}_task-{task_name}_{run}_desc-contrastVIFs.csv'
-    )
+    vifs_filename = f"{subject_id}_{session}_task-{task_name}_{run}_desc-contrastVIFs.csv"
     vifs_file = output_dir / vifs_filename
-    vifs_df = pd.DataFrame(list(vifs.items()), columns=['contrast', 'VIF'])
+    vifs_df = pd.DataFrame(list(vifs.items()), columns=["contrast", "VIF"])
     vifs_df.to_csv(vifs_file, index=False)
-    logger.debug('Contrast VIFs saved: %s', vifs_file)
+    logger.debug("Contrast VIFs saved: %s", vifs_file)
 
     if any_fail:
-        logger.warning('Overall QA: FAILED')
+        logger.warning("Overall QA: FAILED")
     else:
-        logger.info('Overall QA: PASSED')
+        logger.info("Overall QA: PASSED")
 
     return vifs, any_fail

@@ -9,6 +9,7 @@ check_bidsignore_drift(committed, rendered) -> (bool, str)   Same for .bidsignor
 
 All functions are pure (no I/O).  The CLI writes only when --output is given.
 """
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -34,6 +35,7 @@ _BIDSIGNORE_ACTIONS = {"exclude", "trim"}
 # ---------------------------------------------------------------------------
 # render_md
 # ---------------------------------------------------------------------------
+
 
 def render_md(entries: list[dict]) -> str:
     """Render a Markdown document grouped by source from the given entries list.
@@ -97,6 +99,7 @@ def render_md(entries: list[dict]) -> str:
 # render_bidsignore
 # ---------------------------------------------------------------------------
 
+
 def _entry_to_bidsignore_glob(entry: dict) -> str | None:
     """Convert a single exclusion entry to a .bidsignore glob line.
 
@@ -114,10 +117,10 @@ def _entry_to_bidsignore_glob(entry: dict) -> str | None:
     if action not in _BIDSIGNORE_ACTIONS:
         return None
 
-    subject = entry.get("subject", "")    # e.g. "sub-s10"
-    session = entry.get("session", "")    # e.g. "ses-05"
-    task = entry.get("task", "")          # BARE, e.g. "goNogo"
-    run = entry.get("run", "run-*")       # e.g. "run-1" or "run-*"
+    subject = entry.get("subject", "")  # e.g. "sub-s10"
+    session = entry.get("session", "")  # e.g. "ses-05"
+    task = entry.get("task", "")  # BARE, e.g. "goNogo"
+    run = entry.get("run", "run-*")  # e.g. "run-1" or "run-*"
 
     # Normalise subject/session to have BIDS prefix.
     if not subject.startswith("sub-"):
@@ -133,10 +136,7 @@ def _entry_to_bidsignore_glob(entry: dict) -> str | None:
     if not run.startswith("run-"):
         run = f"run-{run}"
 
-    return (
-        f"{subject}/{session}/func/"
-        f"{subject}_{session}_{task_tag}_{run}_echo-*_bold.*"
-    )
+    return f"{subject}/{session}/func/" f"{subject}_{session}_{task_tag}_{run}_echo-*_bold.*"
 
 
 def render_bidsignore(entries: list[dict]) -> str:
@@ -173,6 +173,7 @@ def render_bidsignore(entries: list[dict]) -> str:
 # Collection block (committed, human-curated) + concatenation
 # ---------------------------------------------------------------------------
 
+
 def collection_path(dataset_name: str) -> Path:
     """Path to the committed human-curated collection .bidsignore for a dataset.
 
@@ -184,7 +185,8 @@ def collection_path(dataset_name: str) -> Path:
 
 
 def render_bidsignore_with_collection(
-    dataset_name: str, entries: list[dict],
+    dataset_name: str,
+    entries: list[dict],
 ) -> str:
     """Render the full .bidsignore = committed collection block + generated QC.
 
@@ -232,6 +234,7 @@ def render_bidsignore_with_collection(
 # Drift detection helpers
 # ---------------------------------------------------------------------------
 
+
 def check_md_drift(committed: str, rendered: str) -> tuple[bool, str]:
     """Compare a committed Markdown artifact against a freshly rendered version.
 
@@ -255,6 +258,7 @@ def check_md_drift(committed: str, rendered: str) -> tuple[bool, str]:
     rendered_lines = rendered.splitlines()
 
     import difflib
+
     diff = list(
         difflib.unified_diff(
             rendered_lines,
@@ -293,6 +297,7 @@ def check_bidsignore_drift(committed: str, rendered: str) -> tuple[bool, str]:
     rendered_lines = rendered.splitlines()
 
     import difflib
+
     diff = list(
         difflib.unified_diff(
             rendered_lines,

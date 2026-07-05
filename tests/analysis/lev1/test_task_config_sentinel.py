@@ -1,4 +1,5 @@
 """Loader raises TaskNotConfiguredError on placeholder dual-task YAMLs."""
+
 import pytest
 
 from neuro_workflow.analysis.task_config.loader import (
