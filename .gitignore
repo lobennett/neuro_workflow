@@ -46,3 +46,6 @@ docs/EVENTS-TASK-CONFIG-AUDIT.md.repro_test_*.out
 /.*_[0-9]*.err
 /.stage*.sbatch
 /.*.tmp.py
+
+# Flywheel inventory snapshots — raw study-data dumps, regenerable via scripts/capture_fw_inventory.py; keep out of git
+data/repro/fw_inventory_*.json
