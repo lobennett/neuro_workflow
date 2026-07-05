@@ -26,6 +26,27 @@ registration, but `submit lev1/lev2/mshbm`, the `qa` subcommands, and
 
 After installation, use `uv run neuro-run` from the project directory, or `module load uv && neuro-run` if the venv is on your PATH.
 
+## Documentation
+
+This README is a summary; for the full picture start with
+[`docs/PIPELINE-WALKTHROUGH.md`](docs/PIPELINE-WALKTHROUGH.md) (how to run a stage,
+end to end) and [`docs/RUNBOOK.md`](docs/RUNBOOK.md) (how each SLURM job is launched).
+
+| Doc | Purpose |
+|-----|---------|
+| [`docs/PIPELINE-WALKTHROUGH.md`](docs/PIPELINE-WALKTHROUGH.md) | Full ordered recipe, Flywheel → second-level models, with a quick-reference command list |
+| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Operational reference for launching each SLURM stage (partitions, resources, binds) |
+| [`docs/PROVENANCE-AND-EXCLUSIONS.md`](docs/PROVENANCE-AND-EXCLUSIONS.md) | The exclusion framework (5 sources, compilation, lockfile, drift gate), run-manifest schema, clean-tree policy |
+| [`docs/CONFIG.md`](docs/CONFIG.md) | `thresholds.yaml` and `battery.yaml` schema and usage |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Package structure and module reference |
+| [`docs/DATASETS.md`](docs/DATASETS.md) | Orientation to the cohorts, task battery, and per-subject data budget |
+| [`docs/SCAN-NOTES.md`](docs/SCAN-NOTES.md) | Raw data collection notes per subject (excluded/incomplete sessions) |
+| [`docs/REFERENCES.md`](docs/REFERENCES.md) | Source papers referenced by the analysis (not committed; obtain from publisher) |
+
+MSHBM parcellation, prevalence analysis, parcellation reliability, and XCP-D
+denoising live in the separate [`network_analysis`](https://github.com/lobennett/network_analysis)
+repository.
+
 ## Pipeline Progression
 
 The workflow moves data through these stages:
@@ -178,7 +199,7 @@ Behavioral data is organized into three separate locations:
 
 ### Known Data Issues
 
-Session-level data issues are documented in `config/behavioral_session_mapping.json` (irreconcilable runs, skipped sessions) and `docs/scan-notes.md` (operator notes for excluded and incomplete subjects).
+Session-level data issues are documented in `config/behavioral_session_mapping.json` (irreconcilable runs, skipped sessions) and [`docs/SCAN-NOTES.md`](docs/SCAN-NOTES.md) (operator notes for excluded and incomplete subjects).
 
 ---
 
