@@ -17,8 +17,13 @@ log = logging.getLogger(__name__)
 N_DUMMY = 7
 
 
-def trim_bold_directory(bids_dir: Path) -> dict:
+def trim_bold_directory(bids_dir: Path, subjects: list[str] | None = None) -> dict:
     """Trim dummy volumes from all BOLD NIfTIs in a BIDS directory.
+
+    ``subjects`` (bare IDs like ``s10`` or ``sub-s10``), when given, restricts
+    processing to those subjects — so a large cohort can be sharded across a
+    SLURM array with each task owning a disjoint set of files (no write races).
+    Default ``None`` processes every ``sub-*`` (unchanged behavior).
 
     Returns summary dict with counts of trimmed, skipped_already_trimmed,
     skipped_too_short.
@@ -26,7 +31,16 @@ def trim_bold_directory(bids_dir: Path) -> dict:
     bids_dir = Path(bids_dir)
     summary = {"trimmed": 0, "skipped_already_trimmed": 0, "skipped_too_short": 0, "errors": 0}
 
-    for nifti_path in sorted(bids_dir.glob("sub-*/ses-*/func/*_bold.nii.gz")):
+    if subjects:
+        nifti_paths: list[Path] = []
+        for s in subjects:
+            sub = s if s.startswith("sub-") else f"sub-{s}"
+            nifti_paths.extend(bids_dir.glob(f"{sub}/ses-*/func/*_bold.nii.gz"))
+        nifti_paths = sorted(nifti_paths)
+    else:
+        nifti_paths = sorted(bids_dir.glob("sub-*/ses-*/func/*_bold.nii.gz"))
+
+    for nifti_path in nifti_paths:
         json_path = nifti_path.with_name(
             nifti_path.name.replace(".nii.gz", ".json")
         )
@@ -79,6 +93,9 @@ def trim_bold_directory(bids_dir: Path) -> dict:
 def main():
     parser = argparse.ArgumentParser(description="Trim 7 dummy volumes from BOLD NIfTIs")
     parser.add_argument("bids_dir", type=Path, help="BIDS directory to process")
+    parser.add_argument("--subjects", nargs="+", default=None,
+                        help="Restrict to these subject IDs (e.g. s10 sub-s19); "
+                             "default processes all sub-*. Enables array sharding.")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -86,7 +103,7 @@ def main():
     if not args.bids_dir.exists():
         parser.error(f"Directory not found: {args.bids_dir}")
 
-    summary = trim_bold_directory(args.bids_dir)
+    summary = trim_bold_directory(args.bids_dir, subjects=args.subjects)
     print(f"Trimmed: {summary['trimmed']}")
     print(f"Skipped (already trimmed): {summary['skipped_already_trimmed']}")
     print(f"Skipped (too short): {summary['skipped_too_short']}")

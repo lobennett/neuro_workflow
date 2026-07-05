@@ -1,0 +1,114 @@
+{
+  "dataset": "discovery_oak",
+  "compiled_at": "2026-07-02T16:00:55Z",
+  "compiled_at_code_sha": "8b2f063+dirty",
+  "compiled_path": "/home/users/logben/.neuro_workflow/exclusions/discovery_oak/compiled_exclusions.json",
+  "n_total_entries": 44,
+  "n_overrides": 0,
+  "sources": [
+    {
+      "generator": "behavioral-qc",
+      "ran_at": "2026-07-01T17:39:27Z",
+      "code_sha": "a710c9d+dirty",
+      "args": {
+        "command": "events",
+        "events_command": "qc",
+        "dataset": "discovery_oak",
+        "behavioral_dir": "/oak/stanford/groups/russpold/data/network_grant/bids/discovery/sourcedata/in_scanner_behavior"
+      },
+      "n_entries": 3
+    },
+    {
+      "generator": "collection",
+      "ran_at": "2026-07-01T20:27:28Z",
+      "code_sha": "a710c9d+dirty",
+      "args": {
+        "command": "exclusions",
+        "excl_command": "generate",
+        "source": "collection",
+        "dataset": "discovery_oak",
+        "fmriprep_version": "24.1.0rc2",
+        "fd_threshold": 0.2,
+        "proportion_fd_threshold": 0.2,
+        "proportion_dvars_threshold": 0.2,
+        "behavioral_dir": null,
+        "lev1_outliers_csv": null,
+        "combined_vif": 10.0,
+        "combined_outlier_pct": 10.0,
+        "strict_vif": 15.0,
+        "strict_outlier_pct": 15.0,
+        "decisions_tsv": null
+      },
+      "n_entries": 16
+    },
+    {
+      "generator": "lev1_outlier",
+      "ran_at": "2026-07-02T01:03:35Z",
+      "code_sha": "8b2f063+dirty",
+      "args": {
+        "command": "exclusions",
+        "excl_command": "generate",
+        "source": "lev1_outlier",
+        "dataset": "discovery_oak",
+        "fmriprep_version": "24.1.0rc2",
+        "fd_threshold": 0.2,
+        "proportion_fd_threshold": 0.2,
+        "proportion_dvars_threshold": 0.2,
+        "behavioral_dir": null,
+        "lev1_outliers_csv": "/scratch/users/logben/qa_lev1_discovery/lev1_outliers.csv",
+        "combined_vif": 10.0,
+        "combined_outlier_pct": 10.0,
+        "strict_vif": 15.0,
+        "strict_outlier_pct": 15.0,
+        "decisions_tsv": null
+      },
+      "n_entries": 22
+    },
+    {
+      "generator": "motion",
+      "ran_at": "2026-07-02T01:03:32Z",
+      "code_sha": "8b2f063+dirty",
+      "args": {
+        "command": "exclusions",
+        "excl_command": "generate",
+        "source": "motion",
+        "dataset": "discovery_oak",
+        "fmriprep_version": "25.2.4",
+        "fd_threshold": 0.2,
+        "proportion_fd_threshold": 0.2,
+        "proportion_dvars_threshold": 0.2,
+        "behavioral_dir": null,
+        "lev1_outliers_csv": null,
+        "combined_vif": 10.0,
+        "combined_outlier_pct": 10.0,
+        "strict_vif": 15.0,
+        "strict_outlier_pct": 15.0,
+        "decisions_tsv": null
+      },
+      "n_entries": 0
+    },
+    {
+      "generator": "qa_decisions",
+      "ran_at": "2026-07-01T20:27:29Z",
+      "code_sha": "a710c9d+dirty",
+      "args": {
+        "command": "exclusions",
+        "excl_command": "generate",
+        "source": "qa_decisions",
+        "dataset": "discovery_oak",
+        "fmriprep_version": "24.1.0rc2",
+        "fd_threshold": 0.2,
+        "proportion_fd_threshold": 0.2,
+        "proportion_dvars_threshold": 0.2,
+        "behavioral_dir": null,
+        "lev1_outliers_csv": null,
+        "combined_vif": 10.0,
+        "combined_outlier_pct": 10.0,
+        "strict_vif": 15.0,
+        "strict_outlier_pct": 15.0,
+        "decisions_tsv": "config/manifests/qc_decisions.tsv"
+      },
+      "n_entries": 3
+    }
+  ]
+}

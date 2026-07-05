@@ -1,0 +1,50 @@
+[
+  {
+    "subject": "sub-s1058",
+    "session": "ses-01",
+    "task": "task-nBack",
+    "run": "run-1",
+    "action": "force-exclude",
+    "reason": "Behavioral exclusion"
+  },
+  {
+    "subject": "sub-s1351",
+    "session": "ses-06",
+    "task": "task-nBack",
+    "run": "run-1",
+    "action": "force-exclude",
+    "reason": "Behavioral exclusion"
+  },
+  {
+    "subject": "sub-s1273",
+    "session": "ses-12",
+    "task": "task-spatialTSWCuedTS",
+    "run": "run-1",
+    "action": "force-exclude",
+    "reason": "Behavioral exclusion"
+  },
+  {
+    "subject": "sub-s1408",
+    "session": "ses-12",
+    "task": "task-spatialTSWCuedTS",
+    "run": "run-1",
+    "action": "force-exclude",
+    "reason": "Behavioral exclusion"
+  },
+  {
+    "subject": "sub-s1445",
+    "session": "ses-11",
+    "task": "task-stopSignalWDirectedForgetting",
+    "run": "run-1",
+    "action": "force-exclude",
+    "reason": "Behavioral exclusion"
+  },
+  {
+    "subject": "sub-s180",
+    "session": "ses-12",
+    "task": "task-shapeMatchingWCuedTS",
+    "run": "run-1",
+    "action": "force-exclude",
+    "reason": "Behavioral exclusion"
+  }
+]

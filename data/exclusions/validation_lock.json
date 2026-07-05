@@ -1,11 +1,18 @@
 {
   "dataset": "validation",
-  "compiled_at": "2026-06-12T07:08:36Z",
-  "compiled_at_code_sha": "eec3159+dirty",
+  "compiled_at": "2026-06-29T17:42:38Z",
+  "compiled_at_code_sha": "c1bb151+dirty",
   "compiled_path": "/home/users/logben/.neuro_workflow/exclusions/validation/compiled_exclusions.json",
-  "n_total_entries": 39,
+  "n_total_entries": 142,
   "n_overrides": 6,
   "sources": [
+    {
+      "generator": "behavioral-qc",
+      "ran_at": "2026-06-29T17:41:47Z",
+      "code_sha": "c1bb151+dirty",
+      "args": null,
+      "n_entries": 8
+    },
     {
       "generator": "behavioral",
       "ran_at": "2026-05-08T04:11:52Z",
@@ -31,71 +38,30 @@
     },
     {
       "generator": "collection",
-      "ran_at": "2026-06-12T07:08:34Z",
-      "code_sha": "eec3159+dirty",
-      "args": {
-        "command": "exclusions",
-        "excl_command": "generate",
-        "source": "collection",
-        "dataset": "validation",
-        "fmriprep_version": "24.1.0rc2",
-        "fd_threshold": 0.2,
-        "proportion_fd_threshold": 0.2,
-        "proportion_dvars_threshold": 0.2,
-        "behavioral_dir": null,
-        "lev1_outliers_csv": null,
-        "combined_vif": 10.0,
-        "combined_outlier_pct": 10.0,
-        "strict_vif": 15.0,
-        "strict_outlier_pct": 15.0,
-        "decisions_tsv": null
-      },
+      "ran_at": "2026-06-29T17:42:38Z",
+      "code_sha": "c1bb151+dirty",
+      "args": null,
       "n_entries": 15
     },
     {
+      "generator": "lev1_outlier",
+      "ran_at": "2026-06-29T17:42:38Z",
+      "code_sha": "c1bb151+dirty",
+      "args": null,
+      "n_entries": 97
+    },
+    {
       "generator": "motion",
-      "ran_at": "2026-05-08T04:11:42Z",
-      "code_sha": "2b72a46+dirty",
-      "args": {
-        "command": "exclusions",
-        "excl_command": "generate",
-        "source": "motion",
-        "dataset": "validation",
-        "fmriprep_version": "25.2.4",
-        "fd_threshold": 0.2,
-        "proportion_fd_threshold": 0.2,
-        "proportion_dvars_threshold": 0.2,
-        "behavioral_dir": null,
-        "lev1_outliers_csv": null,
-        "combined_vif": 10.0,
-        "combined_outlier_pct": 10.0,
-        "strict_vif": 15.0,
-        "strict_outlier_pct": 15.0,
-        "decisions_tsv": null
-      },
+      "ran_at": "2026-06-29T17:42:38Z",
+      "code_sha": "c1bb151+dirty",
+      "args": null,
       "n_entries": 10
     },
     {
       "generator": "qa_decisions",
-      "ran_at": "2026-05-17T22:15:52Z",
-      "code_sha": "3563c75+dirty",
-      "args": {
-        "command": "exclusions",
-        "excl_command": "generate",
-        "source": "qa_decisions",
-        "dataset": "validation",
-        "fmriprep_version": "24.1.0rc2",
-        "fd_threshold": 0.2,
-        "proportion_fd_threshold": 0.2,
-        "proportion_dvars_threshold": 0.2,
-        "behavioral_dir": null,
-        "lev1_outliers_csv": null,
-        "combined_vif": 10.0,
-        "combined_outlier_pct": 10.0,
-        "strict_vif": 15.0,
-        "strict_outlier_pct": 15.0,
-        "decisions_tsv": "/home/users/logben/neuro_workflow/config/manifests/qc_decisions.tsv"
-      },
+      "ran_at": "2026-06-29T17:42:38Z",
+      "code_sha": "c1bb151+dirty",
+      "args": null,
       "n_entries": 10
     }
   ]

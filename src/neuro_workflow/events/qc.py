@@ -29,6 +29,11 @@ from neuro_workflow.events.qc_globals import (
 
 log = logging.getLogger(__name__)
 
+# A backward time_elapsed clock glitch makes create_events_df truncate the events
+# at the first non-monotonic onset. If that truncation would drop more than this
+# fraction of the run's test trials, the scan is excluded instead of salvaged.
+NONMONOTONIC_EXCLUDE_FRACTION = 0.5
+
 
 # --- RT tail cutoff detection ---
 
@@ -309,6 +314,32 @@ def run_qc(
                         "action": "exclude",
                         "source": "behavioral-qc",
                         "reason": excl["reason"],
+                    })
+
+                # Non-monotonic onset truncation: create_events_df truncates a
+                # backward-clock-glitch tail; if that drops > half the test
+                # trials, exclude the scan rather than keep a gutted run.
+                try:
+                    from neuro_workflow.events.create import events_truncation_stats
+                    tstats = events_truncation_stats(csv_file, task_name)
+                except Exception as e:  # unknown exp_id / placeholder CSV / parse error
+                    log.warning("truncation-stats skipped for %s: %s", csv_file, e)
+                    tstats = None
+                if (tstats and tstats["cut"] is not None
+                        and tstats["n_test_total"] > 0
+                        and tstats["fraction_test_dropped"] > NONMONOTONIC_EXCLUDE_FRACTION):
+                    exclusion_entries.append({
+                        "subject": sub_dir.name,
+                        "session": ses_dir.name,
+                        "task": f"task-{task_name}",
+                        "run": run_label,
+                        "action": "exclude",
+                        "source": "behavioral-qc",
+                        "reason": (
+                            "non-monotonic onset truncation drops "
+                            f"{tstats['n_test_dropped']}/{tstats['n_test_total']} "
+                            f"test trials (>{int(NONMONOTONIC_EXCLUDE_FRACTION*100)}%)"
+                        ),
                     })
 
     # Write trim list
