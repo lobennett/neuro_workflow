@@ -437,8 +437,12 @@ uv run python scripts/exclusion_gate.py \
 
 ## 7. End-to-end reproduction
 
-`scripts/reproduce_cohort.py` proves that the committed core (Flywheel snapshot + BIDS +
-lockfiles) regenerates the same analytic selection. It is a **live** operation (reads real
+`scripts/reproduce_cohort.py` proves that the pipeline core (Flywheel snapshot + BIDS +
+committed lockfiles) regenerates the same analytic selection. **The Flywheel snapshot is
+NOT committed** — it carries scan-date metadata and is `.gitignore`d (`data/repro/fw_inventory_*.json`);
+before running, regenerate it to that path with `scripts/capture_fw_inventory.py <cohort> --out
+data/repro/fw_inventory_<cohort>.json`, or copy it there from the controlled location kept
+beside the data (the harness reads that exact path). It is a **live** operation (reads real
 fMRIPrep derivatives, behavioral data, and lev1 outputs) but **never writes** to the
 committed `config/exclusions` or `data/exclusions` trees — a `_hermetic_exclusion_paths`
 context manager redirects `EXCLUSIONS_DIR`, `LOCKFILE_DIR`, and the collection dir to a
@@ -451,8 +455,8 @@ uv run python scripts/reproduce_cohort.py validation --out /tmp/rep.md
 
 Steps (`main`):
 
-- **a. Replay** the frozen Flywheel inventory snapshot
-  (`data/repro/fw_inventory_<cohort>.json`, captured by
+- **a. Replay** the Flywheel inventory snapshot at `data/repro/fw_inventory_<cohort>.json`
+  (not in git — regenerate/copy it there first, see above; captured by
   `scripts/capture_fw_inventory.py`) → **stub BIDS** via a `FakeFlywheel` client injected
   through `sys.modules` (the real Flywheel SDK is not required on the compute node) +
   `replay_to_bids`.
@@ -534,7 +538,7 @@ The canonical, backed-up, version-controlled datasets live at:
 | `data/exclusions/<cohort>_collection.bidsignore` | Committed human-curated collection block |
 | `data/exclusions/<cohort>_overrides.json` | Committed force-include / force-exclude |
 | `data/exclusions/<cohort>_reference_compiled.json` | Frozen gate reference |
-| `data/repro/fw_inventory_<cohort>.json` | Frozen Flywheel snapshot |
+| `data/repro/fw_inventory_<cohort>.json` | Flywheel replay snapshot — **not in git** (`.gitignore`d; scan-date metadata); regenerate via `capture_fw_inventory.py` or copy from the controlled location |
 
 ---
 

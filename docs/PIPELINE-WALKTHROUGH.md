@@ -109,14 +109,17 @@ STAGE=/scratch/users/logben/oak_reexec   # scratch staging (subjects files, logs
 
 ### A1. Freeze the determinism anchors (commit into the code repo)
 
-**What:** commit the Flywheel inventory snapshots and the QC-decisions reference, and
-freeze the current validated compiled-exclusion sets as the gate reference.
-**Why:** the snapshots are the deterministic replay anchor; the frozen reference is what
-the exclusion diff-gate compares against.
+**What:** commit the QC-decisions reference and freeze the current validated
+compiled-exclusion sets as the gate reference.
+**Why:** the frozen reference is what the exclusion diff-gate compares against.
+**Note:** the Flywheel inventory snapshots are the deterministic replay anchor but are
+**NOT committed** — they carry scan-date metadata and are `.gitignore`d
+(`data/repro/fw_inventory_*.json`). Retain them in a controlled location beside the data
+and regenerate with `scripts/capture_fw_inventory.py <cohort> --out
+data/repro/fw_inventory_<cohort>.json` when reproduction is needed.
 
 ```bash
-git add data/repro/fw_inventory_discovery.json data/repro/fw_inventory_validation.json \
-        config/manifests/qc_decisions.tsv
+git add config/manifests/qc_decisions.tsv
 cp ~/.neuro_workflow/exclusions/discovery/compiled_exclusions.json  data/exclusions/discovery_reference_compiled.json
 cp ~/.neuro_workflow/exclusions/validation/compiled_exclusions.json data/exclusions/validation_reference_compiled.json
 git add data/exclusions/discovery_reference_compiled.json data/exclusions/validation_reference_compiled.json
@@ -180,10 +183,11 @@ done
 Do `discovery` first as a pilot, verify, then `validation` and `excluded` (parallelizable).
 Below uses `discovery`; substitute the cohort + Oak path for the others.
 
-### B1. Drift Gate — capture fresh inventory + diff vs committed snapshot
+### B1. Drift Gate — capture fresh inventory + diff vs reference snapshot
 
 **What:** query Flywheel for the current project inventory and compare it (roster-scoped,
-with `session_overrides`/`subject_aliases` applied) against the committed snapshot.
+with `session_overrides`/`subject_aliases` applied) against the reference snapshot (kept in
+the controlled location / regenerated to `data/repro/fw_inventory_<cohort>.json`; not in git).
 **Why:** BIDS `ses-NN` is derived by ascending session timestamp — a new/removed session
 could **renumber** sessions and invalidate every exclusion key. The gate catches that
 before any write. (Needs the login node's internet; compute nodes can't reach Flywheel.)
