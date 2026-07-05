@@ -72,8 +72,15 @@ class TestFileFinderDiscoversStub:
         fmriprep = tmp_path / "fmriprep"
         _write_events(bids)
         written = make_fmriprep_run(
-            fmriprep, SUBJECT, SESSION, TASK, RUN,
-            space="MNI", n_trs=N_TRS, motion="clean", seed=0,
+            fmriprep,
+            SUBJECT,
+            SESSION,
+            TASK,
+            RUN,
+            space="MNI",
+            n_trs=N_TRS,
+            motion="clean",
+            seed=0,
         )
         assert "mni_data" in written and "mni_brain_mask" in written
         assert "confounds" in written
@@ -96,16 +103,21 @@ class TestFileFinderDiscoversStub:
         fmriprep = tmp_path / "fmriprep"
         _write_events(bids)
         written = make_fmriprep_run(
-            fmriprep, SUBJECT, SESSION, TASK, RUN,
-            space="fsaverage6", n_trs=N_TRS, motion="clean", seed=0,
+            fmriprep,
+            SUBJECT,
+            SESSION,
+            TASK,
+            RUN,
+            space="fsaverage6",
+            n_trs=N_TRS,
+            motion="clean",
+            seed=0,
         )
         assert "left_surface" in written and "right_surface" in written
 
         finder = FileFinder(bids, fmriprep)
         required = FileFinder.get_required_files_for_space("fsaverage6")
-        files = finder.get_files(
-            SUBJECT, TASK, required_files=required, surface_space="fsaverage6"
-        )
+        files = finder.get_files(SUBJECT, TASK, required_files=required, surface_space="fsaverage6")
 
         assert f"ses-{SESSION}" in files
         run_files = files[f"ses-{SESSION}"][f"run-{RUN}"]
@@ -120,16 +132,21 @@ class TestFileFinderDiscoversStub:
         fmriprep = tmp_path / "fmriprep"
         _write_events(bids)
         written = make_fmriprep_run(
-            fmriprep, SUBJECT, SESSION, TASK, RUN,
-            space="fsLR", n_trs=N_TRS, motion="clean", seed=0,
+            fmriprep,
+            SUBJECT,
+            SESSION,
+            TASK,
+            RUN,
+            space="fsLR",
+            n_trs=N_TRS,
+            motion="clean",
+            seed=0,
         )
         assert "cifti_bold" in written
 
         finder = FileFinder(bids, fmriprep)
         required = FileFinder.get_required_files_for_space("fsLR")
-        files = finder.get_files(
-            SUBJECT, TASK, required_files=required, surface_space="fsLR"
-        )
+        files = finder.get_files(SUBJECT, TASK, required_files=required, surface_space="fsLR")
         run_files = files[f"ses-{SESSION}"][f"run-{RUN}"]
         assert "cifti_bold" in run_files
         assert "space-fsLR_den-91k_bold.dtseries.nii" in run_files["cifti_bold"].name
@@ -140,8 +157,15 @@ class TestFileFinderDiscoversStub:
         fmriprep = tmp_path / "fmriprep"
         _write_events(bids)
         make_fmriprep_run(
-            fmriprep, SUBJECT, SESSION, TASK, RUN,
-            space="T1w", n_trs=N_TRS, motion="clean", seed=0,
+            fmriprep,
+            SUBJECT,
+            SESSION,
+            TASK,
+            RUN,
+            space="T1w",
+            n_trs=N_TRS,
+            motion="clean",
+            seed=0,
         )
         finder = FileFinder(bids, fmriprep)
         required = FileFinder.get_required_files_for_space("T1w")
@@ -171,12 +195,17 @@ class TestMotionGeneratorOnStub:
         bids = tmp_path / "bids"
         deriv = bids / "derivatives" / "fmriprep_25.2.4"
         make_fmriprep_run(
-            deriv, SUBJECT, SESSION, TASK, RUN,
-            space="MNI", n_trs=N_TRS, motion="clean", seed=0,
+            deriv,
+            SUBJECT,
+            SESSION,
+            TASK,
+            RUN,
+            space="MNI",
+            n_trs=N_TRS,
+            motion="clean",
+            seed=0,
         )
-        entries = MotionGenerator().generate(
-            "sim", {"bids_dir": str(bids)}, _motion_args()
-        )
+        entries = MotionGenerator().generate("sim", {"bids_dir": str(bids)}, _motion_args())
         assert entries == [], f"clean run should not be flagged, got {entries}"
 
     def test_high_run_is_flagged(self, tmp_path):
@@ -185,12 +214,17 @@ class TestMotionGeneratorOnStub:
         bids = tmp_path / "bids"
         deriv = bids / "derivatives" / "fmriprep_25.2.4"
         make_fmriprep_run(
-            deriv, SUBJECT, SESSION, TASK, RUN,
-            space="MNI", n_trs=N_TRS, motion="high", seed=0,
+            deriv,
+            SUBJECT,
+            SESSION,
+            TASK,
+            RUN,
+            space="MNI",
+            n_trs=N_TRS,
+            motion="high",
+            seed=0,
         )
-        entries = MotionGenerator().generate(
-            "sim", {"bids_dir": str(bids)}, _motion_args()
-        )
+        entries = MotionGenerator().generate("sim", {"bids_dir": str(bids)}, _motion_args())
         assert len(entries) == 1, f"high run should be flagged once, got {entries}"
         e = entries[0]
         assert e["subject"] == f"sub-{SUBJECT}"
@@ -206,16 +240,28 @@ class TestMotionGeneratorOnStub:
         bids = tmp_path / "bids"
         deriv = bids / "derivatives" / "fmriprep_25.2.4"
         make_fmriprep_run(
-            deriv, "s01", SESSION, TASK, RUN,
-            space="MNI", n_trs=N_TRS, motion="clean", seed=1,
+            deriv,
+            "s01",
+            SESSION,
+            TASK,
+            RUN,
+            space="MNI",
+            n_trs=N_TRS,
+            motion="clean",
+            seed=1,
         )
         make_fmriprep_run(
-            deriv, "s02", SESSION, TASK, RUN,
-            space="MNI", n_trs=N_TRS, motion="high", seed=2,
+            deriv,
+            "s02",
+            SESSION,
+            TASK,
+            RUN,
+            space="MNI",
+            n_trs=N_TRS,
+            motion="high",
+            seed=2,
         )
-        entries = MotionGenerator().generate(
-            "sim", {"bids_dir": str(bids)}, _motion_args()
-        )
+        entries = MotionGenerator().generate("sim", {"bids_dir": str(bids)}, _motion_args())
         flagged = {e["subject"] for e in entries}
         assert flagged == {"sub-s02"}, f"only sub-s02 should be flagged, got {flagged}"
 
@@ -226,16 +272,28 @@ class TestMotionGeneratorOnStub:
         bids = tmp_path / "bids"
         deriv = bids / "derivatives" / "fmriprep_25.2.4"
         make_fmriprep_run(
-            deriv, "s01", SESSION, "rest", RUN,
-            space="MNI", n_trs=N_TRS, motion="clean", seed=0,
+            deriv,
+            "s01",
+            SESSION,
+            "rest",
+            RUN,
+            space="MNI",
+            n_trs=N_TRS,
+            motion="clean",
+            seed=0,
         )
         make_fmriprep_run(
-            deriv, "s02", SESSION, "rest", RUN,
-            space="MNI", n_trs=N_TRS, motion="high", seed=0,
+            deriv,
+            "s02",
+            SESSION,
+            "rest",
+            RUN,
+            space="MNI",
+            n_trs=N_TRS,
+            motion="high",
+            seed=0,
         )
-        entries = MotionGenerator().generate(
-            "sim", {"bids_dir": str(bids)}, _motion_args()
-        )
+        entries = MotionGenerator().generate("sim", {"bids_dir": str(bids)}, _motion_args())
         flagged = {e["subject"] for e in entries}
         assert "sub-s02" in flagged
         assert "sub-s01" not in flagged
@@ -270,8 +328,13 @@ class TestConfoundsWriter:
         func.mkdir()
         prefix = f"sub-{SUBJECT}_ses-{SESSION}_task-{TASK}_run-{RUN}"
         path = write_confounds_tsv(
-            func, prefix=prefix, n_trs=N_TRS, fd_mean=0.05,
-            fd_spikes=30, dvars_spikes=0, seed=0,
+            func,
+            prefix=prefix,
+            n_trs=N_TRS,
+            fd_mean=0.05,
+            fd_spikes=30,
+            dvars_spikes=0,
+            seed=0,
         )
         df = pd.read_csv(path, sep="\t")
         fd = pd.to_numeric(df["framewise_displacement"], errors="coerce").dropna()
@@ -287,9 +350,7 @@ class TestBoldWriter:
         func = tmp_path / "func"
         func.mkdir()
         prefix = f"sub-{SUBJECT}_ses-{SESSION}_task-{TASK}_run-{RUN}"
-        written = write_fmriprep_bold(
-            func, prefix=prefix, space="MNI", n_trs=N_TRS, seed=0
-        )
+        written = write_fmriprep_bold(func, prefix=prefix, space="MNI", n_trs=N_TRS, seed=0)
         bold = written["mni_data"]
         mask = written["mni_brain_mask"]
         assert bold.exists() and mask.exists()

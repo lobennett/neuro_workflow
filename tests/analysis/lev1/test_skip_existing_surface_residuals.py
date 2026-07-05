@@ -4,27 +4,24 @@ the writer in processing/residuals.py (it omitted the `_space-{surface_space}`
 segment), so the surface branch of --skip-existing never matched and always
 recomputed. Both sites now share surface_residual_filename().
 """
+
 import types
 
 import numpy as np
 import pandas as pd
-import pytest
 
+from neuro_workflow.analysis.lev1 import runner
 from neuro_workflow.analysis.lev1.processing.residuals import (
-    surface_residual_filename,
     process_surface_residuals,
+    surface_residual_filename,
 )
 from neuro_workflow.analysis.lev1.processing.surface_data import SurfaceGLM
-from neuro_workflow.analysis.lev1 import runner
 
 
 def test_surface_residual_filename_includes_space_segment():
-    name = surface_residual_filename(
-        "s10_ses-01_task-flanker_run-1", "L", "fsaverage6"
-    )
+    name = surface_residual_filename("s10_ses-01_task-flanker_run-1", "L", "fsaverage6")
     assert name == (
-        "s10_ses-01_task-flanker_run-1_hemi-L_space-fsaverage6"
-        "_task-regressed-residuals.func.gii"
+        "s10_ses-01_task-flanker_run-1_hemi-L_space-fsaverage6" "_task-regressed-residuals.func.gii"
     )
 
 
@@ -39,9 +36,7 @@ def test_writer_output_basename_matches_helper(tmp_path):
     glm.fit(Y, pd.DataFrame(X, columns=["a", "b", "c"]))
 
     base = "s10_ses-01_task-flanker_run-1"
-    res = process_surface_residuals(
-        glm, tmp_path, base, "L", tr=1.49, surface_space="fsaverage6"
-    )
+    res = process_surface_residuals(glm, tmp_path, base, "L", tr=1.49, surface_space="fsaverage6")
     assert res["success"], res
     assert res["saved_path"].name == surface_residual_filename(base, "L", "fsaverage6")
 
@@ -65,7 +60,10 @@ def test_skip_existing_skips_when_surface_residuals_present(tmp_path):
     # falls through and raises ValueError on missing surface files. A correct
     # skip returns True before touching run_files.
     result = runner.process_single_run(
-        session, run, {}, args,
+        session,
+        run,
+        {},
+        args,
         sample_type="validation",
         dirs={"task_residuals": tmp_path},
         task_params={"tr": 1.49},

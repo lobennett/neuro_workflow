@@ -148,16 +148,12 @@ class TestFakeClientSurface:
         """BOLD acquisition files use the ``_eN`` echo suffix select_files keys on."""
         fw = make_fake_flywheel(_basic_spec())
         acqs = (
-            fw.projects.find_first('label="r01network"')
-            .subjects()[0]
-            .sessions()[0]
-            .acquisitions()
+            fw.projects.find_first('label="r01network"').subjects()[0].sessions()[0].acquisitions()
         )
         bold = next(a for a in acqs if a.label == "task-flanker_bold")
         niftis = sorted(f.name for f in bold.files if f.name.endswith(".nii.gz"))
         jsons = sorted(
-            f.name for f in bold.files
-            if f.name.endswith(".json") and f.type == "source code"
+            f.name for f in bold.files if f.name.endswith(".json") and f.type == "source code"
         )
         assert len(niftis) == 3
         assert len(jsons) == 3
@@ -170,10 +166,7 @@ class TestFakeClientSurface:
 
         fw = make_fake_flywheel(_basic_spec())
         acqs = (
-            fw.projects.find_first('label="r01network"')
-            .subjects()[0]
-            .sessions()[0]
-            .acquisitions()
+            fw.projects.find_first('label="r01network"').subjects()[0].sessions()[0].acquisitions()
         )
         for a in acqs:
             for f in a.files:
@@ -209,10 +202,7 @@ class TestFakeClientSurface:
             .acquisitions()
             if a.label == "task-flanker_bold"
         )
-        json_f = next(
-            f for f in bold.files
-            if f.name.endswith(".json") and f.type == "source code"
-        )
+        json_f = next(f for f in bold.files if f.name.endswith(".json") and f.type == "source code")
         dest = tmp_path / "out.json"
         bold.download_file(json_f.name, str(dest))
         data = json.loads(dest.read_text())
@@ -257,7 +247,10 @@ class TestRunBidsifyEndToEnd:
         run_bidsify("discovery", output_dir=tmp_path, subjects=["s01"], overwrite=True)
 
         sidecar = (
-            tmp_path / "sub-s01" / "ses-01" / "func"
+            tmp_path
+            / "sub-s01"
+            / "ses-01"
+            / "func"
             / "sub-s01_ses-01_task-flanker_run-1_echo-1_bold.json"
         )
         data = json.loads(sidecar.read_text())
@@ -273,7 +266,10 @@ class TestRunBidsifyEndToEnd:
         run_bidsify("discovery", output_dir=tmp_path, subjects=["s01"], overwrite=True)
 
         bold = (
-            tmp_path / "sub-s01" / "ses-01" / "func"
+            tmp_path
+            / "sub-s01"
+            / "ses-01"
+            / "func"
             / "sub-s01_ses-01_task-flanker_run-1_echo-1_bold.nii.gz"
         )
         img = nib.load(str(bold))
@@ -284,15 +280,11 @@ class TestRunBidsifyEndToEnd:
         patch_flywheel(fw)
         run_bidsify("discovery", output_dir=tmp_path, subjects=["s01"], overwrite=True)
 
-        recon = json.loads(
-            (tmp_path / "sourcedata" / "reconciliation_rerun-s01.json").read_text()
-        )
+        recon = json.loads((tmp_path / "sourcedata" / "reconciliation_rerun-s01.json").read_text())
         assert "s01" in recon["subjects"]
         assert recon["subjects"]["s01"]["total_sessions"] == 1
 
-        log = json.loads(
-            (tmp_path / "sourcedata" / "bidsify_log_rerun-s01.json").read_text()
-        )
+        log = json.loads((tmp_path / "sourcedata" / "bidsify_log_rerun-s01.json").read_text())
         assert log["total_files"] > 0
 
     def test_physio_branch_writes_bids_physio(self, tmp_path, patch_flywheel):
@@ -428,11 +420,17 @@ class TestMultiSessionOrdering:
 
         # early session (cuedTS) is ses-01; late session (rest) is ses-02.
         assert (
-            tmp_path / "sub-s03" / "ses-01" / "func"
+            tmp_path
+            / "sub-s03"
+            / "ses-01"
+            / "func"
             / "sub-s03_ses-01_task-cuedTS_run-1_echo-1_bold.nii.gz"
         ).exists()
         assert (
-            tmp_path / "sub-s03" / "ses-02" / "func"
+            tmp_path
+            / "sub-s03"
+            / "ses-02"
+            / "func"
             / "sub-s03_ses-02_task-rest_run-1_echo-1_bold.nii.gz"
         ).exists()
 
@@ -514,9 +512,7 @@ class TestGenuineness:
         produced = list(func.glob("*_bold.nii.gz")) if func.exists() else []
         assert produced == []
         # And the reconciliation records the protocol-mismatch warning.
-        recon = json.loads(
-            (tmp_path / "sourcedata" / "reconciliation_rerun-s05.json").read_text()
-        )
+        recon = json.loads((tmp_path / "sourcedata" / "reconciliation_rerun-s05.json").read_text())
         warnings = recon["subjects"]["s05"]["sessions"][0]["warnings"]
         assert any("multi-echo" in w for w in warnings)
 
@@ -598,17 +594,21 @@ class TestSubjectAliasesAndOverrides:
 
         # Alias session (earlier ts) becomes ses-01; native becomes ses-02.
         assert (
-            tmp_path / "sub-s19" / "ses-01" / "func"
+            tmp_path
+            / "sub-s19"
+            / "ses-01"
+            / "func"
             / "sub-s19_ses-01_task-cuedTS_run-1_echo-1_bold.nii.gz"
         ).exists()
         assert (
-            tmp_path / "sub-s19" / "ses-02" / "func"
+            tmp_path
+            / "sub-s19"
+            / "ses-02"
+            / "func"
             / "sub-s19_ses-02_task-rest_run-1_echo-1_bold.nii.gz"
         ).exists()
         # Reconciliation records both FW sources contributed.
-        recon = json.loads(
-            (tmp_path / "sourcedata" / "reconciliation_rerun-s19.json").read_text()
-        )
+        recon = json.loads((tmp_path / "sourcedata" / "reconciliation_rerun-s19.json").read_text())
         assert set(recon["subjects"]["s19"]["flywheel_sources"]) >= {"s19", "s19-2"}
 
     def test_excluded_session_override_is_dropped(self, tmp_path, patch_flywheel):
@@ -657,12 +657,13 @@ class TestSubjectAliasesAndOverrides:
         assert not (tmp_path / "sub-s29" / "ses-02").exists()
         # The surviving session is the rest task (good_sess), not the fmap-only.
         assert (
-            tmp_path / "sub-s29" / "ses-01" / "func"
+            tmp_path
+            / "sub-s29"
+            / "ses-01"
+            / "func"
             / "sub-s29_ses-01_task-rest_run-1_echo-1_bold.nii.gz"
         ).exists()
-        recon = json.loads(
-            (tmp_path / "sourcedata" / "reconciliation_rerun-s29.json").read_text()
-        )
+        recon = json.loads((tmp_path / "sourcedata" / "reconciliation_rerun-s29.json").read_text())
         assert recon["subjects"]["s29"]["total_sessions"] == 1
 
 

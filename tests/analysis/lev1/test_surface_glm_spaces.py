@@ -2,7 +2,6 @@
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from neuro_workflow.analysis.io.file_discovery import FileFinder
 from neuro_workflow.analysis.lev1.processing.confounds import get_fc_confounds
@@ -20,8 +19,8 @@ class TestSurfaceGLMSpaces:
         X = np.random.randn(n_tp, 3)
         Y = X @ np.random.randn(3, n_verts) + np.random.randn(n_tp, n_verts) * 0.5
 
-        dm = pd.DataFrame(X, columns=['r0', 'r1', 'r2'])
-        glm = SurfaceGLM(t_r=1.5, noise_model='ols')
+        dm = pd.DataFrame(X, columns=["r0", "r1", "r2"])
+        glm = SurfaceGLM(t_r=1.5, noise_model="ols")
         glm.fit(Y, dm)
 
         residuals = glm.get_residuals()
@@ -37,8 +36,8 @@ class TestSurfaceGLMSpaces:
         X = np.random.randn(n_tp, 3)
         Y = X @ np.random.randn(3, n_verts) + np.random.randn(n_tp, n_verts) * 0.5
 
-        dm = pd.DataFrame(X, columns=['r0', 'r1', 'r2'])
-        glm = SurfaceGLM(t_r=1.5, noise_model='ols')
+        dm = pd.DataFrame(X, columns=["r0", "r1", "r2"])
+        glm = SurfaceGLM(t_r=1.5, noise_model="ols")
         glm.fit(Y, dm)
         residuals = glm.get_residuals()
 
@@ -62,45 +61,43 @@ class TestFixedEffectsSpaceTag:
     """Test that fixed effects output uses the correct space tag."""
 
     def test_default_space_is_fsnative(self):
-        analyzer = FixedEffectsAnalyzer('sub-s01', 'flanker', hemisphere='L')
-        assert analyzer.surface_space == 'fsnative'
+        analyzer = FixedEffectsAnalyzer("sub-s01", "flanker", hemisphere="L")
+        assert analyzer.surface_space == "fsnative"
 
     def test_fsaverage6_space_tag(self):
         analyzer = FixedEffectsAnalyzer(
-            'sub-s01', 'flanker', hemisphere='L', surface_space='fsaverage6'
+            "sub-s01", "flanker", hemisphere="L", surface_space="fsaverage6"
         )
-        assert analyzer.surface_space == 'fsaverage6'
+        assert analyzer.surface_space == "fsaverage6"
 
     def test_fslr_space_tag(self):
-        analyzer = FixedEffectsAnalyzer(
-            'sub-s01', 'flanker', hemisphere='L', surface_space='fsLR'
-        )
-        assert analyzer.surface_space == 'fsLR'
+        analyzer = FixedEffectsAnalyzer("sub-s01", "flanker", hemisphere="L", surface_space="fsLR")
+        assert analyzer.surface_space == "fsLR"
 
 
 class TestFileDiscoverySpaces:
     """Test file discovery parameterization for multiple spaces."""
 
     def test_surface_patterns_dict_has_all_spaces(self):
-        assert 'fsnative' in FileFinder.SURFACE_PATTERNS
-        assert 'fsaverage6' in FileFinder.SURFACE_PATTERNS
-        assert 'fsLR' in FileFinder.SURFACE_PATTERNS
+        assert "fsnative" in FileFinder.SURFACE_PATTERNS
+        assert "fsaverage6" in FileFinder.SURFACE_PATTERNS
+        assert "fsLR" in FileFinder.SURFACE_PATTERNS
 
     def test_fsnative_patterns_are_gifti(self):
-        patterns = FileFinder.SURFACE_PATTERNS['fsnative']
-        assert 'left_surface' in patterns
-        assert 'right_surface' in patterns
-        assert patterns['left_surface'].endswith('.func.gii')
+        patterns = FileFinder.SURFACE_PATTERNS["fsnative"]
+        assert "left_surface" in patterns
+        assert "right_surface" in patterns
+        assert patterns["left_surface"].endswith(".func.gii")
 
     def test_fsaverage6_patterns_are_gifti(self):
-        patterns = FileFinder.SURFACE_PATTERNS['fsaverage6']
-        assert 'left_surface' in patterns
-        assert 'fsaverage6' in patterns['left_surface']
+        patterns = FileFinder.SURFACE_PATTERNS["fsaverage6"]
+        assert "left_surface" in patterns
+        assert "fsaverage6" in patterns["left_surface"]
 
     def test_fslr_patterns_are_cifti(self):
-        patterns = FileFinder.SURFACE_PATTERNS['fsLR']
-        assert 'cifti_bold' in patterns
-        assert patterns['cifti_bold'].endswith('.dtseries.nii')
+        patterns = FileFinder.SURFACE_PATTERNS["fsLR"]
+        assert "cifti_bold" in patterns
+        assert patterns["cifti_bold"].endswith(".dtseries.nii")
 
 
 class TestFcConfoundsIntegration:
@@ -111,12 +108,21 @@ class TestFcConfoundsIntegration:
         # Simulate a realistic fMRIPrep confounds TSV
         n_tp = 200
         columns = [
-            'csf', 'csf_derivative1',
-            'white_matter', 'white_matter_derivative1',
-            'global_signal', 'global_signal_derivative1',
-            'trans_x', 'trans_y', 'trans_z',
-            'rot_x', 'rot_y', 'rot_z',
-            'cosine00', 'cosine01', 'cosine02',
+            "csf",
+            "csf_derivative1",
+            "white_matter",
+            "white_matter_derivative1",
+            "global_signal",
+            "global_signal_derivative1",
+            "trans_x",
+            "trans_y",
+            "trans_z",
+            "rot_x",
+            "rot_y",
+            "rot_z",
+            "cosine00",
+            "cosine01",
+            "cosine02",
         ]
         df = pd.DataFrame(
             np.random.randn(n_tp, len(columns)),
@@ -128,7 +134,10 @@ class TestFcConfoundsIntegration:
         # Verify no motion or cosine columns leaked in
         for col in fc.columns:
             assert col in [
-                'global_signal', 'global_signal_derivative1',
-                'csf', 'csf_derivative1',
-                'white_matter', 'white_matter_derivative1',
+                "global_signal",
+                "global_signal_derivative1",
+                "csf",
+                "csf_derivative1",
+                "white_matter",
+                "white_matter_derivative1",
             ]

@@ -23,12 +23,13 @@ Usage:
         --output-dir /oak/.../sourcedata \\
         --manifests config/manifests/reconciliation_discovery.tsv config/manifests/reconciliation_validation.tsv
 """
+
 import argparse
 import csv
 import json
 import logging
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 log = logging.getLogger(__name__)
@@ -108,14 +109,23 @@ def main():
     parser = argparse.ArgumentParser(
         description="Migrate out-of-scanner behavioral and survey data to BIDS sourcedata"
     )
-    parser.add_argument("--raw-dir", required=True, type=Path,
-                        help="raw_cleaned behavioral archive")
-    parser.add_argument("--survey-root", required=True, type=Path,
-                        help="survey_data root containing prescan_surveys/ and demographics_surveys/")
-    parser.add_argument("--output-dir", required=True, type=Path,
-                        help="sourcedata output root")
-    parser.add_argument("--manifests", nargs="+", required=True, type=Path,
-                        help="Reconciliation manifests for subject filtering")
+    parser.add_argument(
+        "--raw-dir", required=True, type=Path, help="raw_cleaned behavioral archive"
+    )
+    parser.add_argument(
+        "--survey-root",
+        required=True,
+        type=Path,
+        help="survey_data root containing prescan_surveys/ and demographics_surveys/",
+    )
+    parser.add_argument("--output-dir", required=True, type=Path, help="sourcedata output root")
+    parser.add_argument(
+        "--manifests",
+        nargs="+",
+        required=True,
+        type=Path,
+        help="Reconciliation manifests for subject filtering",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -127,7 +137,7 @@ def main():
     survey_copied = migrate_survey(args.survey_root, args.output_dir, subjects)
 
     report = {
-        "generated": datetime.now(timezone.utc).isoformat(),
+        "generated": datetime.now(UTC).isoformat(),
         "subjects": sorted(subjects),
         "out_scanner_files": out_scanner_copied,
         "survey_files": survey_copied,

@@ -94,10 +94,14 @@ def download_and_place(acq, file_obj, dest_path: str | Path, max_retries: int = 
             if dest_path.exists():
                 dest_path.unlink()
             if attempt < max_retries - 1:
-                wait = 2 ** attempt
+                wait = 2**attempt
                 logger.warning(
                     "Download failed for %s (attempt %d/%d), retrying in %ds: %s",
-                    file_obj.name, attempt + 1, max_retries, wait, exc,
+                    file_obj.name,
+                    attempt + 1,
+                    max_retries,
+                    wait,
+                    exc,
                 )
                 time.sleep(wait)
             else:

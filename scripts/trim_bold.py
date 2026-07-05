@@ -5,6 +5,7 @@ Usage:
     uv run python scripts/trim_bold.py /scratch/users/logben/discovery_bids
     uv run python scripts/trim_bold.py /scratch/users/logben/validation_bids
 """
+
 import argparse
 import json
 import logging
@@ -41,9 +42,7 @@ def trim_bold_directory(bids_dir: Path, subjects: list[str] | None = None) -> di
         nifti_paths = sorted(bids_dir.glob("sub-*/ses-*/func/*_bold.nii.gz"))
 
     for nifti_path in nifti_paths:
-        json_path = nifti_path.with_name(
-            nifti_path.name.replace(".nii.gz", ".json")
-        )
+        json_path = nifti_path.with_name(nifti_path.name.replace(".nii.gz", ".json"))
 
         # Idempotency check: skip if sidecar already records trimming
         if json_path.exists():
@@ -66,7 +65,9 @@ def trim_bold_directory(bids_dir: Path, subjects: list[str] | None = None) -> di
 
             # Trim first N_DUMMY volumes (write to temp file, then atomic rename)
             trimmed_data = img.slicer[:, :, :, N_DUMMY:]
-            tmp_path = nifti_path.parent / nifti_path.name.replace("_bold.nii.gz", "_bold_tmp.nii.gz")
+            tmp_path = nifti_path.parent / nifti_path.name.replace(
+                "_bold.nii.gz", "_bold_tmp.nii.gz"
+            )
             nib.save(trimmed_data, str(tmp_path))
             tmp_path.rename(nifti_path)
 
@@ -82,7 +83,9 @@ def trim_bold_directory(bids_dir: Path, subjects: list[str] | None = None) -> di
         except Exception as e:
             log.error("Failed to process %s: %s", nifti_path.name, e)
             # Clean up temp file if it exists
-            tmp_path = nifti_path.parent / nifti_path.name.replace("_bold.nii.gz", "_bold_tmp.nii.gz")
+            tmp_path = nifti_path.parent / nifti_path.name.replace(
+                "_bold.nii.gz", "_bold_tmp.nii.gz"
+            )
             if tmp_path.exists():
                 tmp_path.unlink()
             summary["errors"] += 1
@@ -93,9 +96,13 @@ def trim_bold_directory(bids_dir: Path, subjects: list[str] | None = None) -> di
 def main():
     parser = argparse.ArgumentParser(description="Trim 7 dummy volumes from BOLD NIfTIs")
     parser.add_argument("bids_dir", type=Path, help="BIDS directory to process")
-    parser.add_argument("--subjects", nargs="+", default=None,
-                        help="Restrict to these subject IDs (e.g. s10 sub-s19); "
-                             "default processes all sub-*. Enables array sharding.")
+    parser.add_argument(
+        "--subjects",
+        nargs="+",
+        default=None,
+        help="Restrict to these subject IDs (e.g. s10 sub-s19); "
+        "default processes all sub-*. Enables array sharding.",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")

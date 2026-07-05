@@ -1,8 +1,3 @@
-from argparse import Namespace
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-import numpy as np
-
 from neuro_workflow.qa.global_signal import GlobalSignalQa, parse_bids_meta
 
 
@@ -24,6 +19,7 @@ def test_qa_attributes():
 
 def test_add_cli_args():
     from argparse import ArgumentParser
+
     qa = GlobalSignalQa()
     parser = ArgumentParser()
     qa.add_cli_args(parser)

@@ -31,13 +31,13 @@ logger = logging.getLogger(__name__)
 # run-manifest. Masks are derived intermediates (re-created per run), so they
 # are intentionally excluded.
 _INPUT_FILE_KEYS = (
-    'events',
-    'confounds',
-    'mni_data',
-    't1w_data',
-    'left_surface',
-    'right_surface',
-    'cifti_bold',
+    "events",
+    "confounds",
+    "mni_data",
+    "t1w_data",
+    "left_surface",
+    "right_surface",
+    "cifti_bold",
 )
 
 
@@ -45,7 +45,7 @@ def _positive_int(value: str) -> int:
     """Argparse type that accepts only integers >= 1."""
     iv = int(value)
     if iv < 1:
-        raise argparse.ArgumentTypeError('--min-runs must be >= 1')
+        raise argparse.ArgumentTypeError("--min-runs must be >= 1")
     return iv
 
 
@@ -58,123 +58,116 @@ def setup_logging(verbose: bool = False) -> None:
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=level,
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%H:%M:%S',
+        format="%(asctime)s %(name)s %(levelname)s %(message)s",
+        datefmt="%H:%M:%S",
         stream=sys.stdout,
     )
 
 
 def get_parser() -> argparse.ArgumentParser:
     """Create command line argument parser."""
-    parser = argparse.ArgumentParser(
-        description='Level 1 GLM Analysis for Network R01 dataset'
-    )
-    parser.add_argument('--subj-id', type=str, required=True, help='Subject ID')
-    parser.add_argument('--task-name', type=str, required=True, help='Task name')
+    parser = argparse.ArgumentParser(description="Level 1 GLM Analysis for Network R01 dataset")
+    parser.add_argument("--subj-id", type=str, required=True, help="Subject ID")
+    parser.add_argument("--task-name", type=str, required=True, help="Task name")
+    parser.add_argument("--bids-dir", type=str, required=True, help="BIDS directory path")
+    parser.add_argument("--fmriprep-dir", type=str, required=True, help="fMRIPrep directory path")
     parser.add_argument(
-        '--bids-dir', type=str, required=True, help='BIDS directory path'
-    )
-    parser.add_argument(
-        '--fmriprep-dir', type=str, required=True, help='fMRIPrep directory path'
-    )
-    parser.add_argument(
-        '--results-dir',
+        "--results-dir",
         type=str,
         required=False,
-        default='./results/',
-        help='GLM results directory',
+        default="./results/",
+        help="GLM results directory",
     )
     parser.add_argument(
-        '--space',
-        choices=['T1w', 'MNI', 'surface', 'fsaverage6', 'fsLR'],
-        default='MNI',
-        help='Analysis space. T1w/MNI for volumetric; surface for fsnative; '
-        'fsaverage6 for fsaverage6 GIFTI; fsLR for fsLR den-91k CIFTI',
+        "--space",
+        choices=["T1w", "MNI", "surface", "fsaverage6", "fsLR"],
+        default="MNI",
+        help="Analysis space. T1w/MNI for volumetric; surface for fsnative; "
+        "fsaverage6 for fsaverage6 GIFTI; fsLR for fsLR den-91k CIFTI",
     )
     parser.add_argument(
-        '--within-subject-threshold',
+        "--within-subject-threshold",
         type=float,
         default=1.0,
-        help='Threshold for mask intersection (0.0-1.0)',
+        help="Threshold for mask intersection (0.0-1.0)",
     )
     parser.add_argument(
-        '--exclusions-file',
+        "--exclusions-file",
         type=str,
         required=True,
-        help='Path to exclusions JSON file',
+        help="Path to exclusions JSON file",
     )
     parser.add_argument(
-        '--residuals',
-        action='store_true',
+        "--residuals",
+        action="store_true",
         default=False,
-        help='Compute residuals (default: false)',
+        help="Compute residuals (default: false)",
     )
     # TODO: Consider removing smoothing if downstream analyses do not
     # require it (added per Du et al. 2025, Neuron).  For surface space
     # this calls FreeSurfer mri_surf2surf (module load biology
     # freesurfer/8.1.0).
     parser.add_argument(
-        '--smoothing-fwhm',
+        "--smoothing-fwhm",
         type=float,
         default=None,
-        help='Spatial smoothing FWHM in mm applied to BOLD before GLM '
-        '(affects all outputs). None means no smoothing.',
+        help="Spatial smoothing FWHM in mm applied to BOLD before GLM "
+        "(affects all outputs). None means no smoothing.",
     )
     parser.add_argument(
-        '--skip-existing',
-        action='store_true',
+        "--skip-existing",
+        action="store_true",
         default=False,
-        help='Skip runs where residual files already exist (useful for resuming)',
+        help="Skip runs where residual files already exist (useful for resuming)",
     )
     parser.add_argument(
-        '--fc-confounds',
-        action='store_true',
+        "--fc-confounds",
+        action="store_true",
         default=False,
-        help='Regress tissue confounds (global signal, WM, CSF) from residuals '
-        'for FC analysis. Requires --residuals. Follows Du et al. 2025.',
+        help="Regress tissue confounds (global signal, WM, CSF) from residuals "
+        "for FC analysis. Requires --residuals. Follows Du et al. 2025.",
     )
     parser.add_argument(
-        '--mni-template',
-        default='MNI152NLin6Asym',
-        help='fMRIPrep MNI template name for --space MNI '
-        '(default: MNI152NLin6Asym)',
+        "--mni-template",
+        default="MNI152NLin6Asym",
+        help="fMRIPrep MNI template name for --space MNI " "(default: MNI152NLin6Asym)",
     )
     parser.add_argument(
-        '--mni-res',
-        default='2',
-        help='Resolution suffix for --space MNI (default: 2)',
+        "--mni-res",
+        default="2",
+        help="Resolution suffix for --space MNI (default: 2)",
     )
     parser.add_argument(
-        '--min-runs',
+        "--min-runs",
         type=_positive_int,
         default=2,
-        help='Minimum runs required to compute a non-tagged fixed-effects map. '
-             'Below this threshold, the saved map is tagged _desc-belowMinRuns '
-             'and lev2 will filter it out (default: 2).',
+        help="Minimum runs required to compute a non-tagged fixed-effects map. "
+        "Below this threshold, the saved map is tagged _desc-belowMinRuns "
+        "and lev2 will filter it out (default: 2).",
     )
     parser.add_argument(
-        '--skip-qc-plots',
-        action='store_true',
+        "--skip-qc-plots",
+        action="store_true",
         default=False,
-        help='Skip per-contrast surface QC plots (matplotlib renders ~10 plots '
-        'per hemisphere per run; for a 46-subject cohort this adds many hours '
-        'of wall time with no impact on the science). The contrast .func.gii '
-        'files are still saved and can be re-plotted offline.',
+        help="Skip per-contrast surface QC plots (matplotlib renders ~10 plots "
+        "per hemisphere per run; for a 46-subject cohort this adds many hours "
+        "of wall time with no impact on the science). The contrast .func.gii "
+        "files are still saved and can be re-plotted offline.",
     )
     parser.add_argument(
-        '--allow-dirty',
-        action='store_true',
+        "--allow-dirty",
+        action="store_true",
         default=False,
-        help='Permit recording provenance against an uncommitted (dirty) git '
-        'working tree without warning. Without this flag a dirty tree warns '
-        'loudly to stderr but the run still proceeds; the manifest records '
-        'code_dirty truthfully either way.',
+        help="Permit recording provenance against an uncommitted (dirty) git "
+        "working tree without warning. Without this flag a dirty tree warns "
+        "loudly to stderr but the run still proceeds; the manifest records "
+        "code_dirty truthfully either way.",
     )
     parser.add_argument(
-        '--verbose',
-        action='store_true',
+        "--verbose",
+        action="store_true",
         default=False,
-        help='Enable debug logging',
+        help="Enable debug logging",
     )
     return parser
 
@@ -215,18 +208,18 @@ def _write_lev1_provenance(results_dir, args, dirs, input_files):
     science; the error is allowed to surface (fail loud) rather than be
     swallowed. ``allow_dirty`` is threaded from the CLI flag.
     """
-    allow_dirty = getattr(args, 'allow_dirty', False)
+    allow_dirty = getattr(args, "allow_dirty", False)
     provenance.write_dataset_description(
         results_dir,
-        name='lev1',
+        name="lev1",
         source_datasets=[
-            {'URL': str(args.bids_dir)},
-            {'URL': str(args.fmriprep_dir)},
+            {"URL": str(args.bids_dir)},
+            {"URL": str(args.fmriprep_dir)},
         ],
     )
     provenance.write_run_manifest(
-        dirs['base'],
-        stage='lev1',
+        dirs["base"],
+        stage="lev1",
         args=args,
         inputs=input_files,
         exclusions_source=args.exclusions_file,
@@ -245,9 +238,9 @@ def main():
     # dirty tree, unless --allow-dirty. The manifest records code_dirty truly.
     if provenance.git_is_dirty() and not args.allow_dirty:
         print(
-            'WARNING: git working tree is dirty; lev1 provenance will record '
-            'code_dirty=true. Commit/stash for a reproducible stamp, or pass '
-            '--allow-dirty to silence this warning.',
+            "WARNING: git working tree is dirty; lev1 provenance will record "
+            "code_dirty=true. Commit/stash for a reproducible stamp, or pass "
+            "--allow-dirty to silence this warning.",
             file=sys.stderr,
         )
 
@@ -255,8 +248,8 @@ def main():
     # setup_analysis still returns expected_sessions/exclusions_by_type; they are
     # not consumed downstream (the active exclusion set is `exclusions`), so bind
     # them to throwaways here rather than thread dead args onward.
-    config, sample_type, _expected_sessions, exclusions, _exclusions_by_type, dirs = (
-        setup_analysis(args)
+    config, sample_type, _expected_sessions, exclusions, _exclusions_by_type, dirs = setup_analysis(
+        args
     )
 
     # File discovery
@@ -277,36 +270,48 @@ def main():
             run_count += 1
             try:
                 success = process_single_run(
-                    session, run, files[session][run], args,
-                    sample_type, dirs, task_params, exclusions,
+                    session,
+                    run,
+                    files[session][run],
+                    args,
+                    sample_type,
+                    dirs,
+                    task_params,
+                    exclusions,
                 )
                 if not success:
-                    failed_runs.append(f'{session}/{run}')
+                    failed_runs.append(f"{session}/{run}")
             except Exception as e:
-                logger.error('Failed to process %s/%s: %s', session, run, e)
-                failed_runs.append(f'{session}/{run}')
+                logger.error("Failed to process %s/%s: %s", session, run, e)
+                failed_runs.append(f"{session}/{run}")
 
     # Fixed effects (compute even with partial failures)
     compute_fixed_effects_all(
-        args, dirs, exclusions, combined_mask_path, failed_runs, run_count,
+        args,
+        dirs,
+        exclusions,
+        combined_mask_path,
+        failed_runs,
+        run_count,
     )
 
     # Provenance (ADDITIVE) — written AFTER all scientific outputs so a manifest
     # error never loses science. Errors are allowed to surface (fail loud).
     _write_lev1_provenance(
-        Path(args.results_dir), args, dirs, _collect_run_inputs(files),
+        Path(args.results_dir),
+        args,
+        dirs,
+        _collect_run_inputs(files),
     )
 
     # Summary
     successful_runs = run_count - len(failed_runs)
-    logger.info(
-        'Analysis complete: %d/%d runs successful', successful_runs, run_count
-    )
+    logger.info("Analysis complete: %d/%d runs successful", successful_runs, run_count)
     if failed_runs:
-        logger.warning('Failed runs: %s', ', '.join(failed_runs))
+        logger.warning("Failed runs: %s", ", ".join(failed_runs))
 
     return 1 if len(failed_runs) > 0 else 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())

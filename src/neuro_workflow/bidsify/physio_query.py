@@ -23,10 +23,7 @@ def find_gephysio_analyses(session: Any) -> list[Any]:
     """
     all_analyses = session.analyses or []
     gephysio = [
-        a for a in all_analyses
-        if a.gear_info
-        and a.gear_info.get("name") == "gephysio"
-        and a.files
+        a for a in all_analyses if a.gear_info and a.gear_info.get("name") == "gephysio" and a.files
     ]
 
     if not gephysio:
@@ -43,7 +40,7 @@ def find_gephysio_analyses(session: Any) -> list[Any]:
 
     # For each acquisition, keep only the most recently created analysis
     latest = []
-    for acq_id, analyses in by_acq.items():
+    for _acq_id, analyses in by_acq.items():
         newest = max(analyses, key=lambda a: a.created or "")
         latest.append(newest)
 
@@ -69,14 +66,14 @@ def match_analyses_to_acquisitions(
             continue
         acq_id = a.inputs[0]._parents.get("acquisition")
         if acq_id not in acq_map:
-            logger.debug(
-                "Gephysio analysis for unknown acquisition %s, skipping", acq_id
-            )
+            logger.debug("Gephysio analysis for unknown acquisition %s, skipping", acq_id)
             continue
         info = acq_map[acq_id]
-        matched.append({
-            "task": info["task"],
-            "run": info["run"],
-            "analysis": a,
-        })
+        matched.append(
+            {
+                "task": info["task"],
+                "run": info["run"],
+                "analysis": a,
+            }
+        )
     return matched

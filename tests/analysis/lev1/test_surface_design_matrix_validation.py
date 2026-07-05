@@ -34,8 +34,8 @@ from neuro_workflow.analysis.lev1.processing.glm import validate_design_matrix
 def _clean_dm(n_tp: int = 100, n_reg: int = 4) -> pd.DataFrame:
     """Build a non-degenerate design matrix with an explicit intercept."""
     rng = np.random.default_rng(0)
-    cols = {f'r{i}': rng.normal(size=n_tp) for i in range(n_reg)}
-    cols['constant'] = np.ones(n_tp)
+    cols = {f"r{i}": rng.normal(size=n_tp) for i in range(n_reg)}
+    cols["constant"] = np.ones(n_tp)
     return pd.DataFrame(cols)
 
 
@@ -47,23 +47,23 @@ def _clean_dm(n_tp: int = 100, n_reg: int = 4) -> pd.DataFrame:
 def test_validate_flags_nan_in_design_matrix():
     """A single NaN cell triggers an explicit error naming the column."""
     dm = _clean_dm()
-    dm.loc[5, 'r1'] = np.nan
+    dm.loc[5, "r1"] = np.nan
     result = validate_design_matrix(dm, n_scans=dm.shape[0])
-    assert result['is_valid'] is False, 'NaN in design matrix should fail validation'
-    assert any('NaN' in e for e in result['errors']), result
-    assert any("'r1'" in e for e in result['errors']), (
-        f'Error should name the offending column; got {result["errors"]}'
-    )
+    assert result["is_valid"] is False, "NaN in design matrix should fail validation"
+    assert any("NaN" in e for e in result["errors"]), result
+    assert any(
+        "'r1'" in e for e in result["errors"]
+    ), f'Error should name the offending column; got {result["errors"]}'
 
 
 def test_validate_flags_infinite_values():
     """Inf cells trigger an explicit error naming the column."""
     dm = _clean_dm()
-    dm.loc[10, 'r2'] = np.inf
+    dm.loc[10, "r2"] = np.inf
     result = validate_design_matrix(dm, n_scans=dm.shape[0])
-    assert result['is_valid'] is False
-    assert any('infinite' in e.lower() for e in result['errors']), result
-    assert any("'r2'" in e for e in result['errors'])
+    assert result["is_valid"] is False
+    assert any("infinite" in e.lower() for e in result["errors"]), result
+    assert any("'r2'" in e for e in result["errors"])
 
 
 def test_validate_flags_row_count_mismatch():
@@ -75,19 +75,19 @@ def test_validate_flags_row_count_mismatch():
     """
     dm = _clean_dm(n_tp=100)
     result = validate_design_matrix(dm, n_scans=80)
-    assert result['is_valid'] is False
-    msg = ' '.join(result['errors'])
-    assert '100' in msg and '80' in msg, (
-        f'Error should name both dimensions; got {result["errors"]}'
-    )
+    assert result["is_valid"] is False
+    msg = " ".join(result["errors"])
+    assert (
+        "100" in msg and "80" in msg
+    ), f'Error should name both dimensions; got {result["errors"]}'
 
 
 def test_validate_flags_empty_design_matrix():
     """An empty design matrix is caught before any other check."""
     dm = pd.DataFrame()
     result = validate_design_matrix(dm, n_scans=100)
-    assert result['is_valid'] is False
-    assert any('empty' in e.lower() for e in result['errors'])
+    assert result["is_valid"] is False
+    assert any("empty" in e.lower() for e in result["errors"])
 
 
 # ---------------------------------------------------------------------------
@@ -99,8 +99,8 @@ def test_validate_passes_for_clean_inputs():
     """Clean design matrix + matching n_scans returns is_valid=True."""
     dm = _clean_dm(n_tp=100)
     result = validate_design_matrix(dm, n_scans=100)
-    assert result['is_valid'] is True, result
-    assert result['errors'] == []
+    assert result["is_valid"] is True, result
+    assert result["errors"] == []
 
 
 def test_validate_recognizes_non_named_intercept():
@@ -114,15 +114,16 @@ def test_validate_recognizes_non_named_intercept():
     """
     rng = np.random.default_rng(0)
     n_tp = 100
-    dm = pd.DataFrame({
-        'r0': rng.normal(size=n_tp),
-        'r1': rng.normal(size=n_tp),
-        'cosine00': np.full(n_tp, 0.1),  # constant non-zero
-    })
+    dm = pd.DataFrame(
+        {
+            "r0": rng.normal(size=n_tp),
+            "r1": rng.normal(size=n_tp),
+            "cosine00": np.full(n_tp, 0.1),  # constant non-zero
+        }
+    )
     result = validate_design_matrix(dm, n_scans=n_tp)
-    assert result['is_valid'] is True, result
-    no_intercept_warning = [w for w in result['warnings']
-                            if 'intercept' in w.lower()]
+    assert result["is_valid"] is True, result
+    no_intercept_warning = [w for w in result["warnings"] if "intercept" in w.lower()]
     assert not no_intercept_warning, (
         f'Constant non-zero column should suffice as intercept; got '
         f'warnings: {result["warnings"]}'
@@ -146,52 +147,56 @@ def test_surface_run_raises_on_nan_design_matrix(tmp_path, monkeypatch):
 
     # Stub surface loading to return a deterministic ndarray
     n_tp = 100
+
     def fake_load(_path, dummy_scans=0):
         return np.random.randn(n_tp, 50).astype(np.float32)
-    monkeypatch.setattr(run_module, 'load_surface_data', fake_load)
+
+    monkeypatch.setattr(run_module, "load_surface_data", fake_load)
 
     # Stub SurfaceGLM to assert it never gets called when validation fails
     fit_calls = []
+
     class FailIfCalled:
         def __init__(self, *args, **kwargs):
             pass
+
         def fit(self, data, dm):
             fit_calls.append((data, dm))
             return self
-    monkeypatch.setattr(run_module, 'SurfaceGLM', FailIfCalled)
+
+    monkeypatch.setattr(run_module, "SurfaceGLM", FailIfCalled)
 
     # NaN-bearing design matrix
     dm = _clean_dm(n_tp=n_tp)
-    dm.loc[3, 'r0'] = np.nan
+    dm.loc[3, "r0"] = np.nan
 
     from argparse import Namespace
+
     args = Namespace(
         fmriprep_dir=str(tmp_path),
-        subj_id='sub-test',
-        task_name='flanker',
+        subj_id="sub-test",
+        task_name="flanker",
         smoothing_fwhm=None,
-        space='fsaverage6',
+        space="fsaverage6",
     )
 
-    run_files = {'left_surface': 'L.func.gii', 'right_surface': 'R.func.gii'}
-    dirs = {'indiv_contrasts': tmp_path, 'quality_control': tmp_path,
-            'task_residuals': tmp_path}
+    run_files = {"left_surface": "L.func.gii", "right_surface": "R.func.gii"}
+    dirs = {"indiv_contrasts": tmp_path, "quality_control": tmp_path, "task_residuals": tmp_path}
 
-    with pytest.raises(ValueError, match='validation failed'):
+    with pytest.raises(ValueError, match="validation failed"):
         run_module.process_surface_run(
             run_files=run_files,
             design_matrix=dm,
             contrasts={},
             args=args,
             dirs=dirs,
-            base_filename='sub-test_task-flanker_run-1',
+            base_filename="sub-test_task-flanker_run-1",
             tr=1.5,
             dummy_scans=0,
             compute_residuals=False,
-            surface_space='fsaverage6',
+            surface_space="fsaverage6",
         )
 
     assert fit_calls == [], (
-        'SurfaceGLM.fit should never run when validation fails; got '
-        f'{len(fit_calls)} call(s).'
+        "SurfaceGLM.fit should never run when validation fails; got " f"{len(fit_calls)} call(s)."
     )

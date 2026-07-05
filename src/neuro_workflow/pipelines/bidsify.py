@@ -3,8 +3,7 @@
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from neuro_workflow.pipelines.base import register, build_mail_line, resolve_resources
-
+from neuro_workflow.pipelines.base import build_mail_line, register, resolve_resources
 
 _DEFAULT_CONTAINER = "/home/groups/russpold/singularity_images/neuro_workflow.sif"
 
@@ -27,7 +26,9 @@ class BidsifyPipeline:
         parser.add_argument("--overwrite", action="store_true", help="Overwrite existing output")
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 1-00:00:00)")
         parser.add_argument("--mem-gb", type=int, default=None, help="Memory in GB (default: 32)")
-        parser.add_argument("--cpus", type=int, default=None, help="CPUs / parallel threads (default: 16)")
+        parser.add_argument(
+            "--cpus", type=int, default=None, help="CPUs / parallel threads (default: 16)"
+        )
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
         resources = resolve_resources(args, self.default_resources)

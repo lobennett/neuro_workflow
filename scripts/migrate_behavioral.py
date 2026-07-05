@@ -8,13 +8,14 @@ Usage:
         --output-dir /oak/.../sourcedata \
         --sample discovery
 """
+
 import argparse
 import csv
 import json
 import logging
 import shutil
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 log = logging.getLogger(__name__)
@@ -72,8 +73,13 @@ def migrate_from_manifest(
             report["skipped_irreconcilable"] += 1
             continue
         if action != "copy":
-            log.warning("Unknown action '%s' for %s %s %s, skipping",
-                        action, row["subject"], row["session"], row["task"])
+            log.warning(
+                "Unknown action '%s' for %s %s %s, skipping",
+                action,
+                row["subject"],
+                row["session"],
+                row["task"],
+            )
             continue
 
         raw_path = row.get("raw_path", "")
@@ -96,13 +102,15 @@ def migrate_from_manifest(
         shutil.copy2(raw_path, dest_path)
 
         report["copied"] += 1
-        report["files"].append({
-            "src": raw_path,
-            "dest": str(dest_path),
-            "subject": subject,
-            "session": dest_session,
-            "task": task,
-        })
+        report["files"].append(
+            {
+                "src": raw_path,
+                "dest": str(dest_path),
+                "subject": subject,
+                "session": dest_session,
+                "task": task,
+            }
+        )
 
         log.info("Copied %s -> %s", Path(raw_path).name, dest_path)
 
@@ -113,16 +121,28 @@ def main():
     parser = argparse.ArgumentParser(
         description="Migrate behavioral data to BIDS sourcedata using reviewed manifest"
     )
-    parser.add_argument("--manifest", required=True, type=Path,
-                        help="Reviewed TSV manifest from reconcile_sessions.py")
-    parser.add_argument("--raw-dir", required=True, type=Path,
-                        help="Path to raw_cleaned behavioral directory (for out-of-scanner, survey, mTurk)")
-    parser.add_argument("--output-dir", required=True, type=Path,
-                        help="Sourcedata output root")
-    parser.add_argument("--sample", required=True, choices=["discovery", "validation"],
-                        help="Sample name (for filtering out-of-scanner/survey subjects)")
-    parser.add_argument("--strict", action="store_true",
-                        help="Fail if any manifest rows are still 'pending'")
+    parser.add_argument(
+        "--manifest",
+        required=True,
+        type=Path,
+        help="Reviewed TSV manifest from reconcile_sessions.py",
+    )
+    parser.add_argument(
+        "--raw-dir",
+        required=True,
+        type=Path,
+        help="Path to raw_cleaned behavioral directory (for out-of-scanner, survey, mTurk)",
+    )
+    parser.add_argument("--output-dir", required=True, type=Path, help="Sourcedata output root")
+    parser.add_argument(
+        "--sample",
+        required=True,
+        choices=["discovery", "validation"],
+        help="Sample name (for filtering out-of-scanner/survey subjects)",
+    )
+    parser.add_argument(
+        "--strict", action="store_true", help="Fail if any manifest rows are still 'pending'"
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -131,7 +151,7 @@ def main():
 
     # Write migration report
     report_out = {
-        "generated": datetime.now(timezone.utc).isoformat(),
+        "generated": datetime.now(UTC).isoformat(),
         "manifest": str(args.manifest),
         "sample": args.sample,
         **{k: v for k, v in report.items() if k != "files"},

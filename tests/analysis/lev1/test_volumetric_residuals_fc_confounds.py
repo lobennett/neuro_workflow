@@ -19,12 +19,10 @@ These tests verify two things:
 
 from __future__ import annotations
 
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import nibabel as nib
 import numpy as np
-import pytest
 
 from neuro_workflow.analysis.lev1.processing.residuals import process_run_residuals
 
@@ -62,12 +60,12 @@ def test_fc_confounds_kwarg_threads_into_filtering_params(monkeypatch, tmp_path)
             self.tr = tr
 
         def apply_filtering(self, mask_img=None, **filtering_params):
-            captured['filtering_params'] = filtering_params
+            captured["filtering_params"] = filtering_params
             return _synthetic_4d(n_tp)
 
         def save_residuals(self, output_dir, base_filename, kind):
             output_dir.mkdir(parents=True, exist_ok=True)
-            path = output_dir / f'{base_filename}_{kind}.nii.gz'
+            path = output_dir / f"{base_filename}_{kind}.nii.gz"
             path.touch()
             return [path]
 
@@ -75,19 +73,23 @@ def test_fc_confounds_kwarg_threads_into_filtering_params(monkeypatch, tmp_path)
             return {}
 
     monkeypatch.setattr(
-        'neuro_workflow.analysis.lev1.processing.residuals.ResidualsProcessor',
+        "neuro_workflow.analysis.lev1.processing.residuals.ResidualsProcessor",
         StubProcessor,
     )
 
     glm = _fake_fitted_glm(n_tp)
     result = process_run_residuals(
-        glm, tmp_path, 'sub-x_task-y_run-1', tr=1.5,
+        glm,
+        tmp_path,
+        "sub-x_task-y_run-1",
+        tr=1.5,
         fc_confounds=fc_confounds,
     )
-    assert result['success'], f'residuals failed: {result["errors"]}'
+    assert result["success"], f'residuals failed: {result["errors"]}'
     np.testing.assert_array_equal(
-        captured['filtering_params']['confounds'], fc_confounds,
-        err_msg='fc_confounds did not reach filtering_params[\'confounds\']',
+        captured["filtering_params"]["confounds"],
+        fc_confounds,
+        err_msg="fc_confounds did not reach filtering_params['confounds']",
     )
 
 
@@ -102,12 +104,12 @@ def test_fc_confounds_kwarg_default_is_none(monkeypatch, tmp_path):
             pass
 
         def apply_filtering(self, mask_img=None, **filtering_params):
-            captured['filtering_params'] = filtering_params
+            captured["filtering_params"] = filtering_params
             return _synthetic_4d(80)
 
         def save_residuals(self, output_dir, base_filename, kind):
             output_dir.mkdir(parents=True, exist_ok=True)
-            path = output_dir / f'{base_filename}_{kind}.nii.gz'
+            path = output_dir / f"{base_filename}_{kind}.nii.gz"
             path.touch()
             return [path]
 
@@ -115,13 +117,13 @@ def test_fc_confounds_kwarg_default_is_none(monkeypatch, tmp_path):
             return {}
 
     monkeypatch.setattr(
-        'neuro_workflow.analysis.lev1.processing.residuals.ResidualsProcessor',
+        "neuro_workflow.analysis.lev1.processing.residuals.ResidualsProcessor",
         StubProcessor,
     )
 
     glm = _fake_fitted_glm()
-    process_run_residuals(glm, tmp_path, 'sub-x_task-y_run-1', tr=1.5)
-    assert captured['filtering_params']['confounds'] is None
+    process_run_residuals(glm, tmp_path, "sub-x_task-y_run-1", tr=1.5)
+    assert captured["filtering_params"]["confounds"] is None
 
 
 def test_explicit_filtering_params_overrides_fc_confounds_kwarg(monkeypatch, tmp_path):
@@ -139,12 +141,12 @@ def test_explicit_filtering_params_overrides_fc_confounds_kwarg(monkeypatch, tmp
             pass
 
         def apply_filtering(self, mask_img=None, **filtering_params):
-            captured['filtering_params'] = filtering_params
+            captured["filtering_params"] = filtering_params
             return _synthetic_4d(80)
 
         def save_residuals(self, output_dir, base_filename, kind):
             output_dir.mkdir(parents=True, exist_ok=True)
-            path = output_dir / f'{base_filename}_{kind}.nii.gz'
+            path = output_dir / f"{base_filename}_{kind}.nii.gz"
             path.touch()
             return [path]
 
@@ -152,22 +154,26 @@ def test_explicit_filtering_params_overrides_fc_confounds_kwarg(monkeypatch, tmp
             return {}
 
     monkeypatch.setattr(
-        'neuro_workflow.analysis.lev1.processing.residuals.ResidualsProcessor',
+        "neuro_workflow.analysis.lev1.processing.residuals.ResidualsProcessor",
         StubProcessor,
     )
 
     explicit = {
-        'low_pass': 0.1,
-        'high_pass': 0.01,
-        'standardize': False,
-        'detrend': False,
-        'confounds': None,  # explicit None — caller knows what they want
+        "low_pass": 0.1,
+        "high_pass": 0.01,
+        "standardize": False,
+        "detrend": False,
+        "confounds": None,  # explicit None — caller knows what they want
     }
     fc = np.random.randn(80, 6)
     glm = _fake_fitted_glm()
     process_run_residuals(
-        glm, tmp_path, 'sub-x_task-y_run-1', tr=1.5,
-        filtering_params=explicit, fc_confounds=fc,
+        glm,
+        tmp_path,
+        "sub-x_task-y_run-1",
+        tr=1.5,
+        filtering_params=explicit,
+        fc_confounds=fc,
     )
     # Explicit dict's None wins
-    assert captured['filtering_params']['confounds'] is None
+    assert captured["filtering_params"]["confounds"] is None

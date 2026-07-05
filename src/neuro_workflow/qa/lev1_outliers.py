@@ -14,12 +14,17 @@ outlier %, reads the per-contrast VIF CSVs lev1 already emits, writes:
     - lev1_outliers.pdf     (Jeanette-style: panels + histograms)
     - lev1_flagged.tsv      (subset where any flag fires)
 """
+
 from __future__ import annotations
 
 import csv
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import numpy as np
 
 # BIDS-style entity parser for our lev1 output filenames.
 # The contrast field may contain underscores (e.g. "stop_success-go"),
@@ -38,6 +43,7 @@ _FILENAME_RE = re.compile(
 @dataclass(frozen=True)
 class ScanContrast:
     """One (subject, session, run, task, contrast) tuple."""
+
     subject: str
     session: str
     task: str
@@ -79,12 +85,13 @@ def discover_contrast_files(
 @dataclass(frozen=True)
 class OutlierResult:
     scan: ScanContrast
-    outlier_pct: float          # percent of voxels >n_std SD from cohort mean
-    n_voxels: int               # total voxels in the volume
+    outlier_pct: float  # percent of voxels >n_std SD from cohort mean
+    n_voxels: int  # total voxels in the volume
 
 
-def _load_volume(path: Path) -> "np.ndarray":
+def _load_volume(path: Path) -> np.ndarray:
     import nibabel as nib  # local import keeps top-level cheap
+
     return nib.load(str(path)).get_fdata()
 
 
@@ -108,25 +115,25 @@ def compute_cohort_outliers(
         groups.setdefault((sc.task, sc.contrast), []).append(sc)
 
     results: list[OutlierResult] = []
-    for (task, contrast), members in groups.items():
+    for (_task, _contrast), members in groups.items():
         # Stack volumes: shape (n_subjects, X, Y, Z)
         stacked = np.stack([_load_volume(m.path) for m in members], axis=0)
         cohort_mean = stacked.mean(axis=0)
         cohort_std = stacked.std(axis=0, ddof=0)
         # Avoid divide-by-zero: voxels with zero cohort std contribute 0 outliers
         with np.errstate(divide="ignore", invalid="ignore"):
-            z = np.where(cohort_std > 0,
-                         (stacked - cohort_mean) / cohort_std,
-                         0.0)
+            z = np.where(cohort_std > 0, (stacked - cohort_mean) / cohort_std, 0.0)
         outlier_mask = np.abs(z) >= n_std  # shape (n_subjects, X, Y, Z)
         n_vox = int(stacked.shape[1] * stacked.shape[2] * stacked.shape[3])
         for i, member in enumerate(members):
             n_out = int(outlier_mask[i].sum())
-            results.append(OutlierResult(
-                scan=member,
-                outlier_pct=100.0 * n_out / n_vox if n_vox else 0.0,
-                n_voxels=n_vox,
-            ))
+            results.append(
+                OutlierResult(
+                    scan=member,
+                    outlier_pct=100.0 * n_out / n_vox if n_vox else 0.0,
+                    n_voxels=n_vox,
+                )
+            )
     return results
 
 
@@ -142,6 +149,7 @@ _VIF_FILENAME_RE = re.compile(
 @dataclass(frozen=True)
 class FlaggedRow:
     """One row in the per-scan-contrast outputs."""
+
     subject: str
     session: str
     run: str
@@ -180,8 +188,11 @@ def load_vif_table(
             continue
         for _, row in df.iterrows():
             key = (
-                m.group("subject"), m.group("session"),
-                m.group("run"), m.group("task"), str(row["contrast"]),
+                m.group("subject"),
+                m.group("session"),
+                m.group("run"),
+                m.group("task"),
+                str(row["contrast"]),
             )
             table[key] = float(row["VIF"])
     return table
@@ -199,38 +210,52 @@ def assemble_flagged_rows(
         sc = r.scan
         key = (sc.subject, sc.session, sc.run, sc.task, sc.contrast)
         vif = vif_table.get(key)
-        rows.append(FlaggedRow(
-            subject=sc.subject,
-            session=sc.session,
-            run=sc.run,
-            task=sc.task,
-            contrast=sc.contrast,
-            outlier_pct=r.outlier_pct,
-            vif=vif,
-            flagged_outliers=r.outlier_pct > outlier_pct_threshold,
-            flagged_vif=(vif is not None and vif > vif_threshold),
-        ))
+        rows.append(
+            FlaggedRow(
+                subject=sc.subject,
+                session=sc.session,
+                run=sc.run,
+                task=sc.task,
+                contrast=sc.contrast,
+                outlier_pct=r.outlier_pct,
+                vif=vif,
+                flagged_outliers=r.outlier_pct > outlier_pct_threshold,
+                flagged_vif=(vif is not None and vif > vif_threshold),
+            )
+        )
     return rows
 
 
 def _write_table(rows: list[FlaggedRow], path: Path, delimiter: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
-        "subject", "session", "run", "task", "contrast",
-        "outlier_pct", "vif", "flagged_outliers", "flagged_vif",
+        "subject",
+        "session",
+        "run",
+        "task",
+        "contrast",
+        "outlier_pct",
+        "vif",
+        "flagged_outliers",
+        "flagged_vif",
     ]
     with path.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=delimiter)
         writer.writeheader()
         for r in rows:
-            writer.writerow({
-                "subject": r.subject, "session": r.session, "run": r.run,
-                "task": r.task, "contrast": r.contrast,
-                "outlier_pct": f"{r.outlier_pct:.4f}",
-                "vif": "" if r.vif is None else f"{r.vif:.4f}",
-                "flagged_outliers": int(r.flagged_outliers),
-                "flagged_vif": int(r.flagged_vif),
-            })
+            writer.writerow(
+                {
+                    "subject": r.subject,
+                    "session": r.session,
+                    "run": r.run,
+                    "task": r.task,
+                    "contrast": r.contrast,
+                    "outlier_pct": f"{r.outlier_pct:.4f}",
+                    "vif": "" if r.vif is None else f"{r.vif:.4f}",
+                    "flagged_outliers": int(r.flagged_outliers),
+                    "flagged_vif": int(r.flagged_vif),
+                }
+            )
 
 
 def write_outliers_csv(rows: list[FlaggedRow], path: Path) -> None:
@@ -254,8 +279,8 @@ def render_outlier_pdf(
     Layout ported from Jeanette Mumford's fmri-outlier-detector/plotting_functions.py.
     """
     import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_pdf import PdfPages
     import numpy as np
+    from matplotlib.backends.backend_pdf import PdfPages
     from nilearn.plotting import plot_stat_map
 
     # Group results by (task, contrast)
@@ -272,7 +297,7 @@ def render_outlier_pdf(
             nrows = (n + ncols - 1) // ncols
             fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 3 * nrows))
             axes = np.atleast_1d(axes).flatten()
-            for ax, r in zip(axes, members):
+            for ax, r in zip(axes, members, strict=False):
                 key = (r.scan.subject, r.scan.session, r.scan.run, r.scan.task, r.scan.contrast)
                 vif = vif_table.get(key)
                 vif_label = f"vif={vif:.2f}" if vif is not None else "vif=?"
@@ -281,12 +306,24 @@ def render_outlier_pdf(
                     f"{vif_label}, outlier={r.outlier_pct:.1f}%"
                 )
                 try:
-                    plot_stat_map(str(r.scan.path), axes=ax, title=title,
-                                  display_mode="z", cut_coords=1,
-                                  colorbar=False, annotate=False)
+                    plot_stat_map(
+                        str(r.scan.path),
+                        axes=ax,
+                        title=title,
+                        display_mode="z",
+                        cut_coords=1,
+                        colorbar=False,
+                        annotate=False,
+                    )
                 except Exception as exc:  # noqa: BLE001
-                    ax.text(0.5, 0.5, f"render failed: {exc}",
-                            ha="center", va="center", transform=ax.transAxes)
+                    ax.text(
+                        0.5,
+                        0.5,
+                        f"render failed: {exc}",
+                        ha="center",
+                        va="center",
+                        transform=ax.transAxes,
+                    )
             for ax in axes[n:]:
                 ax.axis("off")
             fig.suptitle(f"{task} / {contrast}", fontsize=14)
@@ -354,7 +391,8 @@ def detect_lev1_outliers(
 
     if exclusions:
         contrast_paths = [
-            p for p in contrast_paths
+            p
+            for p in contrast_paths
             if _make_exclusion_key(parse_contrast_path(p)) not in exclusions
         ]
 
@@ -364,15 +402,17 @@ def detect_lev1_outliers(
     vif_table = load_vif_table(vif_paths)
 
     rows = assemble_flagged_rows(
-        outlier_results, vif_table,
+        outlier_results,
+        vif_table,
         outlier_pct_threshold=outlier_pct_threshold,
         vif_threshold=vif_threshold,
     )
 
     write_outliers_csv(rows, output_dir / "lev1_outliers.csv")
     write_flagged_tsv(rows, output_dir / "lev1_flagged.tsv")
-    render_outlier_pdf(outlier_results, vif_table=vif_table,
-                        output_path=output_dir / "lev1_outliers.pdf")
+    render_outlier_pdf(
+        outlier_results, vif_table=vif_table, output_path=output_dir / "lev1_outliers.pdf"
+    )
 
 
 def _make_exclusion_key(sc: ScanContrast) -> str:

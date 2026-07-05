@@ -92,9 +92,7 @@ def test_planted_contrast_is_recovered_through_real_glm():
     # REAL first-level fit (nilearn FirstLevelModel under the project wrapper),
     # with an explicit mask (a real fit_run_glm parameter) so auto-masking
     # doesn't reject the spatially-uniform synthetic block.
-    fitted = fit_run_glm(
-        img, design, analysis_type="task", tr=TR, mask_img=make_mask(img)
-    )
+    fitted = fit_run_glm(img, design, analysis_type="task", tr=TR, mask_img=make_mask(img))
 
     # REAL contrast formula from the flanker YAML.
     contrasts = get_task_contrasts(TASK)
@@ -111,9 +109,9 @@ def test_planted_contrast_is_recovered_through_real_glm():
     # Directional recovery: must be clearly positive.
     assert recovered > 0, f"expected positive contrast, got {recovered}"
     # Approximate-magnitude recovery within generous tolerance.
-    assert recovered == pytest.approx(planted_effect, abs=1.0), (
-        f"recovered {recovered:.3f} not within 1.0 of planted {planted_effect}"
-    )
+    assert recovered == pytest.approx(
+        planted_effect, abs=1.0
+    ), f"recovered {recovered:.3f} not within 1.0 of planted {planted_effect}"
 
 
 def test_null_contrast_recovers_near_zero():
@@ -125,16 +123,14 @@ def test_null_contrast_recovers_near_zero():
     planted = {"incongruent": 7.0, "congruent": 7.0, "constant": 100.0}
     img, _ = make_synthetic_run(design, planted, noise_sd=0.5, seed=7)
 
-    fitted = fit_run_glm(
-        img, design, analysis_type="task", tr=TR, mask_img=make_mask(img)
-    )
+    fitted = fit_run_glm(img, design, analysis_type="task", tr=TR, mask_img=make_mask(img))
     formula = get_task_contrasts(TASK)["incongruent-congruent"]
     result = fitted.compute_contrast(formula, output_type="effect_size")
     recovered = float(np.mean(result.get_fdata()))
 
-    assert recovered == pytest.approx(0.0, abs=1.0), (
-        f"null contrast should be ~0, got {recovered:.3f}"
-    )
+    assert recovered == pytest.approx(
+        0.0, abs=1.0
+    ), f"null contrast should be ~0, got {recovered:.3f}"
 
 
 def test_noiseless_recovery_is_tight():
@@ -145,16 +141,14 @@ def test_noiseless_recovery_is_tight():
     planted = {"incongruent": 10.0, "congruent": 5.0, "constant": 100.0}
     ts = plant_bold(design, planted, noise_sd=0.0, seed=0)
     img = as_4d_nifti(ts)
-    fitted = fit_run_glm(
-        img, design, analysis_type="task", tr=TR, mask_img=make_mask(img)
-    )
+    fitted = fit_run_glm(img, design, analysis_type="task", tr=TR, mask_img=make_mask(img))
     formula = get_task_contrasts(TASK)["incongruent-congruent"]
     result = fitted.compute_contrast(formula, output_type="effect_size")
     recovered = float(np.mean(result.get_fdata()))
 
-    assert recovered == pytest.approx(5.0, abs=0.05), (
-        f"noiseless recovery {recovered:.4f} should be ~5.0"
-    )
+    assert recovered == pytest.approx(
+        5.0, abs=0.05
+    ), f"noiseless recovery {recovered:.4f} should be ~5.0"
 
 
 def test_compute_run_contrasts_saves_recovered_effect(tmp_path):
@@ -164,9 +158,7 @@ def test_compute_run_contrasts_saves_recovered_effect(tmp_path):
     planted = {"incongruent": 10.0, "congruent": 5.0, "constant": 100.0}
     img, _ = make_synthetic_run(design, planted, noise_sd=0.5, seed=123)
 
-    fitted = fit_run_glm(
-        img, design, analysis_type="task", tr=TR, mask_img=make_mask(img)
-    )
+    fitted = fit_run_glm(img, design, analysis_type="task", tr=TR, mask_img=make_mask(img))
     saved = compute_run_contrasts(
         fitted_glm=fitted,
         task_name=TASK,
@@ -181,6 +173,6 @@ def test_compute_run_contrasts_saves_recovered_effect(tmp_path):
     import nibabel as nib
 
     recovered = float(np.mean(nib.load(str(effect_path)).get_fdata()))
-    assert recovered == pytest.approx(5.0, abs=1.0), (
-        f"saved effect-size map mean {recovered:.3f} not within 1.0 of +5"
-    )
+    assert recovered == pytest.approx(
+        5.0, abs=1.0
+    ), f"saved effect-size map mean {recovered:.3f} not within 1.0 of +5"

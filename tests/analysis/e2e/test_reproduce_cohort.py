@@ -69,8 +69,7 @@ def test_discovery_reproduces(tmp_path):
     report = report_path.read_text()
     first_line = report.splitlines()[0] if report else ""
     assert "PASS" in first_line, (
-        f"Expected 'PASS' in first line of report, got: {first_line!r}\n"
-        f"Full report:\n{report}"
+        f"Expected 'PASS' in first line of report, got: {first_line!r}\n" f"Full report:\n{report}"
     )
     assert result.returncode == 0, (
         f"reproduce_cohort.py exited with code {result.returncode}.\n"

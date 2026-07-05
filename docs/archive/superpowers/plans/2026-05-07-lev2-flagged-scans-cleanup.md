@@ -73,7 +73,7 @@ Locate `main()` (around line 248). Delete:
     # Filter out flagged scans using provided CSV file
     print(f'Filtering flagged scans using: {args.flagged_scans_csv}')
     input_files = filter_flagged_scans(input_files, args.flagged_scans_csv, args.contrast)
-    
+
     if not input_files:
         print(f'ERROR: No input files remain after filtering flagged scans for contrast {args.contrast}')
         return 1

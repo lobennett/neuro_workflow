@@ -1,14 +1,14 @@
 """Tests for src/neuro_workflow/qa/metrics/outputs.py."""
 
 from neuro_workflow.qa.metrics.outputs import (
-    OutputCheckResult,
     ScanID,
     check_expected_outputs,
 )
 
 
-def _make_scan_outputs(tmp_path, subject="sub-s03", session="ses-01",
-                      task="rest", run="1", spaces=None):
+def _make_scan_outputs(
+    tmp_path, subject="sub-s03", session="ses-01", task="rest", run="1", spaces=None
+):
     """Build a fake fmriprep derivatives tree with the listed output spaces."""
     func_dir = tmp_path / subject / session / "func"
     func_dir.mkdir(parents=True)
@@ -38,12 +38,21 @@ def _make_scan_outputs(tmp_path, subject="sub-s03", session="ses-01",
 
 
 def test_check_expected_outputs_complete(tmp_path):
-    fmriprep = _make_scan_outputs(tmp_path, spaces=[
-        "", "MNI152NLin2009cAsym_res-1", "MNI152NLin6Asym_res-2", "T1w",
-        "hemi-L_fsaverage6", "hemi-R_fsaverage6",
-        "hemi-L_fsnative", "hemi-R_fsnative",
-        "fsLR_91k", "confounds",
-    ])
+    fmriprep = _make_scan_outputs(
+        tmp_path,
+        spaces=[
+            "",
+            "MNI152NLin2009cAsym_res-1",
+            "MNI152NLin6Asym_res-2",
+            "T1w",
+            "hemi-L_fsaverage6",
+            "hemi-R_fsaverage6",
+            "hemi-L_fsnative",
+            "hemi-R_fsnative",
+            "fsLR_91k",
+            "confounds",
+        ],
+    )
     result = check_expected_outputs(fmriprep, ScanID("sub-s03", "ses-01", "rest", "1"))
     assert result.complete
     assert result.missing == []

@@ -1,17 +1,19 @@
 """Tests for src/neuro_workflow/qa/metrics/freesurfer.py."""
+
 import pytest
 
 from neuro_workflow.qa.metrics.freesurfer import (
     FreeSurferMetrics,
     compute_freesurfer,
+    parse_aseg_stats,
     parse_euler_from_log,
     parse_recon_all_status,
-    parse_aseg_stats,
 )
 
 
-def _make_fs_dir(tmp_path, status="OK", euler_lh=-100, euler_rh=-80,
-                 elapsed_hours=10.0, brain_vol=1100000.0):
+def _make_fs_dir(
+    tmp_path, status="OK", euler_lh=-100, euler_rh=-80, elapsed_hours=10.0, brain_vol=1100000.0
+):
     """Build a minimal FreeSurfer subject directory."""
     fs = tmp_path / "sub-X_ses-01"
     (fs / "scripts").mkdir(parents=True)
@@ -23,11 +25,11 @@ def _make_fs_dir(tmp_path, status="OK", euler_lh=-100, euler_rh=-80,
     if status == "OK":
         (fs / "scripts" / "recon-all-status.log").write_text(
             "Started\n"
-            f"recon-all -s sub-X_ses-01 finished without error at Wed Apr 29 19:05:44 PDT 2026\n"
+            "recon-all -s sub-X_ses-01 finished without error at Wed Apr 29 19:05:44 PDT 2026\n"
         )
     elif status == "FAILED":
         (fs / "scripts" / "recon-all-status.log").write_text(
-            f"recon-all -s sub-X_ses-01 exited with ERRORS at Wed Apr 29 12:00:00 PDT 2026\n"
+            "recon-all -s sub-X_ses-01 exited with ERRORS at Wed Apr 29 12:00:00 PDT 2026\n"
         )
     elif status == "INCOMPLETE":
         (fs / "scripts" / "recon-all-status.log").write_text("Started\n#@# Tessellate\n")
@@ -37,8 +39,8 @@ def _make_fs_dir(tmp_path, status="OK", euler_lh=-100, euler_rh=-80,
         f"#@# Topology lh\n"
         f"orig.nofix lheno = {euler_lh}, rheno = {euler_rh}\n"
         f"#@# DONE\n"
-        f"#@#%# recon-all-run-time-hours {elapsed_hours / 2.0}\n"   # stage 1
-        f"#@#%# recon-all-run-time-hours {elapsed_hours / 2.0}\n"   # stage 2
+        f"#@#%# recon-all-run-time-hours {elapsed_hours / 2.0}\n"  # stage 1
+        f"#@#%# recon-all-run-time-hours {elapsed_hours / 2.0}\n"  # stage 2
     )
 
     # aseg.stats
@@ -55,11 +57,7 @@ def _make_fs_dir(tmp_path, status="OK", euler_lh=-100, euler_rh=-80,
 
 def test_parse_euler_from_log(tmp_path):
     log = tmp_path / "recon-all.log"
-    log.write_text(
-        "blah\n"
-        "orig.nofix lheno = -366, rheno = -278\n"
-        "more blah\n"
-    )
+    log.write_text("blah\n" "orig.nofix lheno = -366, rheno = -278\n" "more blah\n")
     result = parse_euler_from_log(log)
     assert result == (-366, -278)
 
@@ -114,7 +112,7 @@ def test_compute_freesurfer_full(tmp_path):
     assert m.euler_lh == -100
     assert m.euler_rh == -80
     assert m.euler_mean == pytest.approx(-90.0)
-    assert m.holes_lh == 51   # (2 - (-100)) / 2 = 51
+    assert m.holes_lh == 51  # (2 - (-100)) / 2 = 51
     assert m.holes_rh == 41
     assert m.holes_mean == pytest.approx(46.0)
     assert m.brain_vol == pytest.approx(1100000.0)
@@ -142,6 +140,7 @@ def test_compute_freesurfer_incomplete_recon(tmp_path):
 def test_parse_elapsed_sums_multiple_stages(tmp_path):
     """recon-all-run-time-hours can appear once per stage; total = sum."""
     from neuro_workflow.qa.metrics.freesurfer import _parse_elapsed
+
     log = tmp_path / "recon-all.log"
     log.write_text(
         "#@#%# recon-all-run-time-hours 0.149\n"

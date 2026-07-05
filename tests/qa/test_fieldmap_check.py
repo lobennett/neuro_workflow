@@ -1,8 +1,11 @@
 import json
 from argparse import Namespace
-from pathlib import Path
 
-from neuro_workflow.qa.fieldmap_check import FieldmapCheckQa, collect_fieldmap_identifiers, collect_func_b0_sources
+from neuro_workflow.qa.fieldmap_check import (
+    FieldmapCheckQa,
+    collect_fieldmap_identifiers,
+    collect_func_b0_sources,
+)
 
 
 def _make_session(tmp_path, subject="sub-s01", session="ses-01"):
@@ -53,9 +56,7 @@ def test_collect_func_b0_sources_string(tmp_path):
         {"B0FieldSource": "pepolar_0", "RepetitionTime": 1.0},
     )
     result = collect_func_b0_sources(base / "func")
-    assert result == [
-        ("sub-s01_ses-01_task-rest_run-1_bold.json", {"pepolar_0"})
-    ]
+    assert result == [("sub-s01_ses-01_task-rest_run-1_bold.json", {"pepolar_0"})]
 
 
 def test_collect_func_b0_sources_list(tmp_path):
@@ -65,9 +66,7 @@ def test_collect_func_b0_sources_list(tmp_path):
         {"B0FieldSource": ["pepolar_0", "pepolar_1"]},
     )
     result = collect_func_b0_sources(base / "func")
-    assert result == [
-        ("sub-s01_ses-01_task-rest_run-1_bold.json", {"pepolar_0", "pepolar_1"})
-    ]
+    assert result == [("sub-s01_ses-01_task-rest_run-1_bold.json", {"pepolar_0", "pepolar_1"})]
 
 
 def test_collect_func_b0_sources_no_field(tmp_path):

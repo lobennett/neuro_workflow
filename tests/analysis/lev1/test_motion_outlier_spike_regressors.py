@@ -33,7 +33,6 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from neuro_workflow.analysis.lev1.processing.confounds import (
     _get_base_confound_pattern,
@@ -41,8 +40,9 @@ from neuro_workflow.analysis.lev1.processing.confounds import (
 )
 
 
-def _make_confounds_tsv(tmp_path, n_tp: int = 200, n_outliers: int = 5,
-                          discovery_nback: bool = False) -> str:
+def _make_confounds_tsv(
+    tmp_path, n_tp: int = 200, n_outliers: int = 5, discovery_nback: bool = False
+) -> str:
     """Write a synthetic fMRIPrep-style confounds.tsv to disk.
 
     Includes the 24-param motion model, DCT cosines, a handful of
@@ -52,53 +52,53 @@ def _make_confounds_tsv(tmp_path, n_tp: int = 200, n_outliers: int = 5,
     """
     rng = np.random.default_rng(0)
     base = {
-        'trans_x': rng.normal(size=n_tp),
-        'trans_y': rng.normal(size=n_tp),
-        'trans_z': rng.normal(size=n_tp),
-        'rot_x': rng.normal(size=n_tp),
-        'rot_y': rng.normal(size=n_tp),
-        'rot_z': rng.normal(size=n_tp),
-        'trans_x_derivative1': rng.normal(size=n_tp),
-        'trans_y_derivative1': rng.normal(size=n_tp),
-        'trans_z_derivative1': rng.normal(size=n_tp),
-        'rot_x_derivative1': rng.normal(size=n_tp),
-        'rot_y_derivative1': rng.normal(size=n_tp),
-        'rot_z_derivative1': rng.normal(size=n_tp),
-        'trans_x_power2': rng.normal(size=n_tp),
-        'trans_y_power2': rng.normal(size=n_tp),
-        'trans_z_power2': rng.normal(size=n_tp),
-        'rot_x_power2': rng.normal(size=n_tp),
-        'rot_y_power2': rng.normal(size=n_tp),
-        'rot_z_power2': rng.normal(size=n_tp),
-        'trans_x_derivative1_power2': rng.normal(size=n_tp),
-        'trans_y_derivative1_power2': rng.normal(size=n_tp),
-        'trans_z_derivative1_power2': rng.normal(size=n_tp),
-        'rot_x_derivative1_power2': rng.normal(size=n_tp),
-        'rot_y_derivative1_power2': rng.normal(size=n_tp),
-        'rot_z_derivative1_power2': rng.normal(size=n_tp),
+        "trans_x": rng.normal(size=n_tp),
+        "trans_y": rng.normal(size=n_tp),
+        "trans_z": rng.normal(size=n_tp),
+        "rot_x": rng.normal(size=n_tp),
+        "rot_y": rng.normal(size=n_tp),
+        "rot_z": rng.normal(size=n_tp),
+        "trans_x_derivative1": rng.normal(size=n_tp),
+        "trans_y_derivative1": rng.normal(size=n_tp),
+        "trans_z_derivative1": rng.normal(size=n_tp),
+        "rot_x_derivative1": rng.normal(size=n_tp),
+        "rot_y_derivative1": rng.normal(size=n_tp),
+        "rot_z_derivative1": rng.normal(size=n_tp),
+        "trans_x_power2": rng.normal(size=n_tp),
+        "trans_y_power2": rng.normal(size=n_tp),
+        "trans_z_power2": rng.normal(size=n_tp),
+        "rot_x_power2": rng.normal(size=n_tp),
+        "rot_y_power2": rng.normal(size=n_tp),
+        "rot_z_power2": rng.normal(size=n_tp),
+        "trans_x_derivative1_power2": rng.normal(size=n_tp),
+        "trans_y_derivative1_power2": rng.normal(size=n_tp),
+        "trans_z_derivative1_power2": rng.normal(size=n_tp),
+        "rot_x_derivative1_power2": rng.normal(size=n_tp),
+        "rot_y_derivative1_power2": rng.normal(size=n_tp),
+        "rot_z_derivative1_power2": rng.normal(size=n_tp),
     }
     # DCT drift cosines — fmriprep emits cosine00..cosineNN
     for i in range(10):
-        base[f'cosine{i:02d}'] = rng.normal(size=n_tp)
+        base[f"cosine{i:02d}"] = rng.normal(size=n_tp)
     # Tissue confounds (FC denoising) — must NOT enter the task design matrix
-    base['global_signal'] = rng.normal(size=n_tp)
-    base['csf'] = rng.normal(size=n_tp)
-    base['white_matter'] = rng.normal(size=n_tp)
+    base["global_signal"] = rng.normal(size=n_tp)
+    base["csf"] = rng.normal(size=n_tp)
+    base["white_matter"] = rng.normal(size=n_tp)
     # aCompCor — should also be excluded from the task design matrix
     for i in range(5):
-        base[f'a_comp_cor_{i:02d}'] = rng.normal(size=n_tp)
+        base[f"a_comp_cor_{i:02d}"] = rng.normal(size=n_tp)
     # Decoys that must NOT be picked up by ``motion_outlier\d+``.
-    base['framewise_displacement'] = rng.normal(size=n_tp).astype(float)
-    base['rmsd'] = rng.normal(size=n_tp).astype(float)
+    base["framewise_displacement"] = rng.normal(size=n_tp).astype(float)
+    base["rmsd"] = rng.normal(size=n_tp).astype(float)
     # One-hot motion-outlier spikes: each fires at a single TR.
     for i in range(n_outliers):
         col = np.zeros(n_tp)
         col[10 + i * 7] = 1.0
-        base[f'motion_outlier{i:02d}'] = col
+        base[f"motion_outlier{i:02d}"] = col
 
     df = pd.DataFrame(base)
-    path = tmp_path / 'confounds.tsv'
-    df.to_csv(path, sep='\t', index=False)
+    path = tmp_path / "confounds.tsv"
+    df.to_csv(path, sep="\t", index=False)
     return str(path)
 
 
@@ -109,15 +109,15 @@ def _make_confounds_tsv(tmp_path, n_tp: int = 200, n_outliers: int = 5,
 
 def test_base_pattern_matches_motion_outlier_columns():
     """``motion_outlier_NN`` columns are captured by the base regex."""
-    pattern = _get_base_confound_pattern('flanker', 'validation')
+    pattern = _get_base_confound_pattern("flanker", "validation")
     for i in range(10):
-        col = f'motion_outlier{i:02d}'
+        col = f"motion_outlier{i:02d}"
         # The pattern is used with pandas.filter(regex=...); .filter does a
         # search, not a fullmatch, so use re.search to mirror behavior.
         import re
+
         assert re.search(pattern, col), (
-            f'Base confound regex {pattern!r} did not match expected spike '
-            f'column {col!r}.'
+            f"Base confound regex {pattern!r} did not match expected spike " f"column {col!r}."
         )
 
 
@@ -129,11 +129,12 @@ def test_base_pattern_excludes_continuous_motion_metrics():
     near-collinear columns.
     """
     import re
-    pattern = _get_base_confound_pattern('flanker', 'validation')
-    for decoy in ('framewise_displacement', 'rmsd', 'dvars', 'std_dvars'):
+
+    pattern = _get_base_confound_pattern("flanker", "validation")
+    for decoy in ("framewise_displacement", "rmsd", "dvars", "std_dvars"):
         assert not re.search(pattern, decoy), (
-            f'Decoy column {decoy!r} should NOT be selected by the base '
-            f'regex; pattern={pattern!r}.'
+            f"Decoy column {decoy!r} should NOT be selected by the base "
+            f"regex; pattern={pattern!r}."
         )
 
 
@@ -147,19 +148,16 @@ def test_load_and_process_confounds_includes_motion_outlier_columns(tmp_path):
     through ``load_and_process_confounds`` with those 5 columns present.
     """
     path = _make_confounds_tsv(tmp_path, n_tp=200, n_outliers=5)
-    df = load_and_process_confounds(path, 'flanker', sample_type='validation')
+    df = load_and_process_confounds(path, "flanker", sample_type="validation")
 
-    outlier_cols = [c for c in df.columns if c.startswith('motion_outlier')]
-    assert len(outlier_cols) == 5, (
-        f'Expected 5 motion_outlier columns; got {outlier_cols}'
-    )
+    outlier_cols = [c for c in df.columns if c.startswith("motion_outlier")]
+    assert len(outlier_cols) == 5, f"Expected 5 motion_outlier columns; got {outlier_cols}"
 
     # Each spike column is one-hot — exactly one nonzero TR, value 1.0.
     for col in outlier_cols:
         nonzero = (df[col] != 0).sum()
         assert nonzero == 1, (
-            f'{col} should be one-hot (single 1, rest zeros); '
-            f'got {nonzero} nonzero rows'
+            f"{col} should be one-hot (single 1, rest zeros); " f"got {nonzero} nonzero rows"
         )
 
 
@@ -172,15 +170,15 @@ def test_load_and_process_confounds_handles_zero_outlier_scan(tmp_path):
     which is the historical behavior. This must not crash or warn.
     """
     path = _make_confounds_tsv(tmp_path, n_tp=200, n_outliers=0)
-    df = load_and_process_confounds(path, 'flanker', sample_type='validation')
+    df = load_and_process_confounds(path, "flanker", sample_type="validation")
 
-    outlier_cols = [c for c in df.columns if c.startswith('motion_outlier')]
+    outlier_cols = [c for c in df.columns if c.startswith("motion_outlier")]
     assert outlier_cols == []
     # The 24-parameter model + cosines should still be intact.
-    motion_cols = [c for c in df.columns if c.startswith(('trans_', 'rot_'))]
+    motion_cols = [c for c in df.columns if c.startswith(("trans_", "rot_"))]
     assert len(motion_cols) == 24, (
-        f'24-parameter motion model should still produce 24 columns; '
-        f'got {len(motion_cols)}: {motion_cols}'
+        f"24-parameter motion model should still produce 24 columns; "
+        f"got {len(motion_cols)}: {motion_cols}"
     )
 
 
@@ -194,15 +192,15 @@ def test_load_and_process_confounds_excludes_tissue_signals(tmp_path):
     ``--fc-confounds``).
     """
     path = _make_confounds_tsv(tmp_path, n_tp=200, n_outliers=2)
-    df = load_and_process_confounds(path, 'flanker', sample_type='validation')
+    df = load_and_process_confounds(path, "flanker", sample_type="validation")
 
-    for tissue_col in ('global_signal', 'csf', 'white_matter'):
+    for tissue_col in ("global_signal", "csf", "white_matter"):
         assert tissue_col not in df.columns, (
-            f'{tissue_col} must not be in the task-GLM confound set; '
-            f'it belongs in the FC-confounds path (--fc-confounds).'
+            f"{tissue_col} must not be in the task-GLM confound set; "
+            f"it belongs in the FC-confounds path (--fc-confounds)."
         )
-    a_comp = [c for c in df.columns if c.startswith('a_comp_cor')]
-    assert a_comp == [], f'aCompCor columns leaked into task confounds: {a_comp}'
+    a_comp = [c for c in df.columns if c.startswith("a_comp_cor")]
+    assert a_comp == [], f"aCompCor columns leaked into task confounds: {a_comp}"
 
 
 def test_load_and_process_confounds_excludes_decoy_motion_metrics(tmp_path):
@@ -212,11 +210,11 @@ def test_load_and_process_confounds_excludes_decoy_motion_metrics(tmp_path):
     would risk near-collinearity in the design matrix.
     """
     path = _make_confounds_tsv(tmp_path, n_tp=200, n_outliers=2)
-    df = load_and_process_confounds(path, 'flanker', sample_type='validation')
-    for decoy in ('framewise_displacement', 'rmsd'):
+    df = load_and_process_confounds(path, "flanker", sample_type="validation")
+    for decoy in ("framewise_displacement", "rmsd"):
         assert decoy not in df.columns, (
-            f'{decoy} must not be in the task-GLM confound set; '
-            f'it duplicates variance the 24-parameter motion model handles.'
+            f"{decoy} must not be in the task-GLM confound set; "
+            f"it duplicates variance the 24-parameter motion model handles."
         )
 
 
@@ -233,16 +231,16 @@ def test_motion_outlier_columns_are_orthogonal_to_continuous_motion(tmp_path):
     Friston regressors.
     """
     path = _make_confounds_tsv(tmp_path, n_tp=400, n_outliers=8)
-    df = load_and_process_confounds(path, 'flanker', sample_type='validation')
+    df = load_and_process_confounds(path, "flanker", sample_type="validation")
 
-    spike_cols = [c for c in df.columns if c.startswith('motion_outlier')]
-    motion_cols = [c for c in df.columns if c.startswith(('trans_', 'rot_'))]
-    assert spike_cols and motion_cols, 'fixture setup error'
+    spike_cols = [c for c in df.columns if c.startswith("motion_outlier")]
+    motion_cols = [c for c in df.columns if c.startswith(("trans_", "rot_"))]
+    assert spike_cols and motion_cols, "fixture setup error"
 
     corrs = df[spike_cols + motion_cols].corr().loc[spike_cols, motion_cols]
     max_abs = corrs.abs().values.max()
     assert max_abs < 0.25, (
-        f'A motion_outlier spike column is unexpectedly correlated with a '
-        f'continuous motion regressor (max |r| = {max_abs:.3f}). One-hot '
-        f'spikes should be near-orthogonal to continuous motion.'
+        f"A motion_outlier spike column is unexpectedly correlated with a "
+        f"continuous motion regressor (max |r| = {max_abs:.3f}). One-hot "
+        f"spikes should be near-orthogonal to continuous motion."
     )

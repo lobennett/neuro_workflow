@@ -2,10 +2,9 @@
 
 import argparse
 import sys
-from pathlib import Path
 
-from neuro_workflow.pipelines.base import get_pipeline, list_pipelines, TEMPLATE_DIR
 from neuro_workflow.core.slurm import render_template
+from neuro_workflow.pipelines.base import TEMPLATE_DIR, get_pipeline, list_pipelines
 
 
 def cmd_show(args, remaining):
@@ -22,7 +21,10 @@ def cmd_show(args, remaining):
 
     pipeline = get_pipeline(args.pipeline)
     if pipeline is None:
-        print(f"Error: unknown pipeline '{args.pipeline}'. Available: {', '.join(list_pipelines())}", file=sys.stderr)
+        print(
+            f"Error: unknown pipeline '{args.pipeline}'. Available: {', '.join(list_pipelines())}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Parse pipeline-specific args
@@ -45,7 +47,10 @@ def cmd_submit(args, remaining):
 
     pipeline = get_pipeline(args.pipeline)
     if pipeline is None:
-        print(f"Error: unknown pipeline '{args.pipeline}'. Available: {', '.join(list_pipelines())}", file=sys.stderr)
+        print(
+            f"Error: unknown pipeline '{args.pipeline}'. Available: {', '.join(list_pipelines())}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Parse pipeline-specific args

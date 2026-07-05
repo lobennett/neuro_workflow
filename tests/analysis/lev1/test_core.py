@@ -18,43 +18,43 @@ class TestCreateExclusionKey:
     def test_create_valid_key(self):
         """Test creating key with all required fields."""
         exclusion = {
-            'subject': 'sub-s001',
-            'session': 'ses-01',
-            'task': 'rest',
-            'run': 'run-1',
+            "subject": "sub-s001",
+            "session": "ses-01",
+            "task": "rest",
+            "run": "run-1",
         }
-        expected = 'sub-s001_ses-01_rest_run-1'
+        expected = "sub-s001_ses-01_rest_run-1"
         assert create_exclusion_key(exclusion) == expected
 
     def test_create_key_missing_required_field(self):
         """Test that missing required field raises KeyError."""
         exclusion = {
-            'subject': 'sub-s001',
-            'session': 'ses-01',
-            'task': 'rest',
+            "subject": "sub-s001",
+            "session": "ses-01",
+            "task": "rest",
             # Missing 'run'
         }
-        with pytest.raises(KeyError, match='Missing required keys in exclusion'):
+        with pytest.raises(KeyError, match="Missing required keys in exclusion"):
             create_exclusion_key(exclusion)
 
     def test_create_key_multiple_missing_fields(self):
         """Test handling multiple missing fields."""
         exclusion = {
-            'subject': 'sub-s001'
+            "subject": "sub-s001"
             # Missing 'session', 'task', 'run'
         }
-        with pytest.raises(KeyError, match='Missing required keys in exclusion'):
+        with pytest.raises(KeyError, match="Missing required keys in exclusion"):
             create_exclusion_key(exclusion)
 
     def test_create_key_empty_values(self):
         """Test creating key with empty string values."""
         exclusion = {
-            'subject': 'sub-s001',
-            'session': '',
-            'task': 'rest',
-            'run': 'run-1',
+            "subject": "sub-s001",
+            "session": "",
+            "task": "rest",
+            "run": "run-1",
         }
-        expected = 'sub-s001__rest_run-1'
+        expected = "sub-s001__rest_run-1"
         assert create_exclusion_key(exclusion) == expected
 
 
@@ -65,102 +65,102 @@ class TestLoadExclusionsByType:
         """Test loading all exclusion types from file."""
         # Create test exclusions data
         exclusions_data = {
-            'fmriprep_exclusions': [
+            "fmriprep_exclusions": [
                 {
-                    'subject': 'sub-s001',
-                    'session': 'ses-01',
-                    'task': 'rest',
-                    'run': 'run-1',
+                    "subject": "sub-s001",
+                    "session": "ses-01",
+                    "task": "rest",
+                    "run": "run-1",
                 },
                 {
-                    'subject': 'sub-002',
-                    'session': 'ses-01',
-                    'task': 'rest',
-                    'run': 'run-1',
+                    "subject": "sub-002",
+                    "session": "ses-01",
+                    "task": "rest",
+                    "run": "run-1",
                 },
             ],
-            'behavioral_exclusions': [
+            "behavioral_exclusions": [
                 {
-                    'subject': 'sub-003',
-                    'session': 'ses-01',
-                    'task': 'task',
-                    'run': 'run-1',
+                    "subject": "sub-003",
+                    "session": "ses-01",
+                    "task": "task",
+                    "run": "run-1",
                 }
             ],
-            'quality_exclusions': [
+            "quality_exclusions": [
                 {
-                    'subject': 'sub-004',
-                    'session': 'ses-01',
-                    'task': 'rest',
-                    'run': 'run-2',
+                    "subject": "sub-004",
+                    "session": "ses-01",
+                    "task": "rest",
+                    "run": "run-2",
                 }
             ],
         }
 
         # Write to temporary file
-        exclusions_file = temp_dir / 'test_exclusions.json'
-        with open(exclusions_file, 'w') as f:
+        exclusions_file = temp_dir / "test_exclusions.json"
+        with open(exclusions_file, "w") as f:
             json.dump(exclusions_data, f)
 
         # Load all types
         result = load_exclusions_by_type(exclusions_file)
 
         assert len(result) == 3
-        assert 'fmriprep_exclusions' in result
-        assert 'behavioral_exclusions' in result
-        assert 'quality_exclusions' in result
+        assert "fmriprep_exclusions" in result
+        assert "behavioral_exclusions" in result
+        assert "quality_exclusions" in result
 
         # Check specific exclusions
-        assert len(result['fmriprep_exclusions']) == 2
-        assert len(result['behavioral_exclusions']) == 1
-        assert len(result['quality_exclusions']) == 1
+        assert len(result["fmriprep_exclusions"]) == 2
+        assert len(result["behavioral_exclusions"]) == 1
+        assert len(result["quality_exclusions"]) == 1
 
-        assert 'sub-s001_ses-01_rest_run-1' in result['fmriprep_exclusions']
-        assert 'sub-003_ses-01_task_run-1' in result['behavioral_exclusions']
+        assert "sub-s001_ses-01_rest_run-1" in result["fmriprep_exclusions"]
+        assert "sub-003_ses-01_task_run-1" in result["behavioral_exclusions"]
 
     def test_load_specific_types(self, temp_dir):
         """Test loading only specified exclusion types."""
         exclusions_data = {
-            'fmriprep_exclusions': [
+            "fmriprep_exclusions": [
                 {
-                    'subject': 'sub-s001',
-                    'session': 'ses-01',
-                    'task': 'rest',
-                    'run': 'run-1',
+                    "subject": "sub-s001",
+                    "session": "ses-01",
+                    "task": "rest",
+                    "run": "run-1",
                 }
             ],
-            'behavioral_exclusions': [
+            "behavioral_exclusions": [
                 {
-                    'subject': 'sub-002',
-                    'session': 'ses-01',
-                    'task': 'task',
-                    'run': 'run-1',
+                    "subject": "sub-002",
+                    "session": "ses-01",
+                    "task": "task",
+                    "run": "run-1",
                 }
             ],
         }
 
-        exclusions_file = temp_dir / 'test_exclusions.json'
-        with open(exclusions_file, 'w') as f:
+        exclusions_file = temp_dir / "test_exclusions.json"
+        with open(exclusions_file, "w") as f:
             json.dump(exclusions_data, f)
 
         # Load only fmriprep exclusions
-        result = load_exclusions_by_type(exclusions_file, ['fmriprep_exclusions'])
+        result = load_exclusions_by_type(exclusions_file, ["fmriprep_exclusions"])
 
         assert len(result) == 1
-        assert 'fmriprep_exclusions' in result
-        assert 'behavioral_exclusions' not in result
-        assert len(result['fmriprep_exclusions']) == 1
+        assert "fmriprep_exclusions" in result
+        assert "behavioral_exclusions" not in result
+        assert len(result["fmriprep_exclusions"]) == 1
 
     def test_load_nonexistent_file(self, temp_dir):
         """Test loading from nonexistent file returns empty dict."""
-        nonexistent_file = temp_dir / 'nonexistent.json'
+        nonexistent_file = temp_dir / "nonexistent.json"
         result = load_exclusions_by_type(nonexistent_file)
         assert result == {}
 
     def test_load_invalid_json(self, temp_dir):
         """Test loading invalid JSON file returns empty dict."""
-        invalid_file = temp_dir / 'invalid.json'
-        invalid_file.write_text('invalid json content')
+        invalid_file = temp_dir / "invalid.json"
+        invalid_file.write_text("invalid json content")
 
         result = load_exclusions_by_type(invalid_file)
         assert result == {}
@@ -168,79 +168,79 @@ class TestLoadExclusionsByType:
     def test_load_missing_exclusion_type(self, temp_dir):
         """Test requesting nonexistent exclusion type."""
         exclusions_data = {
-            'fmriprep_exclusions': [
+            "fmriprep_exclusions": [
                 {
-                    'subject': 'sub-s001',
-                    'session': 'ses-01',
-                    'task': 'rest',
-                    'run': 'run-1',
+                    "subject": "sub-s001",
+                    "session": "ses-01",
+                    "task": "rest",
+                    "run": "run-1",
                 }
             ]
         }
 
-        exclusions_file = temp_dir / 'test_exclusions.json'
-        with open(exclusions_file, 'w') as f:
+        exclusions_file = temp_dir / "test_exclusions.json"
+        with open(exclusions_file, "w") as f:
             json.dump(exclusions_data, f)
 
         # Request nonexistent type
-        result = load_exclusions_by_type(exclusions_file, ['missing_type'])
+        result = load_exclusions_by_type(exclusions_file, ["missing_type"])
         assert result == {}
 
     def test_load_invalid_exclusion_structure(self, temp_dir):
         """Test handling exclusions with invalid structure."""
         exclusions_data = {
-            'fmriprep_exclusions': [
+            "fmriprep_exclusions": [
                 {
-                    'subject': 'sub-s001',
-                    'session': 'ses-01',
-                    'task': 'rest',
-                    'run': 'run-1',
+                    "subject": "sub-s001",
+                    "session": "ses-01",
+                    "task": "rest",
+                    "run": "run-1",
                 },
-                {'subject': 'sub-002'},  # Missing required fields
+                {"subject": "sub-002"},  # Missing required fields
                 {
-                    'subject': 'sub-003',
-                    'session': 'ses-01',
-                    'task': 'rest',
-                    'run': 'run-1',
+                    "subject": "sub-003",
+                    "session": "ses-01",
+                    "task": "rest",
+                    "run": "run-1",
                 },
             ]
         }
 
-        exclusions_file = temp_dir / 'test_exclusions.json'
-        with open(exclusions_file, 'w') as f:
+        exclusions_file = temp_dir / "test_exclusions.json"
+        with open(exclusions_file, "w") as f:
             json.dump(exclusions_data, f)
 
-        result = load_exclusions_by_type(exclusions_file, ['fmriprep_exclusions'])
+        result = load_exclusions_by_type(exclusions_file, ["fmriprep_exclusions"])
 
         # Should skip invalid exclusion but process valid ones
-        assert len(result['fmriprep_exclusions']) == 2
-        assert 'sub-s001_ses-01_rest_run-1' in result['fmriprep_exclusions']
-        assert 'sub-003_ses-01_rest_run-1' in result['fmriprep_exclusions']
+        assert len(result["fmriprep_exclusions"]) == 2
+        assert "sub-s001_ses-01_rest_run-1" in result["fmriprep_exclusions"]
+        assert "sub-003_ses-01_rest_run-1" in result["fmriprep_exclusions"]
 
     def test_load_non_list_exclusion_type(self, temp_dir):
         """Test handling exclusion type that is not a list."""
         exclusions_data = {
-            'fmriprep_exclusions': 'not a list',
-            'behavioral_exclusions': [
+            "fmriprep_exclusions": "not a list",
+            "behavioral_exclusions": [
                 {
-                    'subject': 'sub-s001',
-                    'session': 'ses-01',
-                    'task': 'task',
-                    'run': 'run-1',
+                    "subject": "sub-s001",
+                    "session": "ses-01",
+                    "task": "task",
+                    "run": "run-1",
                 }
             ],
         }
 
-        exclusions_file = temp_dir / 'test_exclusions.json'
-        with open(exclusions_file, 'w') as f:
+        exclusions_file = temp_dir / "test_exclusions.json"
+        with open(exclusions_file, "w") as f:
             json.dump(exclusions_data, f)
 
         result = load_exclusions_by_type(exclusions_file)
 
         # Should skip non-list type but process valid ones
-        assert 'fmriprep_exclusions' not in result
-        assert 'behavioral_exclusions' in result
-        assert len(result['behavioral_exclusions']) == 1
+        assert "fmriprep_exclusions" not in result
+        assert "behavioral_exclusions" in result
+        assert len(result["behavioral_exclusions"]) == 1
 
 
 class TestLoadExclusions:
@@ -249,86 +249,86 @@ class TestLoadExclusions:
     def test_load_combined_exclusions(self, temp_dir):
         """Test loading and combining all exclusions."""
         exclusions_data = {
-            'fmriprep_exclusions': [
+            "fmriprep_exclusions": [
                 {
-                    'subject': 'sub-s001',
-                    'session': 'ses-01',
-                    'task': 'rest',
-                    'run': 'run-1',
+                    "subject": "sub-s001",
+                    "session": "ses-01",
+                    "task": "rest",
+                    "run": "run-1",
                 },
                 {
-                    'subject': 'sub-002',
-                    'session': 'ses-01',
-                    'task': 'rest',
-                    'run': 'run-1',
+                    "subject": "sub-002",
+                    "session": "ses-01",
+                    "task": "rest",
+                    "run": "run-1",
                 },
             ],
-            'behavioral_exclusions': [
+            "behavioral_exclusions": [
                 {
-                    'subject': 'sub-003',
-                    'session': 'ses-01',
-                    'task': 'task',
-                    'run': 'run-1',
+                    "subject": "sub-003",
+                    "session": "ses-01",
+                    "task": "task",
+                    "run": "run-1",
                 },
                 {
-                    'subject': 'sub-s001',
-                    'session': 'ses-01',
-                    'task': 'rest',
-                    'run': 'run-1',
+                    "subject": "sub-s001",
+                    "session": "ses-01",
+                    "task": "rest",
+                    "run": "run-1",
                 },  # Duplicate
             ],
         }
 
-        exclusions_file = temp_dir / 'test_exclusions.json'
-        with open(exclusions_file, 'w') as f:
+        exclusions_file = temp_dir / "test_exclusions.json"
+        with open(exclusions_file, "w") as f:
             json.dump(exclusions_data, f)
 
         result = load_exclusions(exclusions_file)
 
         # Should combine and deduplicate
         assert len(result) == 3  # Unique exclusions
-        assert 'sub-s001_ses-01_rest_run-1' in result
-        assert 'sub-002_ses-01_rest_run-1' in result
-        assert 'sub-003_ses-01_task_run-1' in result
+        assert "sub-s001_ses-01_rest_run-1" in result
+        assert "sub-002_ses-01_rest_run-1" in result
+        assert "sub-003_ses-01_task_run-1" in result
 
     def test_load_specific_exclusion_types_only(self, temp_dir):
         """Test loading only specific exclusion types."""
         exclusions_data = {
-            'fmriprep_exclusions': [
+            "fmriprep_exclusions": [
                 {
-                    'subject': 'sub-s001',
-                    'session': 'ses-01',
-                    'task': 'rest',
-                    'run': 'run-1',
+                    "subject": "sub-s001",
+                    "session": "ses-01",
+                    "task": "rest",
+                    "run": "run-1",
                 }
             ],
-            'behavioral_exclusions': [
+            "behavioral_exclusions": [
                 {
-                    'subject': 'sub-002',
-                    'session': 'ses-01',
-                    'task': 'task',
-                    'run': 'run-1',
+                    "subject": "sub-002",
+                    "session": "ses-01",
+                    "task": "task",
+                    "run": "run-1",
                 }
             ],
         }
 
-        exclusions_file = temp_dir / 'test_exclusions.json'
-        with open(exclusions_file, 'w') as f:
+        exclusions_file = temp_dir / "test_exclusions.json"
+        with open(exclusions_file, "w") as f:
             json.dump(exclusions_data, f)
 
         # Load only behavioral exclusions
-        result = load_exclusions(exclusions_file, ['behavioral_exclusions'])
+        result = load_exclusions(exclusions_file, ["behavioral_exclusions"])
 
         assert len(result) == 1
-        assert 'sub-002_ses-01_task_run-1' in result
-        assert 'sub-s001_ses-01_rest_run-1' not in result
+        assert "sub-002_ses-01_task_run-1" in result
+        assert "sub-s001_ses-01_rest_run-1" not in result
 
     def test_load_empty_exclusions(self, temp_dir):
         """Test loading file with no exclusions."""
-        exclusions_data = {'fmriprep_exclusions': [], 'behavioral_exclusions': []}
+        exclusions_data = {"fmriprep_exclusions": [], "behavioral_exclusions": []}
 
-        exclusions_file = temp_dir / 'test_exclusions.json'
-        with open(exclusions_file, 'w') as f:
+        exclusions_file = temp_dir / "test_exclusions.json"
+        with open(exclusions_file, "w") as f:
             json.dump(exclusions_data, f)
 
         result = load_exclusions(exclusions_file)
@@ -340,33 +340,33 @@ class TestNormalizeSubjectId:
 
     def test_adds_prefix_to_plain_id(self):
         """Test adding sub- prefix to plain subject ID."""
-        result = normalize_subject_id('001')
-        assert result == 'sub-001'
+        result = normalize_subject_id("001")
+        assert result == "sub-001"
 
     def test_adds_prefix_to_numeric_string(self):
         """Test adding sub- prefix to numeric string."""
-        result = normalize_subject_id('123')
-        assert result == 'sub-123'
+        result = normalize_subject_id("123")
+        assert result == "sub-123"
 
     def test_preserves_existing_prefix(self):
         """Test that existing sub- prefix is preserved."""
-        result = normalize_subject_id('sub-001')
-        assert result == 'sub-001'
+        result = normalize_subject_id("sub-001")
+        assert result == "sub-001"
 
     def test_preserves_existing_prefix_with_alphanumeric(self):
         """Test that existing sub- prefix is preserved with alphanumeric ID."""
-        result = normalize_subject_id('sub-s001')
-        assert result == 'sub-s001'
+        result = normalize_subject_id("sub-s001")
+        assert result == "sub-s001"
 
     def test_handles_empty_string(self):
         """Test handling empty string input."""
-        result = normalize_subject_id('')
-        assert result == 'sub-'
+        result = normalize_subject_id("")
+        assert result == "sub-"
 
     def test_handles_only_sub_prefix(self):
         """Test handling input that is only 'sub-'."""
-        result = normalize_subject_id('sub-')
-        assert result == 'sub-'
+        result = normalize_subject_id("sub-")
+        assert result == "sub-"
 
 
 class TestExclusionKeyMatchesRunnerForAllGenerators:
@@ -386,24 +386,32 @@ class TestExclusionKeyMatchesRunnerForAllGenerators:
         from neuro_workflow.analysis.lev1.runner import _run_base_filename
 
         # The scan the runner is iterating over.
-        subj_id, session, task_name, run = 'sub-s10', 'ses-01', 'goNogo', 'run-1'
+        subj_id, session, task_name, run = "sub-s10", "ses-01", "goNogo", "run-1"
         runner_key = _run_base_filename(subj_id, session, task_name, run)
 
         # Motion-style compiled entry (prefixed task, as motion.py emits).
         motion_entry = {
-            'subject': 'sub-s10', 'session': 'ses-01',
-            'task': 'task-goNogo', 'run': 'run-1',
-            'source': 'motion', 'action': 'exclude', 'reason': 'fd',
+            "subject": "sub-s10",
+            "session": "ses-01",
+            "task": "task-goNogo",
+            "run": "run-1",
+            "source": "motion",
+            "action": "exclude",
+            "reason": "fd",
         }
         # Behavioral-style compiled entry — must ALSO be prefixed to match.
         behavioral_entry = {
-            'subject': 'sub-s10', 'session': 'ses-01',
-            'task': 'task-goNogo', 'run': 'run-1',
-            'source': 'behavioral-qc', 'action': 'exclude', 'reason': 'omission',
+            "subject": "sub-s10",
+            "session": "ses-01",
+            "task": "task-goNogo",
+            "run": "run-1",
+            "source": "behavioral-qc",
+            "action": "exclude",
+            "reason": "omission",
         }
 
-        compiled = temp_dir / 'compiled_exclusions.json'
-        with open(compiled, 'w') as f:
+        compiled = temp_dir / "compiled_exclusions.json"
+        with open(compiled, "w") as f:
             json.dump([motion_entry, behavioral_entry], f)
 
         # This is exactly the code path lev1 uses (prepare.py -> load_exclusions).
@@ -412,38 +420,42 @@ class TestExclusionKeyMatchesRunnerForAllGenerators:
         # Both generators' entries must land on the runner's key.
         assert create_exclusion_key(motion_entry) == runner_key
         assert create_exclusion_key(behavioral_entry) == runner_key
-        assert runner_key in exclusions, (
-            f'{runner_key!r} not in {sorted(exclusions)!r}: lev1 would NOT skip this scan'
-        )
+        assert (
+            runner_key in exclusions
+        ), f"{runner_key!r} not in {sorted(exclusions)!r}: lev1 would NOT skip this scan"
 
     def test_behavioral_generator_emits_prefixed_task_and_run(self, temp_dir):
         """The behavioral QC stage must emit prefixed task/run on exclusion
         entries (so they match the runner key). The trim entries keep bare task
         because events.trim re-prefixes; we only pin the exclusion entries here.
         """
-        pytest.importorskip('pandas')
+        pytest.importorskip("pandas")
         import pandas as pd
+
         from neuro_workflow.events.qc import run_qc
 
         # Build a sourcedata CSV for a generic task that trips the omission-rate
         # threshold (all test trials are omissions -> omission_rate=1.0) so an
         # exclusion entry is produced via check_other_exclusion.
-        beh_dir = temp_dir / 'sourcedata' / 'sub-s10' / 'ses-01' / 'beh'
+        beh_dir = temp_dir / "sourcedata" / "sub-s10" / "ses-01" / "beh"
         beh_dir.mkdir(parents=True)
         n = 40
-        df = pd.DataFrame({
-            'trial_id': ['test_trial'] * n,
-            'rt': [-1] * n,                   # all omissions -> omission_rate = 1.0
-            'key_press': [-1] * n,
-            'correct_response': [1] * n,
-        })
-        df.to_csv(beh_dir / 'sub-s10_ses-01_task-flanker_run-1_desc-raw.csv', index=False)
+        df = pd.DataFrame(
+            {
+                "trial_id": ["test_trial"] * n,
+                "rt": [-1] * n,  # all omissions -> omission_rate = 1.0
+                "key_press": [-1] * n,
+                "correct_response": [1] * n,
+            }
+        )
+        df.to_csv(beh_dir / "sub-s10_ses-01_task-flanker_run-1_desc-raw.csv", index=False)
 
         exclusion_entries, _trim_entries = run_qc(
-            behavioral_dir=temp_dir / 'sourcedata', bids_dir=temp_dir,
+            behavioral_dir=temp_dir / "sourcedata",
+            bids_dir=temp_dir,
         )
 
-        assert exclusion_entries, 'expected at least one behavioral exclusion entry'
+        assert exclusion_entries, "expected at least one behavioral exclusion entry"
         for entry in exclusion_entries:
-            assert entry['task'].startswith('task-'), entry
-            assert entry['run'].startswith('run-'), entry
+            assert entry["task"].startswith("task-"), entry
+            assert entry["run"].startswith("run-"), entry

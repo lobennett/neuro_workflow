@@ -11,6 +11,7 @@ primitive into the lev1 run:
 
 Written red-first.
 """
+
 from __future__ import annotations
 
 import json
@@ -210,17 +211,36 @@ def test_lev1_parser_has_allow_dirty_default_false():
     from neuro_workflow.analysis.lev1.run import get_parser
 
     parser = get_parser()
-    ns = parser.parse_args([
-        "--subj-id", "s10", "--task-name", "flanker",
-        "--bids-dir", "/b", "--fmriprep-dir", "/f",
-        "--exclusions-file", "/e.json",
-    ])
+    ns = parser.parse_args(
+        [
+            "--subj-id",
+            "s10",
+            "--task-name",
+            "flanker",
+            "--bids-dir",
+            "/b",
+            "--fmriprep-dir",
+            "/f",
+            "--exclusions-file",
+            "/e.json",
+        ]
+    )
     assert hasattr(ns, "allow_dirty")
     assert ns.allow_dirty is False
 
-    ns2 = parser.parse_args([
-        "--subj-id", "s10", "--task-name", "flanker",
-        "--bids-dir", "/b", "--fmriprep-dir", "/f",
-        "--exclusions-file", "/e.json", "--allow-dirty",
-    ])
+    ns2 = parser.parse_args(
+        [
+            "--subj-id",
+            "s10",
+            "--task-name",
+            "flanker",
+            "--bids-dir",
+            "/b",
+            "--fmriprep-dir",
+            "/f",
+            "--exclusions-file",
+            "/e.json",
+            "--allow-dirty",
+        ]
+    )
     assert ns2.allow_dirty is True

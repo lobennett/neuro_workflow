@@ -1,8 +1,9 @@
 """Tests for scripts/trim_bold.py"""
+
 import json
-import numpy as np
+
 import nibabel as nib
-from pathlib import Path
+import numpy as np
 
 
 def make_bold(tmp_path, sub="s01", ses="ses-01", task="rest", run=1, echo=1, n_vols=163):

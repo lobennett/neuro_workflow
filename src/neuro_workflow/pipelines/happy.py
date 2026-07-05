@@ -25,13 +25,15 @@ def _discover_scans(bids_dir: str, version: str) -> list[dict]:
         rel = nifti.relative_to(bids)
         output = Path(bids_dir) / "derivatives" / f"rapidtide_{version}" / rel
 
-        scans.append({
-            "bold": str(nifti),
-            "bold_json": str(bold_json),
-            "phys_tsv": str(phys_tsv),
-            "phys_json": str(phys_json),
-            "output": str(output),
-        })
+        scans.append(
+            {
+                "bold": str(nifti),
+                "bold_json": str(bold_json),
+                "phys_tsv": str(phys_tsv),
+                "phys_json": str(phys_json),
+                "output": str(output),
+            }
+        )
 
     return scans
 
@@ -50,7 +52,9 @@ class HappyPipeline(ContainerPipeline):
         parser.add_argument("--version", default=None, help="Rapidtide version tag (e.g. 3.1.8)")
         parser.add_argument("--happy-args", default="", help="Additional happy arguments")
         parser.add_argument("--nthreads", type=int, default=None, help="CPUs per task (default: 4)")
-        parser.add_argument("--mem-per-cpu-gb", type=int, default=None, help="Memory per CPU in GB (default: 2)")
+        parser.add_argument(
+            "--mem-per-cpu-gb", type=int, default=None, help="Memory per CPU in GB (default: 2)"
+        )
         parser.add_argument("--time", default=None, help="SLURM time limit (default: 00:10:00)")
 
     def build_context(self, dataset_name: str, dataset_config: dict, args: Namespace) -> dict:
@@ -72,7 +76,9 @@ class HappyPipeline(ContainerPipeline):
         scan_list_file = deriv_dir / "scan_list.txt"
         with open(scan_list_file, "w") as f:
             for s in scans:
-                f.write(f"{s['bold']} {s['bold_json']} {s['phys_tsv']} {s['phys_json']} {s['output']}\n")
+                f.write(
+                    f"{s['bold']} {s['bold_json']} {s['phys_tsv']} {s['phys_json']} {s['output']}\n"
+                )
 
         image_path = str(Path(dataset_config["image_dir"]) / f"rapidtide_{args.version}")
 

@@ -11,12 +11,11 @@ import textwrap
 from pathlib import Path
 
 import pytest
-import yaml
 
 from neuro_workflow.analysis.task_config.loader import (
+    _TASKS_DIR,
     ContrastFormulaError,
     _load_yaml,
-    _TASKS_DIR,
     get_task_contrasts,
     list_available_tasks,
 )
@@ -47,6 +46,7 @@ def tmp_task_yaml(tmp_path, monkeypatch):
         tasks_dir.mkdir(exist_ok=True)
         # Patch the module-level _TASKS_DIR so _load_yaml resolves against tmp
         import neuro_workflow.analysis.task_config.loader as loader_mod
+
         monkeypatch.setattr(loader_mod, "_TASKS_DIR", tasks_dir)
         # Also clear the lru_cache so the patched path is used
         loader_mod._get_task_config.cache_clear()
@@ -58,6 +58,7 @@ def tmp_task_yaml(tmp_path, monkeypatch):
 
     # Clear cache after each test so real tasks load normally afterwards
     import neuro_workflow.analysis.task_config.loader as loader_mod
+
     loader_mod._get_task_config.cache_clear()
 
 
@@ -260,8 +261,6 @@ class TestRealTasksAllValidate:
 
     def test_all_available_non_placeholder_tasks_load(self):
         """Every task returned by list_available_tasks that has regressors must validate."""
-        import neuro_workflow.analysis.task_config.loader as loader_mod
-        from neuro_workflow.analysis.task_config.loader import TaskNotConfiguredError
         import yaml as _yaml
 
         failed = []

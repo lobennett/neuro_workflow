@@ -1,26 +1,39 @@
 import json
-from pathlib import Path
-from neuro_workflow.testing.reproduce.snapshot import load_inventory, dump_inventory
+
 from neuro_workflow.testing.fake_flywheel import FlywheelCohortSpec
+from neuro_workflow.testing.reproduce.snapshot import dump_inventory, load_inventory
 
 
 def _sample_inventory():
     return {
         "project": "r01network",
         "subjects": [
-            {"label": "s03", "sessions": [
-                {"label": "ses-A", "timestamp": "2021-01-15T10:30:00+00:00", "acquisitions": [
-                    {"label": "task-flanker_bold", "timestamp": "2021-01-15T10:35:00+00:00",
-                     "echoes": 3, "n_trs": 10},
-                    {"label": "T1w MPRAGE PROMO", "timestamp": "2021-01-15T10:50:00+00:00"},
-                ]},
-            ]},
+            {
+                "label": "s03",
+                "sessions": [
+                    {
+                        "label": "ses-A",
+                        "timestamp": "2021-01-15T10:30:00+00:00",
+                        "acquisitions": [
+                            {
+                                "label": "task-flanker_bold",
+                                "timestamp": "2021-01-15T10:35:00+00:00",
+                                "echoes": 3,
+                                "n_trs": 10,
+                            },
+                            {"label": "T1w MPRAGE PROMO", "timestamp": "2021-01-15T10:50:00+00:00"},
+                        ],
+                    },
+                ],
+            },
         ],
     }
 
 
 def _w(tmp_path, inv):
-    p = tmp_path / "inv.json"; p.write_text(json.dumps(inv)); return p
+    p = tmp_path / "inv.json"
+    p.write_text(json.dumps(inv))
+    return p
 
 
 def test_load_inventory_builds_spec(tmp_path):
@@ -40,29 +53,37 @@ def test_inventory_roundtrip(tmp_path):
     out = tmp_path / "rt.json"
     dump_inventory(spec, out)
     spec2 = load_inventory(out)
-    assert [a.label for a in spec2.subjects[0].sessions[0].acquisitions] == \
-           [a.label for a in spec.subjects[0].sessions[0].acquisitions]
+    assert [a.label for a in spec2.subjects[0].sessions[0].acquisitions] == [
+        a.label for a in spec.subjects[0].sessions[0].acquisitions
+    ]
 
 
 import sys
 import types
 
-from neuro_workflow.testing.reproduce.replay import replay_to_bids
 from neuro_workflow.testing.fake_flywheel import (
-    FlywheelCohortSpec, FlywheelSubjectSpec, FlywheelSessionSpec, FlywheelAcqSpec)
+    FlywheelAcqSpec,
+    FlywheelSessionSpec,
+    FlywheelSubjectSpec,
+)
+from neuro_workflow.testing.reproduce.replay import replay_to_bids
 
 
 def _mini_spec():
-    acq = FlywheelAcqSpec(label="task-flanker_bold", timestamp="2021-01-15T10:35:00+00:00",
-                          echoes=1, n_trs=12)
-    sess = FlywheelSessionSpec(label="ses-A", timestamp="2021-01-15T10:30:00+00:00",
-                               acquisitions=[acq])
-    return FlywheelCohortSpec(project="r01network",
-                              subjects=[FlywheelSubjectSpec(label="s03", sessions=[sess])])
+    acq = FlywheelAcqSpec(
+        label="task-flanker_bold", timestamp="2021-01-15T10:35:00+00:00", echoes=1, n_trs=12
+    )
+    sess = FlywheelSessionSpec(
+        label="ses-A", timestamp="2021-01-15T10:30:00+00:00", acquisitions=[acq]
+    )
+    return FlywheelCohortSpec(
+        project="r01network", subjects=[FlywheelSubjectSpec(label="s03", sessions=[sess])]
+    )
 
 
 def test_replay_produces_named_trimmed_bids(tmp_path, monkeypatch):
     spec = _mini_spec()
+
     def install(fake):
         # flywheel SDK is not installed in the test venv; inject a stub module
         # whose Client returns our fake, matching the seam used in
@@ -70,11 +91,18 @@ def test_replay_produces_named_trimmed_bids(tmp_path, monkeypatch):
         stub = types.ModuleType("flywheel")
         stub.Client = lambda *a, **k: fake
         monkeypatch.setitem(sys.modules, "flywheel", stub)
-    bids = replay_to_bids(spec, tmp_path, sample_name="discovery",
-                          behavioral_dir=tmp_path / "empty_beh", install_flywheel=install)
+
+    bids = replay_to_bids(
+        spec,
+        tmp_path,
+        sample_name="discovery",
+        behavioral_dir=tmp_path / "empty_beh",
+        install_flywheel=install,
+    )
     bold = list(bids.glob("sub-s03/ses-01/func/*task-flanker*_bold.nii.gz"))
     assert bold, "bidsify must produce a flanker bold with the expected name"
     import json as _j
+
     sc = _j.loads(next(bids.glob("sub-s03/ses-01/func/*task-flanker*_bold.json")).read_text())
     assert sc.get("NumberOfVolumesDiscardedByUser") == 7
 
@@ -83,8 +111,10 @@ from neuro_workflow.testing.reproduce.stage_metrics import stage_metrics
 
 
 def test_stage_metrics_symlinks(tmp_path):
-    bids = tmp_path / "bids"; (bids / "derivatives").mkdir(parents=True)
-    real_fmriprep = tmp_path / "real_fmriprep_25.2.4"; real_fmriprep.mkdir()
+    bids = tmp_path / "bids"
+    (bids / "derivatives").mkdir(parents=True)
+    real_fmriprep = tmp_path / "real_fmriprep_25.2.4"
+    real_fmriprep.mkdir()
     (real_fmriprep / "marker.txt").write_text("x")
     staged = stage_metrics(bids, fmriprep_src=real_fmriprep, version="25.2.4")
     link = bids / "derivatives" / "fmriprep_25.2.4"
@@ -96,37 +126,78 @@ def test_stage_metrics_symlinks(tmp_path):
 # Task 5 — canonical set extractors
 # ---------------------------------------------------------------------------
 from neuro_workflow.testing.reproduce.canonical import (
-    compiled_to_keyset, bidsignore_lineset, bids_fileset)
+    bids_fileset,
+    bidsignore_lineset,
+    compiled_to_keyset,
+)
 
 
 def test_compiled_keyset_normalizes_task_prefix():
     compiled = [
-        {"subject": "sub-s10", "session": "ses-01", "task": "task-goNogo",
-         "run": "run-1", "action": "exclude", "source": "qa_decisions", "reason": "x"},
-        {"subject": "sub-s10", "session": "ses-01", "task": "goNogo",
-         "run": "run-1", "action": "exclude", "source": "collection", "reason": "y"},
-        {"subject": "sub-s10", "session": "ses-02", "task": "flanker",
-         "run": "run-1", "action": "force-include", "source": "override", "reason": "z"},
+        {
+            "subject": "sub-s10",
+            "session": "ses-01",
+            "task": "task-goNogo",
+            "run": "run-1",
+            "action": "exclude",
+            "source": "qa_decisions",
+            "reason": "x",
+        },
+        {
+            "subject": "sub-s10",
+            "session": "ses-01",
+            "task": "goNogo",
+            "run": "run-1",
+            "action": "exclude",
+            "source": "collection",
+            "reason": "y",
+        },
+        {
+            "subject": "sub-s10",
+            "session": "ses-02",
+            "task": "flanker",
+            "run": "run-1",
+            "action": "force-include",
+            "source": "override",
+            "reason": "z",
+        },
         # per-contrast exclusion: gating, carries a contrast in the 7th slot
-        {"subject": "sub-s10", "session": "ses-02", "task": "task-shapeMatching",
-         "run": "run-1", "action": "exclude-contrast", "source": "lev1_outlier",
-         "contrast": "DDS", "reason": "vif"},
+        {
+            "subject": "sub-s10",
+            "session": "ses-02",
+            "task": "task-shapeMatching",
+            "run": "run-1",
+            "action": "exclude-contrast",
+            "source": "lev1_outlier",
+            "contrast": "DDS",
+            "reason": "vif",
+        },
     ]
     ks = compiled_to_keyset(compiled)
     # scan-level entries carry contrast=None in the 7th slot
-    assert ("sub-s10","ses-01","goNogo","run-1","exclude","qa_decisions",None) in ks
-    assert ("sub-s10","ses-01","goNogo","run-1","exclude","collection",None) in ks
+    assert ("sub-s10", "ses-01", "goNogo", "run-1", "exclude", "qa_decisions", None) in ks
+    assert ("sub-s10", "ses-01", "goNogo", "run-1", "exclude", "collection", None) in ks
     # per-contrast entry carries its contrast
-    assert ("sub-s10","ses-02","shapeMatching","run-1","exclude-contrast","lev1_outlier","DDS") in ks
+    assert (
+        "sub-s10",
+        "ses-02",
+        "shapeMatching",
+        "run-1",
+        "exclude-contrast",
+        "lev1_outlier",
+        "DDS",
+    ) in ks
     # force-include is not a gating action -> excluded from the set
-    assert all(t[4] in ("exclude","trim","exclude-contrast") for t in ks)
+    assert all(t[4] in ("exclude", "trim", "exclude-contrast") for t in ks)
     assert len(ks) == 3
 
 
 def test_bidsignore_lineset_ignores_comments_blanks():
     text = "# header\n\nsub-s10/ses-01/func/foo_bold.*\n  \nsub-s19/ses-02/func/bar_bold.*\n"
     assert bidsignore_lineset(text) == {
-        "sub-s10/ses-01/func/foo_bold.*", "sub-s19/ses-02/func/bar_bold.*"}
+        "sub-s10/ses-01/func/foo_bold.*",
+        "sub-s19/ses-02/func/bar_bold.*",
+    }
 
 
 def test_bids_fileset_relative(tmp_path):
@@ -153,9 +224,16 @@ from neuro_workflow.testing.reproduce.lev2_select import lev2_reference_set
 
 
 def test_lev2_reference_set_globs_and_filters_belowminruns(tmp_path):
-    base = tmp_path / "lev1/sub-s03/task-flanker/fixed_effects"; base.mkdir(parents=True)
-    (base / "sub-s03_task-flanker_contrast-incongruent-congruent_rtmodel-RTDur_stat-fixed-effects.nii.gz").write_bytes(b"")
-    (base / "sub-s03_task-flanker_contrast-rare_rtmodel-RTDur_desc-belowMinRuns_stat-fixed-effects.nii.gz").write_bytes(b"")
+    base = tmp_path / "lev1/sub-s03/task-flanker/fixed_effects"
+    base.mkdir(parents=True)
+    (
+        base
+        / "sub-s03_task-flanker_contrast-incongruent-congruent_rtmodel-RTDur_stat-fixed-effects.nii.gz"
+    ).write_bytes(b"")
+    (
+        base
+        / "sub-s03_task-flanker_contrast-rare_rtmodel-RTDur_desc-belowMinRuns_stat-fixed-effects.nii.gz"
+    ).write_bytes(b"")
     ref = lev2_reference_set([tmp_path / "lev1"])
     assert ("sub-s03", "flanker", "incongruent-congruent") in ref
     assert all("rare" not in c for (_, _, c) in ref)  # belowMinRuns filtered
@@ -168,17 +246,21 @@ def test_lev2_eligible_set_per_contrast_drops_below_min_runs(monkeypatch):
 
     # s10 task-shapeMatching has 3 runs across 3 sessions.
     class _FakeFinder:
-        def __init__(self, *a, **k): pass
+        def __init__(self, *a, **k):
+            pass
+
         @staticmethod
-        def get_required_files_for_space(space): return []
+        def get_required_files_for_space(space):
+            return []
+
         def get_files(self, sub, task, required_files=None):
             return {"ses-01": {"run-1": {}}, "ses-02": {"run-1": {}}, "ses-04": {"run-1": {}}}
 
-    monkeypatch.setattr(
-        "neuro_workflow.analysis.io.file_discovery.FileFinder", _FakeFinder)
+    monkeypatch.setattr("neuro_workflow.analysis.io.file_discovery.FileFinder", _FakeFinder)
     monkeypatch.setattr(
         "neuro_workflow.analysis.task_config.loader.get_task_contrasts",
-        lambda task: ["DDS", "task-baseline"])
+        lambda task: ["DDS", "task-baseline"],
+    )
 
     # Drop contrast DDS on 2 of the 3 runs -> DDS has only 1 run left (< min_runs=2)
     contrast_excluded = {
@@ -186,10 +268,16 @@ def test_lev2_eligible_set_per_contrast_drops_below_min_runs(monkeypatch):
         ("sub-s10", "ses-02", "shapeMatching", "run-1", "DDS"),
     }
     out = lev2_select.lev2_eligible_set(
-        bids_dir=".", fmriprep_dir=".", subjects=["sub-s10"], tasks=["shapeMatching"],
-        excluded_keys=set(), contrast_excluded=contrast_excluded, min_runs=2)
+        bids_dir=".",
+        fmriprep_dir=".",
+        subjects=["sub-s10"],
+        tasks=["shapeMatching"],
+        excluded_keys=set(),
+        contrast_excluded=contrast_excluded,
+        min_runs=2,
+    )
 
-    assert ("sub-s10", "shapeMatching", "DDS") not in out      # below floor -> dropped
+    assert ("sub-s10", "shapeMatching", "DDS") not in out  # below floor -> dropped
     assert ("sub-s10", "shapeMatching", "task-baseline") in out  # exempt, 3 runs -> kept
 
 
@@ -197,31 +285,43 @@ def test_lev2_eligible_set_scan_exclusion_drops_all_contrasts(monkeypatch):
     from neuro_workflow.testing.reproduce import lev2_select
 
     class _FakeFinder:
-        def __init__(self, *a, **k): pass
+        def __init__(self, *a, **k):
+            pass
+
         @staticmethod
-        def get_required_files_for_space(space): return []
+        def get_required_files_for_space(space):
+            return []
+
         def get_files(self, sub, task, required_files=None):
             return {"ses-01": {"run-1": {}}, "ses-02": {"run-1": {}}}
 
-    monkeypatch.setattr(
-        "neuro_workflow.analysis.io.file_discovery.FileFinder", _FakeFinder)
+    monkeypatch.setattr("neuro_workflow.analysis.io.file_discovery.FileFinder", _FakeFinder)
     monkeypatch.setattr(
         "neuro_workflow.analysis.task_config.loader.get_task_contrasts",
-        lambda task: ["DDS", "task-baseline"])
+        lambda task: ["DDS", "task-baseline"],
+    )
 
     # whole-scan exclude of ses-02 -> only 1 run survives -> nothing eligible
     out = lev2_select.lev2_eligible_set(
-        bids_dir=".", fmriprep_dir=".", subjects=["sub-s10"], tasks=["shapeMatching"],
-        excluded_keys={("sub-s10", "ses-02", "shapeMatching", "run-1")}, min_runs=2)
+        bids_dir=".",
+        fmriprep_dir=".",
+        subjects=["sub-s10"],
+        tasks=["shapeMatching"],
+        excluded_keys={("sub-s10", "ses-02", "shapeMatching", "run-1")},
+        min_runs=2,
+    )
     assert out == set()
 
 
 def test_strip_filename_boundaries_classes():
     import importlib.util
     from pathlib import Path
+
     spec = importlib.util.spec_from_file_location(
-        "_rc", Path(__file__).resolve().parents[3] / "scripts" / "reproduce_cohort.py")
-    rc = importlib.util.module_from_spec(spec); spec.loader.exec_module(rc)
+        "_rc", Path(__file__).resolve().parents[3] / "scripts" / "reproduce_cohort.py"
+    )
+    rc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rc)
 
     produced = {
         "sub-s19/ses-01/func/sub-s19_ses-01_task-flanker_run-1_echo-1_bold.nii.gz",
@@ -229,24 +329,28 @@ def test_strip_filename_boundaries_classes():
     }
     reference = {
         "sub-s19/ses-01/func/sub-s19_ses-01_task-flanker_run-1_echo-1_bold.nii.gz",
-        "sub-s03/ses-13/anat/sub-s03_ses-13_acq-SagMPRAGE_run-1_T1w.nii.gz",            # anat-only ses
-        "sub-s03/ses-01/fmap/sub-s03_ses-01_run-1_magnitude.json",                      # fmap sidecar
-        "sub-s10/ses-01/func/sub-s10_ses-01_task-goNogo_run-1_events.tsv",              # orphan (excluded)
+        "sub-s03/ses-13/anat/sub-s03_ses-13_acq-SagMPRAGE_run-1_T1w.nii.gz",  # anat-only ses
+        "sub-s03/ses-01/fmap/sub-s03_ses-01_run-1_magnitude.json",  # fmap sidecar
+        "sub-s10/ses-01/func/sub-s10_ses-01_task-goNogo_run-1_events.tsv",  # orphan (excluded)
     }
-    inert = lambda f: f.endswith("sub-s10_ses-01_task-goNogo_run-1_events.tsv")
+
+    def inert(f):
+        return f.endswith("sub-s10_ses-01_task-goNogo_run-1_events.tsv")
+
     pf, rf, dropped = rc._strip_filename_boundaries(produced, reference, inert_events=inert)
 
     assert dropped["rescan_subject"] == {
-        "sub-s19-2/ses-01/func/sub-s19-2_ses-01_task-cuedTS_run-1_echo-1_bold.nii.gz"}
+        "sub-s19-2/ses-01/func/sub-s19-2_ses-01_task-cuedTS_run-1_echo-1_bold.nii.gz"
+    }
     assert dropped["anat_only_session"] == {
-        "sub-s03/ses-13/anat/sub-s03_ses-13_acq-SagMPRAGE_run-1_T1w.nii.gz"}
-    assert dropped["fmap_sidecar"] == {
-        "sub-s03/ses-01/fmap/sub-s03_ses-01_run-1_magnitude.json"}
+        "sub-s03/ses-13/anat/sub-s03_ses-13_acq-SagMPRAGE_run-1_T1w.nii.gz"
+    }
+    assert dropped["fmap_sidecar"] == {"sub-s03/ses-01/fmap/sub-s03_ses-01_run-1_magnitude.json"}
     assert dropped["orphan_events"] == {
-        "sub-s10/ses-01/func/sub-s10_ses-01_task-goNogo_run-1_events.tsv"}
+        "sub-s10/ses-01/func/sub-s10_ses-01_task-goNogo_run-1_events.tsv"
+    }
     # the one genuine shared BOLD survives on both sides -> diff would be empty
-    assert pf == rf == {
-        "sub-s19/ses-01/func/sub-s19_ses-01_task-flanker_run-1_echo-1_bold.nii.gz"}
+    assert pf == rf == {"sub-s19/ses-01/func/sub-s19_ses-01_task-flanker_run-1_echo-1_bold.nii.gz"}
 
 
 def test_lev2_eligible_set_skips_dual_tasks_without_contrasts(monkeypatch):
@@ -255,9 +359,13 @@ def test_lev2_eligible_set_skips_dual_tasks_without_contrasts(monkeypatch):
     from neuro_workflow.testing.reproduce import lev2_select
 
     class _FakeFinder:
-        def __init__(self, *a, **k): pass
+        def __init__(self, *a, **k):
+            pass
+
         @staticmethod
-        def get_required_files_for_space(space): return []
+        def get_required_files_for_space(space):
+            return []
+
         def get_files(self, sub, task, required_files=None):
             return {"ses-11": {"run-1": {}}, "ses-12": {"run-1": {}}}
 
@@ -266,14 +374,17 @@ def test_lev2_eligible_set_skips_dual_tasks_without_contrasts(monkeypatch):
             raise ValueError("Contrast config is empty for task 'stopSignalWFlanker'.")
         return ["incongruent-congruent"]
 
-    monkeypatch.setattr(
-        "neuro_workflow.analysis.io.file_discovery.FileFinder", _FakeFinder)
-    monkeypatch.setattr(
-        "neuro_workflow.analysis.task_config.loader.get_task_contrasts", _contrasts)
+    monkeypatch.setattr("neuro_workflow.analysis.io.file_discovery.FileFinder", _FakeFinder)
+    monkeypatch.setattr("neuro_workflow.analysis.task_config.loader.get_task_contrasts", _contrasts)
 
     out = lev2_select.lev2_eligible_set(
-        bids_dir=".", fmriprep_dir=".", subjects=["sub-s43"],
-        tasks=["flanker", "stopSignalWFlanker"], excluded_keys=set(), min_runs=2)
+        bids_dir=".",
+        fmriprep_dir=".",
+        subjects=["sub-s43"],
+        tasks=["flanker", "stopSignalWFlanker"],
+        excluded_keys=set(),
+        min_runs=2,
+    )
     # base task included; dual task silently skipped (no crash)
     assert ("sub-s43", "flanker", "incongruent-congruent") in out
     assert not any(t == "stopSignalWFlanker" for (_, t, _) in out)
@@ -282,7 +393,7 @@ def test_lev2_eligible_set_skips_dual_tasks_without_contrasts(monkeypatch):
 # ---------------------------------------------------------------------------
 # Task 7 — diff_sets + build_report
 # ---------------------------------------------------------------------------
-from neuro_workflow.testing.reproduce.report import diff_sets, build_report
+from neuro_workflow.testing.reproduce.report import build_report, diff_sets
 
 
 def test_diff_sets_partitions():
@@ -465,8 +576,14 @@ def test_override_seeding_copies_to_correct_lockdir_path(tmp_path):
     committed_overrides_dir = tmp_path / "data" / "exclusions"
     committed_overrides_dir.mkdir(parents=True)
     overrides_payload = [
-        {"subject": "s10", "session": "ses-01", "task": "goNogo",
-         "run": "run-1", "action": "force-include", "reason": "keep this scan"},
+        {
+            "subject": "s10",
+            "session": "ses-01",
+            "task": "goNogo",
+            "run": "run-1",
+            "action": "force-include",
+            "reason": "keep this scan",
+        },
     ]
     committed_file = committed_overrides_dir / "discovery_overrides.json"
     committed_file.write_text(json.dumps(overrides_payload))
@@ -485,9 +602,7 @@ def test_override_seeding_copies_to_correct_lockdir_path(tmp_path):
         # The file must land at the path load_overrides will read
         dest = _overrides_path("discovery")
         assert dest.exists(), f"Seeded overrides file not found at {dest}"
-        assert dest.parent == lock_dir, (
-            f"Expected dest parent {lock_dir}, got {dest.parent}"
-        )
+        assert dest.parent == lock_dir, f"Expected dest parent {lock_dir}, got {dest.parent}"
         loaded = json.loads(dest.read_text())
         assert loaded == overrides_payload
     finally:
