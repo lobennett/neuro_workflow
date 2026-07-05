@@ -19,14 +19,18 @@ uv run python scripts/trim_bold.py /scratch/users/logben/discovery_bids
 - `src/neuro_workflow/` - Main package (bidsify pipeline, events, CLI, analysis, QA)
 - `scripts/` - Standalone post-bidsify scripts
 - `tests/` - Test suite
-- `docs/` - Documentation (4 authoritative files)
+- `docs/` - Documentation (8 authoritative files)
 - `config/` - Configuration, thresholds, and reviewed manifests
 
 ### Authoritative Documentation
-1. **`docs/PROVENANCE-AND-EXCLUSIONS.md`** - Flywheel→models provenance + the exclusion framework (5 sources, compilation, lockfile, gate, reproduction) + the run-manifest schema, `dataset_description`, and clean-tree policy. Per-cohort exclusion catalogs are *rendered* to each dataset's `EXCLUSIONS.md`.
-2. **`docs/SCAN-NOTES.md`** - Raw data collection notes per subject
-3. **`docs/ARCHITECTURE.md`** - Package structure and module reference
+1. **`docs/PIPELINE-WALKTHROUGH.md`** - Full ordered recipe, Flywheel → second-level models, with a quick-reference command list
+2. **`docs/RUNBOOK.md`** - Operational reference for launching each SLURM stage (partitions, resources, binds)
+3. **`docs/PROVENANCE-AND-EXCLUSIONS.md`** - Flywheel→models provenance + the exclusion framework (5 sources, compilation, lockfile, gate, reproduction) + the run-manifest schema, `dataset_description`, and clean-tree policy. Per-cohort exclusion catalogs are *rendered* to each dataset's `EXCLUSIONS.md`.
 4. **`docs/CONFIG.md`** - thresholds.yaml and battery.yaml schema and usage
+5. **`docs/ARCHITECTURE.md`** - Package structure and module reference
+6. **`docs/DATASETS.md`** - Orientation to the cohorts, task battery, and per-subject data budget
+7. **`docs/SCAN-NOTES.md`** - Raw data collection notes per subject
+8. **`docs/REFERENCES.md`** - Source papers referenced by the analysis (not committed; obtain from publisher)
 
 ### Scripts
 - **`scripts/trim_bold.py`** -- Trim 7 dummy volumes from BOLD NIfTIs. Idempotent (checks sidecar for `NumberOfVolumesDiscardedByUser`). Atomic writes (temp file + rename). Skips corrupt files.
