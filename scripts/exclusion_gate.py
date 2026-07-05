@@ -16,11 +16,11 @@ Usage::
         --source motion \
         --report /scratch/users/logben/oak_reexec/gate_discovery_motion.md
 """
+
 from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
 
 from neuro_workflow.testing.reproduce.canonical import compiled_to_keyset
@@ -38,7 +38,8 @@ def _load(path: Path) -> list[dict]:
     if not isinstance(entries, list):
         raise ValueError(
             f"{path}: expected a bare list or a dict with an 'exclusions' list, "
-            f"got {type(data).__name__}")
+            f"got {type(data).__name__}"
+        )
     return entries
 
 
@@ -61,8 +62,7 @@ def _entries_for_keys(entries: list[dict], keys: set) -> list[dict]:
     return out
 
 
-def diff_gate(*, new_path: Path, reference_path: Path,
-              source: str | None = None) -> dict:
+def diff_gate(*, new_path: Path, reference_path: Path, source: str | None = None) -> dict:
     """Return {ok, added, dropped} — added = in new not reference; dropped = reverse.
 
     A ``--source``-scoped run is an intentionally partial view: a scan that moved
@@ -83,16 +83,22 @@ def diff_gate(*, new_path: Path, reference_path: Path,
 
 
 def _render(result: dict) -> str:
-    lines = [f"# Exclusion gate — {'PASS (no drift)' if result['ok'] else 'DRIFT DETECTED'}",
-             f"source filter: {result['source'] or '(all)'}", ""]
-    for label, key in (("ADDED (in new, not reference)", "added"),
-                       ("DROPPED (in reference, not new)", "dropped")):
+    lines = [
+        f"# Exclusion gate — {'PASS (no drift)' if result['ok'] else 'DRIFT DETECTED'}",
+        f"source filter: {result['source'] or '(all)'}",
+        "",
+    ]
+    for label, key in (
+        ("ADDED (in new, not reference)", "added"),
+        ("DROPPED (in reference, not new)", "dropped"),
+    ):
         lines.append(f"## {label}: {len(result[key])}")
         for e in result[key]:
             lines.append(
                 f"- {e['subject']} {e['session']} {e['task']} {e['run']} "
                 f"[{e.get('source')}] {e.get('action')} "
-                f"contrast={e.get('contrast')} — {e.get('reason')}")
+                f"contrast={e.get('contrast')} — {e.get('reason')}"
+            )
         lines.append("")
     return "\n".join(lines)
 
@@ -101,8 +107,9 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("--new", required=True, type=Path)
     p.add_argument("--reference", required=True, type=Path)
-    p.add_argument("--source", default=None,
-                   help="Scope the diff to one source (e.g. motion, lev1_outlier).")
+    p.add_argument(
+        "--source", default=None, help="Scope the diff to one source (e.g. motion, lev1_outlier)."
+    )
     p.add_argument("--report", type=Path, default=None)
     a = p.parse_args(argv)
     result = diff_gate(new_path=a.new, reference_path=a.reference, source=a.source)

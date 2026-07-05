@@ -8,6 +8,7 @@ use; those read *pooled* inputs (a shared decisions TSV / cohort QC CSV) that ca
 contain cross-sample rows and so need the explicit filter. Same for
 ``behavioral`` (reads the dataset's own ``sourcedata``).
 """
+
 from __future__ import annotations
 
 import re
@@ -28,7 +29,7 @@ from neuro_workflow.exclusions.base import register_generator
 def _parse_confounds_filename(filename: str) -> dict | None:
     """Extract BIDS entities from a confounds filename."""
     m = re.match(
-        r'(sub-\w+)_(ses-\w+)_task-(\w+)_run-(\w+)_desc-confounds_timeseries\.tsv',
+        r"(sub-\w+)_(ses-\w+)_task-(\w+)_run-(\w+)_desc-confounds_timeseries\.tsv",
         filename,
     )
     if not m:
@@ -41,7 +42,7 @@ def _parse_confounds_filename(filename: str) -> dict | None:
     }
 
 
-def _compute_metrics(df: "pd.DataFrame") -> dict:
+def _compute_metrics(df: pd.DataFrame) -> dict:
     """Compute motion metrics from a confounds dataframe.
 
     DVARS uses fmriprep's `std_dvars` (standardized, ~0-3 z-units), not the raw
@@ -49,7 +50,9 @@ def _compute_metrics(df: "pd.DataFrame") -> dict:
     `>1.5` applies to standardized DVARS. qa/metrics/motion.py already uses
     std_dvars; this matches.
     """
-    fd = pd.to_numeric(df.get("framewise_displacement", pd.Series(dtype=float)), errors="coerce").dropna()
+    fd = pd.to_numeric(
+        df.get("framewise_displacement", pd.Series(dtype=float)), errors="coerce"
+    ).dropna()
     dvars = pd.to_numeric(df.get("std_dvars", pd.Series(dtype=float)), errors="coerce").dropna()
     return {
         "fmriprep_fd_mean": float(fd.mean()) if len(fd) > 0 else 0.0,
@@ -57,7 +60,9 @@ def _compute_metrics(df: "pd.DataFrame") -> dict:
         "fmriprep_proportion_fd_over_0.5": float((fd > 0.5).mean()) if len(fd) > 0 else 0.0,
         "fmriprep_std_dvars_mean": float(dvars.mean()) if len(dvars) > 0 else 0.0,
         "fmriprep_std_dvars_std": float(dvars.std()) if len(dvars) > 0 else 0.0,
-        "fmriprep_proportion_std_dvars_over_1.5": float((dvars > 1.5).mean()) if len(dvars) > 0 else 0.0,
+        "fmriprep_proportion_std_dvars_over_1.5": float((dvars > 1.5).mean())
+        if len(dvars) > 0
+        else 0.0,
     }
 
 
@@ -67,20 +72,36 @@ class MotionGenerator:
 
     def add_cli_args(self, parser: ArgumentParser) -> None:
         t = _motion_thresholds()
-        parser.add_argument("--fmriprep-version", required=False, default="24.1.0rc2",
-                            help="fMRIPrep version for derivatives path")
-        parser.add_argument("--fd-threshold", type=float, default=t["fd_threshold"],
-                            help=f"FD mean threshold for resting-state (default: {t['fd_threshold']})")
-        parser.add_argument("--proportion-fd-threshold", type=float,
-                            default=t["proportion_fd_threshold"],
-                            help=f"Proportion FD > 0.5 threshold for task scans (default: {t['proportion_fd_threshold']})")
-        parser.add_argument("--proportion-dvars-threshold", type=float,
-                            default=t["proportion_dvars_threshold"],
-                            help=f"Proportion DVARS > 1.5 threshold (default: {t['proportion_dvars_threshold']})")
+        parser.add_argument(
+            "--fmriprep-version",
+            required=False,
+            default="24.1.0rc2",
+            help="fMRIPrep version for derivatives path",
+        )
+        parser.add_argument(
+            "--fd-threshold",
+            type=float,
+            default=t["fd_threshold"],
+            help=f"FD mean threshold for resting-state (default: {t['fd_threshold']})",
+        )
+        parser.add_argument(
+            "--proportion-fd-threshold",
+            type=float,
+            default=t["proportion_fd_threshold"],
+            help=f"Proportion FD > 0.5 threshold for task scans (default: {t['proportion_fd_threshold']})",
+        )
+        parser.add_argument(
+            "--proportion-dvars-threshold",
+            type=float,
+            default=t["proportion_dvars_threshold"],
+            help=f"Proportion DVARS > 1.5 threshold (default: {t['proportion_dvars_threshold']})",
+        )
 
     def generate(self, dataset_name: str, dataset_config: dict, args: Namespace) -> list[dict]:
         if pd is None:
-            print("Error: 'pandas' required for motion generator. Install with: uv pip install -e \".[qa]\"")
+            print(
+                "Error: 'pandas' required for motion generator. Install with: uv pip install -e \".[qa]\""
+            )
             return []
 
         bids_dir = Path(dataset_config["bids_dir"])
@@ -135,18 +156,22 @@ class MotionGenerator:
                 )
 
             if reasons:
-                entries.append({
-                    "subject": parsed["subject"],
-                    "session": parsed["session"],
-                    "task": f"task-{parsed['task']}",
-                    "run": f"run-{parsed['run']}",
-                    "source": "motion",
-                    "action": "exclude",
-                    "reason": "; ".join(reasons),
-                    "metrics": metrics,
-                })
+                entries.append(
+                    {
+                        "subject": parsed["subject"],
+                        "session": parsed["session"],
+                        "task": f"task-{parsed['task']}",
+                        "run": f"run-{parsed['run']}",
+                        "source": "motion",
+                        "action": "exclude",
+                        "reason": "; ".join(reasons),
+                        "metrics": metrics,
+                    }
+                )
 
-        print(f"Motion generator: {len(entries)} exclusions from {len(confound_files)} confound files")
+        print(
+            f"Motion generator: {len(entries)} exclusions from {len(confound_files)} confound files"
+        )
         return entries
 
 

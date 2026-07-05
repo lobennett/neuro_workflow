@@ -1,10 +1,11 @@
 """Scan exclusion management: schema, persistence, compilation, and query API."""
+
 from __future__ import annotations
 
 import json
 from argparse import Namespace
+from datetime import UTC
 from pathlib import Path
-from typing import Optional
 
 from neuro_workflow.core.config import CONFIG_DIR
 
@@ -83,7 +84,7 @@ def save_source_entries(
     dataset_name: str,
     source_name: str,
     entries: list[dict],
-    args: "Namespace | dict | None" = None,
+    args: Namespace | dict | None = None,
 ) -> None:
     """Write entries for a single source as `{"_meta": ..., "entries": [...]}`.
 
@@ -141,7 +142,7 @@ def load_overrides(dataset_name: str) -> list[dict]:
         return json.load(f)
 
 
-def compile_exclusions(dataset_name: str, bids_dir: Optional[str] = None) -> list[dict]:
+def compile_exclusions(dataset_name: str, bids_dir: str | None = None) -> list[dict]:
     """Merge all source files and overrides into a compiled exclusion list.
 
     1. Collect all entries from sources/*.json
@@ -178,16 +179,18 @@ def compile_exclusions(dataset_name: str, bids_dir: Optional[str] = None) -> lis
     for fe in force_excludes:
         if _scan_key(fe) in existing_keys:
             continue
-        all_entries.append({
-            "subject": fe["subject"],
-            "session": fe["session"],
-            "task": fe["task"],
-            "run": fe["run"],
-            "source": "override",
-            "action": "exclude",
-            "reason": fe.get("reason", "Manual force-exclude"),
-            "metrics": fe.get("metrics", {}),
-        })
+        all_entries.append(
+            {
+                "subject": fe["subject"],
+                "session": fe["session"],
+                "task": fe["task"],
+                "run": fe["run"],
+                "source": "override",
+                "action": "exclude",
+                "reason": fe.get("reason", "Manual force-exclude"),
+                "metrics": fe.get("metrics", {}),
+            }
+        )
         existing_keys.add(_scan_key(fe))
 
     # Save compiled
@@ -204,14 +207,15 @@ def compile_exclusions(dataset_name: str, bids_dir: Optional[str] = None) -> lis
             json.dump(all_entries, f, indent=2)
 
     # Write the committed lockfile.
+    from datetime import datetime
+
     from neuro_workflow.exclusions.base import _git_sha
-    from datetime import datetime, timezone
 
     lock_path = _lockfile_path(dataset_name)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     lock = {
         "dataset": dataset_name,
-        "compiled_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "compiled_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "compiled_at_code_sha": _git_sha(),
         "compiled_path": str(compiled_path),
         "n_total_entries": len(all_entries),
@@ -239,7 +243,9 @@ def is_excluded(subject: str, session: str, task: str, run: str, compiled: list[
     return any(_scan_key(e) == key for e in compiled if e["action"] in ("exclude", "trim"))
 
 
-def get_trim_info(subject: str, session: str, task: str, run: str, compiled: list[dict]) -> Optional[dict]:
+def get_trim_info(
+    subject: str, session: str, task: str, run: str, compiled: list[dict]
+) -> dict | None:
     """Get trim metrics for a scan, or None if not a trim action."""
     key = (subject, session, task, run)
     for e in compiled:
@@ -267,15 +273,15 @@ def _normalise_bids_field(value: str, prefix: str) -> str:
     'goNogo'
     """
     if value.startswith(prefix):
-        return value[len(prefix):]
+        return value[len(prefix) :]
     return value
 
 
 def query_exclusions(
     compiled: list[dict],
     subject: str,
-    session: Optional[str] = None,
-    task: Optional[str] = None,
+    session: str | None = None,
+    task: str | None = None,
 ) -> list[dict]:
     """Return all compiled entries that match subject (and optionally session/task).
 
@@ -289,11 +295,11 @@ def query_exclusions(
     """
     subject_norm = _normalise_bids_field(subject, "sub-")
 
-    session_norm: Optional[str] = None
+    session_norm: str | None = None
     if session is not None:
         session_norm = _normalise_bids_field(session, "ses-")
 
-    task_norm: Optional[str] = None
+    task_norm: str | None = None
     if task is not None:
         task_norm = _normalise_bids_field(task, "task-")
 

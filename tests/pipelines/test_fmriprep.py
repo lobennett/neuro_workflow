@@ -1,9 +1,9 @@
-import os
 from argparse import Namespace
 from pathlib import Path
-from neuro_workflow.pipelines.fmriprep import FmriprepPipeline
-from neuro_workflow.pipelines.base import get_pipeline, TEMPLATE_DIR
+
 from neuro_workflow.core.slurm import render_template
+from neuro_workflow.pipelines.base import TEMPLATE_DIR, get_pipeline
+from neuro_workflow.pipelines.fmriprep import FmriprepPipeline
 
 
 def test_fmriprep_pipeline_is_registered():
@@ -191,7 +191,7 @@ def test_fmriprep_render_full_template(tmp_path):
 
     assert "#SBATCH -J fmriprep_test_ds" in script
     assert "#SBATCH --array=1-2" in script
-    assert "--participant-label \"$subject\"" in script
+    assert '--participant-label "$subject"' in script
     assert "/images/fmriprep_24.1.0.sif" in script
     assert "--no-submm-recon" in script
     assert "--output-spaces MNI152NLin2009cAsym:res-2 fsnative" in script
@@ -298,7 +298,9 @@ def test_fmriprep_render_with_output_dir(tmp_path):
     assert "/data /out/fmriprep_25.2.5 participant" in script
     assert "/data/derivatives" not in script
 
-    import subprocess, tempfile
+    import subprocess
+    import tempfile
+
     with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as f:
         f.write(script)
         path = f.name
@@ -337,7 +339,9 @@ def test_fmriprep_bids_dir_override(tmp_path):
     ctx = p.build_context("discovery", dataset_config, args)
 
     # /data should bind the override path
-    assert ctx["bids_dir"] == "/scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4_input"
+    assert (
+        ctx["bids_dir"] == "/scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4_input"
+    )
     # Output should bind the registered BIDS dir's derivatives/ as /out
     assert "-B /scratch/users/logben/discovery_bids/derivatives:/out" in ctx["output_bind_line"]
     assert ctx["output_container"] == "/out"
@@ -377,7 +381,9 @@ def test_fmriprep_bids_dir_override_in_rendered_template(tmp_path):
     script = render_template(template_path, ctx)
 
     # /data binds the view, not the original BIDS dir
-    assert "-B /scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4_input:/data" in script
+    assert (
+        "-B /scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4_input:/data" in script
+    )
     # /out binds the original BIDS dir's derivatives/
     assert "-B /scratch/users/logben/discovery_bids/derivatives:/out" in script
     # fmriprep CLI uses /data input, /out/fmriprep_25.2.4 output
@@ -385,7 +391,9 @@ def test_fmriprep_bids_dir_override_in_rendered_template(tmp_path):
     # No /data/derivatives anywhere (would mean output is going under the view)
     assert "/data/derivatives" not in script
     # bash syntax
-    import subprocess, tempfile
+    import subprocess
+    import tempfile
+
     with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as f:
         f.write(script)
         path = f.name
@@ -429,16 +437,23 @@ def test_fmriprep_bids_dir_override_default_none(tmp_path):
 def test_fmriprep_bids_dir_override_and_output_dir_are_mutually_exclusive():
     """Argparse should reject --bids-dir-override and --output-dir together."""
     import argparse
+
     import pytest
+
     parser = argparse.ArgumentParser()
     p = FmriprepPipeline()
     p.add_cli_args(parser)
     with pytest.raises(SystemExit):
-        parser.parse_args([
-            "--version", "25.2.4",
-            "--output-dir", "/some/out",
-            "--bids-dir-override", "/some/view",
-        ])
+        parser.parse_args(
+            [
+                "--version",
+                "25.2.4",
+                "--output-dir",
+                "/some/out",
+                "--bids-dir-override",
+                "/some/view",
+            ]
+        )
 
 
 def test_fmriprep_resolves_canonical_sample_and_writes_subjects_file(tmp_path, monkeypatch):
@@ -488,6 +503,7 @@ def test_fmriprep_unknown_dataset_without_subjects_file_fails_loud(tmp_path, mon
     """An unknown sample with no resolvable subjects_file fails loud (no silent
     empty SLURM array)."""
     import pytest
+
     monkeypatch.setenv("SCRATCH", str(tmp_path / "scratch"))
     p = FmriprepPipeline()
     dataset_config = {
@@ -499,9 +515,16 @@ def test_fmriprep_unknown_dataset_without_subjects_file_fails_loud(tmp_path, mon
         "mail_user": None,
     }
     args = Namespace(
-        version="25.2.4", output_spaces="", fmriprep_args="",
-        fs_license="~/license.txt", bids_filter_file=None, nthreads=None,
-        mem_per_cpu_gb=None, time=None, output_dir=None, bids_dir_override=None,
+        version="25.2.4",
+        output_spaces="",
+        fmriprep_args="",
+        fs_license="~/license.txt",
+        bids_filter_file=None,
+        nthreads=None,
+        mem_per_cpu_gb=None,
+        time=None,
+        output_dir=None,
+        bids_dir_override=None,
     )
     with pytest.raises(ValueError, match="cannot resolve subjects"):
         p.build_context("not_a_sample", dataset_config, args)
@@ -538,9 +561,9 @@ def test_fmriprep_template_includes_exit_1_workaround(tmp_path):
     script = render_template(template_path, ctx)
 
     # The success-detection workaround must be present
-    assert 'fMRIPrep finished successfully' in script
-    assert 'fmriprep#3634' in script
-    assert 'exitcode=0' in script  # the line that flips exit-1 to 0
+    assert "fMRIPrep finished successfully" in script
+    assert "fmriprep#3634" in script
+    assert "exitcode=0" in script  # the line that flips exit-1 to 0
 
 
 def test_fmriprep_template_includes_work_dir_cleanup(tmp_path):
@@ -574,7 +597,7 @@ def test_fmriprep_template_includes_work_dir_cleanup(tmp_path):
     script = render_template(template_path, ctx)
 
     # Cleanup logic
-    assert 'Cleaned up work dir on success' in script
+    assert "Cleaned up work dir on success" in script
     # Cleans the subject-specific subdirectory, not the whole work dir
     assert 'rm -rf "$subject_work"' in script
     # The cleanup is gated by exit code 0
@@ -615,10 +638,12 @@ def test_fmriprep_template_log_path_uses_array_job_id(tmp_path):
     assert "${SLURM_ARRAY_JOB_ID}" in script
     assert "${SLURM_ARRAY_TASK_ID}" in script
     # The log filename pattern must match the SBATCH -o directive: fmriprep_<ds>-%A-%a.out
-    assert 'fmriprep_discovery-${SLURM_ARRAY_JOB_ID}-${SLURM_ARRAY_TASK_ID}.out' in script
+    assert "fmriprep_discovery-${SLURM_ARRAY_JOB_ID}-${SLURM_ARRAY_TASK_ID}.out" in script
 
     # Bash syntax must be valid
-    import subprocess, tempfile
+    import subprocess
+    import tempfile
+
     with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as f:
         f.write(script)
         path = f.name

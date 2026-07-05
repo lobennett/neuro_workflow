@@ -1,5 +1,4 @@
-from argparse import Namespace
-from neuro_workflow.qa.base import register_qa, get_qa_command, list_qa_commands
+from neuro_workflow.qa.base import get_qa_command, list_qa_commands, register_qa
 
 
 class FakeQa:

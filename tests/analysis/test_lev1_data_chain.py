@@ -1,4 +1,5 @@
 """Regression test: every active BIDS scan has a complete fmriprep output AND an events.tsv (if non-rest)."""
+
 from __future__ import annotations
 
 import fnmatch
@@ -8,15 +9,17 @@ from pathlib import Path
 import pytest
 
 BIDS_DERIV_PAIRS = [
-    (Path("/scratch/users/logben/discovery_bids"),
-     Path("/scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4")),
-    (Path("/scratch/users/logben/validation_bids"),
-     Path("/scratch/users/logben/validation_bids/derivatives/fmriprep_25.2.4")),
+    (
+        Path("/scratch/users/logben/discovery_bids"),
+        Path("/scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4"),
+    ),
+    (
+        Path("/scratch/users/logben/validation_bids"),
+        Path("/scratch/users/logben/validation_bids/derivatives/fmriprep_25.2.4"),
+    ),
 ]
 
-BOLD_RE = re.compile(
-    r"^(sub-\w+)_(ses-\w+)_task-(\w+)_run-(\w+)(?:_echo-\d+)?_bold\.nii\.gz$"
-)
+BOLD_RE = re.compile(r"^(sub-\w+)_(ses-\w+)_task-(\w+)_run-(\w+)(?:_echo-\d+)?_bold\.nii\.gz$")
 CONFOUNDS_RE = re.compile(
     r"^(sub-\w+)_(ses-\w+)_task-(\w+)_run-(\w+)_desc-confounds_timeseries\.tsv$"
 )
@@ -27,7 +30,8 @@ def _load_bidsignore(bids_dir: Path) -> list[str]:
     if not f.is_file():
         return []
     return [
-        ln.strip() for ln in f.read_text().splitlines()
+        ln.strip()
+        for ln in f.read_text().splitlines()
         if ln.strip() and not ln.lstrip().startswith("#")
     ]
 
@@ -62,8 +66,7 @@ def _processed_scans(deriv_dir: Path) -> set[tuple[str, str, str, str]]:
     return out
 
 
-@pytest.mark.parametrize("bids_dir,deriv_dir", BIDS_DERIV_PAIRS,
-                         ids=lambda p: p.name)
+@pytest.mark.parametrize("bids_dir,deriv_dir", BIDS_DERIV_PAIRS, ids=lambda p: p.name)
 def test_every_active_bids_scan_was_processed(bids_dir: Path, deriv_dir: Path) -> None:
     if not bids_dir.is_dir() or not deriv_dir.is_dir():
         pytest.skip(f"BIDS or fmriprep dir not present: {bids_dir} / {deriv_dir}")
@@ -75,8 +78,7 @@ def test_every_active_bids_scan_was_processed(bids_dir: Path, deriv_dir: Path) -
     assert not extra, f"fmriprep processed scans not in BIDS: {sorted(extra)[:10]}"
 
 
-@pytest.mark.parametrize("bids_dir,_deriv_dir", BIDS_DERIV_PAIRS,
-                         ids=lambda p: p.name)
+@pytest.mark.parametrize("bids_dir,_deriv_dir", BIDS_DERIV_PAIRS, ids=lambda p: p.name)
 def test_every_task_scan_has_events(bids_dir: Path, _deriv_dir: Path) -> None:
     if not bids_dir.is_dir():
         pytest.skip(f"BIDS dir not present: {bids_dir}")

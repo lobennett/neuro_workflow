@@ -1,4 +1,5 @@
 """Verify each base task YAML's contrast formulas reference declared regressor names."""
+
 from __future__ import annotations
 
 import re
@@ -7,11 +8,19 @@ from pathlib import Path
 import pytest
 import yaml
 
-TASK_CONFIG_DIR = Path(__file__).resolve().parents[2] / "src/neuro_workflow/analysis/task_config/tasks"
+TASK_CONFIG_DIR = (
+    Path(__file__).resolve().parents[2] / "src/neuro_workflow/analysis/task_config/tasks"
+)
 
 BASE_TASKS = [
-    "cuedTS", "directedForgetting", "flanker", "goNogo",
-    "nBack", "shapeMatching", "spatialTS", "stopSignal",
+    "cuedTS",
+    "directedForgetting",
+    "flanker",
+    "goNogo",
+    "nBack",
+    "shapeMatching",
+    "spatialTS",
+    "stopSignal",
 ]
 
 _TOKEN_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\b")

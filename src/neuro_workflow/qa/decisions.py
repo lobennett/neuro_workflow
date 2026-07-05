@@ -1,11 +1,11 @@
 """Load user QC decisions from a sidecar TSV."""
+
 from __future__ import annotations
 
 import csv
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
-
 
 Action = Literal["pass", "exclude", "review"]
 _VALID_ACTIONS = {"pass", "exclude", "review"}
@@ -50,8 +50,7 @@ def load_decisions(path: Path) -> dict[ScanKey | str, Decision]:
             action = row["action"].strip()
             if action not in _VALID_ACTIONS:
                 raise ValueError(
-                    f"invalid action {action!r} in {path}; "
-                    f"valid: {sorted(_VALID_ACTIONS)}"
+                    f"invalid action {action!r} in {path}; " f"valid: {sorted(_VALID_ACTIONS)}"
                 )
             decision = Decision(action=action, reason=row.get("reason", "").strip())
             session = row.get("session", "-").strip()

@@ -1,4 +1,5 @@
 """Check presence of expected fmriprep output files for a given scan."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

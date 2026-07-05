@@ -2,19 +2,19 @@
 
 import sys
 from argparse import Namespace
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 
-from neuro_workflow.pipelines.base import get_pipeline, TEMPLATE_DIR
 from neuro_workflow.core.slurm import render_template
+from neuro_workflow.pipelines.base import TEMPLATE_DIR, get_pipeline
 
 
 @pytest.fixture
 def bidsify_pipeline():
     # Import triggers registration
     import neuro_workflow.pipelines.bidsify  # noqa: F401
+
     return get_pipeline("bidsify")
 
 
@@ -80,7 +80,7 @@ class TestBidsifyBuildContext:
         )
         ctx = bidsify_pipeline.build_context("validation", {}, args)
         assert "--overwrite" in ctx["extra_args"]
-        assert '--flywheel-project other_project' in ctx["extra_args"]
+        assert "--flywheel-project other_project" in ctx["extra_args"]
 
 
 class TestBidsifyTemplate:
@@ -125,14 +125,25 @@ class TestBidsifyTemplate:
 class TestBidsifySubmitIntegration:
     def test_submit_bidsify_skips_dataset_lookup(self, bidsify_pipeline, monkeypatch):
         """cmd_submit should not call get_dataset for pipelines with requires_dataset=False."""
-        monkeypatch.setattr(sys, "argv", [
-            "neuro-run", "submit", "bidsify", "discovery",
-            "--output-dir", "/scratch/test",
-        ])
-        with patch("neuro_workflow.cli.submit_sbatch") as mock_submit, \
-             patch("neuro_workflow.cli.get_dataset") as mock_get_dataset:
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "neuro-run",
+                "submit",
+                "bidsify",
+                "discovery",
+                "--output-dir",
+                "/scratch/test",
+            ],
+        )
+        with (
+            patch("neuro_workflow.cli.submit_sbatch") as mock_submit,
+            patch("neuro_workflow.cli.get_dataset") as mock_get_dataset,
+        ):
             mock_submit.return_value = "Submitted batch job 12345"
             from neuro_workflow.cli import main
+
             main()
             mock_get_dataset.assert_not_called()
             mock_submit.assert_called_once()

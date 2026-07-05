@@ -1,9 +1,9 @@
 from argparse import Namespace
 from pathlib import Path
 
-from neuro_workflow.pipelines.lev2 import Lev2Pipeline, _discover_contrasts_from_lev1_dirs
-from neuro_workflow.pipelines.base import get_pipeline, TEMPLATE_DIR
 from neuro_workflow.core.slurm import render_template
+from neuro_workflow.pipelines.base import TEMPLATE_DIR, get_pipeline
+from neuro_workflow.pipelines.lev2 import Lev2Pipeline, _discover_contrasts_from_lev1_dirs
 
 
 def test_lev2_pipeline_is_registered():
@@ -34,18 +34,26 @@ def test_discover_contrasts_from_lev1_dirs(tmp_path):
     # Subject 1: flanker task
     fe_dir1 = tmp_path / "sub-s03" / "task-flanker" / "fixed_effects"
     fe_dir1.mkdir(parents=True)
-    (fe_dir1 / "sub-s03_task-flanker_contrast-incongruentGtCongruent_stat-fixed-effects.nii.gz").touch()
-    (fe_dir1 / "sub-s03_task-flanker_contrast-congruentGtIncongruent_stat-fixed-effects.nii.gz").touch()
+    (
+        fe_dir1 / "sub-s03_task-flanker_contrast-incongruentGtCongruent_stat-fixed-effects.nii.gz"
+    ).touch()
+    (
+        fe_dir1 / "sub-s03_task-flanker_contrast-congruentGtIncongruent_stat-fixed-effects.nii.gz"
+    ).touch()
 
     # Subject 2: flanker task (same contrasts)
     fe_dir2 = tmp_path / "sub-s10" / "task-flanker" / "fixed_effects"
     fe_dir2.mkdir(parents=True)
-    (fe_dir2 / "sub-s10_task-flanker_contrast-incongruentGtCongruent_stat-fixed-effects.nii.gz").touch()
+    (
+        fe_dir2 / "sub-s10_task-flanker_contrast-incongruentGtCongruent_stat-fixed-effects.nii.gz"
+    ).touch()
 
     # Subject 1: stroop task
     fe_dir3 = tmp_path / "sub-s03" / "task-stroop" / "fixed_effects"
     fe_dir3.mkdir(parents=True)
-    (fe_dir3 / "sub-s03_task-stroop_contrast-incongruentGtCongruent_stat-fixed-effects.nii.gz").touch()
+    (
+        fe_dir3 / "sub-s03_task-stroop_contrast-incongruentGtCongruent_stat-fixed-effects.nii.gz"
+    ).touch()
 
     contrasts = _discover_contrasts_from_lev1_dirs([str(tmp_path)])
     assert len(contrasts) == 3
@@ -68,10 +76,22 @@ def test_discover_contrasts_preserves_underscored_contrast_names(tmp_path):
     fe_dir = tmp_path / "sub-s03" / "task-cuedTS" / "fixed_effects"
     fe_dir.mkdir(parents=True)
     # Real lev1 output naming: include _rtmodel-RTDur_ between contrast and stat
-    (fe_dir / "sub-s03_task-cuedTS_contrast-cue_switch_cost_rtmodel-RTDur_stat-fixed-effects.nii.gz").touch()
-    (fe_dir / "sub-s03_task-cuedTS_contrast-task_switch_cost_rtmodel-RTDur_stat-fixed-effects.nii.gz").touch()
-    (fe_dir / "sub-s03_task-cuedTS_contrast-task-baseline_rtmodel-RTDur_stat-fixed-effects.nii.gz").touch()
-    (fe_dir / "sub-s03_task-cuedTS_contrast-response_time_rtmodel-RTDur_stat-fixed-effects.nii.gz").touch()
+    (
+        fe_dir
+        / "sub-s03_task-cuedTS_contrast-cue_switch_cost_rtmodel-RTDur_stat-fixed-effects.nii.gz"
+    ).touch()
+    (
+        fe_dir
+        / "sub-s03_task-cuedTS_contrast-task_switch_cost_rtmodel-RTDur_stat-fixed-effects.nii.gz"
+    ).touch()
+    (
+        fe_dir
+        / "sub-s03_task-cuedTS_contrast-task-baseline_rtmodel-RTDur_stat-fixed-effects.nii.gz"
+    ).touch()
+    (
+        fe_dir
+        / "sub-s03_task-cuedTS_contrast-response_time_rtmodel-RTDur_stat-fixed-effects.nii.gz"
+    ).touch()
 
     contrasts = _discover_contrasts_from_lev1_dirs([str(tmp_path)])
     assert "task-cuedTS_contrast-cue_switch_cost" in contrasts
@@ -88,11 +108,16 @@ def test_discover_contrasts_with_task_filter(tmp_path):
     """Task filter limits results to matching tasks only."""
     fe_flanker = tmp_path / "sub-s03" / "task-flanker" / "fixed_effects"
     fe_flanker.mkdir(parents=True)
-    (fe_flanker / "sub-s03_task-flanker_contrast-incongruentGtCongruent_stat-fixed-effects.nii.gz").touch()
+    (
+        fe_flanker
+        / "sub-s03_task-flanker_contrast-incongruentGtCongruent_stat-fixed-effects.nii.gz"
+    ).touch()
 
     fe_stroop = tmp_path / "sub-s03" / "task-stroop" / "fixed_effects"
     fe_stroop.mkdir(parents=True)
-    (fe_stroop / "sub-s03_task-stroop_contrast-incongruentGtCongruent_stat-fixed-effects.nii.gz").touch()
+    (
+        fe_stroop / "sub-s03_task-stroop_contrast-incongruentGtCongruent_stat-fixed-effects.nii.gz"
+    ).touch()
 
     contrasts = _discover_contrasts_from_lev1_dirs([str(tmp_path)], task_filter=["flanker"])
     assert len(contrasts) == 1
@@ -196,7 +221,9 @@ def test_lev2_render_surface_template(tmp_path):
         mem_gb=None,
         time=None,
     )
-    ctx = p.build_context("test_ds", {"bids_dir": "/oak/d", "partition": "russpold", "mail_user": None}, args)
+    ctx = p.build_context(
+        "test_ds", {"bids_dir": "/oak/d", "partition": "russpold", "mail_user": None}, args
+    )
     script = render_template(TEMPLATE_DIR / p.template_name, ctx)
 
     assert "--space surface" in script

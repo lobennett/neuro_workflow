@@ -1,10 +1,12 @@
 """Integration tests for src/neuro_workflow/qa/report.py orchestrator."""
-import pandas as pd
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 
-from neuro_workflow.qa.report import build_reports
+from pathlib import Path
+from unittest.mock import patch
+
+import pandas as pd
+
 from neuro_workflow.qa.reliability_movies import MovieResult
+from neuro_workflow.qa.report import build_reports
 
 
 def _build_fixture(tmp_path: Path) -> Path:
@@ -15,11 +17,14 @@ def _build_fixture(tmp_path: Path) -> Path:
     base = "sub-s03_ses-01_task-rest_run-1"
 
     # Confounds (the only file we actually parse)
-    pd.DataFrame({
-        "framewise_displacement": [None] + [0.1] * 9,
-        "std_dvars": [None] + [1.0] * 9,
-    }).to_csv(func_dir / f"{base}_desc-confounds_timeseries.tsv",
-              sep="\t", index=False, na_rep="n/a")
+    pd.DataFrame(
+        {
+            "framewise_displacement": [None] + [0.1] * 9,
+            "std_dvars": [None] + [1.0] * 9,
+        }
+    ).to_csv(
+        func_dir / f"{base}_desc-confounds_timeseries.tsv", sep="\t", index=False, na_rep="n/a"
+    )
 
     # Touch all expected outputs so check_expected_outputs returns complete
     for suffix in [
@@ -40,16 +45,18 @@ def _build_fixture(tmp_path: Path) -> Path:
     (fs / "scripts").mkdir(parents=True)
     (fs / "stats").mkdir(parents=True)
     (fs / "scripts" / "recon-all-status.log").write_text(
-        "recon-all -s sub-s03_ses-01 finished without error at ...\n")
+        "recon-all -s sub-s03_ses-01 finished without error at ...\n"
+    )
     (fs / "scripts" / "recon-all.log").write_text(
-        "orig.nofix lheno = -100, rheno = -80\n"
-        "#@#%# recon-all-run-time-hours 9.5\n")
+        "orig.nofix lheno = -100, rheno = -80\n" "#@#%# recon-all-run-time-hours 9.5\n"
+    )
     (fs / "stats" / "aseg.stats").write_text(
         "# Measure BrainSeg, BrainSegVol, Brain Segmentation Volume, 1100000.0, mm^3\n"
         "# Measure TotalGray, TotalGrayVol, Total gray matter volume, 600000.0, mm^3\n"
         "# Measure CerebralWhiteMatter, CerebralWhiteMatterVol, Cerebral White Matter Volume, 500000.0, mm^3\n"
         "# Measure CSF, CSFVol, CSF Volume, 1500.0, mm^3\n"
-        "# Measure EstimatedTotalIntraCranialVol, eTIV, Estimated Total Intracranial Volume, 1500000.0, mm^3\n")
+        "# Measure EstimatedTotalIntraCranialVol, eTIV, Estimated Total Intracranial Volume, 1500000.0, mm^3\n"
+    )
     return deriv
 
 
@@ -58,9 +65,9 @@ def test_build_reports_emits_cohort_and_subject_html(tmp_path):
     out = tmp_path / "qa_html"
 
     with patch("neuro_workflow.qa.report.render_reliability_movies") as MV:
-        MV.return_value = {"sub-s03": [
-            MovieResult("T1w", out / "movies/sub-s03_space-T1w.mp4", None)
-        ]}
+        MV.return_value = {
+            "sub-s03": [MovieResult("T1w", out / "movies/sub-s03_space-T1w.mp4", None)]
+        }
         build_reports(
             fmriprep_dir=deriv,
             output_dir=out,
@@ -98,14 +105,13 @@ def test_build_reports_renders_decision_from_tsv(tmp_path):
     out = tmp_path / "qa_html"
     decisions = tmp_path / "decisions.tsv"
     decisions.write_text(
-        "subject\tsession\ttask\trun\taction\treason\n"
-        "sub-s03\t-\t-\t-\texclude\tmanual call\n"
+        "subject\tsession\ttask\trun\taction\treason\n" "sub-s03\t-\t-\t-\texclude\tmanual call\n"
     )
 
     with patch("neuro_workflow.qa.report.render_reliability_movies") as MV:
-        MV.return_value = {"sub-s03": [
-            MovieResult("T1w", out / "movies/sub-s03_space-T1w.mp4", None)
-        ]}
+        MV.return_value = {
+            "sub-s03": [MovieResult("T1w", out / "movies/sub-s03_space-T1w.mp4", None)]
+        }
         build_reports(
             fmriprep_dir=deriv,
             output_dir=out,

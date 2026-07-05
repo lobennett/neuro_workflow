@@ -3,7 +3,6 @@
 import logging
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +14,8 @@ class FileFinder:
         self,
         bids_dir: Path,
         fmriprep_dir: Path,
-        mni_template: str = 'MNI152NLin6Asym',
-        mni_res: str = '2',
+        mni_template: str = "MNI152NLin6Asym",
+        mni_res: str = "2",
     ):
         """Initialize file finder.
 
@@ -34,25 +33,25 @@ class FileFinder:
         self.fmriprep_dir = Path(fmriprep_dir)
         self.mni_template = mni_template
         self.mni_res = mni_res
-        self.run_pattern = re.compile(r'run-\d+')
+        self.run_pattern = re.compile(r"run-\d+")
 
     # Surface file patterns keyed by space name
     SURFACE_PATTERNS = {
-        'fsnative': {
-            'left_surface': 'hemi-L_space-fsnative_bold.func.gii',
-            'right_surface': 'hemi-R_space-fsnative_bold.func.gii',
+        "fsnative": {
+            "left_surface": "hemi-L_space-fsnative_bold.func.gii",
+            "right_surface": "hemi-R_space-fsnative_bold.func.gii",
         },
-        'fsaverage6': {
-            'left_surface': 'hemi-L_space-fsaverage6_bold.func.gii',
-            'right_surface': 'hemi-R_space-fsaverage6_bold.func.gii',
+        "fsaverage6": {
+            "left_surface": "hemi-L_space-fsaverage6_bold.func.gii",
+            "right_surface": "hemi-R_space-fsaverage6_bold.func.gii",
         },
-        'fsLR': {
-            'cifti_bold': 'space-fsLR_den-91k_bold.dtseries.nii',
+        "fsLR": {
+            "cifti_bold": "space-fsLR_den-91k_bold.dtseries.nii",
         },
     }
 
     @staticmethod
-    def get_required_files_for_space(space: str) -> List[str]:
+    def get_required_files_for_space(space: str) -> list[str]:
         """Get list of required file types for a given analysis space.
 
         Args:
@@ -65,32 +64,32 @@ class FileFinder:
             >>> FileFinder.get_required_files_for_space('T1w')
             ['events', 'confounds', 't1w_data', 't1w_brain_mask']
         """
-        if space == 'T1w':
-            return ['events', 'confounds', 't1w_data', 't1w_brain_mask']
-        elif space == 'MNI':
-            return ['events', 'confounds', 'mni_data', 'mni_brain_mask']
-        elif space in ('surface', 'fsnative', 'fsaverage6'):
-            return ['events', 'confounds', 'left_surface', 'right_surface']
-        elif space == 'fsLR':
-            return ['events', 'confounds', 'cifti_bold']
+        if space == "T1w":
+            return ["events", "confounds", "t1w_data", "t1w_brain_mask"]
+        elif space == "MNI":
+            return ["events", "confounds", "mni_data", "mni_brain_mask"]
+        elif space in ("surface", "fsnative", "fsaverage6"):
+            return ["events", "confounds", "left_surface", "right_surface"]
+        elif space == "fsLR":
+            return ["events", "confounds", "cifti_bold"]
         else:
             # Default: all files
             return [
-                'events',
-                'confounds',
-                't1w_data',
-                't1w_brain_mask',
-                'mni_data',
-                'mni_brain_mask',
+                "events",
+                "confounds",
+                "t1w_data",
+                "t1w_brain_mask",
+                "mni_data",
+                "mni_brain_mask",
             ]
 
     def get_files(
         self,
         subject_id: str,
         task_name: str,
-        required_files: Optional[List[str]] = None,
-        surface_space: Optional[str] = None,
-    ) -> Dict[str, Dict[str, Dict[str, Path]]]:
+        required_files: list[str] | None = None,
+        surface_space: str | None = None,
+    ) -> dict[str, dict[str, dict[str, Path]]]:
         """Parse BIDS and fMRIPrep directories for required files.
 
         Args:
@@ -109,33 +108,33 @@ class FileFinder:
             >>> files['ses-01']['run-1']['events']
             PosixPath('/data/bids/sub-s001/ses-01/func/sub-s001_ses-01_task-rest_run-1_events.tsv')
         """
-        if not subject_id.startswith('sub-'):
-            subject_id = f'sub-{subject_id}'
+        if not subject_id.startswith("sub-"):
+            subject_id = f"sub-{subject_id}"
 
         if required_files is None:
             required_files = [
-                'events',
-                'confounds',
-                't1w_data',
-                't1w_brain_mask',
-                'mni_data',
-                'mni_brain_mask',
+                "events",
+                "confounds",
+                "t1w_data",
+                "t1w_brain_mask",
+                "mni_data",
+                "mni_brain_mask",
             ]
 
         files = {}
 
         # Select surface patterns based on surface_space
         surface_patterns = self.SURFACE_PATTERNS.get(
-            surface_space or 'fsnative', self.SURFACE_PATTERNS['fsnative']
+            surface_space or "fsnative", self.SURFACE_PATTERNS["fsnative"]
         )
 
         # File patterns for fMRIPrep derivatives
         fmriprep_patterns = {
-            'confounds': 'desc-confounds_timeseries.tsv',
-            't1w_data': 'space-T1w_desc-preproc_bold.nii.gz',
-            't1w_brain_mask': 'space-T1w_desc-brain_mask.nii.gz',
-            'mni_data': f'space-{self.mni_template}_res-{self.mni_res}_desc-preproc_bold.nii.gz',
-            'mni_brain_mask': f'space-{self.mni_template}_res-{self.mni_res}_desc-brain_mask.nii.gz',
+            "confounds": "desc-confounds_timeseries.tsv",
+            "t1w_data": "space-T1w_desc-preproc_bold.nii.gz",
+            "t1w_brain_mask": "space-T1w_desc-brain_mask.nii.gz",
+            "mni_data": f"space-{self.mni_template}_res-{self.mni_res}_desc-preproc_bold.nii.gz",
+            "mni_brain_mask": f"space-{self.mni_template}_res-{self.mni_res}_desc-brain_mask.nii.gz",
             **surface_patterns,
         }
 
@@ -148,12 +147,10 @@ class FileFinder:
         # Filter to complete runs only
         return self._filter_complete_runs(files, required_files)
 
-    def _discover_events_files(
-        self, files: Dict, subject_id: str, task_name: str
-    ) -> None:
+    def _discover_events_files(self, files: dict, subject_id: str, task_name: str) -> None:
         """Discover BIDS events files."""
         bids_subj_dir = self.bids_dir / subject_id
-        pattern = f'ses-*/func/*task-{task_name}_*events.tsv'
+        pattern = f"ses-*/func/*task-{task_name}_*events.tsv"
 
         for events_file in bids_subj_dir.glob(pattern):
             session = events_file.parts[-3]
@@ -161,16 +158,14 @@ class FileFinder:
 
             if run_match:
                 run = run_match.group(0)
-                files.setdefault(session, {}).setdefault(run, {})['events'] = (
-                    events_file
-                )
+                files.setdefault(session, {}).setdefault(run, {})["events"] = events_file
 
     def _discover_fmriprep_files(
-        self, files: Dict, subject_id: str, task_name: str, patterns: Dict[str, str]
+        self, files: dict, subject_id: str, task_name: str, patterns: dict[str, str]
     ) -> None:
         """Discover fMRIPrep derivative files."""
         fmriprep_subj_dir = self.fmriprep_dir / subject_id
-        pattern = f'ses-*/func/*task-{task_name}_*'
+        pattern = f"ses-*/func/*task-{task_name}_*"
 
         for file_path in fmriprep_subj_dir.glob(pattern):
             session = file_path.parts[-3]
@@ -188,8 +183,8 @@ class FileFinder:
                     files[session][run][file_type] = file_path
 
     def _filter_complete_runs(
-        self, files: Dict, required_files: List[str]
-    ) -> Dict[str, Dict[str, Dict[str, Path]]]:
+        self, files: dict, required_files: list[str]
+    ) -> dict[str, dict[str, dict[str, Path]]]:
         """Filter to only include runs with all required files.
 
         A run is dropped when it's missing any required file type. To make
@@ -208,15 +203,17 @@ class FileFinder:
                     filtered_files.setdefault(session, {})[run] = file_dict
                 elif file_dict:
                     logger.warning(
-                        'Skipping %s/%s: missing required file(s): %s',
-                        session, run, ', '.join(sorted(missing)),
+                        "Skipping %s/%s: missing required file(s): %s",
+                        session,
+                        run,
+                        ", ".join(sorted(missing)),
                     )
 
         return filtered_files
 
     def validate_file_completeness(
-        self, files: Dict[str, Dict[str, Dict[str, Path]]], task_name: str
-    ) -> Dict[str, int]:
+        self, files: dict[str, dict[str, dict[str, Path]]], task_name: str
+    ) -> dict[str, int]:
         """Validate file completeness and return summary.
 
         Args:
@@ -230,8 +227,8 @@ class FileFinder:
         complete_runs = total_runs  # Already filtered by _filter_complete_runs
 
         return {
-            'total_runs': total_runs,
-            'complete_runs': complete_runs,
-            'total_sessions': len(files),
-            'sessions_with_data': len([s for s in files.values() if s]),
+            "total_runs": total_runs,
+            "complete_runs": complete_runs,
+            "total_sessions": len(files),
+            "sessions_with_data": len([s for s in files.values() if s]),
         }

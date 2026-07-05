@@ -1,4 +1,5 @@
 """CLI-level tests for `neuro-run exclusions query` — written RED-first."""
+
 from __future__ import annotations
 
 import json
@@ -10,10 +11,10 @@ import pytest
 import neuro_workflow.cli as cli_mod
 from neuro_workflow.core import exclusions as core_excl
 
-
 # ---------------------------------------------------------------------------
 # Shared fixture: isolated compiled exclusions in tmp_path
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def compiled_dataset(tmp_path, monkeypatch):
@@ -135,13 +136,13 @@ def test_cmd_exclusions_query_is_exported_on_cli_namespace():
 
 def test_exclusions_query_subparser_registered(tmp_path):
     """'exclusions query --help' exit code 0 (subparser exists)."""
-    import subprocess, sys
+    import subprocess
+
     result = subprocess.run(
         ["uv", "run", "neuro-run", "exclusions", "query", "--help"],
         capture_output=True,
         text=True,
-        cwd="/scratch/users/logben/neuro_workflow_refactor",
-        env={**__import__("os").environ, "UV_CACHE_DIR": "/scratch/users/logben/.uv-cache"},
+        cwd=Path(__file__).resolve().parents[2],
     )
     assert result.returncode == 0, result.stderr
     assert "--subject" in result.stdout

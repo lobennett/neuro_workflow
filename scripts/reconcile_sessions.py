@@ -12,6 +12,7 @@ Usage:
         --scan-notes docs/SCAN-NOTES.md \
         --output /tmp/reconciliation_manifest.tsv
 """
+
 from __future__ import annotations
 
 import argparse
@@ -114,14 +115,10 @@ def normalize_task_name(raw: str) -> str | None:
 # ---------------------------------------------------------------------------
 
 # Regex for BIDS-style filenames: sub-XXX_ses-YY_task-TASKNAME_desc-...
-_BIDS_CSV_RE = re.compile(
-    r"sub-\w+[_-]ses[_-](\d+)[_-]task[_-](.+?)[_-]desc[_-]"
-)
+_BIDS_CSV_RE = re.compile(r"sub-\w+[_-]ses[_-](\d+)[_-]task[_-](.+?)[_-]desc[_-]")
 
 # Regex for descriptive filenames: taskname__fmri_results
-_DESCRIPTIVE_CSV_RE = re.compile(
-    r"^(.+?)(?:_single_task_network)?__fmri_results"
-)
+_DESCRIPTIVE_CSV_RE = re.compile(r"^(.+?)(?:_single_task_network)?__fmri_results")
 
 
 def parse_behavioral_csv(filename: str) -> str | None:
@@ -165,6 +162,7 @@ def parse_behavioral_csv(filename: str) -> str | None:
 # Layer 3: Directory scanning
 # ---------------------------------------------------------------------------
 
+
 def _zero_pad_session(ses: str) -> str:
     """Normalize session labels to zero-padded two-digit form.
 
@@ -186,9 +184,7 @@ def scan_bids_bold(bids_dir: str | Path) -> dict:
     bids_dir = Path(bids_dir)
     result: dict[tuple[str, str, str], dict] = {}
 
-    bold_re = re.compile(
-        r"(sub-[^_]+)_(ses-[^_]+)_task-([^_]+).*_bold\.nii\.gz$"
-    )
+    bold_re = re.compile(r"(sub-[^_]+)_(ses-[^_]+)_task-([^_]+).*_bold\.nii\.gz$")
 
     for nifti_path in sorted(bids_dir.glob("sub-*/ses-*/func/*_bold.nii.gz")):
         m = bold_re.search(nifti_path.name)
@@ -198,7 +194,7 @@ def scan_bids_bold(bids_dir: str | Path) -> dict:
 
         subject = m.group(1)  # e.g. sub-s03
         session = m.group(2)  # e.g. ses-01
-        task = m.group(3)     # e.g. goNogo
+        task = m.group(3)  # e.g. goNogo
 
         key = (subject, session, task)
         if key not in result:
@@ -235,8 +231,8 @@ def scan_raw_behavioral(raw_dir: str | Path) -> dict:
             if len(parts) < 3:
                 continue
 
-            raw_subject = parts[0]   # e.g. "s03"
-            raw_session = parts[1]   # e.g. "ses-1"
+            raw_subject = parts[0]  # e.g. "s03"
+            raw_session = parts[1]  # e.g. "ses-1"
 
             subject = f"sub-{raw_subject}"
             session = _zero_pad_session(raw_session)
@@ -264,6 +260,7 @@ def scan_raw_behavioral(raw_dir: str | Path) -> dict:
 # ---------------------------------------------------------------------------
 # Layer 4: Manifest generation
 # ---------------------------------------------------------------------------
+
 
 def _load_scan_notes(scan_notes_path: str | Path) -> str:
     """Load SCAN-NOTES.md content for annotation lookup."""
@@ -349,17 +346,15 @@ def reconcile(
     bids_subjects = {k[0] for k in bids_bold}
 
     # Filter raw behavioral to only BIDS subjects
-    raw_beh_filtered = {
-        k: v for k, v in raw_beh.items() if k[0] in bids_subjects
-    }
+    raw_beh_filtered = {k: v for k, v in raw_beh.items() if k[0] in bids_subjects}
 
     # Build cross-session index: for each (subject, task), which sessions exist?
     bids_sessions_by_subj_task: dict[tuple[str, str], set[str]] = {}
-    for (subj, ses, task) in bids_bold:
+    for subj, ses, task in bids_bold:
         bids_sessions_by_subj_task.setdefault((subj, task), set()).add(ses)
 
     raw_sessions_by_subj_task: dict[tuple[str, str], set[str]] = {}
-    for (subj, ses, task) in raw_beh_filtered:
+    for subj, ses, task in raw_beh_filtered:
         raw_sessions_by_subj_task.setdefault((subj, task), set()).add(ses)
 
     all_keys = set(bids_bold.keys()) | set(raw_beh_filtered.keys())
@@ -390,12 +385,8 @@ def reconcile(
         other_sessions = ""
         if status != "matched":
             # Check if same subject+task appears in any other session
-            bids_other = bids_sessions_by_subj_task.get(
-                (subject, task), set()
-            ) - {session}
-            raw_other = raw_sessions_by_subj_task.get(
-                (subject, task), set()
-            ) - {session}
+            bids_other = bids_sessions_by_subj_task.get((subject, task), set()) - {session}
+            raw_other = raw_sessions_by_subj_task.get((subject, task), set()) - {session}
             parts = []
             for ses in sorted(bids_other | raw_other):
                 in_bids = ses in bids_other

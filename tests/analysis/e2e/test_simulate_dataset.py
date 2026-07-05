@@ -59,7 +59,6 @@ pytest.importorskip("nilearn")
 import numpy as np  # noqa: E402
 
 from neuro_workflow.analysis.core.utils import (  # noqa: E402
-    create_exclusion_key,
     load_exclusions,
     normalize_subject_id,
 )
@@ -128,7 +127,9 @@ def _capstone_spec() -> CohortSpec:
                         session="02",
                         scans=[
                             ScanSpec(
-                                task=TASK, run="1", outcome="exclude:motion",
+                                task=TASK,
+                                run="1",
+                                outcome="exclude:motion",
                                 n_trs=N_TRS,
                             ),
                         ],
@@ -142,7 +143,9 @@ def _capstone_spec() -> CohortSpec:
                         session="01",
                         scans=[
                             ScanSpec(
-                                task="goNogo", run="1", outcome="exclude:collection",
+                                task="goNogo",
+                                run="1",
+                                outcome="exclude:collection",
                             ),
                             ScanSpec(task=TASK, run="1", outcome="keep", n_trs=N_TRS),
                         ],
@@ -199,9 +202,10 @@ class TestExclusionSetFidelity:
         # Sanity: the plant actually contained one of each (guards the test
         # itself against a silently-empty expectation).
         sources = {src for *_rest, src in expected}
-        assert sources == {"behavioral-qc", "motion"}, (
-            f"plant should contain one behavioral + one motion scan; got {sources}"
-        )
+        assert sources == {
+            "behavioral-qc",
+            "motion",
+        }, f"plant should contain one behavioral + one motion scan; got {sources}"
 
         compiled_set = result.excluded_keys_with_source()
         assert compiled_set == expected, (
@@ -216,9 +220,7 @@ class TestExclusionSetFidelity:
         root, manifest = cohort
         result = simulate_exclusions(root, manifest, dataset="sim")
 
-        coll_scans = [
-            s for s in manifest["scans"] if s["outcome"] == "exclude:collection"
-        ]
+        coll_scans = [s for s in manifest["scans"] if s["outcome"] == "exclude:collection"]
         assert len(coll_scans) == 1  # guard the plant
         scan = coll_scans[0]
 
@@ -248,21 +250,18 @@ class TestExclusionSetFidelity:
         assert keep_scans  # guard the plant
 
         excluded = result.excluded_keys()
-        bidsignore_lines = (
-            result.bidsignore.splitlines() if result.bidsignore else []
-        )
+        bidsignore_lines = result.bidsignore.splitlines() if result.bidsignore else []
         for scan in keep_scans:
             key = _planted_key(scan)
             assert key not in excluded, f"keep scan {key} wrongly in compiled QC set"
             # No glob line should reference a keep scan's run prefix.
             run_prefix = (
-                f"{scan['subject']}_{scan['session']}_task-{scan['task']}_"
-                f"{scan['run']}_"
+                f"{scan['subject']}_{scan['session']}_task-{scan['task']}_" f"{scan['run']}_"
             )
             offending = [ln for ln in bidsignore_lines if run_prefix in ln]
-            assert not offending, (
-                f"keep scan {key} wrongly covered by .bidsignore line(s): {offending}"
-            )
+            assert (
+                not offending
+            ), f"keep scan {key} wrongly covered by .bidsignore line(s): {offending}"
 
     def test_compiled_lockfile_and_artifacts_are_hermetic(self, cohort):
         """The simulation writes its compiled artifacts under the work dir, not
@@ -288,7 +287,8 @@ class TestLev1RecoveryAndExclusionHonoring:
         """Discover one (session, run, files) via the REAL FileFinder."""
         finder = FileFinder(manifest["bids_dir"], manifest["fmriprep_dir"])
         files = finder.get_files(
-            subject, task,
+            subject,
+            task,
             required_files=FileFinder.get_required_files_for_space("MNI"),
         )
         assert files, f"FileFinder found no complete runs for {subject}/{task}"
@@ -310,8 +310,11 @@ class TestLev1RecoveryAndExclusionHonoring:
         events = pd.read_csv(run_files["events"], sep="\t")
         confounds = pd.DataFrame({"constant": np.ones(N_TRS)})
         design, _ = create_design_matrix(
-            events_df=events, confounds_df=confounds,
-            task_name=TASK, n_scans=N_TRS, tr=tr,
+            events_df=events,
+            confounds_df=confounds,
+            task_name=TASK,
+            n_scans=N_TRS,
+            tr=tr,
         )
         assert {"congruent", "incongruent"} <= set(design.columns)
 
@@ -325,7 +328,10 @@ class TestLev1RecoveryAndExclusionHonoring:
         # not rejected by auto-masking — mask_img is a real fit_run_glm param).
         reloaded = nib.load(str(run_files["mni_data"]))
         fitted = fit_run_glm(
-            reloaded, design, analysis_type="task", tr=tr,
+            reloaded,
+            design,
+            analysis_type="task",
+            tr=tr,
             mask_img=make_mask(planted_img),
         )
 
@@ -333,7 +339,8 @@ class TestLev1RecoveryAndExclusionHonoring:
         formula = get_task_contrasts(TASK)["incongruent-congruent"]
         assert formula == "incongruent - congruent"  # guard config drift
         saved = compute_run_contrasts(
-            fitted_glm=fitted, task_name=TASK,
+            fitted_glm=fitted,
+            task_name=TASK,
             output_dir=root / "lev1_out",
             base_filename=f"{subject}_{session}_task-{TASK}_{run}",
             contrasts={"incongruent-congruent": formula},
@@ -346,9 +353,9 @@ class TestLev1RecoveryAndExclusionHonoring:
         # Directional + approximate-magnitude recovery. A flipped sign
         # (incongruent < congruent) or a zeroed contrast would fail here.
         assert recovered > 0, f"expected positive contrast, got {recovered}"
-        assert recovered == pytest.approx(PLANTED_EFFECT, abs=1.0), (
-            f"recovered {recovered:.3f} not within 1.0 of planted {PLANTED_EFFECT}"
-        )
+        assert recovered == pytest.approx(
+            PLANTED_EFFECT, abs=1.0
+        ), f"recovered {recovered:.3f} not within 1.0 of planted {PLANTED_EFFECT}"
 
     def test_lev1_exclusion_path_honors_excluded_scans(self, cohort):
         """The REAL lev1 exclusion path (load_exclusions over the compiled file
@@ -386,9 +393,9 @@ class TestLev1RecoveryAndExclusionHonoring:
         # Keep scans: the runner key must NOT be in the set (processed normally).
         for scan in by_outcome["keep"]:
             key = runner_key(scan)
-            assert key not in exclusion_keys, (
-                f"keep scan key {key!r} wrongly present in lev1 exclusion set"
-            )
+            assert (
+                key not in exclusion_keys
+            ), f"keep scan key {key!r} wrongly present in lev1 exclusion set"
 
     def test_is_excluded_agrees_on_planted_scans(self, cohort):
         """Cross-check via core.exclusions.is_excluded on the compiled entries:
@@ -405,6 +412,4 @@ class TestLev1RecoveryAndExclusionHonoring:
                 assert excluded, f"{scan['outcome']} scan should be is_excluded"
             else:
                 # keep + exclude:collection are NOT compiled QC entries.
-                assert not excluded, (
-                    f"{scan['outcome']} scan should not be a compiled QC exclusion"
-                )
+                assert not excluded, f"{scan['outcome']} scan should not be a compiled QC exclusion"

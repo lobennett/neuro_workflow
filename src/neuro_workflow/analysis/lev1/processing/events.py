@@ -14,7 +14,6 @@ labeling are handled upstream during event file creation (events/create.py).
 
 import logging
 from pathlib import Path
-from typing import Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -61,49 +60,50 @@ def preprocess_events(
     events_df = events_df.copy()
 
     # Convert columns that may contain "n/a" strings to numeric
-    for col in ['onset', 'duration', 'response_time', 'key_press', 'correct_response']:
+    for col in ["onset", "duration", "response_time", "key_press", "correct_response"]:
         if col in events_df.columns:
-            events_df[col] = pd.to_numeric(events_df[col], errors='coerce')
+            events_df[col] = pd.to_numeric(events_df[col], errors="coerce")
 
     # Adjust event onsets for dummy scan removal (off by default — already done upstream)
     if adjust_for_dummy_scans and dummy_scans > 0:
         adjustment = dummy_scans * tr
-        logger.info('Adjusting onsets by -%.2fs for dummy scan removal', adjustment)
-        events_df['onset'] -= adjustment
-        events_df = events_df[events_df['onset'] >= 0].copy()
+        logger.info("Adjusting onsets by -%.2fs for dummy scan removal", adjustment)
+        events_df["onset"] -= adjustment
+        events_df = events_df[events_df["onset"] >= 0].copy()
 
     # Drop events whose onset is past the BOLD's wall time (salvaged scans).
-    if n_scans is not None and 'onset' in events_df.columns:
+    if n_scans is not None and "onset" in events_df.columns:
         bold_duration = n_scans * tr
         before = len(events_df)
-        events_df = events_df[events_df['onset'] < bold_duration].copy()
+        events_df = events_df[events_df["onset"] < bold_duration].copy()
         dropped = before - len(events_df)
         if dropped > 0:
             logger.info(
-                'Dropped %d event(s) with onset >= BOLD duration (%.2fs)',
-                dropped, bold_duration,
+                "Dropped %d event(s) with onset >= BOLD duration (%.2fs)",
+                dropped,
+                bold_duration,
             )
 
     # Add constant column for modeling
-    events_df['constant_1_column'] = 1
+    events_df["constant_1_column"] = 1
 
     # Initialize junk column if it doesn't exist
-    if 'junk' not in events_df.columns:
-        events_df['junk'] = 0
+    if "junk" not in events_df.columns:
+        events_df["junk"] = 0
 
     # Handle negative RTs: mark as junk and set to NaN
-    if 'response_time' in events_df.columns:
-        na_mask = events_df['response_time'] < 0
-        events_df['na_trials'] = na_mask.astype(int)
-        events_df.loc[na_mask, 'junk'] = 1
-        events_df.loc[na_mask, 'response_time'] = np.nan
+    if "response_time" in events_df.columns:
+        na_mask = events_df["response_time"] < 0
+        events_df["na_trials"] = na_mask.astype(int)
+        events_df.loc[na_mask, "junk"] = 1
+        events_df.loc[na_mask, "response_time"] = np.nan
     else:
-        events_df['na_trials'] = 0
+        events_df["na_trials"] = 0
 
     return events_df
 
 
-def define_nuisance_trials(events_df: pd.DataFrame, task: str) -> Dict[str, pd.Series]:
+def define_nuisance_trials(events_df: pd.DataFrame, task: str) -> dict[str, pd.Series]:
     """Define nuisance trials based on task type and response patterns.
 
     Args:
@@ -116,23 +116,23 @@ def define_nuisance_trials(events_df: pd.DataFrame, task: str) -> Dict[str, pd.S
     """
     # Define task groups and their trial identification columns
     test_trial_tasks = {
-        'cuedTS',
-        'nBack',
-        'spatialTS',
-        'flanker',
-        'shapeMatching',
-        'directedForgetting',
+        "cuedTS",
+        "nBack",
+        "spatialTS",
+        "flanker",
+        "shapeMatching",
+        "directedForgetting",
     }
-    go_trial_tasks = {'stopSignal', 'goNogo'}
+    go_trial_tasks = {"stopSignal", "goNogo"}
 
     # Determine trial filter based on task type
     if task in test_trial_tasks:
-        trial_filter = events_df.trial_id == 'test_trial'
+        trial_filter = events_df.trial_id == "test_trial"
     elif task in go_trial_tasks:
-        trial_filter = events_df.trial_type == 'go'
+        trial_filter = events_df.trial_type == "go"
     else:
         raise ValueError(
-            f'Unknown task: {task}. Supported tasks: {test_trial_tasks | go_trial_tasks}'
+            f"Unknown task: {task}. Supported tasks: {test_trial_tasks | go_trial_tasks}"
         )
 
     # Define nuisance trial types
@@ -147,23 +147,21 @@ def define_nuisance_trials(events_df: pd.DataFrame, task: str) -> Dict[str, pd.S
 
     # Also include trials already marked as junk
     existing_junk = pd.Series(False, index=events_df.index)
-    if 'junk' in events_df.columns:
-        existing_junk = (events_df['junk'] == 1) & trial_filter
+    if "junk" in events_df.columns:
+        existing_junk = (events_df["junk"] == 1) & trial_filter
 
     bad_trials = omission | commission | rt_too_fast | existing_junk
 
     return {
-        'trial_filter': trial_filter,
-        'bad_trials': bad_trials,
-        'omission': omission,
-        'commission': commission,
-        'rt_too_fast': rt_too_fast,
+        "trial_filter": trial_filter,
+        "bad_trials": bad_trials,
+        "omission": omission,
+        "commission": commission,
+        "rt_too_fast": rt_too_fast,
     }
 
 
-def add_junk_trials(
-    events_df: pd.DataFrame, task_name: str
-) -> tuple[pd.DataFrame, float]:
+def add_junk_trials(events_df: pd.DataFrame, task_name: str) -> tuple[pd.DataFrame, float]:
     """Calculate percentage of junk trials and add nuisance regressors to dataframe.
 
     Args:
@@ -174,7 +172,7 @@ def add_junk_trials(
         Tuple of (events_df with nuisance columns, percentage of junk trials (0-1)).
     """
     if len(events_df) == 0:
-        raise ValueError('Events dataframe is empty')
+        raise ValueError("Events dataframe is empty")
 
     events_df = events_df.copy()
 
@@ -182,22 +180,20 @@ def add_junk_trials(
     nuisance_masks = define_nuisance_trials(events_df, task_name)
 
     # Add nuisance columns to dataframe as integers (0/1)
-    events_df['junk_trials'] = nuisance_masks['bad_trials'].astype(int)
-    events_df['omission'] = nuisance_masks['omission'].astype(int)
-    events_df['commission'] = nuisance_masks['commission'].astype(int)
-    events_df['rt_too_fast'] = nuisance_masks['rt_too_fast'].astype(int)
+    events_df["junk_trials"] = nuisance_masks["bad_trials"].astype(int)
+    events_df["omission"] = nuisance_masks["omission"].astype(int)
+    events_df["commission"] = nuisance_masks["commission"].astype(int)
+    events_df["rt_too_fast"] = nuisance_masks["rt_too_fast"].astype(int)
 
     # Denominator is the number of relevant trials (test/go), not all events,
     # so that non-test events (breaks, cues, etc.) don't dilute the junk rate.
-    n_relevant = nuisance_masks['trial_filter'].sum()
-    junk_percentage = nuisance_masks['bad_trials'].sum() / n_relevant if n_relevant > 0 else 0.0
+    n_relevant = nuisance_masks["trial_filter"].sum()
+    junk_percentage = nuisance_masks["bad_trials"].sum() / n_relevant if n_relevant > 0 else 0.0
 
     return events_df, junk_percentage
 
 
-def save_simplified_events(
-    regressor_3cols: list, output_file: Union[str, Path]
-) -> Path:
+def save_simplified_events(regressor_3cols: list, output_file: str | Path) -> Path:
     """Save simplified events in 3-column format.
 
     Args:
@@ -210,7 +206,7 @@ def save_simplified_events(
     output_file = Path(output_file)
 
     if not regressor_3cols:
-        raise ValueError('No regressors provided - regressor_3cols is empty')
+        raise ValueError("No regressors provided - regressor_3cols is empty")
 
     # Convert 3-column tuples to dataframes
     all_events = []
@@ -218,25 +214,25 @@ def save_simplified_events(
         if onsets:  # Only if regressor has events
             regressor_df = pd.DataFrame(
                 {
-                    'onset': onsets,
-                    'duration': durations,
-                    'amplitude': amplitudes,
-                    'regressor': regressor_name,
+                    "onset": onsets,
+                    "duration": durations,
+                    "amplitude": amplitudes,
+                    "regressor": regressor_name,
                 }
             )
             # Filter out zero-amplitude entries to avoid redundant rows
-            regressor_df = regressor_df[regressor_df['amplitude'] != 0.0]
+            regressor_df = regressor_df[regressor_df["amplitude"] != 0.0]
             if not regressor_df.empty:
                 all_events.append(regressor_df)
 
     # Combine all regressors
     if not all_events:
-        raise ValueError('No valid events found after processing regressors')
+        raise ValueError("No valid events found after processing regressors")
 
     simplified_df = pd.concat(all_events, ignore_index=True)
 
     # Sort by onset time
-    simplified_df = simplified_df.sort_values('onset').reset_index(drop=True)
+    simplified_df = simplified_df.sort_values("onset").reset_index(drop=True)
 
     # Save to CSV
     simplified_df.to_csv(output_file, index=False)
@@ -244,9 +240,7 @@ def save_simplified_events(
     return output_file
 
 
-def load_bold_data_with_dummy_removal(
-    bold_file: Union[str, Path], dummy_scans: int = 0
-):
+def load_bold_data_with_dummy_removal(bold_file: str | Path, dummy_scans: int = 0):
     """Load BOLD data and optionally remove dummy scans.
 
     Default is 0 since BOLD is pre-trimmed by scripts/trim_bold.py in this

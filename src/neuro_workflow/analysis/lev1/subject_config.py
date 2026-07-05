@@ -10,7 +10,6 @@ top-level ``analysis/config`` to avoid a name collision with the unrelated
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +28,9 @@ class Config:
 
     bids_dir: Path
     fmriprep_dir: Path
-    output_dir: Path = Path('./results/')
-    subject_id: Optional[str] = None
-    task_name: Optional[str] = None
+    output_dir: Path = Path("./results/")
+    subject_id: str | None = None
+    task_name: str | None = None
 
     def __post_init__(self):
         """Convert string paths to Path objects if needed."""
@@ -39,7 +38,7 @@ class Config:
         self.fmriprep_dir = Path(self.fmriprep_dir)
         self.output_dir = Path(self.output_dir)
 
-    def get_subject_dirs(self) -> Dict[str, Path]:
+    def get_subject_dirs(self) -> dict[str, Path]:
         """Get subject-specific output directories.
 
         Returns:
@@ -49,23 +48,21 @@ class Config:
             ValueError: If subject_id or task_name not set
         """
         if not self.subject_id or not self.task_name:
-            raise ValueError(
-                'subject_id and task_name must be set to create subject directories'
-            )
+            raise ValueError("subject_id and task_name must be set to create subject directories")
 
-        base_dir = self.output_dir / self.subject_id / f'task-{self.task_name}'
+        base_dir = self.output_dir / self.subject_id / f"task-{self.task_name}"
 
         return {
-            'quality_control': base_dir / 'quality_control',
-            'indiv_contrasts': base_dir / 'indiv_contrasts',
-            'fixed_effects': base_dir / 'fixed_effects',
-            'simplified_events': base_dir / 'simplified_events',
-            'task_residuals': base_dir / 'task_residuals',
-            'masks': base_dir / 'masks',
-            'base': base_dir,
+            "quality_control": base_dir / "quality_control",
+            "indiv_contrasts": base_dir / "indiv_contrasts",
+            "fixed_effects": base_dir / "fixed_effects",
+            "simplified_events": base_dir / "simplified_events",
+            "task_residuals": base_dir / "task_residuals",
+            "masks": base_dir / "masks",
+            "base": base_dir,
         }
 
-    def create_subject_dirs(self, clean_existing: bool = True) -> Dict[str, Path]:
+    def create_subject_dirs(self, clean_existing: bool = True) -> dict[str, Path]:
         """Create subject-specific output directories.
 
         Args:
@@ -80,11 +77,12 @@ class Config:
             dir_path.mkdir(parents=True, exist_ok=True)
 
             if clean_existing:
-                existing_files = [f for f in dir_path.rglob('*') if f.is_file()]
+                existing_files = [f for f in dir_path.rglob("*") if f.is_file()]
                 if existing_files:
                     logger.warning(
-                        'Removing %d existing file(s) from %s',
-                        len(existing_files), dir_path,
+                        "Removing %d existing file(s) from %s",
+                        len(existing_files),
+                        dir_path,
                     )
                     for file_path in existing_files:
                         file_path.unlink()

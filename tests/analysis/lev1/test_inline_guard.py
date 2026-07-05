@@ -6,6 +6,7 @@ matrix is intentionally not checked here because nuisance regressors
 (motion + motion**2, drift bases) routinely have high inter-column VIFs
 that don't impair contrast estimation.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -32,11 +33,13 @@ def test_rank_deficient_design_matrix_raises():
     n = 100
     rng = np.random.default_rng(0)
     a = rng.normal(size=n)
-    dm = pd.DataFrame({
-        "go": a,
-        "go_dup": a,                 # perfect duplicate of "go"
-        "constant": np.ones(n),
-    })
+    dm = pd.DataFrame(
+        {
+            "go": a,
+            "go_dup": a,  # perfect duplicate of "go"
+            "constant": np.ones(n),
+        }
+    )
     with pytest.raises(RankDeficientDesignError, match="rank"):
         check_design_matrix_health(dm)
 
@@ -44,11 +47,13 @@ def test_rank_deficient_design_matrix_raises():
 def test_clean_design_matrix_passes():
     n = 100
     rng = np.random.default_rng(1)
-    dm = pd.DataFrame({
-        "go": rng.normal(size=n),
-        "stop": rng.normal(size=n),
-        "constant": np.ones(n),
-    })
+    dm = pd.DataFrame(
+        {
+            "go": rng.normal(size=n),
+            "stop": rng.normal(size=n),
+            "constant": np.ones(n),
+        }
+    )
     # Should not raise
     check_design_matrix_health(dm)
 

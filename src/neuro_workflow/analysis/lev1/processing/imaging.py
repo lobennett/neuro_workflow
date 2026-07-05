@@ -1,4 +1,5 @@
 """Shared image-dtype helpers for lev1 statistical-map saving."""
+
 from __future__ import annotations
 
 

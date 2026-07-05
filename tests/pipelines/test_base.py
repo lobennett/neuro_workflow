@@ -1,4 +1,11 @@
-from neuro_workflow.pipelines.base import Pipeline, TEMPLATE_DIR, get_pipeline, list_pipelines, build_mail_line, resolve_resources
+from neuro_workflow.pipelines.base import (
+    TEMPLATE_DIR,
+    Pipeline,
+    build_mail_line,
+    get_pipeline,
+    list_pipelines,
+    resolve_resources,
+)
 
 
 def test_template_dir_exists():
@@ -6,15 +13,22 @@ def test_template_dir_exists():
 
 
 def test_pipeline_protocol_has_required_attributes():
-    """Verify the protocol defines the expected interface."""
-    import inspect
-    annotations = Pipeline.__protocol_attrs__
-    assert "name" in annotations
-    assert "docker_uri" in annotations
-    assert "template_name" in annotations
-    assert "default_resources" in annotations
-    assert "add_cli_args" in annotations
-    assert "build_context" in annotations
+    """Verify the protocol defines the expected interface.
+
+    ``__protocol_attrs__`` is a CPython 3.12+ typing internal; derive the
+    member set portably (annotated attrs + public methods) so the test runs
+    on 3.11 too.
+    """
+
+    members = set(getattr(Pipeline, "__annotations__", {})) | {
+        n for n in dir(Pipeline) if not n.startswith("_")
+    }
+    assert "name" in members
+    assert "docker_uri" in members
+    assert "template_name" in members
+    assert "default_resources" in members
+    assert "add_cli_args" in members
+    assert "build_context" in members
 
 
 def test_get_pipeline_returns_none_for_unknown():
@@ -40,6 +54,7 @@ def test_build_mail_line_without_user():
 
 def test_resolve_resources_defaults():
     from argparse import Namespace
+
     defaults = {"nthreads": 8, "mem_gb": 64, "time": "2-00:00:00"}
     args = Namespace(nthreads=None, mem_gb=None, time=None)
     result = resolve_resources(args, defaults)
@@ -48,6 +63,7 @@ def test_resolve_resources_defaults():
 
 def test_resolve_resources_overrides():
     from argparse import Namespace
+
     defaults = {"nthreads": 8, "mem_gb": 64, "time": "2-00:00:00"}
     args = Namespace(nthreads=4, mem_gb=32, time="1-00:00:00")
     result = resolve_resources(args, defaults)
@@ -56,6 +72,7 @@ def test_resolve_resources_overrides():
 
 def test_resolve_resources_partial_override():
     from argparse import Namespace
+
     defaults = {"nthreads": 8, "mem_per_cpu_gb": 8, "time": "5-00:00:00"}
     args = Namespace(nthreads=4, mem_per_cpu_gb=None, time=None)
     result = resolve_resources(args, defaults)

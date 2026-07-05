@@ -1,26 +1,27 @@
 import json
-import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+
 import numpy as np
 
 
 class TestCalculateVolumeCutoff:
     def test_basic_calculation(self):
         from neuro_workflow.events.trim import calculate_volume_cutoff
+
         # onset_cutoff=10000ms, TR=2000ms -> 5 volumes
         assert calculate_volume_cutoff(10000.0, 2.0) == 5
 
     def test_rounds_down(self):
         from neuro_workflow.events.trim import calculate_volume_cutoff
+
         # onset_cutoff=11000ms, TR=2000ms -> floor(5.5) = 5
         assert calculate_volume_cutoff(11000.0, 2.0) == 5
 
 
 class TestTrimNifti:
     def test_trims_to_correct_volumes(self, tmp_path):
-        from neuro_workflow.events.trim import trim_nifti
         import nibabel as nib
+
+        from neuro_workflow.events.trim import trim_nifti
 
         # Create a fake 4D NIfTI with 10 volumes
         data = np.random.rand(2, 2, 2, 10).astype(np.float32)
@@ -34,7 +35,6 @@ class TestTrimNifti:
         json_path.write_text(json.dumps(sidecar))
 
         out_nifti = tmp_path / "out" / "bold_trimmed.nii.gz"
-        out_json = tmp_path / "out" / "bold_trimmed.json"
         out_nifti.parent.mkdir(parents=True)
 
         trim_nifti(nifti_path, out_nifti, n_volumes=7)
@@ -43,8 +43,9 @@ class TestTrimNifti:
         assert trimmed.shape[-1] == 7
 
     def test_patches_json_sidecar(self, tmp_path):
-        from neuro_workflow.events.trim import trim_nifti
         import nibabel as nib
+
+        from neuro_workflow.events.trim import trim_nifti
 
         data = np.random.rand(2, 2, 2, 10).astype(np.float32)
         img = nib.Nifti1Image(data, np.eye(4))

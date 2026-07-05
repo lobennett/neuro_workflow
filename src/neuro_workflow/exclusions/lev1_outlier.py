@@ -17,6 +17,7 @@ The VIF rules (combined, strict_vif) are SKIPPED for ``exempt_contrasts``
 (task-baseline, response_time) — structurally high-VIF, not quality signals; the
 outlier-only rule still applies to them.
 """
+
 from __future__ import annotations
 
 import csv
@@ -33,6 +34,7 @@ _LEV1 = _lev1_thresholds()
 @dataclass(frozen=True)
 class Thresholds:
     """Auto-exclude thresholds. Defaults sourced from config/thresholds.yaml."""
+
     combined_vif: float = _LEV1["combined_vif"]
     combined_outlier_pct: float = _LEV1["combined_outlier_pct"]
     strict_vif: float = _LEV1["strict_vif"]
@@ -65,8 +67,9 @@ def _read_outliers_csv(path: Path) -> list[dict]:
         return list(csv.DictReader(f))
 
 
-def _rules_fired(vif: float, outlier_pct: float, t: Thresholds,
-                 *, vif_exempt: bool = False) -> list[str]:
+def _rules_fired(
+    vif: float, outlier_pct: float, t: Thresholds, *, vif_exempt: bool = False
+) -> list[str]:
     """Return the names of all rules that fire for this (vif, outlier_pct) pair.
 
     ``vif_exempt`` skips the two VIF-based rules (``combined``, ``strict_vif``)
@@ -84,8 +87,7 @@ def _rules_fired(vif: float, outlier_pct: float, t: Thresholds,
     return fired
 
 
-def _format_contrast_clause(contrast: str, vif: float, outlier_pct: float,
-                            rules: list[str]) -> str:
+def _format_contrast_clause(contrast: str, vif: float, outlier_pct: float, rules: list[str]) -> str:
     """Single-contrast clause for the `reason` field, e.g.
     'response_time vif=18.09 (strict_vif)'.
     """
@@ -96,7 +98,8 @@ def _format_contrast_clause(contrast: str, vif: float, outlier_pct: float,
 
 
 def _emit_contrast_entries(
-    rows: list[dict], thresholds: Thresholds,
+    rows: list[dict],
+    thresholds: Thresholds,
     exempt: frozenset[str] = _EXEMPT_CONTRASTS,
 ) -> list[dict]:
     """Emit one PER-CONTRAST exclusion entry for each (subject, session, run,
@@ -115,21 +118,23 @@ def _emit_contrast_entries(
         fired = _rules_fired(vif, pct, thresholds, vif_exempt=(contrast in exempt))
         if not fired:
             continue
-        entries.append({
-            "subject": row["subject"],
-            "session": row["session"],
-            "task": f"task-{row['task']}",
-            "run": f"run-{row['run']}",
-            "contrast": contrast,
-            "source": "lev1_outlier",
-            "action": "exclude-contrast",
-            "reason": "lev1_outlier: " + _format_contrast_clause(contrast, vif, pct, fired),
-            "metrics": {
-                "vif": vif,
-                "outlier_pct": pct,
-                "rules_fired": fired,
-            },
-        })
+        entries.append(
+            {
+                "subject": row["subject"],
+                "session": row["session"],
+                "task": f"task-{row['task']}",
+                "run": f"run-{row['run']}",
+                "contrast": contrast,
+                "source": "lev1_outlier",
+                "action": "exclude-contrast",
+                "reason": "lev1_outlier: " + _format_contrast_clause(contrast, vif, pct, fired),
+                "metrics": {
+                    "vif": vif,
+                    "outlier_pct": pct,
+                    "rules_fired": fired,
+                },
+            }
+        )
     return sorted(
         entries,
         key=lambda e: (e["subject"], e["session"], e["task"], e["run"], e["contrast"]),
@@ -150,11 +155,14 @@ class Lev1OutlierGenerator:
         # / `generate behavioral` invocations. The runtime guard in generate()
         # raises the clear FileNotFoundError when this source is selected.
         parser.add_argument(
-            "--lev1-outliers-csv", type=Path,
+            "--lev1-outliers-csv",
+            type=Path,
             help="Path to cohort QC's lev1_outliers.csv (required when source=lev1_outlier).",
         )
         parser.add_argument("--combined-vif", type=float, default=_LEV1["combined_vif"])
-        parser.add_argument("--combined-outlier-pct", type=float, default=_LEV1["combined_outlier_pct"])
+        parser.add_argument(
+            "--combined-outlier-pct", type=float, default=_LEV1["combined_outlier_pct"]
+        )
         parser.add_argument("--strict-vif", type=float, default=_LEV1["strict_vif"])
         parser.add_argument("--strict-outlier-pct", type=float, default=_LEV1["strict_outlier_pct"])
 
@@ -171,9 +179,7 @@ class Lev1OutlierGenerator:
             strict_outlier_pct=args.strict_outlier_pct,
         )
         if args.lev1_outliers_csv is None:
-            raise FileNotFoundError(
-                "lev1_outlier generator requires --lev1-outliers-csv"
-            )
+            raise FileNotFoundError("lev1_outlier generator requires --lev1-outliers-csv")
         rows = _read_outliers_csv(args.lev1_outliers_csv)
         # Canonical roster from pipeline_config.json `samples` (fail-loud on an
         # unknown dataset). Drops cross-sample rows from a pooled QC CSV.

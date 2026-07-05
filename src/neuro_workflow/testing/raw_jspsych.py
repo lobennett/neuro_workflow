@@ -60,7 +60,6 @@ production imports from here.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -85,7 +84,7 @@ _KEY_F = 71.0
 
 # BIDS task name -> jsPsych ``exp_id`` for the supported tasks. The exp_id keys
 # the production column-selection / trial-type tables in events/utils.py.
-EXP_ID: Dict[str, str] = {
+EXP_ID: dict[str, str] = {
     "flanker": "flanker_single_task_network__fmri",
     "stopSignal": "stop_signal_single_task_network__fmri",
 }
@@ -155,9 +154,7 @@ def make_raw_jspsych_csv(
             ``omission_rate`` / ``accuracy`` outside [0, 1].
     """
     if task not in EXP_ID:
-        raise ValueError(
-            f"unsupported task {task!r}; supported: {list(_SUPPORTED)}"
-        )
+        raise ValueError(f"unsupported task {task!r}; supported: {list(_SUPPORTED)}")
     if n_trials < 1:
         raise ValueError(f"n_trials must be >= 1, got {n_trials}")
     if not 0.0 <= omission_rate <= 1.0:
@@ -171,34 +168,41 @@ def make_raw_jspsych_csv(
 
     if task == "flanker":
         df = _flanker_frame(
-            n_trials, omission_rate, accuracy, go_rt_ms,
-            first_onset, iti, block_duration_ms, stim_duration_ms, rng,
+            n_trials,
+            omission_rate,
+            accuracy,
+            go_rt_ms,
+            first_onset,
+            iti,
+            block_duration_ms,
+            stim_duration_ms,
+            rng,
         )
     else:  # stopSignal
         df = _stop_signal_frame(
-            n_trials, omission_rate, accuracy, go_rt_ms,
-            first_onset, iti, block_duration_ms, stim_duration_ms, rng,
+            n_trials,
+            omission_rate,
+            accuracy,
+            go_rt_ms,
+            first_onset,
+            iti,
+            block_duration_ms,
+            stim_duration_ms,
+            rng,
         )
 
     df.to_csv(path, index=False)
     return path
 
 
-def _onset_to_time_elapsed(
-    onset_s: float, block_duration_ms: float
-) -> float:
+def _onset_to_time_elapsed(onset_s: float, block_duration_ms: float) -> float:
     """Plant ``time_elapsed`` so the recovered events onset is ``onset_s``.
 
     Inverts the production reconstruction
     (``-trigger_time`` then ``-block_duration`` then ``/1000`` then
     ``-DUMMY_OFFSET_S``).
     """
-    return (
-        _TRIGGER_TIME_MS
-        + block_duration_ms
-        + _DUMMY_OFFSET_MS
-        + onset_s * 1000.0
-    )
+    return _TRIGGER_TIME_MS + block_duration_ms + _DUMMY_OFFSET_MS + onset_s * 1000.0
 
 
 def _trigger_row(exp_id: str, block_duration_ms: float) -> dict:
@@ -244,7 +248,7 @@ def _flanker_frame(
         onset_s = first_onset + i * iti
         omit = i < n_omit
         responded_rank = i - n_omit
-        correct = (0 <= responded_rank < n_correct)
+        correct = 0 <= responded_rank < n_correct
         condition = "congruent" if i % 2 == 0 else "incongruent"
         center = "H" if rng.random() < 0.5 else "F"
         correct_response = _KEY_H if center == "H" else _KEY_F
@@ -299,9 +303,7 @@ def _stop_signal_frame(
     maps these to trial_type go / stop_success / stop_failure.
     """
     exp_id = EXP_ID["stopSignal"]
-    condition = np.array(
-        ["go" if i % 2 == 0 else "stop" for i in range(n_trials)]
-    )
+    condition = np.array(["go" if i % 2 == 0 else "stop" for i in range(n_trials)])
     is_go = condition == "go"
     go_positions = np.flatnonzero(is_go)
     stop_positions = np.flatnonzero(~is_go)
@@ -330,7 +332,8 @@ def _stop_signal_frame(
             else:
                 correct = go_rank[i] < n_go_correct
                 key_press = (
-                    correct_response if correct
+                    correct_response
+                    if correct
                     else (_KEY_F if correct_response == _KEY_H else _KEY_H)
                 )
                 rt = int(go_rt_ms)

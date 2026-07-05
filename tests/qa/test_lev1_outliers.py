@@ -1,4 +1,5 @@
 """Tests for src/neuro_workflow/qa/lev1_outliers.py — discovery + parsing."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -6,7 +7,6 @@ from pathlib import Path
 import pytest
 
 from neuro_workflow.qa.lev1_outliers import (
-    ScanContrast,
     discover_contrast_files,
     parse_contrast_path,
 )
@@ -32,32 +32,36 @@ def test_exclusion_key_matches_compiled_registry_format():
     drops nothing — the exact failure mode that made the events .bidsignore filter
     inert. This pins both sides to one format.
     """
-    from neuro_workflow.qa.lev1_outliers import _make_exclusion_key
     from neuro_workflow.analysis.core.utils import create_exclusion_key
+    from neuro_workflow.qa.lev1_outliers import _make_exclusion_key
 
     path = Path(
         "/lev1/sub-s10/task-goNogo/indiv_contrasts/"
         "sub-s10_ses-05_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz"
     )
     # compiled-exclusions entry shape: task/run carry their BIDS prefixes.
-    entry = {"subject": "sub-s10", "session": "ses-05",
-             "task": "task-goNogo", "run": "run-1"}
+    entry = {"subject": "sub-s10", "session": "ses-05", "task": "task-goNogo", "run": "run-1"}
     assert _make_exclusion_key(parse_contrast_path(path)) == create_exclusion_key(entry)
 
 
 def test_discover_contrast_files(tmp_path: Path):
     # Build a tiny fixture
-    f1 = (tmp_path / "sub-s03/task-goNogo/indiv_contrasts" /
-          "sub-s03_ses-01_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz")
+    f1 = (
+        tmp_path
+        / "sub-s03/task-goNogo/indiv_contrasts"
+        / "sub-s03_ses-01_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz"
+    )
     f1.parent.mkdir(parents=True)
     f1.touch()
-    f2 = (tmp_path / "sub-s10/task-goNogo/indiv_contrasts" /
-          "sub-s10_ses-01_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz")
+    f2 = (
+        tmp_path
+        / "sub-s10/task-goNogo/indiv_contrasts"
+        / "sub-s10_ses-01_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz"
+    )
     f2.parent.mkdir(parents=True)
     f2.touch()
     # red herring that should NOT match
-    (tmp_path / "sub-s03/task-goNogo/indiv_contrasts" /
-     "junk.txt").touch()
+    (tmp_path / "sub-s03/task-goNogo/indiv_contrasts" / "junk.txt").touch()
 
     found = discover_contrast_files(
         [tmp_path],
@@ -71,7 +75,6 @@ import numpy as np
 
 from neuro_workflow.qa.lev1_outliers import (
     compute_cohort_outliers,
-    OutlierResult,
 )
 
 
@@ -88,8 +91,12 @@ def test_compute_cohort_outliers_known_counts(tmp_path: Path):
     paths: list[Path] = []
     for i, val in enumerate([0.0, 0.0, 0.0, 0.0, 100.0]):
         sub = f"sub-s{i:02d}"
-        p = (base / sub / "task-stopSignal/indiv_contrasts" /
-             f"{sub}_ses-01_task-stopSignal_run-1_contrast-go_stat-effect-size.nii.gz")
+        p = (
+            base
+            / sub
+            / "task-stopSignal/indiv_contrasts"
+            / f"{sub}_ses-01_task-stopSignal_run-1_contrast-go_stat-effect-size.nii.gz"
+        )
         _mk_nifti(np.full((4, 4, 4), val, dtype=np.float32), p)
         paths.append(p)
 
@@ -105,13 +112,21 @@ def test_compute_cohort_outliers_groups_by_task_contrast(tmp_path: Path):
     for i in range(3):
         sub = f"sub-s{i:02d}"
         # contrast A
-        pa = (tmp_path / sub / "task-goNogo/indiv_contrasts" /
-              f"{sub}_ses-01_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz")
+        pa = (
+            tmp_path
+            / sub
+            / "task-goNogo/indiv_contrasts"
+            / f"{sub}_ses-01_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz"
+        )
         _mk_nifti(np.full((4, 4, 4), float(i), dtype=np.float32), pa)
         paths.append(pa)
         # contrast B
-        pb = (tmp_path / sub / "task-goNogo/indiv_contrasts" /
-              f"{sub}_ses-01_task-goNogo_run-1_contrast-stop_stat-effect-size.nii.gz")
+        pb = (
+            tmp_path
+            / sub
+            / "task-goNogo/indiv_contrasts"
+            / f"{sub}_ses-01_task-goNogo_run-1_contrast-stop_stat-effect-size.nii.gz"
+        )
         _mk_nifti(np.full((4, 4, 4), float(i) * 10, dtype=np.float32), pb)
         paths.append(pb)
 
@@ -122,14 +137,11 @@ def test_compute_cohort_outliers_groups_by_task_contrast(tmp_path: Path):
 
 def test_aggregate_vifs_from_csv(tmp_path: Path):
     """A VIF CSV with two contrasts → both VIFs ingested into the right ScanContrast."""
-    import pandas as pd
 
-    sub_dir = (tmp_path / "sub-s03/task-goNogo/quality_control")
+    sub_dir = tmp_path / "sub-s03/task-goNogo/quality_control"
     sub_dir.mkdir(parents=True)
     (sub_dir / "sub-s03_ses-01_task-goNogo_run-1_desc-contrastVIFs.csv").write_text(
-        "contrast,VIF\n"
-        "go,1.5\n"
-        "stop,2.7\n"
+        "contrast,VIF\n" "go,1.5\n" "stop,2.7\n"
     )
     from neuro_workflow.qa.lev1_outliers import discover_vif_files, load_vif_table
 
@@ -147,19 +159,33 @@ def test_aggregate_vifs_from_csv(tmp_path: Path):
 
 def test_write_outputs_csv_and_flagged(tmp_path: Path):
     from neuro_workflow.qa.lev1_outliers import (
-        FlaggedRow, write_outliers_csv, write_flagged_tsv,
+        FlaggedRow,
+        write_flagged_tsv,
+        write_outliers_csv,
     )
 
     rows = [
         FlaggedRow(
-            subject="sub-s03", session="ses-01", run="1", task="goNogo",
-            contrast="go", outlier_pct=5.0, vif=1.2,
-            flagged_outliers=False, flagged_vif=False,
+            subject="sub-s03",
+            session="ses-01",
+            run="1",
+            task="goNogo",
+            contrast="go",
+            outlier_pct=5.0,
+            vif=1.2,
+            flagged_outliers=False,
+            flagged_vif=False,
         ),
         FlaggedRow(
-            subject="sub-s10", session="ses-01", run="1", task="goNogo",
-            contrast="go", outlier_pct=15.0, vif=8.0,
-            flagged_outliers=True, flagged_vif=True,
+            subject="sub-s10",
+            session="ses-01",
+            run="1",
+            task="goNogo",
+            contrast="go",
+            outlier_pct=15.0,
+            vif=8.0,
+            flagged_outliers=True,
+            flagged_vif=True,
         ),
     ]
     out_csv = tmp_path / "lev1_outliers.csv"
@@ -182,13 +208,16 @@ def test_render_pdf_smoke(tmp_path: Path):
     paths: list[Path] = []
     for i in range(3):
         sub = f"sub-s{i:02d}"
-        p = (tmp_path / sub / "task-goNogo/indiv_contrasts" /
-             f"{sub}_ses-01_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz")
+        p = (
+            tmp_path
+            / sub
+            / "task-goNogo/indiv_contrasts"
+            / f"{sub}_ses-01_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz"
+        )
         p.parent.mkdir(parents=True, exist_ok=True)
         # 8x8x8 with random values — large enough for nilearn slicing
         rng = np.random.default_rng(i)
-        nib.save(nib.Nifti1Image(rng.normal(size=(8, 8, 8)).astype(np.float32),
-                                 np.eye(4)), str(p))
+        nib.save(nib.Nifti1Image(rng.normal(size=(8, 8, 8)).astype(np.float32), np.eye(4)), str(p))
         paths.append(p)
 
     from neuro_workflow.qa.lev1_outliers import (
@@ -213,12 +242,15 @@ def test_detect_lev1_outliers_end_to_end(tmp_path: Path):
     for i in range(3):
         sub = f"sub-s{i:02d}"
         # contrast NIfTI
-        cp = (lev1 / sub / "task-goNogo/indiv_contrasts" /
-              f"{sub}_ses-01_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz")
+        cp = (
+            lev1
+            / sub
+            / "task-goNogo/indiv_contrasts"
+            / f"{sub}_ses-01_task-goNogo_run-1_contrast-go_stat-effect-size.nii.gz"
+        )
         cp.parent.mkdir(parents=True, exist_ok=True)
         rng = np.random.default_rng(i)
-        nib.save(nib.Nifti1Image(rng.normal(size=(6, 6, 6)).astype(np.float32),
-                                 np.eye(4)), str(cp))
+        nib.save(nib.Nifti1Image(rng.normal(size=(6, 6, 6)).astype(np.float32), np.eye(4)), str(cp))
         # VIF CSV
         qc = lev1 / sub / "task-goNogo/quality_control"
         qc.mkdir(parents=True, exist_ok=True)
@@ -227,6 +259,7 @@ def test_detect_lev1_outliers_end_to_end(tmp_path: Path):
         )
 
     from neuro_workflow.qa.lev1_outliers import detect_lev1_outliers
+
     detect_lev1_outliers(
         lev1_dirs=[lev1],
         output_dir=out,

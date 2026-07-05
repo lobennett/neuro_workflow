@@ -4,6 +4,7 @@ The snapshot JSON captures exactly what bidsify consumes (subject/session/acq
 labels + timestamps + echo/n_trs); aliases + session overrides are applied by
 production bidsify from pipeline_config.json, NOT here.
 """
+
 from __future__ import annotations
 
 import json
@@ -13,7 +14,11 @@ from pathlib import Path
 from typing import Any
 
 from neuro_workflow.testing.fake_flywheel import (
-    FlywheelAcqSpec, FlywheelCohortSpec, FlywheelSessionSpec, FlywheelSubjectSpec)
+    FlywheelAcqSpec,
+    FlywheelCohortSpec,
+    FlywheelSessionSpec,
+    FlywheelSubjectSpec,
+)
 
 # Pattern for multi-echo BOLD file names: *_eN.nii.gz  (N is one or more digits)
 _ECHO_RE = re.compile(r"_e\d+\.nii\.gz$")
@@ -97,20 +102,26 @@ def fw_project_to_inventory(project: Any) -> dict:
         for sess in subj.sessions():
             acqs_out = []
             for acq in sess.acquisitions():
-                acqs_out.append({
-                    "label": acq.label,
-                    "timestamp": _ts_to_str(acq.timestamp),
-                    "echoes": _count_echoes(acq.files),
-                })
-            sessions_out.append({
-                "label": sess.label,
-                "timestamp": _ts_to_str(sess.timestamp),
-                "acquisitions": acqs_out,
-            })
-        subjects_out.append({
-            "label": subj.label,
-            "sessions": sessions_out,
-        })
+                acqs_out.append(
+                    {
+                        "label": acq.label,
+                        "timestamp": _ts_to_str(acq.timestamp),
+                        "echoes": _count_echoes(acq.files),
+                    }
+                )
+            sessions_out.append(
+                {
+                    "label": sess.label,
+                    "timestamp": _ts_to_str(sess.timestamp),
+                    "acquisitions": acqs_out,
+                }
+            )
+        subjects_out.append(
+            {
+                "label": subj.label,
+                "sessions": sessions_out,
+            }
+        )
     return {
         "project": project.label,
         "subjects": subjects_out,
@@ -125,13 +136,19 @@ def load_inventory(path: Path) -> FlywheelCohortSpec:
         for sess in subj.get("sessions", []):
             acqs = [
                 FlywheelAcqSpec(
-                    label=a["label"], timestamp=a.get("timestamp"),
-                    echoes=a.get("echoes", 3), n_trs=a.get("n_trs", 10),
-                    with_physio=a.get("with_physio", False))
+                    label=a["label"],
+                    timestamp=a.get("timestamp"),
+                    echoes=a.get("echoes", 3),
+                    n_trs=a.get("n_trs", 10),
+                    with_physio=a.get("with_physio", False),
+                )
                 for a in sess.get("acquisitions", [])
             ]
-            sessions.append(FlywheelSessionSpec(
-                label=sess["label"], timestamp=sess.get("timestamp"), acquisitions=acqs))
+            sessions.append(
+                FlywheelSessionSpec(
+                    label=sess["label"], timestamp=sess.get("timestamp"), acquisitions=acqs
+                )
+            )
         subjects.append(FlywheelSubjectSpec(label=subj["label"], sessions=sessions))
     return FlywheelCohortSpec(project=data.get("project", "r01network"), subjects=subjects)
 

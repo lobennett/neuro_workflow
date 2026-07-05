@@ -20,6 +20,7 @@ symlinks + empty dirs — targets are never touched).
 Usage:
     uv run python scripts/build_xcpd_view.py discovery --fmriprep-version 25.2.4 --xcpd-version 26.0.2
 """
+
 from __future__ import annotations
 
 import argparse

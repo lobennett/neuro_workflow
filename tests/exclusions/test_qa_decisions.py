@@ -1,4 +1,5 @@
 """Tests for src/neuro_workflow/exclusions/qa_decisions.py."""
+
 from __future__ import annotations
 
 import csv
@@ -10,6 +11,7 @@ import pytest
 def test_qa_decisions_generator_importable():
     """The generator module imports and exposes QADecisionsGenerator."""
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+
     assert QADecisionsGenerator.name == "qa_decisions"
 
 
@@ -24,15 +26,17 @@ def _write_tsv(path: Path, rows: list[dict]) -> None:
             w.writerow(r)
 
 
-def _make_args(tsv_path: Path) -> "object":
+def _make_args(tsv_path: Path) -> object:
     """Minimal Namespace stand-in for args (only attributes the generator reads)."""
     from argparse import Namespace
+
     return Namespace(decisions_tsv=tsv_path)
 
 
 def test_generator_has_cli_arg_for_decisions_tsv():
     """The generator declares --decisions-tsv on its parser."""
     from argparse import ArgumentParser
+
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
 
     parser = ArgumentParser()
@@ -44,11 +48,21 @@ def test_generator_has_cli_arg_for_decisions_tsv():
 def test_scan_level_exclude_emits_one_entry(tmp_path):
     """A single scan-level action=exclude row -> one entry, BIDS-prefixed."""
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+
     tsv = tmp_path / "decisions.tsv"
-    _write_tsv(tsv, [
-        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
-         "run": "run-1", "action": "exclude", "reason": "noisy task data"},
-    ])
+    _write_tsv(
+        tsv,
+        [
+            {
+                "subject": "sub-s03",
+                "session": "ses-02",
+                "task": "task-cuedTS",
+                "run": "run-1",
+                "action": "exclude",
+                "reason": "noisy task data",
+            },
+        ],
+    )
 
     entries = QADecisionsGenerator().generate("discovery", {}, _make_args(tsv))
 
@@ -68,15 +82,37 @@ def test_scan_level_exclude_emits_one_entry(tmp_path):
 def test_pass_and_review_rows_skipped(tmp_path, capsys):
     """Mixed actions: only `exclude` produces entries; summary line counts the others."""
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+
     tsv = tmp_path / "decisions.tsv"
-    _write_tsv(tsv, [
-        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
-         "run": "run-1", "action": "exclude", "reason": "noisy"},
-        {"subject": "sub-s10", "session": "ses-01", "task": "task-flanker",
-         "run": "run-1", "action": "review", "reason": "borderline RT"},
-        {"subject": "sub-s19", "session": "ses-03", "task": "task-goNogo",
-         "run": "run-1", "action": "pass", "reason": "looks fine"},
-    ])
+    _write_tsv(
+        tsv,
+        [
+            {
+                "subject": "sub-s03",
+                "session": "ses-02",
+                "task": "task-cuedTS",
+                "run": "run-1",
+                "action": "exclude",
+                "reason": "noisy",
+            },
+            {
+                "subject": "sub-s10",
+                "session": "ses-01",
+                "task": "task-flanker",
+                "run": "run-1",
+                "action": "review",
+                "reason": "borderline RT",
+            },
+            {
+                "subject": "sub-s19",
+                "session": "ses-03",
+                "task": "task-goNogo",
+                "run": "run-1",
+                "action": "pass",
+                "reason": "looks fine",
+            },
+        ],
+    )
 
     entries = QADecisionsGenerator().generate("discovery", {}, _make_args(tsv))
     captured = capsys.readouterr()
@@ -109,16 +145,30 @@ def _make_fake_bids(tmp_path, subject: str, scans: list[tuple[str, str, str]]) -
 def test_subject_level_exclude_expands_via_bids_glob(tmp_path, capsys):
     """A subject-level exclude row -> one entry per matched BOLD file in BIDS."""
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
-    bids_dir = _make_fake_bids(tmp_path, "sub-s03", [
-        ("ses-01", "flanker", "1"),
-        ("ses-02", "cuedTS", "1"),
-        ("ses-02", "stopSignal", "1"),
-    ])
+
+    bids_dir = _make_fake_bids(
+        tmp_path,
+        "sub-s03",
+        [
+            ("ses-01", "flanker", "1"),
+            ("ses-02", "cuedTS", "1"),
+            ("ses-02", "stopSignal", "1"),
+        ],
+    )
     tsv = tmp_path / "decisions.tsv"
-    _write_tsv(tsv, [
-        {"subject": "sub-s03", "session": "-", "task": "-", "run": "-",
-         "action": "exclude", "reason": "dropped from cohort"},
-    ])
+    _write_tsv(
+        tsv,
+        [
+            {
+                "subject": "sub-s03",
+                "session": "-",
+                "task": "-",
+                "run": "-",
+                "action": "exclude",
+                "reason": "dropped from cohort",
+            },
+        ],
+    )
 
     config = {"bids_dir": str(bids_dir)}
     entries = QADecisionsGenerator().generate("discovery", config, _make_args(tsv))
@@ -148,13 +198,23 @@ def test_subject_level_with_no_bids_files_emits_zero(tmp_path, capsys):
     entries, no error. Uses a real discovery subject (s10) so it passes the
     canonical roster filter and reaches the (empty) BIDS glob."""
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+
     bids_dir = tmp_path / "bids"
     bids_dir.mkdir()
     tsv = tmp_path / "decisions.tsv"
-    _write_tsv(tsv, [
-        {"subject": "sub-s10", "session": "-", "task": "-", "run": "-",
-         "action": "exclude", "reason": "missing data"},
-    ])
+    _write_tsv(
+        tsv,
+        [
+            {
+                "subject": "sub-s10",
+                "session": "-",
+                "task": "-",
+                "run": "-",
+                "action": "exclude",
+                "reason": "missing data",
+            },
+        ],
+    )
 
     config = {"bids_dir": str(bids_dir)}
     entries = QADecisionsGenerator().generate("discovery", config, _make_args(tsv))
@@ -169,13 +229,29 @@ def test_subject_filter_drops_non_member_scan_level(tmp_path):
     (pipeline_config.json `samples`) are dropped. s1035 is a validation subject,
     so it must not appear in a discovery compile — the cross-sample bug."""
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+
     tsv = tmp_path / "decisions.tsv"
-    _write_tsv(tsv, [
-        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
-         "run": "run-1", "action": "exclude", "reason": "in dataset"},
-        {"subject": "sub-s1035", "session": "ses-02", "task": "task-flanker",
-         "run": "run-1", "action": "exclude", "reason": "out of dataset"},
-    ])
+    _write_tsv(
+        tsv,
+        [
+            {
+                "subject": "sub-s03",
+                "session": "ses-02",
+                "task": "task-cuedTS",
+                "run": "run-1",
+                "action": "exclude",
+                "reason": "in dataset",
+            },
+            {
+                "subject": "sub-s1035",
+                "session": "ses-02",
+                "task": "task-flanker",
+                "run": "run-1",
+                "action": "exclude",
+                "reason": "out of dataset",
+            },
+        ],
+    )
 
     entries = QADecisionsGenerator().generate("discovery", {}, _make_args(tsv))
 
@@ -191,21 +267,45 @@ def test_subject_filter_drops_subject_level_before_glob(tmp_path):
     roster comes from pipeline_config.json `samples`, NOT a subjects_file.
     """
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
-    bids_dir = _make_fake_bids(tmp_path, "sub-s03", [
-        ("ses-01", "flanker", "1"),
-    ])
+
+    bids_dir = _make_fake_bids(
+        tmp_path,
+        "sub-s03",
+        [
+            ("ses-01", "flanker", "1"),
+        ],
+    )
     # Out-of-dataset (validation) subject also has BIDS files — must be ignored.
-    _make_fake_bids(tmp_path, "sub-s1035", [
-        ("ses-01", "flanker", "1"),
-        ("ses-02", "cuedTS", "1"),
-    ])
+    _make_fake_bids(
+        tmp_path,
+        "sub-s1035",
+        [
+            ("ses-01", "flanker", "1"),
+            ("ses-02", "cuedTS", "1"),
+        ],
+    )
     tsv = tmp_path / "decisions.tsv"
-    _write_tsv(tsv, [
-        {"subject": "sub-s03", "session": "-", "task": "-", "run": "-",
-         "action": "exclude", "reason": "in dataset"},
-        {"subject": "sub-s1035", "session": "-", "task": "-", "run": "-",
-         "action": "exclude", "reason": "out of dataset"},
-    ])
+    _write_tsv(
+        tsv,
+        [
+            {
+                "subject": "sub-s03",
+                "session": "-",
+                "task": "-",
+                "run": "-",
+                "action": "exclude",
+                "reason": "in dataset",
+            },
+            {
+                "subject": "sub-s1035",
+                "session": "-",
+                "task": "-",
+                "run": "-",
+                "action": "exclude",
+                "reason": "out of dataset",
+            },
+        ],
+    )
 
     config = {"bids_dir": str(bids_dir)}
     entries = QADecisionsGenerator().generate("discovery", config, _make_args(tsv))
@@ -218,12 +318,23 @@ def test_subject_filter_drops_subject_level_before_glob(tmp_path):
 def test_unknown_dataset_fails_loud(tmp_path):
     """An unknown dataset name fails loud (no silent no-filter / None path)."""
     import pytest
+
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+
     tsv = tmp_path / "decisions.tsv"
-    _write_tsv(tsv, [
-        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
-         "run": "run-1", "action": "exclude", "reason": "noisy"},
-    ])
+    _write_tsv(
+        tsv,
+        [
+            {
+                "subject": "sub-s03",
+                "session": "ses-02",
+                "task": "task-cuedTS",
+                "run": "run-1",
+                "action": "exclude",
+                "reason": "noisy",
+            },
+        ],
+    )
     with pytest.raises(ValueError, match="not_a_sample"):
         QADecisionsGenerator().generate("not_a_sample", {}, _make_args(tsv))
 
@@ -231,6 +342,7 @@ def test_unknown_dataset_fails_loud(tmp_path):
 def test_missing_tsv_raises_file_not_found_error(tmp_path):
     """Bogus TSV path -> FileNotFoundError with the path in the message."""
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+
     bogus = tmp_path / "does_not_exist.tsv"
     with pytest.raises(FileNotFoundError, match=str(bogus)):
         QADecisionsGenerator().generate("discovery", {}, _make_args(bogus))
@@ -239,6 +351,7 @@ def test_missing_tsv_raises_file_not_found_error(tmp_path):
 def test_empty_tsv_returns_empty_list(tmp_path):
     """TSV with header only returns []."""
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+
     tsv = tmp_path / "decisions.tsv"
     _write_tsv(tsv, [])
     entries = QADecisionsGenerator().generate("discovery", {}, _make_args(tsv))
@@ -248,28 +361,47 @@ def test_empty_tsv_returns_empty_list(tmp_path):
 def test_invalid_action_propagates_value_error(tmp_path):
     """Unknown action value (e.g. 'maybe') propagates ValueError from load_decisions."""
     from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
+
     tsv = tmp_path / "decisions.tsv"
-    _write_tsv(tsv, [
-        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
-         "run": "run-1", "action": "maybe", "reason": "uh"},
-    ])
+    _write_tsv(
+        tsv,
+        [
+            {
+                "subject": "sub-s03",
+                "session": "ses-02",
+                "task": "task-cuedTS",
+                "run": "run-1",
+                "action": "maybe",
+                "reason": "uh",
+            },
+        ],
+    )
     with pytest.raises(ValueError, match="invalid action"):
         QADecisionsGenerator().generate("discovery", {}, _make_args(tsv))
 
 
 def test_generator_output_flows_through_compile(tmp_path, monkeypatch):
     """Entries from QADecisionsGenerator appear in compile_exclusions output."""
-    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
     from neuro_workflow.core import exclusions as core_excl
+    from neuro_workflow.exclusions.qa_decisions import QADecisionsGenerator
 
     monkeypatch.setattr(core_excl, "EXCLUSIONS_DIR", tmp_path / "exclusions")
     monkeypatch.setattr(core_excl, "LOCKFILE_DIR", tmp_path / "data" / "exclusions")
 
     tsv = tmp_path / "decisions.tsv"
-    _write_tsv(tsv, [
-        {"subject": "sub-s03", "session": "ses-02", "task": "task-cuedTS",
-         "run": "run-1", "action": "exclude", "reason": "noisy"},
-    ])
+    _write_tsv(
+        tsv,
+        [
+            {
+                "subject": "sub-s03",
+                "session": "ses-02",
+                "task": "task-cuedTS",
+                "run": "run-1",
+                "action": "exclude",
+                "reason": "noisy",
+            },
+        ],
+    )
 
     entries = QADecisionsGenerator().generate("discovery", {}, _make_args(tsv))
     assert len(entries) == 1

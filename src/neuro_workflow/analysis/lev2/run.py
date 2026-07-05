@@ -7,15 +7,15 @@
 # helpers like discover_input_files. Lazy import surfaces a clear
 # ModuleNotFoundError when randomise actually gets called in production.
 
-from pathlib import Path
-from nilearn.masking import intersect_masks
-from nilearn.image import math_img
-from typing import List
-import json
-import sys
 import argparse
-import subprocess
 import glob
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+from nilearn.image import math_img
+from nilearn.masking import intersect_masks
 
 from neuro_workflow.core import provenance
 
@@ -51,18 +51,16 @@ def compute_mask(input_files, threshold=0.9, connected=False):
     nibabel.nifti1.Nifti1Image
         The combined group mask image.
     """
-    print('== Generating a mask for each of the input files ==')
-    subject_masks = [math_img('img != 0', img=f) for f in input_files]
+    print("== Generating a mask for each of the input files ==")
+    subject_masks = [math_img("img != 0", img=f) for f in input_files]
 
-    print('== Intersecting subject masks to create the final group mask ==')
-    group_mask = intersect_masks(
-        subject_masks, threshold=threshold, connected=connected
-    )
+    print("== Intersecting subject masks to create the final group mask ==")
+    group_mask = intersect_masks(subject_masks, threshold=threshold, connected=connected)
 
     return group_mask
 
 
-def discover_input_files(level1_dirs: List[Path], contrast_name: str) -> List[str]:
+def discover_input_files(level1_dirs: list[Path], contrast_name: str) -> list[str]:
     """
     Discover input files for a specific contrast from multiple level1 output directories.
 
@@ -78,26 +76,26 @@ def discover_input_files(level1_dirs: List[Path], contrast_name: str) -> List[st
         List of paths to fixed effects files for this contrast (excluding
         _desc-belowMinRuns_ files).
     """
-    all_files: List[str] = []
+    all_files: list[str] = []
     n_dropped = 0
 
     for level1_dir in level1_dirs:
         pattern = (
             level1_dir
-            / 'sub-*'
-            / '*'
-            / 'fixed_effects'
-            / f'*{contrast_name}_rtmodel-*_stat-fixed-effects.nii.gz'
+            / "sub-*"
+            / "*"
+            / "fixed_effects"
+            / f"*{contrast_name}_rtmodel-*_stat-fixed-effects.nii.gz"
         )
         files = glob.glob(str(pattern))
-        kept = [f for f in files if '_desc-belowMinRuns_' not in f]
+        kept = [f for f in files if "_desc-belowMinRuns_" not in f]
         n_dropped += len(files) - len(kept)
         all_files.extend(kept)
 
     if n_dropped:
         print(
-            f'discover_input_files: dropped {n_dropped} '
-            f'_desc-belowMinRuns files for contrast {contrast_name}'
+            f"discover_input_files: dropped {n_dropped} "
+            f"_desc-belowMinRuns files for contrast {contrast_name}"
         )
 
     return sorted(all_files)
@@ -114,10 +112,10 @@ def _input_manifest_path(input_file: str | Path) -> Path:
     the ``fixed_effects/`` dir. So the manifest is the input file's
     grandparent-dir ``run-manifest.json``.
     """
-    return Path(input_file).parent.parent / 'run-manifest.json'
+    return Path(input_file).parent.parent / "run-manifest.json"
 
 
-def _read_input_provenance(input_files: List[str]) -> dict:
+def _read_input_provenance(input_files: list[str]) -> dict:
     """Summarize the provenance chain of lev2's selected lev1 inputs.
 
     For each input fixed-effects file, locate and read its PR4b lev1
@@ -160,39 +158,39 @@ def _read_input_provenance(input_files: List[str]) -> dict:
         except (OSError, ValueError):
             # Missing / unreadable / malformed manifest: legacy or pre-PR4b
             # outputs. Record the gap rather than crashing.
-            code_shas.add('unknown')
-            config_versions.add('unknown')
-            excl_shas.add('unknown')
+            code_shas.add("unknown")
+            config_versions.add("unknown")
+            excl_shas.add("unknown")
             continue
 
         n_manifests_found += 1
-        code_shas.add(manifest.get('code_sha') or 'unknown')
-        config_versions.add(manifest.get('config_version') or 'unknown')
+        code_shas.add(manifest.get("code_sha") or "unknown")
+        config_versions.add(manifest.get("config_version") or "unknown")
 
-        excl_block = manifest.get('exclusions_source')
+        excl_block = manifest.get("exclusions_source")
         if not excl_block:
-            excl_shas.add('none')
+            excl_shas.add("none")
         else:
-            excl_shas.add(excl_block.get('sha256') or 'none')
+            excl_shas.add(excl_block.get("sha256") or "none")
 
     distinct = {
-        'code_sha': sorted(code_shas),
-        'config_version': sorted(config_versions),
-        'exclusions_source': sorted(excl_shas),
+        "code_sha": sorted(code_shas),
+        "config_version": sorted(config_versions),
+        "exclusions_source": sorted(excl_shas),
     }
     consistent = all(len(v) <= 1 for v in distinct.values())
 
     return {
-        'n_inputs': len(input_files),
-        'n_manifests_found': n_manifests_found,
-        'consistent': consistent,
+        "n_inputs": len(input_files),
+        "n_manifests_found": n_manifests_found,
+        "consistent": consistent,
         **distinct,
     }
 
 
 def run_level2_analysis(
     contrast_name: str,
-    input_files: List[str],
+    input_files: list[str],
     output_dir: Path,
     mask_threshold: float = 0.9,
     num_permutations: int = 5000,
@@ -209,23 +207,23 @@ def run_level2_analysis(
     parameter (older randomise-prep versions do not), so this never breaks on an
     API that predates seed support.
     """
-    print(f'Running Level 2 analysis for: {contrast_name}')
-    print(f'Found {len(input_files)} input files')
+    print(f"Running Level 2 analysis for: {contrast_name}")
+    print(f"Found {len(input_files)} input files")
 
     if not input_files:
-        print(f'Error: No input files found for contrast {contrast_name}')
+        print(f"Error: No input files found for contrast {contrast_name}")
         return False
 
     contrast_output_dir = output_dir / contrast_name
     contrast_output_dir.mkdir(parents=True, exist_ok=True)
 
-    print('Computing group analysis mask...')
+    print("Computing group analysis mask...")
     group_mask_img = compute_mask(input_files, threshold=mask_threshold)
-    group_mask_path = contrast_output_dir / 'group_mask.nii.gz'
+    group_mask_path = contrast_output_dir / "group_mask.nii.gz"
     group_mask_img.to_filename(group_mask_path)
-    print(f'--> Group mask saved to: {group_mask_path}')
+    print(f"--> Group mask saved to: {group_mask_path}")
 
-    print('Setting up FSL randomise...')
+    print("Setting up FSL randomise...")
     # Lazy import so test environments without the lev1 extras installed
     # can still import + exercise the helpers in this module. In production
     # randomise_prep is in the lev1 extras group; install it via
@@ -237,36 +235,33 @@ def run_level2_analysis(
         input_files=input_files,
         group_mask=str(group_mask_path),
         output_directory=str(contrast_output_dir),
-        analysis_type='onesample_2sided',
+        analysis_type="onesample_2sided",
         num_perm=num_permutations,
     )
     # Forward the seed only if the installed setup_randomise_tfce supports it
     # (explicit `seed` param, or **kwargs). Safe no-op on versions that don't.
     import inspect
+
     _sig = inspect.signature(setup_randomise_tfce)
-    if 'seed' in _sig.parameters or any(
-        p.kind == p.VAR_KEYWORD for p in _sig.parameters.values()
-    ):
-        randomise_kwargs['seed'] = seed
+    if "seed" in _sig.parameters or any(p.kind == p.VAR_KEYWORD for p in _sig.parameters.values()):
+        randomise_kwargs["seed"] = seed
     else:
         print(
-            'WARNING: installed randomise-prep has no seed parameter; FSL '
-            'randomise permutation RNG is not pinned for this run.',
+            "WARNING: installed randomise-prep has no seed parameter; FSL "
+            "randomise permutation RNG is not pinned for this run.",
             file=sys.stderr,
         )
     script_path = setup_randomise_tfce(**randomise_kwargs)
 
-    print('Running FSL randomise...')
+    print("Running FSL randomise...")
     try:
-        result = subprocess.run(
-            ['bash', script_path], capture_output=True, text=True, check=True
-        )
-        print('✓ FSL randomise completed successfully')
-        print(f'Results saved to: {contrast_output_dir}')
+        subprocess.run(["bash", script_path], capture_output=True, text=True, check=True)
+        print("✓ FSL randomise completed successfully")
+        print(f"Results saved to: {contrast_output_dir}")
     except subprocess.CalledProcessError as e:
-        print(f'✗ FSL randomise failed: {e}')
-        print(f'Stdout: {e.stdout}')
-        print(f'Stderr: {e.stderr}')
+        print(f"✗ FSL randomise failed: {e}")
+        print(f"Stdout: {e.stdout}")
+        print(f"Stderr: {e.stderr}")
         return False
 
     return True
@@ -274,59 +269,61 @@ def run_level2_analysis(
 
 def get_parser() -> argparse.ArgumentParser:
     """Create command line argument parser."""
-    parser = argparse.ArgumentParser(
-        description='Level 2 GLM Analysis for Network R01 dataset'
-    )
+    parser = argparse.ArgumentParser(description="Level 2 GLM Analysis for Network R01 dataset")
     parser.add_argument(
-        '--contrast',
+        "--contrast",
         type=str,
         required=True,
         help='Contrast name (e.g., "nBack_twoBack-oneBack")',
     )
     parser.add_argument(
-        '--level1-dirs', nargs='+', type=str, required=True, help='Level 1 output directories (can specify multiple)'
+        "--level1-dirs",
+        nargs="+",
+        type=str,
+        required=True,
+        help="Level 1 output directories (can specify multiple)",
     )
     parser.add_argument(
-        '--output-dir',
+        "--output-dir",
         type=str,
         required=False,
-        default='./level2_output',
-        help='Level 2 output directory',
+        default="./level2_output",
+        help="Level 2 output directory",
     )
     parser.add_argument(
-        '--mask-threshold',
+        "--mask-threshold",
         type=float,
         default=0.9,
-        help='Threshold for group mask intersection (0.0-1.0)',
+        help="Threshold for group mask intersection (0.0-1.0)",
     )
     parser.add_argument(
-        '--num-permutations',
+        "--num-permutations",
         type=int,
         default=5000,
-        help='Number of permutations (FSL randomise for volume; sign-flip for surface)',
+        help="Number of permutations (FSL randomise for volume; sign-flip for surface)",
     )
     parser.add_argument(
-        '--space',
-        choices=['volume', 'surface'],
-        default='volume',
-        help='volume: FSL randomise on NIfTI fixed-effects (default). '
-        'surface: self-contained sign-flip permutation group test on the '
-        'GIFTI surface fixed-effects (both hemispheres, whole-cortex FWE).',
+        "--space",
+        choices=["volume", "surface"],
+        default="volume",
+        help="volume: FSL randomise on NIfTI fixed-effects (default). "
+        "surface: self-contained sign-flip permutation group test on the "
+        "GIFTI surface fixed-effects (both hemispheres, whole-cortex FWE).",
     )
     parser.add_argument(
-        '--seed',
+        "--seed",
         type=int,
         default=0,
-        help='RNG seed for the surface sign-flip permutation (reproducible).',
+        help="RNG seed for the surface sign-flip permutation (reproducible).",
     )
     parser.add_argument(
-        '--allow-dirty',
-        action='store_true',
+        "--allow-dirty",
+        action="store_true",
         default=False,
-        help='Permit recording provenance against an uncommitted (dirty) git '
-        'working tree without warning. Without this flag a dirty tree warns '
-        'loudly to stderr but the run still proceeds; the manifest records '
-        'code_dirty truthfully either way.',
+        help="Permit recording provenance against an uncommitted (dirty) git "
+        "working tree without warning. Without this flag a dirty tree warns "
+        "loudly to stderr but the run still proceeds; the manifest records "
+        "code_dirty truthfully either way.",
     )
     return parser
 
@@ -341,7 +338,7 @@ def _warn_if_inconsistent_inputs(input_provenance: dict) -> None:
     the operator decides). The full distinct-value summary is also persisted in
     the lev2 manifest under ``input_provenance`` for the audit trail.
     """
-    if input_provenance.get('consistent', True):
+    if input_provenance.get("consistent", True):
         return
 
     print(
@@ -373,11 +370,11 @@ def _write_lev2_provenance(output_dir, args, level1_dirs, input_files):
     Called AFTER the contrast's scientific outputs; errors are allowed to
     surface (fail loud). ``allow_dirty`` is threaded from the CLI flag.
     """
-    allow_dirty = getattr(args, 'allow_dirty', False)
+    allow_dirty = getattr(args, "allow_dirty", False)
     provenance.write_dataset_description(
         output_dir,
-        name='lev2',
-        source_datasets=[{'URL': str(d)} for d in level1_dirs],
+        name="lev2",
+        source_datasets=[{"URL": str(d)} for d in level1_dirs],
     )
 
     # Provenance-chain closure (PR4c): read each input's lev1 run-manifest and
@@ -387,7 +384,7 @@ def _write_lev2_provenance(output_dir, args, level1_dirs, input_files):
 
     manifest_path = provenance.write_run_manifest(
         output_dir,
-        stage='lev2',
+        stage="lev2",
         args=args,
         inputs=[Path(f) for f in input_files],
         allow_dirty=allow_dirty,
@@ -397,12 +394,12 @@ def _write_lev2_provenance(output_dir, args, level1_dirs, input_files):
     # write_run_manifest's schema is fixed and shared across stages, so we
     # merge the lev2-specific block in here rather than widen the primitive.
     manifest = json.loads(manifest_path.read_text())
-    manifest['input_provenance'] = input_provenance
+    manifest["input_provenance"] = input_provenance
     # External (non-pip) tool versions. nilearn/numpy/scipy are already in the
     # manifest's tool_versions; FSL (the volume randomise engine) is not a Python
     # package, so record it explicitly. "unknown" when FSL is absent (e.g. the
     # surface path, which uses numpy only).
-    manifest['external_tool_versions'] = {'fsl': provenance.fsl_version()}
+    manifest["external_tool_versions"] = {"fsl": provenance.fsl_version()}
     manifest_path.write_text(json.dumps(manifest, indent=2))
 
 
@@ -411,24 +408,24 @@ def main() -> None:
     parser = get_parser()
     args = parser.parse_args()
 
-    print('=' * 60)
-    print('Level 2 GLM Analysis')
-    print('=' * 60)
-    print(f'Contrast: {args.contrast}')
-    print(f'Level 1 directories: {args.level1_dirs}')
-    print(f'Output directory: {args.output_dir}')
-    print(f'Mask threshold: {args.mask_threshold}')
-    print(f'Permutations: {args.num_permutations}')
-    print('=' * 60)
+    print("=" * 60)
+    print("Level 2 GLM Analysis")
+    print("=" * 60)
+    print(f"Contrast: {args.contrast}")
+    print(f"Level 1 directories: {args.level1_dirs}")
+    print(f"Output directory: {args.output_dir}")
+    print(f"Mask threshold: {args.mask_threshold}")
+    print(f"Permutations: {args.num_permutations}")
+    print("=" * 60)
     print()
 
     # Provenance is ADDITIVE: warn loudly (but do not fail) when stamping a
     # dirty tree, unless --allow-dirty. The manifest records code_dirty truly.
     if provenance.git_is_dirty() and not args.allow_dirty:
         print(
-            'WARNING: git working tree is dirty; lev2 provenance will record '
-            'code_dirty=true. Commit/stash for a reproducible stamp, or pass '
-            '--allow-dirty to silence this warning.',
+            "WARNING: git working tree is dirty; lev2 provenance will record "
+            "code_dirty=true. Commit/stash for a reproducible stamp, or pass "
+            "--allow-dirty to silence this warning.",
             file=sys.stderr,
         )
 
@@ -438,30 +435,34 @@ def main() -> None:
     level1_dirs = [Path(d) for d in args.level1_dirs]
     for level1_dir in level1_dirs:
         if not level1_dir.exists():
-            print(f'ERROR: Level 1 directory not found: {level1_dir}')
+            print(f"ERROR: Level 1 directory not found: {level1_dir}")
             return 1
 
     # Discover input files for the specific contrast. Surface and volume use
     # different fixed-effects file types (.func.gii vs .nii.gz) and engines.
-    print(f'Discovering input files for contrast: {args.contrast} (space={args.space})')
-    if args.space == 'surface':
+    print(f"Discovering input files for contrast: {args.contrast} (space={args.space})")
+    if args.space == "surface":
         from neuro_workflow.analysis.lev2.surface import (
             discover_surface_inputs,
             run_surface_level2_analysis,
         )
+
         surf = discover_surface_inputs(level1_dirs, args.contrast)
-        input_files = surf['L'] + surf['R']
+        input_files = surf["L"] + surf["R"]
         if not input_files:
-            print(f'ERROR: No surface input files found for contrast {args.contrast}')
+            print(f"ERROR: No surface input files found for contrast {args.contrast}")
             return 1
         ok = run_surface_level2_analysis(
-            args.contrast, level1_dirs, output_dir,
-            n_perm=args.num_permutations, seed=args.seed,
+            args.contrast,
+            level1_dirs,
+            output_dir,
+            n_perm=args.num_permutations,
+            seed=args.seed,
         )
     else:
         input_files = discover_input_files(level1_dirs, args.contrast)
         if not input_files:
-            print(f'ERROR: No input files found for contrast {args.contrast}')
+            print(f"ERROR: No input files found for contrast {args.contrast}")
             return 1
         ok = run_level2_analysis(
             args.contrast,
@@ -475,7 +476,7 @@ def main() -> None:
         # The analysis failed (e.g. randomise errored). Do NOT stamp a success
         # provenance manifest; propagate a non-zero exit so the SLURM array
         # surfaces the failure instead of reporting success.
-        print(f'ERROR: Level 2 analysis failed for {args.contrast}', file=sys.stderr)
+        print(f"ERROR: Level 2 analysis failed for {args.contrast}", file=sys.stderr)
         return 1
 
     # Provenance (ADDITIVE) — written AFTER the contrast's scientific outputs so
@@ -487,9 +488,9 @@ def main() -> None:
     contrast_output_dir = output_dir / args.contrast
     _write_lev2_provenance(contrast_output_dir, args, level1_dirs, input_files)
 
-    print(f'\nLevel 2 GLM analysis completed for {args.contrast}')
+    print(f"\nLevel 2 GLM analysis completed for {args.contrast}")
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())

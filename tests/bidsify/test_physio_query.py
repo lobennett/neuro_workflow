@@ -1,9 +1,7 @@
 """Tests for physio Flywheel query module."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
-
-import pytest
 
 from neuro_workflow.bidsify.physio_query import (
     find_gephysio_analyses,
@@ -16,7 +14,7 @@ def _make_analysis(label, gear_name, input_name, input_acq_id, files=None, creat
     a = MagicMock()
     a.label = label
     a.gear_info = {"name": gear_name}
-    a.created = created or datetime(2026, 1, 29, tzinfo=timezone.utc)
+    a.created = created or datetime(2026, 1, 29, tzinfo=UTC)
     a.files = files or []
 
     # Mock the input object
@@ -80,7 +78,7 @@ class TestFindGephysioAnalyses:
             "scan.gephysio.zip",
             "acq123",
             files=[_make_file("PPG_FltData.csv")],
-            created=datetime(2025, 10, 17, tzinfo=timezone.utc),
+            created=datetime(2025, 10, 17, tzinfo=UTC),
         )
         new = _make_analysis(
             "gephysio 01/28/2026",
@@ -88,7 +86,7 @@ class TestFindGephysioAnalyses:
             "scan.gephysio.zip",
             "acq123",
             files=[_make_file("PPG_FltData.csv")],
-            created=datetime(2026, 1, 28, tzinfo=timezone.utc),
+            created=datetime(2026, 1, 28, tzinfo=UTC),
         )
 
         session = MagicMock()
@@ -97,7 +95,7 @@ class TestFindGephysioAnalyses:
         result = find_gephysio_analyses(session)
 
         assert len(result) == 1
-        assert result[0].created == datetime(2026, 1, 28, tzinfo=timezone.utc)
+        assert result[0].created == datetime(2026, 1, 28, tzinfo=UTC)
 
 
 class TestMatchAnalysesToAcquisitions:

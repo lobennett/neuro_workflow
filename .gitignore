@@ -40,3 +40,9 @@ docs/*.pdf
 # Generated audit figures and auto-generated markdown reports (untracked)
 docs/audits/figures/
 docs/EVENTS-TASK-CONFIG-AUDIT.md.repro_test_*.out
+
+# SLURM/scratch captures at repo root (never tracked)
+/.*_[0-9]*.out
+/.*_[0-9]*.err
+/.stage*.sbatch
+/.*.tmp.py

@@ -8,6 +8,7 @@ construction" assumption — that ``{bids_dir}/sourcedata`` holds only the cohor
 behavioral — does not hold for this layout and silently cross-contaminated
 cohorts; this filter closes that.)
 """
+
 from __future__ import annotations
 
 from argparse import ArgumentParser, Namespace
@@ -32,11 +33,17 @@ class BehavioralGenerator:
         try:
             from neuro_workflow.events.qc import run_qc
         except ImportError:
-            print("Error: pandas required for behavioral generator. Install with: uv pip install -e '.[events]'")
+            print(
+                "Error: pandas required for behavioral generator. Install with: uv pip install -e '.[events]'"
+            )
             return []
 
         bids_dir = Path(dataset_config["bids_dir"])
-        behavioral_dir = Path(args.behavioral_dir) if getattr(args, "behavioral_dir", None) else bids_dir / "sourcedata"
+        behavioral_dir = (
+            Path(args.behavioral_dir)
+            if getattr(args, "behavioral_dir", None)
+            else bids_dir / "sourcedata"
+        )
 
         # Scope to the dataset roster: the shared behavioral tree holds all
         # cohorts' subjects, so restrict QC to this dataset's subjects (fail-loud
@@ -52,8 +59,10 @@ class BehavioralGenerator:
         for entry in exclusion_entries:
             entry["source"] = "behavioral-qc"
 
-        print(f"Behavioral QC: {len(exclusion_entries)} exclusions, {len(trim_entries)} trim entries "
-              f"(roster-scoped to {len(roster)} subjects of dataset '{dataset_name}')")
+        print(
+            f"Behavioral QC: {len(exclusion_entries)} exclusions, {len(trim_entries)} trim entries "
+            f"(roster-scoped to {len(roster)} subjects of dataset '{dataset_name}')"
+        )
         return exclusion_entries
 
 

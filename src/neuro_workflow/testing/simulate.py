@@ -47,7 +47,6 @@ from __future__ import annotations
 import contextlib
 from argparse import Namespace
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from neuro_workflow.core import exclusions as _exclusions
 from neuro_workflow.core import exclusions_render as _render
@@ -88,10 +87,10 @@ class SimulationResult:
     def __init__(
         self,
         *,
-        compiled: List[dict],
-        bidsignore: Optional[str],
-        behavioral_entries: List[dict],
-        motion_entries: List[dict],
+        compiled: list[dict],
+        bidsignore: str | None,
+        behavioral_entries: list[dict],
+        motion_entries: list[dict],
         exclusions_dir: Path,
     ) -> None:
         self.compiled = compiled
@@ -122,9 +121,7 @@ class SimulationResult:
 
 
 @contextlib.contextmanager
-def _redirect_exclusion_paths(
-    exclusions_dir: Path, lockfile_dir: Path, collection_dir: Path
-):
+def _redirect_exclusion_paths(exclusions_dir: Path, lockfile_dir: Path, collection_dir: Path):
     """Temporarily point the exclusions/render module paths at tmp dirs.
 
     ``compile_exclusions`` / ``save_source_entries`` resolve ``EXCLUSIONS_DIR``
@@ -154,10 +151,10 @@ def _redirect_exclusion_paths(
 
 def simulate_exclusions(
     cohort_root: Path,
-    manifest: Dict,
+    manifest: dict,
     *,
     dataset: str = "sim",
-    work_dir: Optional[Path] = None,
+    work_dir: Path | None = None,
 ) -> SimulationResult:
     """Run the REAL exclusion pipeline over a synthetic cohort.
 
@@ -213,9 +210,7 @@ def simulate_exclusions(
 
     # --- run the REAL generators ------------------------------------------
     behavioral_args = Namespace(behavioral_dir=None)
-    behavioral_entries = BehavioralGenerator().generate(
-        dataset, dataset_config, behavioral_args
-    )
+    behavioral_entries = BehavioralGenerator().generate(dataset, dataset_config, behavioral_args)
 
     # MotionGenerator reconstructs <bids_dir>/derivatives/fmriprep_{version}
     # from --fmriprep-version; supply the matching version + the real default
@@ -289,10 +284,10 @@ class FullPipelineResult:
     def __init__(
         self,
         *,
-        manifest: Dict,
+        manifest: dict,
         exclusions: SimulationResult,
-        recovery_scan: Optional[dict],
-        recovered_contrast: Optional[float],
+        recovery_scan: dict | None,
+        recovered_contrast: float | None,
     ) -> None:
         self.manifest = manifest
         self.exclusions = exclusions
@@ -306,7 +301,7 @@ _PLANTED_BETAS = {"incongruent": 10.0, "congruent": 5.0, "constant": 100.0}
 _PLANTED_EFFECT = _PLANTED_BETAS["incongruent"] - _PLANTED_BETAS["congruent"]
 
 
-def _map_spec_to_bids_scans(spec) -> List[dict]:
+def _map_spec_to_bids_scans(spec) -> list[dict]:
     """Compute each func acquisition's produced BIDS (sub, ses, task, run).
 
     Reproduces ``bidsify/run.py``'s numbering WITHOUT running it: sessions are
@@ -321,12 +316,10 @@ def _map_spec_to_bids_scans(spec) -> List[dict]:
     """
     from neuro_workflow.bidsify.config import map_acquisition
 
-    records: List[dict] = []
+    records: list[dict] = []
     for subj in spec.subjects:
         sub = f"sub-{subj.label}"
-        sessions_sorted = sorted(
-            subj.sessions, key=lambda s: (s.timestamp or "", s.label)
-        )
+        sessions_sorted = sorted(subj.sessions, key=lambda s: (s.timestamp or "", s.label))
         for ses_idx, sess in enumerate(sessions_sorted, start=1):
             ses = f"ses-{ses_idx:02d}"
             # Group this session's func acqs by task, number runs by timestamp.
@@ -338,13 +331,11 @@ def _map_spec_to_bids_scans(spec) -> List[dict]:
                 func_acqs.append((acq, mapping["task"]))
 
             # Per-task run numbering by ascending acq timestamp.
-            by_task: Dict[str, list] = {}
+            by_task: dict[str, list] = {}
             for acq, task in func_acqs:
                 by_task.setdefault(task, []).append(acq)
             for task, acqs in by_task.items():
-                acqs_sorted = sorted(
-                    acqs, key=lambda a: (a.timestamp or "", a.label)
-                )
+                acqs_sorted = sorted(acqs, key=lambda a: (a.timestamp or "", a.label))
                 for run_idx, acq in enumerate(acqs_sorted, start=1):
                     records.append(
                         {
@@ -463,20 +454,16 @@ def simulate_full_pipeline(
     fake = make_fake_flywheel(spec)
     install_flywheel(fake)
     subject_labels = [s.label for s in spec.subjects]
-    run_bidsify(
-        "discovery", output_dir=bids_dir, subjects=subject_labels, overwrite=True
-    )
+    run_bidsify("discovery", output_dir=bids_dir, subjects=subject_labels, overwrite=True)
 
     # Map each spec func acquisition to its produced BIDS (sub, ses, task, run).
     scans = _map_spec_to_bids_scans(spec)
     plant_scans = [s for s in scans if s["plant_contrast"]]
     if len(plant_scans) > 1:
-        raise ValueError(
-            f"at most one plant_contrast scan supported; got {len(plant_scans)}"
-        )
+        raise ValueError(f"at most one plant_contrast scan supported; got {len(plant_scans)}")
 
     # --- 2. sourcedata raw-jsPsych CSVs + REAL events.create --------------
-    collection_lines: List[str] = []
+    collection_lines: list[str] = []
     scan_seed = seed
     for scan in scans:
         scan_seed += 1
@@ -501,29 +488,30 @@ def simulate_full_pipeline(
                     beh_params = {"omission_rate": 0.5}
             else:
                 beh_params = {}
-            make_raw_jspsych_csv(
-                beh_csv, task, n_trials=40, seed=scan_seed, **beh_params
-            )
+            make_raw_jspsych_csv(beh_csv, task, n_trials=40, seed=scan_seed, **beh_params)
         scan["beh_csv"] = str(beh_csv) if beh_csv else None
 
         # fMRIPrep derivative stub (clean unless exclude:motion).
         motion = "high" if scan["outcome"] == "exclude:motion" else "clean"
         written = make_fmriprep_run(
-            fmriprep_dir, sub.replace("sub-", ""), ses.replace("ses-", ""),
-            task, run_num, space="MNI", n_trs=scan["n_trs"], version=version,
-            motion=motion, seed=scan_seed,
+            fmriprep_dir,
+            sub.replace("sub-", ""),
+            ses.replace("ses-", ""),
+            task,
+            run_num,
+            space="MNI",
+            n_trs=scan["n_trs"],
+            version=version,
+            motion=motion,
+            seed=scan_seed,
         )
         scan["mni_data"] = str(written["mni_data"])
-        scan["events"] = str(
-            bids_dir / sub / ses / "func" / f"{prefix}_events.tsv"
-        )
+        scan["events"] = str(bids_dir / sub / ses / "func" / f"{prefix}_events.tsv")
 
         # Collection glob for exclude:collection scans (committed-collection
         # .bidsignore style — covers every echo of the run).
         if scan["outcome"] == "exclude:collection":
-            collection_lines.append(
-                f"{sub}/{ses}/func/{prefix}_echo-*_bold.*"
-            )
+            collection_lines.append(f"{sub}/{ses}/func/{prefix}_echo-*_bold.*")
 
     # REAL events generation: walks sourcedata CSVs, discovers BIDS func NIfTIs,
     # writes events.tsv into the produced BIDS func dirs.
@@ -553,9 +541,7 @@ def simulate_full_pipeline(
     # --- 4. Exclusions: REAL behavioral + motion + compile + render -------
     # Write the synthetic collection block (same stem simulate_exclusions
     # expects: <root>/data/exclusions/<dataset>_collection.bidsignore).
-    collection_file = _write_full_collection_block(
-        root, dataset, sorted(set(collection_lines))
-    )
+    collection_file = _write_full_collection_block(root, dataset, sorted(set(collection_lines)))
     excl_manifest = {
         "bids_dir": str(bids_dir),
         "fmriprep_dir": str(fmriprep_dir),
@@ -568,7 +554,8 @@ def simulate_full_pipeline(
     if recovery_scan is not None:
         finder = FileFinder(str(bids_dir), str(fmriprep_dir))
         files = finder.get_files(
-            recovery_scan["subject"], recovery_scan["task"],
+            recovery_scan["subject"],
+            recovery_scan["task"],
             required_files=FileFinder.get_required_files_for_space("MNI"),
         )
         session, run = recovery_scan["session"], recovery_scan["run"]
@@ -585,22 +572,22 @@ def simulate_full_pipeline(
 
         reloaded = nib.load(str(run_files["mni_data"]))
         fitted = fit_run_glm(
-            reloaded, design, analysis_type="task", tr=tr,
+            reloaded,
+            design,
+            analysis_type="task",
+            tr=tr,
             mask_img=make_mask(reloaded),
         )
         formula = get_task_contrasts(task)["incongruent-congruent"]
         saved = compute_run_contrasts(
-            fitted_glm=fitted, task_name=task,
+            fitted_glm=fitted,
+            task_name=task,
             output_dir=root / "lev1_out",
-            base_filename=(
-                f"{recovery_scan['subject']}_{session}_task-{task}_{run}"
-            ),
+            base_filename=(f"{recovery_scan['subject']}_{session}_task-{task}_{run}"),
             contrasts={"incongruent-congruent": formula},
         )
         effect_path = saved["incongruent-congruent"]["effect_size"]
-        recovered_contrast = float(
-            np.mean(nib.load(str(effect_path)).get_fdata())
-        )
+        recovered_contrast = float(np.mean(nib.load(str(effect_path)).get_fdata()))
 
     manifest = {
         "bids_dir": str(bids_dir),
@@ -628,9 +615,7 @@ _FULL_COLLECTION_HEADER = (
 )
 
 
-def _write_full_collection_block(
-    root: Path, dataset: str, lines: List[str]
-) -> Optional[Path]:
+def _write_full_collection_block(root: Path, dataset: str, lines: list[str]) -> Path | None:
     """Write the full-chain collection ``.bidsignore`` block, if any lines.
 
     Mirrors ``cohort._write_collection_block`` but keyed on ``dataset`` so the

@@ -1,9 +1,7 @@
 """Tests for bidsify file_selector module."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
-
-import pytest
 
 from neuro_workflow.bidsify.file_selector import select_files
 
@@ -13,7 +11,7 @@ def _make_file(name, file_type="nifti", size=100, created=None):
     f.name = name
     f.type = file_type
     f.size = size
-    f.created = created or datetime(2021, 1, 1, tzinfo=timezone.utc)
+    f.created = created or datetime(2021, 1, 1, tzinfo=UTC)
     return f
 
 
@@ -43,8 +41,8 @@ class TestSelectBoldMultiecho:
 
     def test_select_bold_prefers_newest_duplicate(self):
         """When duplicate NIfTIs exist for same echo, pick newest by .created."""
-        old = datetime(2021, 1, 1, tzinfo=timezone.utc)
-        new = datetime(2021, 6, 1, tzinfo=timezone.utc)
+        old = datetime(2021, 1, 1, tzinfo=UTC)
+        new = datetime(2021, 6, 1, tzinfo=UTC)
 
         files = [
             _make_file("bold_e1.nii.gz", size=100, created=old),
@@ -79,8 +77,8 @@ class TestSelectFieldmap:
 class TestSelectAnat:
     def test_select_anat(self):
         """Picks newest NIfTI and newest JSON."""
-        old = datetime(2021, 1, 1, tzinfo=timezone.utc)
-        new = datetime(2021, 6, 1, tzinfo=timezone.utc)
+        old = datetime(2021, 1, 1, tzinfo=UTC)
+        new = datetime(2021, 6, 1, tzinfo=UTC)
 
         files = [
             _make_file("t1w.nii.gz", created=old),

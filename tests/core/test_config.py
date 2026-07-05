@@ -1,16 +1,14 @@
-import json
 from pathlib import Path
 
 import pytest
 
 from neuro_workflow.core.config import (
     CONFIG_DIR,
-    CONFIG_FILE,
     DEFAULTS,
-    load_datasets,
-    save_dataset,
     get_dataset,
+    load_datasets,
     resolve_dataset_subjects,
+    save_dataset,
 )
 
 
@@ -56,9 +54,10 @@ def test_get_dataset_merges_defaults(tmp_path, monkeypatch):
 def test_get_dataset_raises_on_missing(tmp_path, monkeypatch):
     monkeypatch.setattr("neuro_workflow.core.config.CONFIG_FILE", tmp_path / "datasets.json")
     from neuro_workflow.core.config import DatasetNotFoundError
+
     try:
         get_dataset("nonexistent")
-        assert False, "Should have raised DatasetNotFoundError"
+        raise AssertionError("Should have raised DatasetNotFoundError")
     except DatasetNotFoundError:
         pass
 
