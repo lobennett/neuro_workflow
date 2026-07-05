@@ -7,9 +7,9 @@ All fixtures are synthetic; this file NEVER touches:
 
 from __future__ import annotations
 
-import os
 import subprocess
 from argparse import Namespace
+from pathlib import Path
 
 import pytest
 
@@ -337,8 +337,7 @@ def _run_help(*args):
         ["uv", "run", "neuro-run", *args],
         capture_output=True,
         text=True,
-        cwd="/scratch/users/logben/neuro_workflow_refactor",
-        env={**os.environ, "UV_CACHE_DIR": "/scratch/users/logben/.uv-cache"},
+        cwd=Path(__file__).resolve().parents[2],
     )
 
 
