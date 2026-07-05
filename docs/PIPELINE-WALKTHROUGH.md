@@ -444,8 +444,8 @@ done
 ```
 
 Record the run (live-pull date, code SHA, final lockfile SHA + per-source counts, every
-gate outcome, the reproduce PASS line, dataset commit SHAs) in
-`docs/REEXECUTION-RUN-LOG.md`.
+gate outcome, the reproduce PASS line, dataset commit SHAs) in a run log
+(e.g. `REEXECUTION-RUN-LOG.md` under docs/ — create it if it doesn't exist yet).
 
 ---
 

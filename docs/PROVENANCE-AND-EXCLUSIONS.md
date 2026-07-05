@@ -14,8 +14,8 @@ rationale, the per-cohort catalog is *rendered* to each dataset's `EXCLUSIONS.md
 run-manifest schema see [§11 below](#run-manifest-schema--clean-tree-policy).
 
 > **Note.** This document is the single authoritative reference for the exclusion
-> framework and supersedes the former `docs/EXCLUSIONS-FLOW.md`, `docs/EXCLUSIONS.md`
-> (both removed 2026-07-04), and `docs/PROVENANCE.md` / `docs/WORKFLOW.md` (folded in
+> framework and supersedes the former `EXCLUSIONS-FLOW.md`, `EXCLUSIONS.md`
+> (both removed 2026-07-04), and `PROVENANCE.md` / `WORKFLOW.md` (folded in
 > 2026-07-04; see §11 and `docs/PIPELINE-WALKTHROUGH.md` respectively). It reflects the
 > current code; §10 records current-vs-legacy behavior worth knowing (notably:
 > `lev1_outlier` is **active** and **per-contrast**, not archived).
@@ -542,22 +542,22 @@ The canonical, backed-up, version-controlled datasets live at:
 
 Points to reconcile in the other docs (this document follows the code):
 
-1. **`docs/EXCLUSIONS-FLOW.md` — `lev1_outlier` is described as archived/"do not use"
+1. **`EXCLUSIONS-FLOW.md` — `lev1_outlier` is described as archived/"do not use"
    with whole-scan (`strict_vif=15`) granularity.** Stale. The generator is **active** and
    emits **per-contrast** `exclude-contrast` entries with the `exempt_contrasts`
    (`task-baseline`, `response_time`) carve-out; the committed discovery lockfile shows it
    contributing 22 entries. `docs/DATASETS.md` §6 already reflects the current behavior.
-2. **`docs/EXCLUSIONS-FLOW.md` roster filter** references a dataset `subjects_file` /
+2. **`EXCLUSIONS-FLOW.md` roster filter** references a dataset `subjects_file` /
    `~/.neuro_workflow/datasets.json`. Current code resolves the roster from
    `config/pipeline_config.json` `samples` via `load_dataset_subjects` /
    `resolve_dataset_subjects`; the removed `subjects_*.txt` files are gone.
-3. **`docs/EXCLUSIONS-FLOW.md` CLI path** points at `src/neuro_workflow/cli.py`; the
+3. **`EXCLUSIONS-FLOW.md` CLI path** points at `src/neuro_workflow/cli.py`; the
    handlers now live in `src/neuro_workflow/cli/exclusions.py`.
-4. **`docs/EXCLUSIONS-FLOW.md` "operator playbook"** says there is *no automated path* from
+4. **`EXCLUSIONS-FLOW.md` "operator playbook"** says there is *no automated path* from
    cohort QC to the registry (act only via `qa_decisions`/overrides). The automated path
    now exists — the `lev1_outlier` generator — as long as it is understood to be
    per-contrast, not scan-level.
-5. **`docs/EXCLUSIONS.md`** (last updated 2026-04-14) predates the compiled-source model:
+5. **`EXCLUSIONS.md`** (last updated 2026-04-14) predates the compiled-source model:
    it describes `.bidsignore` as the authoritative store. The authoritative store is now
    the compiled set / lockfile; `.bidsignore` and `EXCLUSIONS.md` are **rendered** from it.
 6. **Two behavioral source files in the lockfile** (`behavioral-qc` with 3 entries and a
@@ -569,7 +569,7 @@ Points to reconcile in the other docs (this document follows the code):
 
 ## Run-manifest schema & clean-tree policy
 
-> Folded in from the former `docs/PROVENANCE.md` (2026-07-04). Every lev1 and lev2 run
+> Folded in from the former `PROVENANCE.md` (2026-07-04). Every lev1 and lev2 run
 > automatically records its provenance; this section describes what is captured, where it
 > lands, and how the clean-tree policy works. (§4 above covers the compiled-**exclusions**
 > lockfile and its own, separate provenance fields — `compiled_at`, `compiled_at_code_sha`,
