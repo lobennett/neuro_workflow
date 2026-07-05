@@ -93,7 +93,7 @@ Stage 6  Finalize                                → datalad save → git annex 
 3. Recompile exclusions **adding lev1_outlier** → **Exclusion Gate B**: diff vs committed; sign-off on any change.
 4. **datalad commit #3** = **final** exclusion lockfile (all 5 sources, single clean SHA) + final `.bidsignore` + `EXCLUSIONS.md`.
 
-### Stage 4 — lev2 (base-task contrasts) 
+### Stage 4 — lev2 (base-task contrasts)
 - Run lev2 for base-task contrasts, **surface** (sign-flip permutation, seeded) and **volume** (FSL randomise — verify seed support, else prefer surface for reproducibility). `rsync` outputs → Oak. Prevalence dashboards are a cheap post-lev2 follow-on.
 
 ### Stage 5 — Reproduce certification (Oak)
