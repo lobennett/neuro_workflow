@@ -19,16 +19,14 @@ uv run python scripts/trim_bold.py /scratch/users/logben/discovery_bids
 - `src/neuro_workflow/` - Main package (bidsify pipeline, events, CLI, analysis, QA)
 - `scripts/` - Standalone post-bidsify scripts
 - `tests/` - Test suite
-- `docs/` - Documentation (6 authoritative files)
+- `docs/` - Documentation (4 authoritative files)
 - `config/` - Configuration, thresholds, and reviewed manifests
 
 ### Authoritative Documentation
-1. **`docs/WORKFLOW.md`** - Reproducible pipeline: Flywheel to lev2 (Steps 1-14)
-2. **`docs/PROVENANCE-AND-EXCLUSIONS.md`** - Flywheel→models provenance + the exclusion framework (5 sources, compilation, lockfile, gate, reproduction). Per-cohort exclusion catalogs are *rendered* to each dataset's `EXCLUSIONS.md`.
-3. **`docs/SCAN-NOTES.md`** - Raw data collection notes per subject
-4. **`docs/ARCHITECTURE.md`** - Package structure and module reference
-5. **`docs/PROVENANCE.md`** - Run-manifest schema, dataset_description, clean-tree policy
-6. **`docs/CONFIG.md`** - thresholds.yaml and battery.yaml schema and usage
+1. **`docs/PROVENANCE-AND-EXCLUSIONS.md`** - Flywheel→models provenance + the exclusion framework (5 sources, compilation, lockfile, gate, reproduction) + the run-manifest schema, `dataset_description`, and clean-tree policy. Per-cohort exclusion catalogs are *rendered* to each dataset's `EXCLUSIONS.md`.
+2. **`docs/SCAN-NOTES.md`** - Raw data collection notes per subject
+3. **`docs/ARCHITECTURE.md`** - Package structure and module reference
+4. **`docs/CONFIG.md`** - thresholds.yaml and battery.yaml schema and usage
 
 ### Scripts
 - **`scripts/trim_bold.py`** -- Trim 7 dummy volumes from BOLD NIfTIs. Idempotent (checks sidecar for `NumberOfVolumesDiscardedByUser`). Atomic writes (temp file + rename). Skips corrupt files.
@@ -54,7 +52,7 @@ MSHBM, prevalence analysis, parcellation reliability, and XCP-D are NOT in this 
 
 ## Pipeline Overview
 
-See `docs/WORKFLOW.md` for exact commands. Summary:
+See `docs/PIPELINE-WALKTHROUGH.md` (§ Quick reference (Steps 1–14)) for exact commands. Summary:
 
 ```bash
 # 1. Pull from Flywheel
@@ -99,7 +97,8 @@ uv run neuro-run exclusions compile discovery
 
 # 12. First-level GLM
 uv run neuro-run submit lev1 discovery
-# Each run emits run-manifest.json + dataset_description.json (see docs/PROVENANCE.md)
+# Each run emits run-manifest.json + dataset_description.json
+# (see docs/PROVENANCE-AND-EXCLUSIONS.md#run-manifest-schema--clean-tree-policy)
 ```
 
 ### Re-running a single subject
