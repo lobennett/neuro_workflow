@@ -338,6 +338,11 @@ rsync -avP $STAGE/discovery/derivatives/fmriprep_25.2.4 $BIDSROOT/discovery/deri
 uv run python scripts/build_xcpd_view.py discovery_oak --fmriprep-version 25.2.4
 ```
 
+`build_xcpd_view.py` only builds the `.bidsignore`-filtered symlink *input* view. The XCP-D
+**run itself** (denoising, `--mode abcd` etc.) is a separate pipeline now maintained in the
+`network_analysis` repo (`github.com/lobennett/network_analysis`) — see its `templates/xcpd.sbatch`
+and `neuro-run submit xcpd`, pointed at this view.
+
 ### C3. Motion exclusions → gate → commit #2
 
 ```bash
@@ -464,6 +469,7 @@ gate outcome, the reproduce PASS line, dataset commit SHAs) in a run log
 | gate | `scripts/exclusion_gate.py --new … --reference … [--source …]` | drift report; exit 3 on change |
 | fMRIPrep | `neuro-run submit fmriprep <ds> --version 25.2.4 --nthreads 24 --mem-per-cpu-gb 7 …` | `derivatives/fmriprep_25.2.4` |
 | views | `scripts/build_xcpd_view.py <ds> --fmriprep-version 25.2.4` | `fmriprep_*_input` / `xcp_d_*_input` |
+| XCP-D run | Moved — `neuro-run submit xcpd` in the `network_analysis` repo | XCP-D derivatives |
 | lev1 | `neuro-run submit lev1 <ds> --base-tasks --space fsaverage6 --residuals --min-runs 2` | `derivatives/lev1_surface` |
 | cohort QC | `neuro-run submit qa lev1 <ds> --output-dir …` | `lev1_outliers.csv` |
 | lev2 | `neuro-run submit lev2 <ds> --space surface|volume --num-permutations 5000` | group stat maps |
