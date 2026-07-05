@@ -109,8 +109,8 @@ gitignored via `/subjects_*.txt`).
 
 Every pipeline exposes `--nthreads`, `--mem-gb` (or `--mem-per-cpu-gb`), `--time`; unset
 values fall back to the pipeline's `default_resources` (`base.py::resolve_resources`).
-Preprocessing pipelines (fmriprep, xcpd) additionally take `--array-throttle N` →
-`#SBATCH --array=1-N_subjects%N` to cap concurrent array tasks.
+Array pipelines (currently fmriprep; xcpd similarly in `network_analysis`) additionally
+take `--array-throttle N` → `#SBATCH --array=1-N_subjects%N` to cap concurrent array tasks.
 
 ---
 
@@ -127,14 +127,13 @@ outputs + logs land. Cohorts: `discovery` (5 subjects: s03, s10, s19, s29, s43) 
 > `/scratch/users/logben/network_analysis`) — see `docs/ARCHITECTURE.md`. They are **no
 > longer registered `neuro-run` pipelines here**: there are no `xcpd`/`prep-mshbm`/`mshbm`
 > pipeline classes or `.sbatch` templates in this repo, and `scripts/prevalence_*.py` /
-> `scripts/mshbm_*.py` / `scripts/xcpd_preflight.py` have been removed. The sections below
-> are retained as a historical record of how those stages were launched; their commands,
-> default resources, and output/log paths must be re-verified against the `network_analysis`
-> repo (this is the source of the un-resolvable `[VERIFY]` markers in those sections). The
-> `discovery_xcpd` / `*_mshbm` entries still shown by `neuro-run show --list` are stale
-> dataset registrations in `~/.neuro_workflow/datasets.json`, not live pipelines. Stages
-> that remain in this repo — bidsify, fmriprep, lev1, lev2, qa_report, the iProc scatter —
-> are current.
+> `scripts/mshbm_*.py` / `scripts/xcpd_preflight.py` have been removed. Each of those
+> sections below is now a one-line pointer to the equivalent template/command in
+> `network_analysis` — no commands or resource details are duplicated here, so nothing in
+> this doc can go stale as that repo evolves. The `discovery_xcpd` / `*_mshbm` entries still
+> shown by `neuro-run show --list` are stale dataset registrations in
+> `~/.neuro_workflow/datasets.json`, not live pipelines. Stages that remain in this repo —
+> bidsify, fmriprep, lev1, lev2, qa_report, the iProc scatter — are current.
 
 ### 2.1 bidsify (Flywheel → BIDS) — `templates/bidsify.sbatch`
 
@@ -195,32 +194,11 @@ uv run neuro-run submit fmriprep discovery \
 - Has a benign exit-1 workaround for fmriprep#3634: if the `.out` log contains
   "fMRIPrep finished successfully", exit-1 is treated as exit-0.
 
-### 2.3 xcpd (post-fmriprep denoising) — `templates/xcpd.sbatch`
+### 2.3 xcpd (post-fmriprep denoising)
 
-Array job, one per subject, throttled. Requires `--version` and `--fmriprep-version`
-(it reads the fmriprep derivatives as `/data:ro`). Default partition for xcpd is typically
-**bigmem** via the dataset config; defaults are heavier (16 cpus, 24G/cpu **[VERIFY — in
-`network_analysis`; xcpd was extracted from this repo]**).
-
-```bash
-uv run neuro-run submit xcpd discovery \
-  --version 26.0.2 \
-  --fmriprep-version 25.2.4 \
-  --array-throttle 8 \
-  --xcpd-args "--despike"
-```
-
-- Hard-coded run flags in the template: `--mode abcd --fd-thresh 0.3 --combine-runs
-  --warp-surfaces-native2std --linc-qc --min-time 150 --min-coverage 0.5` + notch motion
-  filter; `{xcpd_args}` are appended.
-- **Outputs:** `--output-dir` (bound as `/out`), per-subject `sub-<id>/`. **[VERIFY — in
-  `network_analysis`]** the default output path (`pipelines/xcpd.py` no longer exists here).
-- **Logs:** `{log_dir}/%x-%A-%a.out|.err`.
-- Benign exit-1 workaround for the XCP-D 26.0.2 execsummary matplotlib bug: if the log
-  contains "Reports generated successfully", exit-1 is treated as exit-0.
-
-Preflight helper (omits T2w-only anat dirs XCP-D rejects):
-`uv run python scripts/xcpd_preflight.py discovery_xcpd --fmriprep-version 25.2.4 --xcpd-version 26.0.2`.
+**Moved.** This stage now lives in the `network_analysis` repo
+(`github.com/lobennett/network_analysis`). See its `xcpd.sbatch` template (under that repo's
+`templates/`) and `neuro-run submit xcpd` there.
 
 ### 2.4 lev1 (subject-level GLM array) — `templates/lev1.sbatch`
 
@@ -284,56 +262,17 @@ uv run neuro-run submit lev2 discovery \
 - `module load biology fsl` (randomise). Defaults: 2 cpus, 4G, `04:00:00`.
 - **Outputs:** `--results-dir`. **Logs:** `<results_dir>/logs/%x-%A-%a.out|.err`.
 
-### 2.6 prep-mshbm (surface prep) — `templates/prep_mshbm.sbatch`
+### 2.6 prep-mshbm (surface prep)
 
-Array job, one per subject. `--fmriprep-dir` and `--output-dir` required; supply exactly one
-of `--rest-only` or `--glm-dir <lev1-dir>` (validated in `pipelines/prep_mshbm.py`). No
-container; runs `python -m neuro_workflow.analysis.mshbm.run`.
+**Moved.** This stage now lives in the `network_analysis` repo
+(`github.com/lobennett/network_analysis`). See its `prep_mshbm.sbatch` template (under that
+repo's `templates/`) and `neuro-run submit prep-mshbm` there.
 
-```bash
-# Rest-only variant
-uv run neuro-run submit prep-mshbm discovery \
-  --fmriprep-dir /scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4 \
-  --output-dir /scratch/users/logben/mshbm_surface_prep \
-  --rest-only
+### 2.7 mshbm (MATLAB network mapping)
 
-# Task-residual variant
-uv run neuro-run submit prep-mshbm discovery \
-  --fmriprep-dir /scratch/users/logben/discovery_bids/derivatives/fmriprep_25.2.4 \
-  --output-dir /scratch/users/logben/mshbm_surface_prep \
-  --glm-dir /scratch/users/logben/discovery_bids/derivatives/lev1 \
-  --residuals-space surface
-```
-
-- `#SBATCH --array=1-<n_subjects>` (one per subject; not throttled). Subject per line via
-  `sed -n "${SLURM_ARRAY_TASK_ID}p" <subject_list_file>`.
-- `module load biology freesurfer/8.1.0` + `biology ants/2.4.0` + `uv`. Defaults: 1 cpu,
-  64G, `24:00:00` **[VERIFY — in `network_analysis`; prep-mshbm was extracted]**.
-- **Outputs:** `--output-dir`. **Logs:** `{log_dir}/%x-%A-%a.out|.err`. **[VERIFY — in
-  `network_analysis`]** log dir.
-
-### 2.7 mshbm (MATLAB network mapping) — `templates/mshbm.sbatch`
-
-**Single** job (not an array). Drives the PrecisionNetworkMapping MATLAB wrapper.
-`--surface-inputs-dir` and `--output-dir` required; `--mshbm-dir` points at the PNM repo.
-
-```bash
-uv run neuro-run submit mshbm discovery \
-  --surface-inputs-dir /scratch/users/logben/mshbm_surface_prep \
-  --output-dir /scratch/users/logben/mshbm_maps \
-  --mshbm-dir /scratch/users/logben/network_analysis/external/PrecisionNetworkMapping  # PNM checkout (see network_analysis)
-```
-
-- Context writes a 2-column, header-less CSV (`sub-XXX,<surface_dir>/`) consumed by MATLAB.
-- `module load matlab`; runs `bash <mshbm_dir>/MSHBM/run_MSHBM.sh <sub_list> <output_dir> <mshbm_dir>`.
-- Defaults: 1 cpu, 64G, `24:00:00` **[VERIFY — in `network_analysis`; mshbm was extracted]**.
-- **Outputs:** `--output-dir`. **Logs:** `<output_dir>/logs/%x-%j.out|.err`.
-
-PrecisionNetworkMapping (PNM) now lives with the extracted `network_analysis` repo
-(`github.com/lobennett/PrecisionNetworkMapping`, fork `lobennett/`). It is **no longer a
-submodule of this repo** — the `external/PrecisionNetworkMapping` submodule was removed once
-mshbm/prep-mshbm were extracted. Point `--mshbm-dir` at the PNM checkout used by
-`network_analysis`; the original `~/network_glm` clone has been used for `CBIG_CODE_DIR`.
+**Moved.** This stage (and the PrecisionNetworkMapping/PNM dependency it drives) now lives
+in the `network_analysis` repo (`github.com/lobennett/network_analysis`). See its
+`mshbm.sbatch` template (under that repo's `templates/`) and `neuro-run submit mshbm` there.
 
 ### 2.8 qa_report (cohort QA HTML + reliability movies) — `scripts/run_qa_report.sbatch`
 
@@ -361,18 +300,11 @@ sbatch /home/users/logben/neuro_workflow/scripts/run_qa_report.sbatch \
 Related: cohort lev1 QC via `sbatch scripts/run_lev1_outliers.sbatch --lev1-dir ...`
 (russpold, 1h, 16G, 2 cpus → `scripts/lev1_outliers.py`, logs to `logs/lev1_outliers-%j.*`).
 
-### 2.9 prevalence (maps + dashboards) — MOVED to `network_analysis`
+### 2.9 prevalence (maps + dashboards)
 
-Prevalence analysis was extracted to the `network_analysis` repo (see the banner at the top
-of §2 and `docs/ARCHITECTURE.md`). The `scripts/prevalence_*.py` family and the
-`neuro_workflow.analysis.prevalence.*` package no longer exist in this repo. Historically
-these were direct `uv run python` invocations (not SLURM pipelines) that rendered PNG panels
-+ DataTables `index.html` and per-instance trend TSV/figures, e.g.
-`prevalence_by_instance_run.py` and `prevalence_dashboard.py`.
-
-**[VERIFY — in `network_analysis`]** exact CLI flags and output dirs per script (e.g. the
-existing diagnostic dashboard at `/scratch/users/logben/prevalence_diagnostic_all44`). These
-are research glue, documented only in their module docstrings in that repo.
+**Moved.** This stage now lives in the `network_analysis` repo
+(`github.com/lobennett/network_analysis`). See its `scripts/prevalence_*.py` family there
+(direct `uv run python` invocations, not SLURM pipelines).
 
 ---
 
@@ -520,15 +452,15 @@ uv run python scripts/iproc_parallel_run.py --sub s10 \
 |---|---|---|---|
 | bidsify | `neuro-run submit bidsify` (container, 1 job) | `--output-dir` BIDS tree | `<output-dir>/sourcedata/logs/bidsify_<sample>-%j.*` |
 | fmriprep | `neuro-run submit fmriprep` (array%throttle) | `<bids>/derivatives/fmriprep_<ver>/` | `<...>/fmriprep_<ver>/logs/%x-%A-%a.*` |
-| xcpd | `neuro-run submit xcpd` (array%throttle) | `--output-dir` | `{log_dir}/%x-%A-%a.*` |
+| xcpd | Moved — see `network_analysis` repo | — | — |
 | lev1 | `neuro-run submit lev1` (array subj×task) | `--results-dir` (def `<bids>/derivatives/lev1`) | `<results>/logs/%x-%A-%a.*` |
 | lev2 | `neuro-run submit lev2` (array per contrast) | `--results-dir` | `<results>/logs/%x-%A-%a.*` |
-| prep-mshbm | `neuro-run submit prep-mshbm` (array per subj) | `--output-dir` | `{log_dir}/%x-%A-%a.*` |
-| mshbm | `neuro-run submit mshbm` (1 MATLAB job) | `--output-dir` | `<output>/logs/%x-%j.*` |
+| prep-mshbm | Moved — see `network_analysis` repo | — | — |
+| mshbm | Moved — see `network_analysis` repo | — | — |
 | qa_report | `sbatch scripts/run_qa_report.sbatch` | `<fmriprep>/qa_html/` | repo `logs/qa_report-%j.*` |
 | iproc combine/filter | `iproc_scatter.py submit-rest` | canonical iProc tree | `scatter_combine_s10/logs/<label>/slurm_comb_%j.log` |
 | iproc tedana | `iproc_tedana_scatter.py submit` (drip, 10-min) | canonical `.../tedana/...` | `scatter_combine_s10/logs/<label>/slurm_teda_<space>_%j.*` |
-| prevalence | moved to `network_analysis` repo | per-script **[VERIFY — in `network_analysis`]** | n/a (foreground) |
+| prevalence | Moved — see `network_analysis` repo | — | — |
 
 ---
 
@@ -538,9 +470,11 @@ uv run python scripts/iproc_parallel_run.py --sub s10 \
   (`${{SLURM_ARRAY_TASK_ID}}`) in the `.sbatch` template. Renaming a context key without
   updating the template (or vice versa) raises `KeyError` at render time.
 - **lev1 needs exclusions compiled first**; lev2 auto-discovers contrasts and skips
-  `_desc-belowMinRuns` files; xcpd needs fmriprep done; tedana needs combine done.
-- **fMRIPrep / XCP-D benign exit-1**: both templates grep the success string and convert
-  exit-1 → exit-0. Re-verify the success string when bumping versions.
+  `_desc-belowMinRuns` files; tedana needs combine done. (xcpd, which needs fmriprep done,
+  now lives in `network_analysis`.)
+- **fMRIPrep benign exit-1**: the template greps the success string and converts exit-1 →
+  exit-0. Re-verify the success string when bumping versions. (XCP-D has an analogous
+  workaround in `network_analysis`.)
 - **Repo `logs/` hygiene:** `logs/*.err` from `run_qa_report.sbatch` / `run_lev1_outliers.sbatch`
   are currently untracked and not covered by `logs/.gitignore` (which ignores `*.out` but
   not `*.err`). These repo logs are stale SLURM stdout/stderr and are **safe to delete now**:
