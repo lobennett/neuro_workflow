@@ -193,7 +193,7 @@ For each of discovery / validation (in an `sbatch` job, git-annex on PATH):
 
 - [ ] **Step 2: `datalad save`** the reconciled paths with a provenance message recording code SHA (`git -C <worktree> rev-parse --short HEAD`), exclusion lockfile path, fMRIPrep version 25.2.4. Scope to explicit paths (do NOT sweep the pre-existing dirty `derivatives/` state unrelated to this reconcile — `datalad save <.bidsignore> <derivatives/fmriprep_25.2.4_input> <changed events>`).
 
-- [ ] **Step 3: Excluded dataset** — verify `/scratch/users/logben/excluded_bids` holds the right 11-subject roster (`pipeline_config.json` excluded sample); `datalad save` it (no lev1 pipeline). 
+- [ ] **Step 3: Excluded dataset** — verify `/scratch/users/logben/excluded_bids` holds the right 11-subject roster (`pipeline_config.json` excluded sample); `datalad save` it (no lev1 pipeline).
 
 - [ ] **Step 4: Set datasets read-only** (matching the project's post-update convention): `chmod -R a-w` on the three dataset trees (or the project's documented lock step).
 
