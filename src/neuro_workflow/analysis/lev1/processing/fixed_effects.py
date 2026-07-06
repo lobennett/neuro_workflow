@@ -27,6 +27,7 @@ class FixedEffectsAnalyzer:
         min_runs: int = 2,
         hemisphere: str | None = None,
         surface_space: str = "fsnative",
+        no_rt: bool = False,
     ):
         """Initialize fixed effects analyzer.
 
@@ -37,6 +38,10 @@ class FixedEffectsAnalyzer:
             min_runs: Minimum runs required to compute a non-tagged fixed-effects map (default: 2).
             hemisphere: Optional hemisphere ('L' or 'R') for surface data
             surface_space: Surface space name for output filenames (default 'fsnative')
+            no_rt: If True, this analyzer represents a GLM built without a
+                response_time regressor; tags output filenames
+                `_rtmodel-noRT` (instead of `_rtmodel-RTDur`) and drops
+                response_time-related contrasts.
 
         Examples:
             >>> analyzer = FixedEffectsAnalyzer('sub-01', 'stopSignal')
@@ -48,6 +53,8 @@ class FixedEffectsAnalyzer:
         self.min_runs = min_runs
         self.hemisphere = hemisphere
         self.surface_space = surface_space
+        self.no_rt = no_rt
+        self.rtmodel_tag = "noRT" if no_rt else "RTDur"
         self.contrast_results = {}
 
     def find_contrast_files(
@@ -285,7 +292,7 @@ class FixedEffectsAnalyzer:
             f"{self.subject_id}{hemi_tag}{space_tag}"
             f"_task-{self.task_name}"
             f"_contrast-{contrast_name}"
-            f"_rtmodel-RTDur{below_min_tag}"
+            f"_rtmodel-{self.rtmodel_tag}{below_min_tag}"
             f"_stat-fixed-effects"
         )
 
@@ -389,6 +396,17 @@ class FixedEffectsAnalyzer:
         """
         if contrasts is None:
             contrasts = get_task_contrasts(self.task_name)
+
+        if self.no_rt:
+            # This analyzer's design matrix has no response_time regressor
+            # (no_rt=True), so any contrast referencing it can't be computed —
+            # drop it regardless of whether `contrasts` came from the task's
+            # YAML config or was passed in explicitly by the caller.
+            contrasts = {
+                k: v
+                for k, v in contrasts.items()
+                if "response_time" not in str(v) and k != "response_time"
+            }
 
         all_saved_files = {}
 
