@@ -130,6 +130,7 @@ def create_design_matrix(
     task_name: str,
     n_scans: int,
     tr: float = 1.49,
+    no_rt: bool = False,
 ) -> tuple[pd.DataFrame, list[tuple]]:
     """Create complete design matrix from events and confounds.
 
@@ -139,6 +140,8 @@ def create_design_matrix(
         task_name: Name of the task
         n_scans: Number of scans in the run
         tr: Repetition time in seconds
+        no_rt: If True, drop the response_time regressor from the task
+            config before building the design matrix.
 
     Returns:
         Tuple of (design_matrix DataFrame, list of regressor 3-column tuples)
@@ -154,6 +157,8 @@ def create_design_matrix(
     """
     # Get regressor configuration for this task
     task_config = get_regressor_config(task_name)
+    if no_rt:
+        task_config = {k: v for k, v in task_config.items() if k != "response_time"}
 
     # Create regressors
     regressors = {}
