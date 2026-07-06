@@ -30,7 +30,5 @@ def test_no_rt_removes_response_time_from_config(monkeypatch):
         }
     )
     confounds = pd.DataFrame(index=range(10))
-    design.create_design_matrix(
-        ev, confounds, n_scans=10, task_name="cuedTS", tr=1.0, no_rt=True
-    )
+    design.create_design_matrix(ev, confounds, n_scans=10, task_name="cuedTS", tr=1.0, no_rt=True)
     assert "response_time" not in seen and "task" in seen

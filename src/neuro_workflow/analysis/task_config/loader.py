@@ -311,9 +311,7 @@ def drop_rt_contrasts(contrasts: dict) -> dict:
     the per-run and fixed-effects contrast sets stay consistent with the design.
     """
     return {
-        k: v
-        for k, v in contrasts.items()
-        if k != "response_time" and "response_time" not in str(v)
+        k: v for k, v in contrasts.items() if k != "response_time" and "response_time" not in str(v)
     }
 
 
