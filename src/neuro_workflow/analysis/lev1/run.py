@@ -169,6 +169,12 @@ def get_parser() -> argparse.ArgumentParser:
         default=False,
         help="Enable debug logging",
     )
+    parser.add_argument(
+        "--no-rt",
+        action="store_true",
+        default=False,
+        help="Build GLM without response_time regressor; tags rtmodel-noRT",
+    )
     return parser
 
 
@@ -293,6 +299,7 @@ def main():
         combined_mask_path,
         failed_runs,
         run_count,
+        no_rt=args.no_rt,
     )
 
     # Provenance (ADDITIVE) — written AFTER all scientific outputs so a manifest

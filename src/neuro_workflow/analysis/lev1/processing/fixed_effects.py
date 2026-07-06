@@ -490,6 +490,7 @@ def compute_subject_fixed_effects(
     hemisphere: str | None = None,
     surface_space: str = "fsnative",
     contrast_exclusions: set[tuple[str, str]] | None = None,
+    no_rt: bool = False,
 ) -> dict[str, dict[str, Path]]:
     """Compute fixed effects for all contrasts for a subject.
 
@@ -503,6 +504,8 @@ def compute_subject_fixed_effects(
         min_runs: Minimum runs threshold passed to the analyzer (default 2).
         hemisphere: Optional hemisphere ('L' or 'R') for surface data
         surface_space: Surface space name for output filenames (default 'fsnative')
+        no_rt: If True, build without a response_time regressor; tags
+            output filenames `_rtmodel-noRT` and drops RT-related contrasts.
 
     Returns:
         Dictionary mapping contrast names to saved file paths
@@ -523,6 +526,7 @@ def compute_subject_fixed_effects(
         min_runs=min_runs,
         hemisphere=hemisphere,
         surface_space=surface_space,
+        no_rt=no_rt,
     )
 
     return analyzer.compute_all_task_fixed_effects(

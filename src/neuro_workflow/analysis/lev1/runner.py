@@ -342,6 +342,7 @@ def process_single_run(session, run, run_files, args, sample_type, dirs, task_pa
         args.task_name,
         n_scans,
         tr,
+        no_rt=args.no_rt,
     )
     logger.debug("Design matrix shape: %s", design_matrix.shape)
 
@@ -435,6 +436,7 @@ def compute_fixed_effects_all(
     combined_mask_path,
     failed_runs,
     run_count,
+    no_rt: bool = False,
 ):
     """Compute fixed effects across runs, supporting partial-run analysis.
 
@@ -476,6 +478,7 @@ def compute_fixed_effects_all(
                     hemisphere=hemisphere,
                     surface_space=surface_space,
                     contrast_exclusions=contrast_exclusions,
+                    no_rt=no_rt,
                 )
                 logger.info("Fixed effects: %d contrasts (hemi-%s)", len(results), hemisphere)
         else:
@@ -488,6 +491,7 @@ def compute_fixed_effects_all(
                 exclusions,
                 min_runs=args.min_runs,
                 contrast_exclusions=contrast_exclusions,
+                no_rt=no_rt,
             )
             logger.info("Fixed effects: %d contrasts", len(results))
     except Exception as e:
