@@ -11,7 +11,7 @@ from neuro_workflow.analysis.lev1.processing.imaging import cast_nifti_to_float3
 from neuro_workflow.analysis.lev1.processing.surface_data import (
     compute_surface_fixed_effects,
 )
-from neuro_workflow.analysis.task_config.loader import get_task_contrasts
+from neuro_workflow.analysis.task_config.loader import drop_rt_contrasts, get_task_contrasts
 
 logger = logging.getLogger(__name__)
 
@@ -401,12 +401,9 @@ class FixedEffectsAnalyzer:
             # This analyzer's design matrix has no response_time regressor
             # (no_rt=True), so any contrast referencing it can't be computed —
             # drop it regardless of whether `contrasts` came from the task's
-            # YAML config or was passed in explicitly by the caller.
-            contrasts = {
-                k: v
-                for k, v in contrasts.items()
-                if "response_time" not in str(v) and k != "response_time"
-            }
+            # YAML config or was passed in explicitly by the caller. Shared
+            # helper keeps this logic identical to the per-run path in runner.py.
+            contrasts = drop_rt_contrasts(contrasts)
 
         all_saved_files = {}
 
