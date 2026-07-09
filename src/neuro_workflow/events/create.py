@@ -194,6 +194,24 @@ def _build_events_df(filename: Path, short_name: str) -> pd.DataFrame:
     df = _set_default_event_cols(df)
     df = _rename_cells(df, exp_id)
 
+    # cuedTSWFlanker: the cued-task-switch factor (composite trial_type +
+    # cue_condition/task_condition) lands only on the test_cue row, while the
+    # modeled test_trial row carries just flanker_condition. (The exp_id lacks
+    # the "__fmri" suffix the add_cols special-case checks, so its shift never
+    # fires.) Propagate the switch factor from each test_cue onto the
+    # immediately following test_trial, only where the test_trial value is
+    # missing — so test_trial rows carry the switch trial_type like every other
+    # dual task.
+    if "flanker_with_cued_task_switching" in exp_id:
+        is_cue = df["trial_id"] == "test_cue"
+        is_trial = df["trial_id"] == "test_trial"
+        for col in ("trial_type", "cue_condition", "task_condition"):
+            if col not in df.columns:
+                continue
+            carried = df[col].where(is_cue).ffill()
+            fill = is_trial & df[col].isna()
+            df.loc[fill, col] = carried[fill]
+
     # Convert all columns to object dtype before filling NaN with "n/a"
     # (newer pandas refuses to fill float columns with string values)
     for col in df.columns:

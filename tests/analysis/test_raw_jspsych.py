@@ -256,3 +256,132 @@ class TestStopSignalRaw:
         )
         metrics = compute_metrics_from_csv(raw, "stopSignal")
         assert determine_exclusion("stopSignal", metrics) is None
+
+
+# --------------------------------------------------------------------------- #
+# Dual-task raw-frame builders (minimal jsPsych exports mirroring the REAL
+# raw_cleaned structure for the two tasks whose events.create transform is
+# under test). These synthesize the exact columns/row-ordering the production
+# `create_events_df` reads, so the fixes are exercised end-to-end rather than
+# via a stub of the transform.
+# --------------------------------------------------------------------------- #
+from neuro_workflow.core.acquisition import N_DUMMY, TR_SECONDS  # noqa: E402
+
+_TRIGGER_MS = 60000.0
+_DUMMY_MS = N_DUMMY * TR_SECONDS * 1000.0
+_BLOCK_MS = 2000.0
+
+
+def _te(onset_s: float) -> float:
+    """Plant time_elapsed so create_events_df recovers events onset ``onset_s``."""
+    return _TRIGGER_MS + _BLOCK_MS + _DUMMY_MS + onset_s * 1000.0
+
+
+def _write_cued_ts_flanker_csv(path, cue_switch_pairs, flankers):
+    """Raw flanker_with_cued_task_switching export.
+
+    The cued-task-switch factor (cue_condition / task_condition) lives ONLY on
+    the ``test_cue`` row; ``flanker_condition`` is on both the cue and the
+    following ``test_trial`` row. Rows are ordered cue-then-trial per trial, as
+    in the real export.
+    """
+    exp_id = "flanker_with_cued_task_switching"
+    trig = {
+        "exp_id": exp_id,
+        "trial_id": "fmri_trigger_initial",
+        "time_elapsed": _TRIGGER_MS,
+        "block_duration": _BLOCK_MS,
+        "rt": int(_BLOCK_MS),
+        "stim_duration": np.nan,
+        "key_press": np.nan,
+        "correct_response": np.nan,
+        "flanker_condition": np.nan,
+        "cue": np.nan,
+        "task_condition": np.nan,
+        "cue_condition": np.nan,
+        "flanking_number": np.nan,
+        "stimulus": "",
+    }
+    rows = [trig]
+    onset = 5.0
+    for (cue_cond, task_cond), flk in zip(cue_switch_pairs, flankers):
+        rows.append(
+            {
+                "exp_id": exp_id,
+                "trial_id": "test_cue",
+                "time_elapsed": _te(onset),
+                "block_duration": _BLOCK_MS,
+                "rt": -1,
+                "stim_duration": 500.0,
+                "key_press": -1,
+                "correct_response": np.nan,
+                "flanker_condition": flk,
+                "cue": "Parity",
+                "task_condition": task_cond,
+                "cue_condition": cue_cond,
+                "flanking_number": np.nan,
+                "stimulus": "",
+            }
+        )
+        onset += 1.5
+        rows.append(
+            {
+                "exp_id": exp_id,
+                "trial_id": "test_trial",
+                "time_elapsed": _te(onset),
+                "block_duration": _BLOCK_MS,
+                "rt": 700,
+                "stim_duration": 1000.0,
+                "key_press": 71.0,
+                "correct_response": 71.0,
+                "flanker_condition": flk,
+                "cue": "Parity",
+                "task_condition": np.nan,  # switch factor absent on trial row
+                "cue_condition": np.nan,
+                "flanking_number": 5.0,
+                "stimulus": "",
+            }
+        )
+        onset += 1.5
+    pd.DataFrame(rows).to_csv(path, index=False)
+    return path
+
+
+# --------------------------------------------------------------------------- #
+# Defect A — cuedTSWFlanker: the cued-task-switch trial_type must be carried
+# onto the modeled test_trial row (it lives only on the preceding test_cue).
+# --------------------------------------------------------------------------- #
+class TestCuedTSWFlankerSwitchFactorOnTestTrial:
+    def test_switch_factor_propagated_to_following_test_trial(self, tmp_path):
+        raw = _write_cued_ts_flanker_csv(
+            tmp_path / "raw_cuedtsflanker.csv",
+            cue_switch_pairs=[
+                ("switch", "stay"),  # -> switch_stay
+                ("stay", "stay"),  # -> stay_stay
+                ("switch", "switch"),  # -> switch_switch
+                ("na", "na"),  # -> n/a_n/a
+            ],
+            flankers=["incongruent", "congruent", "incongruent", "congruent"],
+        )
+        events = create_events_df(raw, "flankerWCuedTS").reset_index(drop=True)
+
+        onsets = pd.to_numeric(events["onset"])
+        assert onsets.is_monotonic_increasing
+
+        # Every test_trial carries the switch trial_type of its preceding cue
+        # (no n/a left over), and flanker_condition stays on the trial row.
+        last_cue_tt = None
+        seen_switch_stay = False
+        for _, row in events.iterrows():
+            if row["trial_id"] == "test_cue":
+                last_cue_tt = row["trial_type"]
+            elif row["trial_id"] == "test_trial":
+                assert row["trial_type"] == last_cue_tt, (
+                    f"test_trial trial_type {row['trial_type']!r} != preceding cue "
+                    f"{last_cue_tt!r}"
+                )
+                assert row["trial_type"] != "n/a"
+                assert row["flanker_condition"] in {"congruent", "incongruent"}
+                if last_cue_tt == "switch_stay":
+                    seen_switch_stay = True
+        assert seen_switch_stay, "expected a test_trial following a switch_stay cue"
