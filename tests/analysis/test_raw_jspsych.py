@@ -347,6 +347,56 @@ def _write_cued_ts_flanker_csv(path, cue_switch_pairs, flankers):
     return path
 
 
+def _write_nback_spatial_ts_csv(path, nback_conditions, task_switch_condition="tswitch_cswitch"):
+    """Raw n_back_with_spatial_task_switching export.
+
+    trial_type is built as ``n_back_condition + '_' + task_switch_condition`` on
+    the ``test_trial`` rows; ``n_back_condition`` mixes case in the real export
+    (e.g. ``Mismatch`` vs ``mismatch``).
+    """
+    exp_id = "n_back_with_spatial_task_switching__fmri"
+    trig = {
+        "exp_id": exp_id,
+        "trial_id": "fmri_trigger_initial",
+        "time_elapsed": _TRIGGER_MS,
+        "block_duration": _BLOCK_MS,
+        "rt": int(_BLOCK_MS),
+        "stim_duration": np.nan,
+        "key_press": np.nan,
+        "correct_response": np.nan,
+        "n_back_condition": np.nan,
+        "task": np.nan,
+        "probe": np.nan,
+        "whichQuadrant": np.nan,
+        "task_switch_condition": np.nan,
+        "stimulus": "",
+    }
+    rows = [trig]
+    onset = 5.0
+    for nb in nback_conditions:
+        rows.append(
+            {
+                "exp_id": exp_id,
+                "trial_id": "test_trial",
+                "time_elapsed": _te(onset),
+                "block_duration": _BLOCK_MS,
+                "rt": 650,
+                "stim_duration": 1000.0,
+                "key_press": 71.0,
+                "correct_response": 71.0,
+                "n_back_condition": nb,
+                "task": "spatial",
+                "probe": "probe",
+                "whichQuadrant": 1.0,
+                "task_switch_condition": task_switch_condition,
+                "stimulus": "",
+            }
+        )
+        onset += 1.5
+    pd.DataFrame(rows).to_csv(path, index=False)
+    return path
+
+
 # --------------------------------------------------------------------------- #
 # Defect A — cuedTSWFlanker: the cued-task-switch trial_type must be carried
 # onto the modeled test_trial row (it lives only on the preceding test_cue).

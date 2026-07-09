@@ -212,6 +212,14 @@ def _build_events_df(filename: Path, short_name: str) -> pd.DataFrame:
             fill = is_trial & df[col].isna()
             df.loc[fill, col] = carried[fill]
 
+    # nBackWSpatialTS: raw n_back_condition mixes case (Mismatch vs mismatch),
+    # so the composite trial_type does too. Normalize to lowercase on test_trial
+    # rows for consistent cells. str.lower() leaves genuine NaN as NaN (it does
+    # not create the string "nan").
+    if "n_back_with_spatial_task_switching" in exp_id:
+        is_trial = df["trial_id"] == "test_trial"
+        df.loc[is_trial, "trial_type"] = df.loc[is_trial, "trial_type"].str.lower()
+
     # Convert all columns to object dtype before filling NaN with "n/a"
     # (newer pandas refuses to fill float columns with string values)
     for col in df.columns:
