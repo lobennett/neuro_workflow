@@ -304,7 +304,7 @@ def _write_cued_ts_flanker_csv(path, cue_switch_pairs, flankers):
     }
     rows = [trig]
     onset = 5.0
-    for (cue_cond, task_cond), flk in zip(cue_switch_pairs, flankers):
+    for (cue_cond, task_cond), flk in zip(cue_switch_pairs, flankers, strict=False):
         rows.append(
             {
                 "exp_id": exp_id,

@@ -6,6 +6,7 @@ depending on any real task staying unconfigured.
 """
 
 import pytest
+
 from neuro_workflow.analysis.task_config import loader
 from neuro_workflow.analysis.task_config.loader import (
     TaskNotConfiguredError,
