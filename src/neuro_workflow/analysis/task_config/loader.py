@@ -230,7 +230,7 @@ def get_dual_tasks() -> list[str]:
 
 
 def get_all_tasks() -> list[str]:
-    """Return base + dual tasks in canonical order (18 tasks total)."""
+    """Return base + dual tasks in canonical order (19 tasks total)."""
     batt = _load_battery()
     return list(batt["base"]) + list(batt["dual"])
 
