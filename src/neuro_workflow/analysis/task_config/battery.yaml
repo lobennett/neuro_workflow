@@ -1,7 +1,7 @@
 # Task battery definitions for neuro_workflow.
 #
 # base: 8 single-task paradigms (one task per run).
-# dual: 10 dual-task paradigms (two concurrent tasks per run).
+# dual: 11 dual-task paradigms (two concurrent tasks per run).
 #
 # Order is canonical — lev1 and lev2 pipeline flag resolution
 # (--all / --base-tasks / --dual-tasks) depends on this order.
@@ -28,3 +28,4 @@ dual:
   - spatialTSWShapeMatching
   - nBackWShapeMatching
   - nBackWSpatialTS
+  - shapeMatchingWCuedTS
