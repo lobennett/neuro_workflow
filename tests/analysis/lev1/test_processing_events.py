@@ -110,3 +110,44 @@ class TestDefineNuisanceTrials:
         assert nuisance_masks["omission"].sum() == 0  # No omissions in go trials
         assert nuisance_masks["commission"].iloc[3]  # Wrong response in go trial
         assert nuisance_masks["rt_too_fast"].iloc[1]  # Fast RT in go trial
+
+
+def _stop_dual_df():
+    return pd.DataFrame(
+        {
+            "trial_id": ["test_trial"] * 4,
+            "trial_type": ["go_congruent", "go_incongruent", "stop_success_congruent", "stop_failure_incongruent"],
+            "key_press": [89, 71, -1, 71],
+            "correct_response": [89, 71, -1, 89],
+            "response_time": [0.5, 0.4, -1.0, 0.3],
+        }
+    )
+
+
+def test_nonstop_dual_uses_test_trial_filter():
+    df = pd.DataFrame(
+        {
+            "trial_id": ["test_cue", "test_trial", "test_trial"],
+            "trial_type": ["n/a", "congruent_con", "incongruent_neg"],
+            "key_press": [-1, 89, -1],
+            "correct_response": [-1, 89, 71],
+            "response_time": [-1.0, 0.5, 0.6],
+        }
+    )
+    masks = define_nuisance_trials(df, "directedForgettingWFlanker")
+    assert masks["omission"].tolist() == [False, False, True]
+
+
+def test_stop_dual_go_restricted_omission():
+    df = _stop_dual_df()
+    masks = define_nuisance_trials(df, "stopSignalWFlanker")
+    # successful stop (row 2, key_press == -1) must NOT be an omission (not a go trial)
+    assert masks["omission"].tolist() == [False, False, False, False]
+    assert masks["commission"].tolist() == [False, False, False, False]
+
+
+def test_stop_dual_go_commission():
+    df = _stop_dual_df()
+    df.loc[0, "key_press"] = 71  # wrong on go_congruent -> commission
+    masks = define_nuisance_trials(df, "stopSignalWDirectedForgetting")
+    assert bool(masks["commission"].iloc[0]) is True
