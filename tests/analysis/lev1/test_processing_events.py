@@ -116,7 +116,12 @@ def _stop_dual_df():
     return pd.DataFrame(
         {
             "trial_id": ["test_trial"] * 4,
-            "trial_type": ["go_congruent", "go_incongruent", "stop_success_congruent", "stop_failure_incongruent"],
+            "trial_type": [
+                "go_congruent",
+                "go_incongruent",
+                "stop_success_congruent",
+                "stop_failure_incongruent",
+            ],
             "key_press": [89, 71, -1, 71],
             "correct_response": [89, 71, -1, 89],
             "response_time": [0.5, 0.4, -1.0, 0.3],
