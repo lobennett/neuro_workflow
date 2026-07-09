@@ -114,7 +114,7 @@ def define_nuisance_trials(events_df: pd.DataFrame, task: str) -> dict[str, pd.S
         Dictionary with keys: 'trial_filter', 'bad_trials', 'omission',
         'commission', 'rt_too_fast'.  Each value is a boolean Series mask.
     """
-    # Define task groups and their trial identification columns
+    # Base + dual tasks whose nuisance trials are defined on the test_trial row.
     test_trial_tasks = {
         "cuedTS",
         "nBack",
@@ -122,17 +122,33 @@ def define_nuisance_trials(events_df: pd.DataFrame, task: str) -> dict[str, pd.S
         "flanker",
         "shapeMatching",
         "directedForgetting",
+        # dual tasks (9 non-stop):
+        "cuedTSWFlanker",
+        "directedForgettingWCuedTS",
+        "directedForgettingWFlanker",
+        "flankerWShapeMatching",
+        "nBackWShapeMatching",
+        "nBackWSpatialTS",
+        "shapeMatchingWCuedTS",
+        "spatialTSWCuedTS",
+        "spatialTSWShapeMatching",
     }
+    # Base stop/go tasks use bare trial_type == 'go'; stop duals encode go as
+    # 'go_congruent'/'go_con'/etc., so match the prefix. Restricting to go trials
+    # keeps successful stops (key_press == -1) from being mis-flagged as omissions.
     go_trial_tasks = {"stopSignal", "goNogo"}
+    stop_dual_tasks = {"stopSignalWFlanker", "stopSignalWDirectedForgetting"}
 
-    # Determine trial filter based on task type
     if task in test_trial_tasks:
         trial_filter = events_df.trial_id == "test_trial"
     elif task in go_trial_tasks:
         trial_filter = events_df.trial_type == "go"
+    elif task in stop_dual_tasks:
+        trial_filter = events_df.trial_type.astype(str).str.startswith("go")
     else:
         raise ValueError(
-            f"Unknown task: {task}. Supported tasks: {test_trial_tasks | go_trial_tasks}"
+            f"Unknown task: {task}. Supported tasks: "
+            f"{test_trial_tasks | go_trial_tasks | stop_dual_tasks}"
         )
 
     # Define nuisance trial types

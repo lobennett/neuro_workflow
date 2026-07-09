@@ -3,6 +3,7 @@
 import logging
 import re
 from pathlib import Path
+from typing import Any
 
 from nilearn.glm.contrasts import compute_fixed_effects
 
@@ -183,7 +184,7 @@ class FixedEffectsAnalyzer:
         effect_files: list[Path],
         variance_files: list[Path],
         precision_weighted: bool = False,
-    ) -> tuple[any | None, any | None, any | None]:
+    ) -> tuple[Any | None, Any | None, Any | None]:
         """Compute fixed effects for a single contrast.
 
         Args:

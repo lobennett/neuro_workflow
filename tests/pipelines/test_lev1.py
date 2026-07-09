@@ -73,7 +73,7 @@ def test_lev1_template_exists():
 
 def test_lev1_task_constants():
     assert len(get_base_tasks()) == 8
-    assert len(get_dual_tasks()) == 10
+    assert len(get_dual_tasks()) == 11
     assert get_all_tasks() == get_base_tasks() + get_dual_tasks()
 
 

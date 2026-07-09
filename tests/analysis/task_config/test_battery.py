@@ -33,6 +33,7 @@ _EXPECTED_DUAL = [
     "spatialTSWShapeMatching",
     "nBackWShapeMatching",
     "nBackWSpatialTS",
+    "shapeMatchingWCuedTS",
 ]
 
 
@@ -60,9 +61,17 @@ def test_base_has_8_tasks():
     assert len(get_base_tasks()) == 8
 
 
-def test_dual_has_10_tasks():
-    assert len(get_dual_tasks()) == 10
+def test_dual_has_11_tasks():
+    assert len(get_dual_tasks()) == 11
 
 
-def test_all_has_18_tasks():
-    assert len(get_all_tasks()) == 18
+def test_all_has_19_tasks():
+    assert len(get_all_tasks()) == 19
+
+
+def test_all_eleven_dual_tasks_registered():
+    from neuro_workflow.analysis.task_config.loader import get_dual_tasks
+
+    dual = get_dual_tasks()
+    assert "shapeMatchingWCuedTS" in dual
+    assert len(dual) == 11

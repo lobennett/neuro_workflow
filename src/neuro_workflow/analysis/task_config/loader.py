@@ -225,12 +225,12 @@ def get_base_tasks() -> list[str]:
 
 
 def get_dual_tasks() -> list[str]:
-    """Return the ordered list of 10 dual-task paradigm names."""
+    """Return the ordered list of 11 dual-task paradigm names."""
     return list(_load_battery()["dual"])
 
 
 def get_all_tasks() -> list[str]:
-    """Return base + dual tasks in canonical order (18 tasks total)."""
+    """Return base + dual tasks in canonical order (19 tasks total)."""
     batt = _load_battery()
     return list(batt["base"]) + list(batt["dual"])
 
