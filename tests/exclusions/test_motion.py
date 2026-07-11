@@ -12,7 +12,7 @@ def _make_confounds_tsv(func_dir, subject, session, task, run, fd_values, dvars_
     (func_dir / filename).write_text("\n".join(lines))
 
 
-def _make_deriv_tree(tmp_path, version="24.1.0rc2"):
+def _make_deriv_tree(tmp_path, version="25.2.4"):
     """Create a BIDS derivatives tree with confound files."""
     deriv = tmp_path / "bids" / "derivatives" / f"fmriprep_{version}"
 
@@ -44,12 +44,23 @@ def test_generator_attributes():
     assert g.description
 
 
+def test_fmriprep_version_default_is_current():
+    """The recorded fMRIPrep version default must match the actual derivatives (25.2.4),
+    not the stale 24.1.0rc2 — provenance-string correctness."""
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    MotionGenerator().add_cli_args(parser)
+    ns = parser.parse_args([])
+    assert ns.fmriprep_version == "25.2.4"
+
+
 def test_generate_finds_bad_scans(tmp_path):
     bids_dir = _make_deriv_tree(tmp_path)
     g = MotionGenerator()
     config = {"bids_dir": bids_dir}
     args = Namespace(
-        fmriprep_version="24.1.0rc2",
+        fmriprep_version="25.2.4",
         fd_threshold=0.2,
         proportion_fd_threshold=0.2,
         proportion_dvars_threshold=0.2,
@@ -70,7 +81,7 @@ def test_generate_uses_std_dvars_not_raw_dvars(tmp_path):
     flag every scan if used. qa_report.metrics.motion already uses std_dvars
     (qa/metrics/motion.py:34); the generator must agree.
     """
-    deriv = tmp_path / "bids" / "derivatives" / "fmriprep_24.1.0rc2"
+    deriv = tmp_path / "bids" / "derivatives" / "fmriprep_25.2.4"
     func = deriv / "sub-s01" / "ses-01" / "func"
     func.mkdir(parents=True)
     # Realistic fmriprep numbers: raw dvars ~18 (always >1.5), std_dvars ~1.1 (<1.5)
@@ -83,7 +94,7 @@ def test_generate_uses_std_dvars_not_raw_dvars(tmp_path):
     g = MotionGenerator()
     config = {"bids_dir": str(tmp_path / "bids")}
     args = Namespace(
-        fmriprep_version="24.1.0rc2",
+        fmriprep_version="25.2.4",
         fd_threshold=0.2,
         proportion_fd_threshold=0.2,
         proportion_dvars_threshold=0.2,
@@ -119,7 +130,7 @@ def test_generate_all_actions_are_exclude(tmp_path):
     g = MotionGenerator()
     config = {"bids_dir": bids_dir}
     args = Namespace(
-        fmriprep_version="24.1.0rc2",
+        fmriprep_version="25.2.4",
         fd_threshold=0.2,
         proportion_fd_threshold=0.2,
         proportion_dvars_threshold=0.2,
