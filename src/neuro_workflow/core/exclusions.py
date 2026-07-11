@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from argparse import Namespace
 from datetime import UTC
 from pathlib import Path
@@ -142,6 +143,125 @@ def load_overrides(dataset_name: str) -> list[dict]:
         return json.load(f)
 
 
+# A real (possibly multi-echo) BOLD filename on disk. Tolerates intervening BIDS
+# entities (`_echo-N`, `_acq-`, `_dir-`, ...) before `_bold`, matching the same
+# handling in exclusions.qa_decisions / exclusions.collection.
+_MIN_RUNS_BOLD_RE = re.compile(
+    r"^(?P<subject>sub-[A-Za-z0-9]+)"
+    r"_(?P<session>ses-[A-Za-z0-9]+)"
+    r"_task-(?P<task>[A-Za-z0-9]+)"
+    r"_run-(?P<run>[A-Za-z0-9]+)"
+    r"(?:_[A-Za-z0-9]+-[A-Za-z0-9]+)*"
+    r"_bold\.nii\.gz$"
+)
+
+
+def _bids_run_inventory(bids_dir: Path) -> dict[tuple[str, str], set[tuple[str, str]]]:
+    """Map (subject, bare-task) -> set of distinct (session, run) BOLD scans in BIDS.
+
+    Globs ``{bids_dir}/sub-*/ses-*/func/*_bold.nii.gz`` (derivatives live under
+    ``{bids_dir}/derivatives`` and never match the ``sub-*`` top level). Rest
+    scans are excluded (no task GLM / fixed effect). Multi-echo acquisitions
+    collapse to a single (session, run) per scan via the set.
+    """
+    inventory: dict[tuple[str, str], set[tuple[str, str]]] = {}
+    for bold in bids_dir.glob("sub-*/ses-*/func/*_bold.nii.gz"):
+        m = _MIN_RUNS_BOLD_RE.match(bold.name)
+        if not m:
+            continue
+        task = m.group("task")
+        if task == "rest":
+            continue
+        key = (m.group("subject"), task)
+        inventory.setdefault(key, set()).add((m.group("session"), f"run-{m.group('run')}"))
+    return inventory
+
+
+def _derive_min_runs_entries(all_entries: list[dict], bids_dir: str) -> list[dict]:
+    """Derive belowMinRuns exclusions from the BIDS inventory + scan-level excludes.
+
+    For each (subject, task) present in BIDS, count total runs and how many are
+    removed by an existing scan-level exclusion (``action in {"exclude","trim"}``;
+    ``exclude-contrast`` does NOT remove a scan). If the surviving count is
+    strictly between zero and the fixed-effects floor
+    (``0 < surviving < min_runs_floor(is_dual)``), emit one derived record.
+
+    The boundary matches lev2 exactly: lev1 tags a fixed-effects map
+    ``_desc-belowMinRuns`` iff ``0 < n_runs < min_runs`` (a subject×task with 0
+    surviving runs produces no map, so there is nothing for lev2 to filter), and
+    lev2 drops every ``_desc-belowMinRuns_`` file.
+    """
+    from neuro_workflow.analysis.task_config.loader import get_dual_tasks
+    from neuro_workflow.core.thresholds import min_runs_floor
+
+    inventory = _bids_run_inventory(Path(bids_dir))
+    if not inventory:
+        return []
+
+    dual_tasks = set(get_dual_tasks())
+
+    # Normalised scan keys already excluded at scan level (exclude/trim only).
+    excluded_keys = {
+        (
+            _normalise_bids_field(e["subject"], "sub-"),
+            _normalise_bids_field(e["session"], "ses-"),
+            _normalise_bids_field(e["task"], "task-"),
+            _normalise_bids_field(e["run"], "run-"),
+        )
+        for e in all_entries
+        if e.get("action") in ("exclude", "trim")
+    }
+    # (subject, bare-task) pairs that already have a derived min_runs entry.
+    existing_min_runs = {
+        (
+            _normalise_bids_field(e["subject"], "sub-"),
+            _normalise_bids_field(e["task"], "task-"),
+        )
+        for e in all_entries
+        if e.get("source") == "min_runs"
+    }
+
+    derived: list[dict] = []
+    for (subject, task), scans in sorted(inventory.items()):
+        sub_bare = _normalise_bids_field(subject, "sub-")
+        if (sub_bare, task) in existing_min_runs:
+            continue  # idempotent: never duplicate a derived record
+        total = len(scans)
+        excluded = sum(
+            1
+            for (session, run) in scans
+            if (
+                sub_bare,
+                _normalise_bids_field(session, "ses-"),
+                task,
+                _normalise_bids_field(run, "run-"),
+            )
+            in excluded_keys
+        )
+        surviving = total - excluded
+        is_dual = task in dual_tasks
+        floor = min_runs_floor(is_dual)
+        if 0 < surviving < floor:
+            derived.append(
+                {
+                    "subject": subject,
+                    "session": "ses-all",
+                    "run": "run-all",
+                    "task": f"task-{task}",
+                    "source": "min_runs",
+                    "action": "exclude",
+                    "reason": f"belowMinRuns: {surviving} usable run(s) < floor {floor}",
+                    "metrics": {
+                        "surviving_runs": surviving,
+                        "floor": floor,
+                        "total_runs": total,
+                        "is_dual": is_dual,
+                    },
+                }
+            )
+    return derived
+
+
 def compile_exclusions(dataset_name: str, bids_dir: str | None = None) -> list[dict]:
     """Merge all source files and overrides into a compiled exclusion list.
 
@@ -192,6 +312,13 @@ def compile_exclusions(dataset_name: str, bids_dir: str | None = None) -> list[d
             }
         )
         existing_keys.add(_scan_key(fe))
+
+    # DERIVED: record belowMinRuns (too few usable runs for fixed effects) as
+    # first-class exclusions. Requires a BIDS run inventory, so only when a
+    # bids_dir is provided. Appended after overrides so force-include/exclude
+    # already reshaped the surviving-run set (idempotent; see helper).
+    if bids_dir:
+        all_entries.extend(_derive_min_runs_entries(all_entries, bids_dir))
 
     # Save compiled
     compiled_path = _compiled_path(dataset_name)
