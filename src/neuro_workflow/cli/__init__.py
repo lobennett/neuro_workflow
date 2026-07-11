@@ -19,6 +19,7 @@ import sys
 
 import neuro_workflow.exclusions.behavioral  # noqa: F401
 import neuro_workflow.exclusions.collection  # noqa: F401
+import neuro_workflow.exclusions.junk_qc  # noqa: F401
 import neuro_workflow.exclusions.lev1_outlier  # noqa: F401
 
 # Import exclusion generators to trigger auto-registration
