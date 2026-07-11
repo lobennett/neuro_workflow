@@ -72,6 +72,21 @@ lev1_outlier:
     - task-baseline
     - response_time
 
+# --- Lev1 QA + fixed-effects floors ---
+# Source: hardcoded literals in analysis/lev1 (quality_control.py + run.py),
+# lifted here so they are auditable and folded into config_version() for
+# provenance. Values are byte-identical to the pre-refactor literals.
+# junk_fraction_max: behavioral junk-trial fraction above which a run's design
+#   fails QA (quality_control.run_quality_control: `percent_junk > 0.30`).
+# min_runs: minimum retained runs required to emit a non-tagged fixed-effects
+#   map; below this the map is tagged _desc-belowMinRuns and lev2 filters it.
+#   base single-task sessions require 2; dual-task sessions require 1.
+lev1:
+  junk_fraction_max: 0.30
+  min_runs:
+    base: 2
+    dual: 1
+
 # --- Lev1 confound selection ---
 # Consumed by analysis/lev1/processing/confounds.py.
 confounds:
