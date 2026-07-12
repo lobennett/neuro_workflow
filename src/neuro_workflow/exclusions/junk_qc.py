@@ -170,7 +170,7 @@ class JunkQCGenerator:
                     {
                         "subject": subject,
                         "session": f"ses-{ses}",
-                        "task": task,  # bare task name (no `task-` prefix)
+                        "task": f"task-{task}",  # BIDS-prefixed to match the lev1 scan gate
                         "run": f"run-{run}",
                         "action": "exclude",
                         "reason": (
