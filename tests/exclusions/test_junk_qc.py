@@ -108,7 +108,7 @@ def test_flags_only_the_junk_scan(tmp_path):
     e = entries[0]
     assert e["subject"] == "sub-s10"
     assert e["session"] == "ses-01"
-    assert e["task"] == "cuedTS"  # bare task, no `task-` prefix
+    assert e["task"] == "task-cuedTS"  # BIDS-prefixed, matching the lev1 scan gate
     assert e["run"] == "run-1"
     assert e["action"] == "exclude"
     assert e["source"] == "junk_qc"
@@ -119,6 +119,24 @@ def test_flags_only_the_junk_scan(tmp_path):
     assert validate_entry(e)
     # metric carried through as a 0-1 fraction
     assert e["metrics"]["percent_junk"] == pytest.approx(0.40, abs=1e-6)
+
+
+def test_key_matches_lev1_scan_gate(tmp_path):
+    """Regression: the exclusion key built from a junk_qc entry must equal the
+    per-run key the lev1 gate tests membership against (``_run_base_filename``),
+    else junk scans silently leak into lev1. The gate uses a ``task-`` prefix, so
+    the entry's ``task`` field must too. (Caught in the discovery Phase-2 pilot:
+    a bare ``task`` produced ``..._cuedTS_run-1`` which never matched the gate's
+    ``..._task-cuedTS_run-1``.)"""
+    from neuro_workflow.analysis.core.utils import create_exclusion_key
+    from neuro_workflow.analysis.lev1.runner import _run_base_filename
+    from neuro_workflow.exclusions.junk_qc import JunkQCGenerator
+
+    bids = _make_bids(tmp_path, "sub-s10")
+    e = JunkQCGenerator().generate("discovery", {"bids_dir": str(bids)}, Namespace())[0]
+
+    gate_key = _run_base_filename("sub-s10", "ses-01", "cuedTS", "run-1")
+    assert create_exclusion_key(e) == gate_key
 
 
 def test_clean_only_tree_emits_nothing(tmp_path):
