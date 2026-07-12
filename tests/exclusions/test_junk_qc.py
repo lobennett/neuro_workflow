@@ -29,7 +29,9 @@ def _write_bold(func_dir: Path, subject: str, session: str, task: str, run: str,
     nib.save(img, func_dir / fname)
 
 
-def _write_events(func_dir: Path, subject: str, session: str, task: str, run: str, df: pd.DataFrame):
+def _write_events(
+    func_dir: Path, subject: str, session: str, task: str, run: str, df: pd.DataFrame
+):
     func_dir.mkdir(parents=True, exist_ok=True)
     fname = f"{subject}_{session}_task-{task}_run-{run}_events.tsv"
     df.to_csv(func_dir / fname, sep="\t", index=False)
@@ -41,16 +43,28 @@ def _cuedts_events(n_good: int, n_omission: int) -> pd.DataFrame:
     onset = 0.0
     for _ in range(n_good):
         rows.append(
-            {"onset": onset, "duration": 1.0, "trial_id": "test_trial",
-             "trial_type": "test", "key_press": 1, "correct_response": 1,
-             "response_time": 0.5}
+            {
+                "onset": onset,
+                "duration": 1.0,
+                "trial_id": "test_trial",
+                "trial_type": "test",
+                "key_press": 1,
+                "correct_response": 1,
+                "response_time": 0.5,
+            }
         )
         onset += 2.0
     for _ in range(n_omission):
         rows.append(
-            {"onset": onset, "duration": 1.0, "trial_id": "test_trial",
-             "trial_type": "test", "key_press": -1, "correct_response": 1,
-             "response_time": "n/a"}
+            {
+                "onset": onset,
+                "duration": 1.0,
+                "trial_id": "test_trial",
+                "trial_type": "test",
+                "key_press": -1,
+                "correct_response": 1,
+                "response_time": "n/a",
+            }
         )
         onset += 2.0
     return pd.DataFrame(rows)

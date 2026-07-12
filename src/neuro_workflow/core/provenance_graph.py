@@ -173,9 +173,7 @@ def _find_manifest(bids_root: Path, glob_pattern: str) -> Path | None:
     return matches[0] if matches else None
 
 
-def _analysis_stage(
-    name: str, bids_root: Path | None, glob_pattern: str
-) -> dict[str, Any]:
+def _analysis_stage(name: str, bids_root: Path | None, glob_pattern: str) -> dict[str, Any]:
     """Build a lev1/lev2-style stage from a representative run-manifest.json.
 
     Globs the derivatives tree for the first matching manifest and lifts its
@@ -258,7 +256,9 @@ def build_provenance_graph(cohort: str, bids_root: str | Path | None = None) -> 
         _bidsignore_stage(repo_root, cohort),
         _fmriprep_stage(bids_path),
         _lockfile_stage(repo_root, cohort),
-        _analysis_stage("lev1", bids_path, "derivatives/lev1_surface/sub-*/task-*/run-manifest.json"),
+        _analysis_stage(
+            "lev1", bids_path, "derivatives/lev1_surface/sub-*/task-*/run-manifest.json"
+        ),
         _analysis_stage("lev2", bids_path, "derivatives/lev2*/**/run-manifest.json"),
     ]
 

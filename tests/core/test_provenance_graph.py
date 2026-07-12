@@ -125,11 +125,7 @@ def test_edges_flag_sha_mismatch(stub_repo_and_bids):
     assert bool_edges, "expected at least one edge with a sha_mismatch bool"
 
     # The lockfile(abc1234) -> lev1(def5678) edge is a mismatch.
-    lock_lev1 = [
-        e
-        for e in g["edges"]
-        if e["from"] == "exclusions_lockfile" and e["to"] == "lev1"
-    ]
+    lock_lev1 = [e for e in g["edges"] if e["from"] == "exclusions_lockfile" and e["to"] == "lev1"]
     assert lock_lev1
     assert lock_lev1[0]["sha_mismatch"] is True
 

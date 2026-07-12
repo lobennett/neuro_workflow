@@ -45,24 +45,41 @@ def _write_bold(func: Path, sub: str, ses: str, task: str, run: str, n_scans: in
     nib.save(img, func / f"{sub}_{ses}_task-{task}_run-{run}_echo-1_bold.nii.gz")
 
 
-def _write_events(func: Path, sub: str, ses: str, task: str, run: str, n_good: int, n_om: int) -> None:
+def _write_events(
+    func: Path, sub: str, ses: str, task: str, run: str, n_good: int, n_om: int
+) -> None:
     func.mkdir(parents=True, exist_ok=True)
     rows = []
     onset = 0.0
     for _ in range(n_good):
         rows.append(
-            {"onset": onset, "duration": 1.0, "trial_id": "test_trial", "trial_type": "test",
-             "key_press": 1, "correct_response": 1, "response_time": 0.5}
+            {
+                "onset": onset,
+                "duration": 1.0,
+                "trial_id": "test_trial",
+                "trial_type": "test",
+                "key_press": 1,
+                "correct_response": 1,
+                "response_time": 0.5,
+            }
         )
         onset += 2.0
     for _ in range(n_om):
         rows.append(
-            {"onset": onset, "duration": 1.0, "trial_id": "test_trial", "trial_type": "test",
-             "key_press": -1, "correct_response": 1, "response_time": "n/a"}
+            {
+                "onset": onset,
+                "duration": 1.0,
+                "trial_id": "test_trial",
+                "trial_type": "test",
+                "key_press": -1,
+                "correct_response": 1,
+                "response_time": "n/a",
+            }
         )
         onset += 2.0
-    pd.DataFrame(rows).to_csv(func / f"{sub}_{ses}_task-{task}_run-{run}_events.tsv", sep="\t",
-                              index=False)
+    pd.DataFrame(rows).to_csv(
+        func / f"{sub}_{ses}_task-{task}_run-{run}_events.tsv", sep="\t", index=False
+    )
 
 
 def _build_synthetic_cohort(tmp_path: Path) -> Path:

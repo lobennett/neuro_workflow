@@ -84,9 +84,7 @@ def diff_locks(recompiled: dict, committed: dict) -> list[str]:
         elif gen not in b_src:
             diffs.append(f"sources: '{gen}' in recompiled but not committed")
         elif a_src[gen] != b_src[gen]:
-            diffs.append(
-                f"sources['{gen}']: recompiled={a_src[gen]!r} != committed={b_src[gen]!r}"
-            )
+            diffs.append(f"sources['{gen}']: recompiled={a_src[gen]!r} != committed={b_src[gen]!r}")
     return diffs
 
 
@@ -135,9 +133,7 @@ def assert_lockfile_reproducible(
     """
     from neuro_workflow.core.exclusions import _lockfile_path, compile_exclusions
 
-    compiled = compile_exclusions(
-        dataset, bids_dir=str(bids_dir) if bids_dir is not None else None
-    )
+    compiled = compile_exclusions(dataset, bids_dir=str(bids_dir) if bids_dir is not None else None)
     recompiled_lock = load_lock(_lockfile_path(dataset))
     committed_lock = load_lock(committed_lock_path)
 
