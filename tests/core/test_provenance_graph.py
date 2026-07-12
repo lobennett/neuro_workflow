@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 
 import pytest
+
 from neuro_workflow.core import provenance_graph as pg
 
 # The seven pipeline stages, in chain order.
