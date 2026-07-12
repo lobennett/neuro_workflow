@@ -12,7 +12,6 @@ the config + typed accessors; the read-sites are intentionally NOT rewired here.
 
 from __future__ import annotations
 
-
 # The config_version() over thresholds.yaml + battery.yaml BEFORE this task's
 # edit. Recorded so we can prove the new fields are folded into the provenance
 # hash (a fresh process reads the file bytes at call time; captured pre-change).
