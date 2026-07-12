@@ -48,8 +48,8 @@ class TestGetExpectedSessions:
         assert get_expected_sessions("nBack") == 5
 
     def test_dual_task_sessions(self):
-        """Test that dual tasks return 2 sessions."""
-        assert get_expected_sessions("stopSignalWDirectedForgetting") == 2
+        """Dual tasks have no fixed expected-session count (expected_sessions: null)."""
+        assert get_expected_sessions("stopSignalWDirectedForgetting") is None
 
     def test_unknown_task_raises(self):
         """Test that unknown task names raise an error."""

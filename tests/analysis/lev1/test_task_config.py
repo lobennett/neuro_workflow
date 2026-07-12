@@ -123,10 +123,14 @@ class TestGetRegressorConfig:
         assert regressors["stop_success"]["subset"] is not None
         assert "stop_success" in regressors["stop_success"]["subset"]
 
-    def test_empty_config_raises(self):
-        """Dual task with empty regressors should raise ValueError."""
-        with pytest.raises(ValueError, match="empty"):
-            get_regressor_config("stopSignalWDirectedForgetting")
+    def test_dual_task_regressor_config_populated(self):
+        """Dual tasks are configured (PR #42): regressor config is non-empty.
+
+        (The empty-config ValueError guard is still exercised by the
+        placeholder-sentinel loader test; no task ships an empty config now.)
+        """
+        regressors = get_regressor_config("stopSignalWDirectedForgetting")
+        assert isinstance(regressors, dict) and len(regressors) > 0
 
 
 class TestGetTaskContrasts:
@@ -160,10 +164,10 @@ class TestGetTaskContrasts:
             for name, formula in contrasts.items():
                 assert isinstance(formula, str), f"{task_name}/{name} formula is not a string"
 
-    def test_empty_contrasts_raises(self):
-        """Dual task with empty contrasts should raise ValueError."""
-        with pytest.raises(ValueError, match="empty"):
-            get_task_contrasts("stopSignalWDirectedForgetting")
+    def test_dual_task_contrasts_populated(self):
+        """Dual tasks are configured (PR #42): contrasts are non-empty."""
+        contrasts = get_task_contrasts("stopSignalWDirectedForgetting")
+        assert isinstance(contrasts, dict) and len(contrasts) > 0
 
 
 class TestGetTaskParameters:
@@ -187,6 +191,6 @@ class TestGetTaskParameters:
         assert params["expected_sessions"] == 5
 
     def test_dual_task_sessions(self):
-        """Dual tasks should have 2 expected sessions."""
+        """Dual tasks have no fixed expected-session count (YAML expected_sessions: null)."""
         params = get_task_parameters("stopSignalWDirectedForgetting")
-        assert params["expected_sessions"] == 2
+        assert params["expected_sessions"] is None
