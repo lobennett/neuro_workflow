@@ -1,0 +1,53 @@
+[
+  {
+    "subject": "sub-s10",
+    "session": "ses-01",
+    "task": "flanker",
+    "run": "run-1",
+    "action": "exclude",
+    "reason": "junk_qc: junk 40.0% > 30% of relevant trials",
+    "source": "junk_qc",
+    "metrics": {
+      "percent_junk": 0.4
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-01",
+    "task": "flanker",
+    "run": "run-2",
+    "action": "exclude",
+    "reason": "junk_qc: junk 40.0% > 30% of relevant trials",
+    "source": "junk_qc",
+    "metrics": {
+      "percent_junk": 0.4
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-02",
+    "task": "cuedTSWFlanker",
+    "run": "run-1",
+    "action": "exclude",
+    "reason": "junk_qc: junk 40.0% > 30% of relevant trials",
+    "source": "junk_qc",
+    "metrics": {
+      "percent_junk": 0.4
+    }
+  },
+  {
+    "subject": "sub-s10",
+    "session": "ses-all",
+    "run": "run-all",
+    "task": "task-flanker",
+    "source": "min_runs",
+    "action": "exclude",
+    "reason": "belowMinRuns: 1 usable run(s) < floor 2",
+    "metrics": {
+      "surviving_runs": 1,
+      "floor": 2,
+      "total_runs": 3,
+      "is_dual": false
+    }
+  }
+]

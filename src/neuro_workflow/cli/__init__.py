@@ -19,6 +19,7 @@ import sys
 
 import neuro_workflow.exclusions.behavioral  # noqa: F401
 import neuro_workflow.exclusions.collection  # noqa: F401
+import neuro_workflow.exclusions.junk_qc  # noqa: F401
 import neuro_workflow.exclusions.lev1_outlier  # noqa: F401
 
 # Import exclusion generators to trigger auto-registration
@@ -87,6 +88,10 @@ from neuro_workflow.cli.pipelines import (  # noqa: F401
     cmd_show,
     cmd_submit,
 )
+from neuro_workflow.cli.provenance import (  # noqa: F401
+    add_provenance_parser,
+    cmd_provenance_graph,
+)
 from neuro_workflow.cli.qa import add_qa_parser, cmd_qa  # noqa: F401
 
 
@@ -116,6 +121,9 @@ def main():
 
     # events
     add_events_parser(subparsers)
+
+    # provenance
+    add_provenance_parser(subparsers)
 
     args, remaining = parser.parse_known_args()
     try:

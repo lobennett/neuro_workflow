@@ -75,7 +75,7 @@ class MotionGenerator:
         parser.add_argument(
             "--fmriprep-version",
             required=False,
-            default="24.1.0rc2",
+            default="25.2.4",
             help="fMRIPrep version for derivatives path",
         )
         parser.add_argument(
@@ -105,7 +105,7 @@ class MotionGenerator:
             return []
 
         bids_dir = Path(dataset_config["bids_dir"])
-        version = getattr(args, "fmriprep_version", "24.1.0rc2")
+        version = getattr(args, "fmriprep_version", "25.2.4")
         deriv = bids_dir / "derivatives" / f"fmriprep_{version}"
 
         confound_files = sorted(deriv.glob("sub-*/ses-*/func/*_desc-confounds_timeseries.tsv"))

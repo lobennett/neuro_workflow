@@ -86,6 +86,30 @@ def lev1_outlier() -> dict[str, Any]:
     return dict(_cached_thresholds()["lev1_outlier"])
 
 
+def junk_fraction_max() -> float:
+    """Behavioral junk-trial fraction above which a run's design fails lev1 QA.
+
+    Lifted from the hardcoded ``percent_junk > 0.30`` literal in
+    :func:`neuro_workflow.analysis.lev1.processing.quality_control.run_quality_control`
+    so the cutoff is auditable and folded into :func:`config_version`. Value
+    unchanged (0.30).
+    """
+    return float(_cached_thresholds()["lev1"]["junk_fraction_max"])
+
+
+def min_runs_floor(is_dual: bool) -> int:
+    """Minimum retained runs required to emit a non-tagged fixed-effects map.
+
+    Below this floor the fixed-effects map is tagged ``_desc-belowMinRuns`` and
+    lev2 filters it out. Base single-task sessions require 2 runs; dual-task
+    sessions require 1. Lifted from the ``--min-runs`` argparse default in
+    ``analysis/lev1/run.py`` so the floors are auditable and folded into
+    :func:`config_version`. Values unchanged (base=2, dual=1).
+    """
+    section = _cached_thresholds()["lev1"]["min_runs"]
+    return int(section["dual"] if is_dual else section["base"])
+
+
 def confounds_cosine_caps() -> dict[str, dict[str, int]]:
     """Per-(sample, task) caps on the number of DCT cosine high-pass regressors.
 

@@ -1,0 +1,17 @@
+{
+  "dataset": "discovery",
+  "compiled_at": "SNAPSHOT",
+  "compiled_at_code_sha": "SNAPSHOT",
+  "compiled_path": "SNAPSHOT",
+  "n_total_entries": 4,
+  "n_overrides": 0,
+  "sources": [
+    {
+      "generator": "junk_qc",
+      "ran_at": "SNAPSHOT",
+      "code_sha": "SNAPSHOT",
+      "args": null,
+      "n_entries": 3
+    }
+  ]
+}

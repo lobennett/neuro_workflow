@@ -635,6 +635,88 @@ def main(
 
 
 # ---------------------------------------------------------------------------
+# Lockfile byte-equality gate (--check-lockfile)
+# ---------------------------------------------------------------------------
+
+
+def check_lockfile(
+    cohort: str,
+    out: Path,
+    *,
+    bids_root: Path | None = None,
+    lev1_outliers_csv: Path | None = None,
+) -> bool:
+    """Recompile the cohort's exclusions and assert lockfile byte-equality.
+
+    Replays the FW snapshot → stub BIDS, stages the real fMRIPrep metrics, runs
+    all pre-lev1 generators + ``compile_exclusions`` under the hermetic seam (so
+    NOTHING in the committed tree is written), then compares the freshly-written
+    scratch lockfile against the committed ``data/exclusions/{cohort}_lock.json``
+    on every NON-VOLATILE field (compiled_at / code_sha / paths / ran_at
+    normalized out). When a committed ``{cohort}_reference_compiled.json`` entry
+    snapshot exists it also diffs the compiled exclusion ENTRY SET.
+
+    Returns True iff the recompile reproduces the committed lockfile. Writes a
+    short Markdown report to ``out`` whose first line contains PASS/FAIL.
+    """
+    import tempfile
+
+    from neuro_workflow.testing.reproduce.lockfile import (
+        diff_entry_sets,
+        diff_locks,
+        load_lock,
+    )
+    from neuro_workflow.testing.reproduce.replay import replay_to_bids
+    from neuro_workflow.testing.reproduce.snapshot import load_inventory
+    from neuro_workflow.testing.reproduce.stage_metrics import stage_metrics
+
+    paths = _resolve_cohort_paths(cohort, bids_root=bids_root, lev1_outliers_csv=lev1_outliers_csv)
+
+    print(f"[check-lockfile] loading inventory: {paths['snapshot']}")
+    spec = load_inventory(paths["snapshot"])
+    scratch_root = Path(tempfile.mkdtemp(prefix=f"repro_lock_{cohort}_"))
+
+    stub_bids = replay_to_bids(
+        spec,
+        scratch_root,
+        sample_name=cohort,
+        behavioral_dir=paths["behavioral"],
+        install_flywheel=_make_install_flywheel(),
+    )
+    stage_metrics(stub_bids, fmriprep_src=paths["fmriprep_src"], version=paths["fmriprep_version"])
+
+    work_dir = scratch_root / "_excl_work"
+    work_dir.mkdir(parents=True, exist_ok=True)
+    with _hermetic_exclusion_paths(work_dir) as coll_dir:
+        compiled, _bidsignore = _run_all_generators(cohort, stub_bids, paths, coll_dir)
+        recompiled_lock = load_lock(_excl_mod._lockfile_path(cohort))
+
+    committed_lock_path = _REPO_ROOT / "data" / "exclusions" / f"{cohort}_lock.json"
+    committed_lock = load_lock(committed_lock_path)
+    diffs = diff_locks(recompiled_lock, committed_lock)
+
+    ref_compiled = _REPO_ROOT / "data" / "exclusions" / f"{cohort}_reference_compiled.json"
+    if ref_compiled.is_file():
+        committed_compiled = json.loads(ref_compiled.read_text())
+        diffs.extend(diff_entry_sets(compiled, committed_compiled))
+
+    ok = not diffs
+    lines = [
+        f"# Lockfile reproduction — {cohort}: {'PASS' if ok else 'FAIL'}",
+        "",
+        f"- committed lockfile: {committed_lock_path}",
+        f"- recompiled entries: {len(compiled)}",
+        f"- diffs ({len(diffs)}):",
+    ]
+    lines += [f"  - {d}" for d in diffs] or ["  - (none)"]
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines) + "\n")
+    print(f"[check-lockfile] report written to {out}")
+    print(f"  result: {lines[0]}")
+    return ok
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -669,11 +751,28 @@ def _parse_args(argv=None):
         default=None,
         help="Override the lev1_outliers.csv reference path.",
     )
+    parser.add_argument(
+        "--check-lockfile",
+        action="store_true",
+        help=(
+            "Only recompile the exclusions and assert byte-equality of the "
+            "recompiled lockfile against the committed data/exclusions/"
+            "{cohort}_lock.json (non-volatile fields). Exit 0 on PASS, 1 on FAIL."
+        ),
+    )
     return parser.parse_args(argv)
 
 
 if __name__ == "__main__":
     args = _parse_args()
+    if args.check_lockfile:
+        ok = check_lockfile(
+            args.cohort,
+            args.out,
+            bids_root=args.bids_root,
+            lev1_outliers_csv=args.lev1_outliers_csv,
+        )
+        sys.exit(0 if ok else 1)
     main(args.cohort, args.out, bids_root=args.bids_root, lev1_outliers_csv=args.lev1_outliers_csv)
     report_text = args.out.read_text()
     sys.exit(0 if "PASS" in report_text.splitlines()[0] else 1)
