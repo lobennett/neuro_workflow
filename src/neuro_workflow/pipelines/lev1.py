@@ -94,6 +94,12 @@ class Lev1Pipeline(LocalAnalysisPipeline):
             help="Skip per-contrast surface QC plots (the .func.gii files are still saved)",
         )
         parser.add_argument(
+            "--no-rt",
+            action="store_true",
+            default=False,
+            help="lev1 without response_time (rtmodel-noRT)",
+        )
+        parser.add_argument(
             "--nthreads",
             type=int,
             default=None,
@@ -168,6 +174,8 @@ class Lev1Pipeline(LocalAnalysisPipeline):
             extra_flags.append("--skip-existing")
         if getattr(args, "skip_qc_plots", False):
             extra_flags.append("--skip-qc-plots")
+        if getattr(args, "no_rt", False):
+            extra_flags.append("--no-rt")
 
         return {
             **self._base_context(dataset_name, dataset_config, resources, log_dir, results_dir),

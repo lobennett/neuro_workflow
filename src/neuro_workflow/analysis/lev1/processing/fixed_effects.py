@@ -11,7 +11,7 @@ from neuro_workflow.analysis.lev1.processing.imaging import cast_nifti_to_float3
 from neuro_workflow.analysis.lev1.processing.surface_data import (
     compute_surface_fixed_effects,
 )
-from neuro_workflow.analysis.task_config.loader import get_task_contrasts
+from neuro_workflow.analysis.task_config.loader import drop_rt_contrasts, get_task_contrasts
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ class FixedEffectsAnalyzer:
         min_runs: int = 2,
         hemisphere: str | None = None,
         surface_space: str = "fsnative",
+        no_rt: bool = False,
     ):
         """Initialize fixed effects analyzer.
 
@@ -37,6 +38,10 @@ class FixedEffectsAnalyzer:
             min_runs: Minimum runs required to compute a non-tagged fixed-effects map (default: 2).
             hemisphere: Optional hemisphere ('L' or 'R') for surface data
             surface_space: Surface space name for output filenames (default 'fsnative')
+            no_rt: If True, this analyzer represents a GLM built without a
+                response_time regressor; tags output filenames
+                `_rtmodel-noRT` (instead of `_rtmodel-RTDur`) and drops
+                response_time-related contrasts.
 
         Examples:
             >>> analyzer = FixedEffectsAnalyzer('sub-01', 'stopSignal')
@@ -48,6 +53,8 @@ class FixedEffectsAnalyzer:
         self.min_runs = min_runs
         self.hemisphere = hemisphere
         self.surface_space = surface_space
+        self.no_rt = no_rt
+        self.rtmodel_tag = "noRT" if no_rt else "RTDur"
         self.contrast_results = {}
 
     def find_contrast_files(
@@ -285,7 +292,7 @@ class FixedEffectsAnalyzer:
             f"{self.subject_id}{hemi_tag}{space_tag}"
             f"_task-{self.task_name}"
             f"_contrast-{contrast_name}"
-            f"_rtmodel-RTDur{below_min_tag}"
+            f"_rtmodel-{self.rtmodel_tag}{below_min_tag}"
             f"_stat-fixed-effects"
         )
 
@@ -390,6 +397,14 @@ class FixedEffectsAnalyzer:
         if contrasts is None:
             contrasts = get_task_contrasts(self.task_name)
 
+        if self.no_rt:
+            # This analyzer's design matrix has no response_time regressor
+            # (no_rt=True), so any contrast referencing it can't be computed —
+            # drop it regardless of whether `contrasts` came from the task's
+            # YAML config or was passed in explicitly by the caller. Shared
+            # helper keeps this logic identical to the per-run path in runner.py.
+            contrasts = drop_rt_contrasts(contrasts)
+
         all_saved_files = {}
 
         for contrast_name in contrasts.keys():
@@ -472,6 +487,7 @@ def compute_subject_fixed_effects(
     hemisphere: str | None = None,
     surface_space: str = "fsnative",
     contrast_exclusions: set[tuple[str, str]] | None = None,
+    no_rt: bool = False,
 ) -> dict[str, dict[str, Path]]:
     """Compute fixed effects for all contrasts for a subject.
 
@@ -485,6 +501,8 @@ def compute_subject_fixed_effects(
         min_runs: Minimum runs threshold passed to the analyzer (default 2).
         hemisphere: Optional hemisphere ('L' or 'R') for surface data
         surface_space: Surface space name for output filenames (default 'fsnative')
+        no_rt: If True, build without a response_time regressor; tags
+            output filenames `_rtmodel-noRT` and drops RT-related contrasts.
 
     Returns:
         Dictionary mapping contrast names to saved file paths
@@ -505,6 +523,7 @@ def compute_subject_fixed_effects(
         min_runs=min_runs,
         hemisphere=hemisphere,
         surface_space=surface_space,
+        no_rt=no_rt,
     )
 
     return analyzer.compute_all_task_fixed_effects(

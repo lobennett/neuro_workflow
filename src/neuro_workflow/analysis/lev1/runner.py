@@ -52,7 +52,7 @@ from neuro_workflow.analysis.lev1.processing.surface_data import (
     smooth_surface_gifti,
 )
 from neuro_workflow.analysis.lev1.spaces import is_surface_space, resolve_surface_space
-from neuro_workflow.analysis.task_config.loader import get_task_contrasts
+from neuro_workflow.analysis.task_config.loader import drop_rt_contrasts, get_task_contrasts
 
 logger = logging.getLogger(__name__)
 
@@ -342,14 +342,20 @@ def process_single_run(session, run, run_files, args, sample_type, dirs, task_pa
         args.task_name,
         n_scans,
         tr,
+        no_rt=args.no_rt,
     )
     logger.debug("Design matrix shape: %s", design_matrix.shape)
 
     # Handle zero-variance columns
     design_matrix, dropped_columns = handle_zero_variance_columns(design_matrix)
 
-    # Get and filter contrasts
+    # Get and filter contrasts. Under --no-rt the response_time regressor is
+    # absent from the design, so its contrast (and any referencing it) cannot be
+    # evaluated — drop it before the zero-variance filter, else compute_run_contrasts
+    # / run_quality_control raise on the missing design column and fail the run.
     all_contrasts = get_task_contrasts(args.task_name)
+    if args.no_rt:
+        all_contrasts = drop_rt_contrasts(all_contrasts)
     contrasts, skipped_contrasts = filter_contrasts_for_dropped_columns(
         all_contrasts, dropped_columns
     )
@@ -435,6 +441,7 @@ def compute_fixed_effects_all(
     combined_mask_path,
     failed_runs,
     run_count,
+    no_rt: bool = False,
 ):
     """Compute fixed effects across runs, supporting partial-run analysis.
 
@@ -476,6 +483,7 @@ def compute_fixed_effects_all(
                     hemisphere=hemisphere,
                     surface_space=surface_space,
                     contrast_exclusions=contrast_exclusions,
+                    no_rt=no_rt,
                 )
                 logger.info("Fixed effects: %d contrasts (hemi-%s)", len(results), hemisphere)
         else:
@@ -488,6 +496,7 @@ def compute_fixed_effects_all(
                 exclusions,
                 min_runs=args.min_runs,
                 contrast_exclusions=contrast_exclusions,
+                no_rt=no_rt,
             )
             logger.info("Fixed effects: %d contrasts", len(results))
     except Exception as e:

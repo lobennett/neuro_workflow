@@ -302,6 +302,19 @@ def get_task_contrasts(task_name: str) -> dict[str, str]:
     return dict(contrasts)
 
 
+def drop_rt_contrasts(contrasts: dict) -> dict:
+    """Drop the response_time contrast (and any referencing it) — used for --no-rt.
+
+    When a GLM is built without the response_time regressor (``--no-rt``), any
+    contrast named ``response_time`` or whose formula references it cannot be
+    evaluated (its design column does not exist). This filter removes them so
+    the per-run and fixed-effects contrast sets stay consistent with the design.
+    """
+    return {
+        k: v for k, v in contrasts.items() if k != "response_time" and "response_time" not in str(v)
+    }
+
+
 def get_task_parameters(task_name: str) -> dict[str, Any]:
     """Get general parameters for a task.
 
